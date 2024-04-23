@@ -1,0 +1,239 @@
+"""
+    𝒢₁(x::Float64,N::Int64,a::Float64,b::Float64)
+
+Compute the integral I = ∫(xⁿ/R²)dx, where R = a + bx, evaluated at x.
+
+# Input Argument(s)
+- 'x::Float64': evaluation point.
+- 'n::Int64': exponent.
+- 'a::Float64': coefficient.
+- 'b::Float64': coefficient.
+
+# Output Argument(s)
+- 'v::Vector{Float64}': integral evaluated at x for 0 ≤ n ≤ N.
+
+# Author(s)
+Charles Bienvenue
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+
+"""
+function 𝒢₁(x::Real,N::Int64,a::Real,b::Real)
+
+    # Initialize
+    v = zeros(N+1)
+    if x == 0 return v end
+    R = a+b*x
+
+    # Eq. 2.111 (4)
+    @inbounds for n in range(0,N)
+        v[n+1] += (-1)^(n-1)*a^n/(b^(n+1)*R) + (-1)^(n+1)*n*a^(n-1)/b^(n+1)*log(R)
+        for g in range(1,n-1)
+            v[n+1] += (-1)^(g-1) * (g*a^(g-1)*x^(n-g))/((n-g)*b^(g+1))
+        end
+    end
+    
+    return v
+end
+
+"""
+    𝒢₂(x::Float64,N::Int64,a::Float64,b::Float64)
+
+Compute the integral I = ∫(xⁿ/R²)dx, where R = a + bx^2, evaluated at x.
+
+# Input Argument(s)
+- 'x::Float64': evaluation point.
+- 'n::Int64': exponent.
+- 'a::Float64': coefficient.
+- 'b::Float64': coefficient.
+
+# Output Argument(s)
+- 'v::Vector{Float64}': integral evaluated at x for 2 ≤ n ≤ N and n even only.
+
+# Author(s)
+Charles Bienvenue
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+
+"""
+function 𝒢₂(x::Real,N::Int64,a::Real,b::Real)
+
+    # Initialize
+    v = zeros(N)
+    if x == 0 return v end
+    R = a+b*x^2
+
+    # Eq. 2.172 and Eq. 2.173 (1)
+    v₀ = x/(2*a*R) + 1/(2*a*sqrt(a*b))*atan(b*x/sqrt(a*b))
+
+    # Eq. 2.174 (1)
+    v[2] = -x/(b*R) + a/b*v₀
+    @inbounds for n in range(4,N,step=2)
+        v[n] = -x^(n-1)/((3-n)*b*R) + (n-1)*a/((3-n)*b)*v[n-2]
+    end
+
+    return v
+end
+
+"""
+    𝒢₃(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
+
+Compute the integral I = ∫tⁿzᵐdx, where z = a + bx and t = α + βx, evaluated at x.
+
+# Input Argument(s)
+- 'x::Float64': evaluation point.
+- 'n::Int64': exponent.
+- 'm::Int64': exponent.
+- 'a::Float64': coefficient.
+- 'b::Float64': coefficient.
+- 'α::Float64': coefficient.
+- 'β::Float64': coefficient.
+
+# Output Argument(s)
+- 'v::Vector{Float64}': integral evaluated at x for (n,m).
+
+# Author(s)
+Charles Bienvenue
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+
+"""
+function 𝒢₃(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
+
+    Δ = a*β-b*α
+    z = a+b*x
+    t = α+β*x
+    if β == 0 || b == 0 error() end
+
+    if Δ == 0
+        return (a/α)^m*𝒢₃(n+m,0,a,b,α,β,x)
+    elseif n == 0
+        if m != -1 return z^(m+1)/(b*(m+1)) else return log(abs(z))/b end
+    elseif m == 0
+        if n != -1 return t^(n+1)/(β*(n+1)) else return log(abs(t))/β end
+    elseif m < 0 && n < 0
+        if  m == -1 && n == -1 # Gradshteyn - Sect. 2.154
+            return log(t/z)/Δ
+        elseif n != -1 && m < 0 # Gradshteyn - Sect. 2.155
+            return 1/(Δ*(n+1))*( t^(n+1)*z^(m+1) - b*(m+n+2)*𝒢₃(n+1,m,a,b,α,β,x) )
+        elseif m != -1 && n < 0 # Gradshteyn - Sect. 2.155
+            return -1/(Δ*(m+1))*( t^(n+1)*z^(m+1) - β*(m+n+2)*𝒢₃(n,m+1,a,b,α,β,x) )
+        else
+            error()
+        end
+    elseif m > 0 && n > 0 # Gradshteyn - Sect. 2.151 & Sect. 2.153
+        return 1/(b*(m+n+1))*( z^(m+1)*t^n - n*Δ*𝒢₃(n-1,m,a,b,α,β,x) )
+    elseif n > 0 && m < 0 # Gradshteyn - Sect. 2.153
+        if m+n != -1
+            return 1/(b*(m+n+1))*( z^(m+1)*t^n - n*Δ*𝒢₃(n-1,m,a,b,α,β,x) )
+        else
+            return  -1/((m+1)*Δ) * ( z^(m+1)*t^(n+1) - (m+n+2)*β*𝒢₃(n,m+1,a,b,α,β,x) )
+        end
+    elseif m > 0 && n < 0 # Gradshteyn - Sect. 2.153
+        if m+n != -1
+            return 1/(β*(m+n+1))*( t^(n+1)*z^m + m*Δ*𝒢₃(n,m-1,a,b,α,β,x) )
+        else
+            return  1/((n+1)*Δ) * ( z^(m+1)*t^(n+1) - (m+n+2)*b*𝒢₃(n+1,m,a,b,α,β,x) )
+        end
+    else
+        error()
+    end
+
+end
+
+"""
+    𝒢₄(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
+
+Compute the integral I = ∫(1/(tⁿzᵐ√z))dx, where z = a + bx and t = α + βx, evaluated at x.
+
+# Input Argument(s)
+- 'x::Float64': evaluation point.
+- 'n::Int64': exponent.
+- 'm::Int64': exponent.
+- 'a::Float64': coefficient.
+- 'b::Float64': coefficient.
+- 'α::Float64': coefficient.
+- 'β::Float64': coefficient.
+
+# Output Argument(s)
+- 'v::Vector{Float64}': integral evaluated at x for (n,m).
+
+# Author(s)
+Charles Bienvenue
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+- Zwillinger (2003) : Standard mathematical tables and formulae.
+
+
+"""
+function 𝒢₄(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
+
+    Δ = a*β-b*α
+    z = a+b*x
+    t = α+β*x
+    if m < 0 error("Negative m index") end
+    if n < 0 || m < 0 || β == 0 || b == 0 error("Negative n index") end
+
+    if Δ == 0
+        return (α/a)^m*𝒢₄(n+m,0,a,b,α,β,x)
+    elseif n == 0
+        return z^(0.5-m)/(b*(0.5-m))
+    elseif m == 0 && n == 1 # Gradshteyn - Sect. 2.246
+        if Δ*β > 0
+            return 1/sqrt(β*Δ) * log((β*sqrt(z)-sqrt(β*Δ))/(β*sqrt(z)+sqrt(β*Δ)))
+        elseif Δ*β < 0
+            return 2/sqrt(-β*Δ) * atan(β*sqrt(z)/sqrt(-β*Δ))
+        else
+            return -2*sqrt(z)/(b*t)
+        end 
+    elseif m == 0 && n != 1 # Zwillinger - Sect. 5.4.10 (147)
+        return -1/((n-1)*Δ) * (sqrt(z)/t^(n-1) + (n-3/2)*b*𝒢₄(n-1,0,a,b,α,β,x))
+    elseif m > 0 && n == 1 # Gradshteyn - Sect. 2.249 (2)
+        return 2/((2*m-1)*Δ) * 1/(z^(m-1)*sqrt(z)) + β/Δ*𝒢₄(1,m-1,a,b,α,β,x) 
+    elseif m > 0 && n != 1 # Gradshteyn - Sect. 2.249 (1)
+        return -1/((n-1)*Δ)*sqrt(z)/(z^m*t^(n-1)) - (2*n+2*m-3)*b/(2*(n-1)*Δ)*𝒢₄(n-1,m,a,b,α,β,x)
+    else
+        error()
+    end
+
+    #=
+    if Δ == 0 return (α/a)^n * z^(n-m+0.5)/(b*(n-m+0.5)) end
+
+    if n ≥ 0
+        if m > 0
+            # Gradshteyn - Sect. 2.249 (1)
+            return 2/((2*m-1)*Δ)*t^(n+1)/z^m*sqrt(z) - (2*n-2*m+3)*β/((2*m-1)*Δ)*𝒢₄(n,m-1,a,b,α,β,x)
+        else
+            if n != 0
+                # Zwillinger - Sect. 5.4.10 (148)
+                return 2/(b*(2*n+1))*(t^n*sqrt(z)-n*Δ*𝒢₄(n-1,m,a,b,α,β,x))
+            else
+                return 2/b*sqrt(z)
+            end
+        end
+    elseif n < 0
+        if m > 0
+            # Gradshteyn - Sect. 2.243 (1)
+            return 2/((2*m-1)*Δ)*t^(n+1)/z^m*sqrt(z) - (2*n-2*m+3)*β/((2*m-1)*Δ)*𝒢₄(n,m-1,a,b,α,β,x)
+        else
+            if n < -1
+                # Zwillinger - Sect. 5.4.10 (147)
+                return 1/((n+1)*Δ) * (t^(n+1)*sqrt(z) - (2*n+3)/2*b*𝒢₄(n+1,m,a,b,α,β,x))
+            else
+                # Gradshteyn - Sect. 2.246
+                if Δ*β > 0
+                    return 1/sqrt(β*Δ) * log((β*sqrt(z)-sqrt(β*Δ))/(β*sqrt(z)+sqrt(β*Δ)))
+                elseif Δ*β < 0
+                    return 2/sqrt(-β*Δ) * atan(β*sqrt(z)/sqrt(-β*Δ))
+                else
+                    return -2*sqrt(z)/(b*t)
+                end 
+            end
+        end
+    end
+    =#
+end
