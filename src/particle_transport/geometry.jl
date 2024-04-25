@@ -55,8 +55,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
         end
         for ix in rx
             vol[ix] = (xB[i+1]-xB[i])/xVoxels[i]
-            index = findfirst(x->x==idMat[i],materialNames)
-            if isnothing(index) error("No cross section information for material ",idMat[i],".") end
+            index = findfirst(x->x==idMat[i].name,materialNames)
+            if isnothing(index) error("No cross section information for material ",idMat[i].name,".") end
             mat[ix] = index
         end
         i += 1
@@ -173,8 +173,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
             end
             for ix in rx
                 for iy in ry
-                    index = findfirst(x->x==idMat[i,j],materialNames)
-                    if isnothing(index) error("No cross section information for material ",idMat[i,j],".") end
+                    index = findfirst(x->x==idMat[i,j].name,materialNames)
+                    if isnothing(index) error("No cross section information for material ",idMat[i,j].name,".") end
                     mat[ix,iy] = index
                 end
             end
@@ -347,8 +347,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
                 for ix in rx
                     for iy in ry
                         for iz in rz
-                            index = findfirst(x->x==idMat[i,j,k],materialNames)
-                            if isnothing(index) error("No cross section information for material ",idMat[i,j,k],".") end
+                            index = findfirst(x->x==idMat[i,j,k].name,materialNames)
+                            if isnothing(index) error("No cross section information for material ",idMat[i,j,k].name,".") end
                             mat[ix,iy,iz] = index
                         end
                     end

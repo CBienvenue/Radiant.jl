@@ -6,7 +6,7 @@ mutable struct Geometry
     type                        ::Union{Missing,String}
     dimension                   ::Union{Missing,Int64}
     axis                        ::Union{Missing,Vector{String}}
-    material_per_region         ::Union{Missing,Array{String}}
+    material_per_region         ::Union{Missing,Array{Material}}
     boundary_conditions         ::Dict{String,String}
     number_of_regions           ::Dict{String,Int64}
     voxels_per_region           ::Dict{String,Vector{Int64}}
@@ -138,7 +138,7 @@ function set_dimension(this::Geometry,dimension::Int64)
     this.dimension = dimension
 end
 
-function set_material_per_region(this::Geometry,material_per_region::Array{String})
+function set_material_per_region(this::Geometry,material_per_region::Array{Material})
     this.material_per_region = material_per_region
 end
 

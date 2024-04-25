@@ -38,14 +38,6 @@ include("Fixed_Sources.jl")
 include("Flux_Per_Particle.jl")
 include("Flux.jl")
 include("Computation_Unit.jl")
-export Material
-export Cross_Sections
-export Geometry
-export Method
-export Surface_Source
-export Volume_Source
-export Source
-export Computation_Unit
 
 # To use Python-like notation for methods
 RadiantObject = Union{
