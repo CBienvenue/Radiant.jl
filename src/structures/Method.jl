@@ -5,7 +5,7 @@ Structure used to define the discretization method associated with the transport
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `name::String`: name (or identifier) of the Method structure.
     - `particle::String`: particle for which the discretization methods is defined
     - `solver_type::String`: type of solver for the transport calculations.
@@ -15,7 +15,7 @@ Structure used to define the discretization method associated with the transport
     - `scheme_type::Dict{String,String}`: type of schemes for the spatial or energy discretization.
     - `scheme_order::Dict{String,Int64}`: order of the expansion for the discretization schemes.
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
     - `angular_fokker_planck::String="finite-difference"`: type of discretization for the angular Fokker-Planck operation.
     - `angular_boltzmann::String="galerkin-d"`: type of discretization for the Boltzmann operation.
     - `convergence_criterion::Float64 = 1e-7`: convergence criterion of in-group iterations.

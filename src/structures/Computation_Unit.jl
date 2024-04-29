@@ -5,13 +5,13 @@ Structure used to consolidate the cross-sections, geometry, methods and sources,
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `cross_sections::Cross_Sections`: cross-section library.
     - `geometry::Geometry`: geometry.
     - `methods::Methods`: methods.
     - `sources::Sources`: fixed sources.
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
 
 # System-defined field(s)
     - `flux`: flux solution.

@@ -5,11 +5,11 @@ Structure used to define the collection of discretization methods for transport 
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `methods_list::Vector{Method}`: list of the particle methods
     - `number_of_generations::Int64`: number of particle generations to transport.
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
     N/A
 
 # System-defined field(s)

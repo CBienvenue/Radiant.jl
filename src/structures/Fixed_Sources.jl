@@ -5,13 +5,13 @@ Structure used to define a collection of fixed sources and their properties.
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
     - `cross_sections`: Cross_Sections structure.
     - `geometry`: Geometry structure.
     - `methods`: Methods structure.
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
     N/A
 
 # System-defined field(s)

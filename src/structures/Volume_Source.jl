@@ -5,13 +5,13 @@ Structure used to define an isotropic volume source and its properties.
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `name::String`: name (or identifier) of the Volume_Source structure.
     - `particle::String`: type of particle emitted.
     - `energy_group::Int64`: energy group index in which the particle are emitted.
     - `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
     - `intensity::Float64=1.0`: intensity [# particles/cmᴺ, where N is the geometry dimension].
 
 # System-defined field(s)

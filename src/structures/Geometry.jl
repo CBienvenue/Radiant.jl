@@ -22,8 +22,8 @@ Structure used to define the geometry properties of the medium for transport cal
 - `number_of_voxels::Dict{String,Int64}`: total number of voxels along each axis.
 - `voxels_width::Dict{String,Vector{Float64}}`: width of each voxels along each axis.
 - `voxels_position::Dict{String,Vector{Float64}}`: midpoint positon of each voxels along each axis.
-- `material_per_voxel::Array{Int64}`: array of the material identifier number per voxel
-- `volume_per_voxel::Array{Float64}`: array of the volume per voxel
+- `material_per_voxel::Array{Int64}`: array of the material identifier number per voxel.
+- `volume_per_voxel::Array{Float64}`: array of the volume per voxel.
 - `is_build::Bool`: boolean value defining if the Geometry was build or not.
 
 """

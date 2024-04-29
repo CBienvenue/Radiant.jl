@@ -5,13 +5,13 @@ Structure used to define the parameters to extract or build a multigroup cross-s
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `name::String`: name (or identifier) of the Cross_Sections structure.
     - `source::String`: source of the cross-sections.
-    - ### if `source = "FMAC-M"`
+    - **if `source = "FMAC-M"`**
         - `file::String`: file containing cross-sections data.
         - `materials::Vector{Material}`: material list.
-    - ### if `source = "RADIANT"`
+    - **if `source = "RADIANT"`**
         - `materials::Vector{Material}`: material list.
         - `particles::Vector{String}`: particle list.
         - `energy::Float64`: midpoint energy of the highest energy group [in MeV].
@@ -21,7 +21,7 @@ Structure used to define the parameters to extract or build a multigroup cross-s
         - `interactions::Vector{Interaction}`: list of interaction.
         - `solvers::Vector{String}`: list of solver per particle.
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
     - `cutoff::Float64=0.001`: lower energy bound of the lowest energy group (cutoff energy) [in MeV].
 
 # System-defined field(s)

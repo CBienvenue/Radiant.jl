@@ -5,7 +5,7 @@ Structure used to define a directionnal boundary source and its properties.
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- **Mandatory field(s)**
     - `name::String`: name (or identifier) of the Surface_Source structure.
     - `particle::String`: type of particle emitted.
     - `energy_group::Int64`: energy group index in which the particle are emitted.
@@ -13,7 +13,7 @@ Structure used to define a directionnal boundary source and its properties.
     - `location::String`: boundary at which the source is located.
     - `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
 
-- ## Optional field(s) - with default values
+- **Optional field(s) - with default values**
     - `intensity::Float64=1.0`: intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
 
 # System-defined field(s)
