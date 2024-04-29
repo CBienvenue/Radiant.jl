@@ -1,5 +1,5 @@
 """
-    transport(cross_sections::Cross_Sections,geometry::Geometry,coupled_transport_solvers::Coupled_Transport_Solvers,
+    transport(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,
     sources::Fixed_Sources)
 
 Solve transport calculations.
@@ -9,7 +9,7 @@ See also [`compute_flux`](@ref).
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
-- 'coupled_transport_solvers::Coupled_Transport_Solvers': coupled_transport_solvers informations.
+- 'solvers::Solvers': solvers informations.
 - 'sources::Fixed_Sources': sources informations.
 
 # Output Argument(s)
@@ -22,12 +22,12 @@ Charles Bienvenue
 N/A
 
 """
-function transport(cross_sections::Cross_Sections,geometry::Geometry,coupled_transport_solvers::Coupled_Transport_Solvers,sources::Fixed_Sources,is_CUDA::Bool)
+function transport(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,is_CUDA::Bool)
 
 #----
 # Initialization
 #----
-Npart = coupled_transport_solvers.get_number_of_particles()
+Npart = solvers.get_number_of_particles()
 flux = Flux()
 
 #---
@@ -36,10 +36,10 @@ flux = Flux()
 if Npart == 1
 
     # Initialization
-    particle = coupled_transport_solvers.get_particles()[1]
+    particle = solvers.get_particles()[1]
 
     # Transport
-    method = coupled_transport_solvers.get_method(particle)
+    method = solvers.get_method(particle)
     fixed_source = sources.get_source(particle)
 
     particle_flux = compute_flux(cross_sections,geometry,method,fixed_source,is_CUDA)
@@ -51,12 +51,12 @@ if Npart == 1
 else
 
     # Initialization
-    particles = coupled_transport_solvers.get_particles()
+    particles = solvers.get_particles()
     fixed_source = Vector{Source}(undef,Npart)
     particle_sources = Vector{Source}(undef,Npart)
     method = Vector{Method}(undef,Npart) 
     for i in range(1,Npart)
-        method[i] = coupled_transport_solvers.get_method(particles[i])
+        method[i] = solvers.get_method(particles[i])
         fixed_source[i] = sources.get_source(particles[i])
         particle_sources[i] = Source(particles[i],cross_sections,geometry,method[i])
     end
@@ -77,7 +77,7 @@ else
     end
 
     # Coupled transport
-    Ngen = coupled_transport_solvers.get_number_of_generations()
+    Ngen = solvers.get_number_of_generations()
     for n in range(1,Ngen), p in range(1,Npart)
 
         i = particle_index[p]

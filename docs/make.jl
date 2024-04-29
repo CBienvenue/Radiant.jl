@@ -10,7 +10,7 @@ makedocs(
             "Cross_Sections" => "cross_sections.md",
             "Solvers" => [
                 "Discrete_Ordinates" => "discrete_ordinates.md"
-                "Coupled\\_Transport\\_Solvers" => "coupled_transport_solvers.md"
+                "Solvers" => "solvers.md"
             ],
             "Geometry" => "geometry.md",
             "Interactions" => [
@@ -26,7 +26,7 @@ makedocs(
                 "Rayleigh" => "rayleigh.md",
             ],
             "Material" => "material.md",
-            "Source" => [
+            "Sources" => [
                 "Surface_Source" => "surface_source.md",
                 "Volume_Source" => "volume_source.md",
                 "Fixed_Sources" => "fixed_source.md"

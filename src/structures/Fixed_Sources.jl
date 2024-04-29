@@ -9,7 +9,7 @@ Structure used to define a collection of fixed sources and their properties.
     - `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
     - `cross_sections`: Cross_Sections structure.
     - `geometry`: Geometry structure.
-    - `methods`: Coupled_Transport_Solvers structure.
+    - `solvers`: Solvers structure.
 
 - **Optional field(s) - with default values**
     N/A
@@ -31,10 +31,10 @@ mutable struct Fixed_Sources
     sources_list               ::Vector{Source}
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
-    methods                    ::Coupled_Transport_Solvers
+    solvers                    ::Solvers
 
     # Constructor(s)
-    function Fixed_Sources(cross_sections,geometry,methods)
+    function Fixed_Sources(cross_sections,geometry,solvers)
 
         this = new()
 
@@ -45,7 +45,7 @@ mutable struct Fixed_Sources
         this.sources_list = Vector{Source}()
         this.cross_sections = cross_sections
         this.geometry = geometry
-        this.methods = methods
+        this.solvers = solvers
 
         return this
     end
@@ -83,7 +83,7 @@ julia> fs.add_source(vs)
 """
 function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
     particle = fixed_source.get_particle()
-    method = this.methods.get_method(particle)
+    method = this.solvers.get_method(particle)
     if particle ∈ this.particles
         source = Source(particle,this.cross_sections,this.geometry,method)
         source.add_source(fixed_source)
@@ -101,7 +101,7 @@ end
 
 function get_source(this::Fixed_Sources,particle::String)
     index = findfirst(x -> x == particle,this.particles)
-    method = this.methods.get_method(particle)
+    method = this.solvers.get_method(particle)
     if isnothing(index)
         source = Source(particle,this.cross_sections,this.geometry,method)
         return source

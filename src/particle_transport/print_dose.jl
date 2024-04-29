@@ -1,6 +1,6 @@
 """
     energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,
-    coupled_transport_solvers::Coupled_Transport_Solvers,sources::Fixed_Sources,flux::Flux,type::String)
+    solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
 
 Calculate the energy deposition and print it in the output file. 
 
@@ -9,7 +9,7 @@ See also [`charge_deposition`](@ref).
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
-- 'coupled_transport_solvers::Coupled_Transport_Solvers': coupled_transport_solvers informations.
+- 'solvers::Solvers': solvers informations.
 - 'sources::Sources': sources informations.
 - 'flux::Flux': flux informations.
 - 'type::String': type of output.
@@ -26,7 +26,7 @@ Charles Bienvenue
   Boltzmann-Fokker-Planck Equation
 
 """
-function energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,coupled_transport_solvers::Coupled_Transport_Solvers,sources::Fixed_Sources,flux::Flux,type::String)
+function energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
 
 #----
 # Extract geometry data
@@ -47,7 +47,7 @@ end
 for part in particles
 
     # Extract discrete_ordinates data
-    discrete_ordinates = coupled_transport_solvers.get_method(part)
+    discrete_ordinates = solvers.get_method(part)
     _,isCSD = discrete_ordinates.get_solver_type()
 
     norm = sources.get_normalization_factor()

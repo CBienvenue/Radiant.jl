@@ -29,7 +29,7 @@ include("Material.jl")
 include("Cross_Sections.jl")
 include("Geometry.jl")
 include("Discrete_Ordinates.jl")
-include("Coupled_Transport_Solvers.jl")
+include("Solvers.jl")
 include("Surface_Source.jl")
 include("Volume_Source.jl")
 include("Source.jl")
@@ -42,7 +42,7 @@ export Material
 export Cross_Sections
 export Geometry
 export Discrete_Ordinates
-export Coupled_Transport_Solvers
+export Solvers
 export Surface_Source
 export Volume_Source
 export Fixed_Sources
@@ -55,7 +55,7 @@ RadiantObject = Union{
     Multigroup_Cross_Sections,
     Geometry,
     Discrete_Ordinates,
-    Coupled_Transport_Solvers,
+    Solvers,
     Surface_Source,
     Volume_Source,
     Fixed_Sources,
