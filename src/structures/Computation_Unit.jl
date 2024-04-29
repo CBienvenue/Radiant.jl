@@ -1,8 +1,25 @@
+"""
+    Computation_Unit
 
+Structure used to consolidate the cross-sections, geometry, methods and sources, execute transport calculations and extract its results.
+
+# User-defined field(s)
+
+- ## Mandatory field(s)
+    - `cross_sections::Cross_Sections`: cross-section library.
+    - `geometry::Geometry`: geometry.
+    - `methods::Methods`: methods.
+    - `sources::Sources`: fixed sources.
+
+- ## Optional field(s) - with default values
+
+# System-defined field(s)
+    - `flux`: flux solution.
+
+"""
 mutable struct Computation_Unit
 
     # Variable(s)
-    name                     ::Union{Missing,String}
     cross_sections           ::Union{Missing,Cross_Sections}
     geometry                 ::Union{Missing,Geometry}
     methods                  ::Union{Missing,Methods}
@@ -14,7 +31,6 @@ mutable struct Computation_Unit
 
         this = new()
 
-        this.name = missing
         this.cross_sections = missing
         this.geometry = missing
         this.methods = missing
@@ -41,33 +57,122 @@ Base.propertynames(::Computation_Unit) =
     :get_energies
 )
 
-function println(this::Computation_Unit)
-    entries = ["Name","Cross-Sections","Geometry","Methods","Sources"]
-    values = [this.name,this.cross_sections.name,this.geometry.name,this.methods.name,this.sources.name]
-    N = length(entries); L = length.(entries); Lmax = maximum(L)
-    println("Computation_Unit")
-    for n in range(1,N)
-        println(string("   ",entries[n]," "^(Lmax-L[n])),"  :  ",values[n])
-    end
-end
+"""
+    set_cross_sections(this::Computation_Unit,cross_sections::Cross_Sections)
 
+To set the cross-sections library for transport calculations.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `cross_sections::Cross_Sections`: cross-sections library.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> ... # Define cross-sections properties and generate multigroup cross-sections.
+julia> cu = Computation_Unit()
+julia> cu.set_cross_sections(cs)
+```
+"""
 function set_cross_sections(this::Computation_Unit,cross_sections::Cross_Sections)
     this.cross_sections = cross_sections
 end
 
+"""
+    set_geometry(this::Computation_Unit,geometry::Geometry)
+
+To set the geometry for transport calculations.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `geometry::Geometry`: geometry.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> ... # Define geometry and its properties
+julia> cu = Computation_Unit()
+julia> cu.set_geometry(geo)
+```
+"""
 function set_geometry(this::Computation_Unit,geometry::Geometry)
     this.geometry = geometry
 end
 
+"""
+    set_methods(this::Computation_Unit,methods::Methods)
+
+To set the discretization methods for transport calculations.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `methods::Methods`: collection of discretization method per particle.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ms = Methods()
+julia> ... # Define all the discretization methods and their properties
+julia> cu = Computation_Unit()
+julia> cu.set_methods(ms)
+```
+"""
 function set_methods(this::Computation_Unit,methods::Methods)
     this.methods = methods
 end
 
+"""
+    set_sources(this::Computation_Unit,sources::Fixed_Sources)
+
+To set the fixed sources for transport calculations.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `sources::Fixed_Sources`: collection of fixed sources.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> fs = Fixed_Sources()
+julia> ... # Define all the fixed sources and their properties
+julia> cu = Computation_Unit()
+julia> cu.set_sources(fs)
+```
+"""
 function set_sources(this::Computation_Unit,sources::Fixed_Sources)
     this.sources = sources
 end
 
-function run(this::Computation_Unit,is_CUDA::Bool=false)
+"""
+    run(this::Computation_Unit)
+
+To lauch the transport calculations to solve the transport equation and obtain the flux solution.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define the cross-sections, geometry, fixed sources and discretization methods
+julia> cu.run()
+```
+"""
+function run(this::Computation_Unit)
+    is_CUDA = false
     this.flux = transport(this.cross_sections,this.geometry,this.methods,this.sources,is_CUDA)
 end
 

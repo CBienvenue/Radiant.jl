@@ -32,8 +32,8 @@ Charles Bienvenue
 """
 function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64)
 
-if method == "finite-element"
-    ℳ, λ₀, Mn_FP, Dn_FP, N_FP = fokker_planck_finite_element(N,quadrature_type,Ndims,pℓ,pm,P,Nd,Mn,Dn)
+if method == "finite-difference"
+    ℳ, λ₀, Mn_FP, Dn_FP, N_FP = fokker_planck_finite_difference(N,quadrature_type,Ndims,pℓ,pm,P,Nd,Mn,Dn)
 elseif method == "differential-quadrature"
     ℳ, λ₀ = fokker_planck_differential_quadrature(N,quadrature_type,Ndims)
     Mn_FP = Mn; Dn_FP = Dn; N_FP = Nd

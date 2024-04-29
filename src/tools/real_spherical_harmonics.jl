@@ -3,8 +3,6 @@
 
 Calculate the real spherical harmonics components Rℓm(μ,ϕ). 
 
-See also [`ferrer_associated_legendre`](@ref).
-
 # Input Argument(s)
 - 'ℓ::Int64': order of the associated Legendre polynomial.
 - 'm::Int64': degree of the associated Legendre polynomial.

@@ -1,4 +1,25 @@
+"""
+    Volume_Source
 
+Structure used to define an isotropic volume source and its properties.
+
+# User-defined field(s)
+
+- ## Mandatory field(s)
+    - `name::String`: name (or identifier) of the Volume_Source structure.
+    - `particle::String`: type of particle emitted.
+    - `energy_group::Int64`: energy group index in which the particle are emitted.
+    - `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
+
+- ## Optional field(s) - with default values
+    - `intensity::Float64=1.0`: intensity [# particles/cmᴺ, where N is the geometry dimension].
+
+# System-defined field(s)
+- `is_build::Bool`: boolean value defining if the Multigroup_Cross_Sections was build or not.
+- `volume_sources::Array{Float64}`: formatted array for transport calculations. 
+- `normalization_factor::Float64`: normalization over the number of particles.
+
+"""
 mutable struct Volume_Source
 
     # Variable(s)
@@ -18,7 +39,7 @@ mutable struct Volume_Source
 
         this.name = missing
         this.particle = missing
-        this.intensity = missing
+        this.intensity = 1.0
         this.energy_group = missing
         this.boundaries = Dict{String,Vector{Float64}}()
         this.is_build = false
@@ -41,31 +62,97 @@ Base.propertynames(::Volume_Source) =
     :build
 )
 
-function println(this::Volume_Source)
-    entries = ["Name","Intensity","Energy group","Boundaries"]
-    values = [this.name,this.intensity,this.energy_group,this.boundaries]
-    N = length(entries); L = length.(entries); Lmax = maximum(L)
-    println("Volume_Source")
-    for n in range(1,N)
-        println(string("   ",entries[n]," "^(Lmax-L[n])),"  :  ",values[n])
-    end
-end
+"""
+    set_particle(this::Volume_Source,particle::String)
 
+To define the source particle.
+
+# Input Argument(s)
+- `this::Volume_Source`: volume source.
+- `particle::String`: type of particle, which can takes the following values:
+    - `particle = "photons"`: photons.
+    - `particle = "electrons"`: electrons.
+    - `particle = "positrons"`: positrons.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> vs = Volume_Source()
+julia> vs.set_particle("electrons")
+```
+"""
 function set_particle(this::Volume_Source,particle::String)
     if particle ∉ ["electrons","positrons","photons"] end
     this.particle = particle
 end
 
-function set_intensity(this::Volume_Source,intensity::Float64)
+"""
+    set_intensity(this::Volume_Source,intensity::Real)
+
+To define the intensity of the source.
+
+# Input Argument(s)
+- `this::Volume_Source`: volume source.
+- `intensity::Float64`: intensity [# particles/cmᴺ, where N is the geometry dimension]
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> vs = Volume_Source()
+julia> vs.set_intensity(100)
+```
+"""
+function set_intensity(this::Volume_Source,intensity::Real)
     if intensity ≤ 0 error("The intensity should be greater than 0.") end
     this.intensity = intensity
 end
 
+"""
+    set_energy_group(this::Volume_Source,energy_group::Int64)
+
+To define the energy of the source by setting the energy group in which they are produced.
+
+# Input Argument(s)
+- `this::Volume_Source`: volume source.
+- `energy_group::Int64`: energy group index.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> vs = Volume_Source()
+julia> vs.set_energy_group(1)
+```
+"""
 function set_energy_group(this::Volume_Source,energy_group::Int64)
     if energy_group ≤ 0 error("The energy group number should be greater than 0.") end
     this.energy_group = energy_group
 end
 
+"""
+    set_boundaries(this::Volume_Source,axis::String,boundaries::Vector{Float64})
+
+To define the boundaries of the source along the specified axis.
+
+# Input Argument(s)
+- `this::Volume_Source`: volume source.
+- `axis::String`: axis along which the boundaries are defined.
+- `boundaries::Vector{Float64}`: boundaries of the source in accending order [in cm]
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> vs = Volume_Source()
+julia> vs.set_boundaries("x",[1.0,3.0])
+```
+"""
 function set_boundaries(this::Volume_Source,axis::String,boundaries::Vector{Float64})
     if lowercase(axis) ∉ ["x","y","z"] error("Unknown axis.") end
     if length(boundaries) != 2 error("The two boundary side should be provided.") end

@@ -10,7 +10,7 @@ include("scattering_source.jl")
 include("particle_source.jl")
 include("fokker_planck_source.jl")
 include("fokker_planck_scattering_matrix.jl")
-include("fokker_planck_finite_element.jl")
+include("fokker_planck_finite_difference.jl")
 include("fokker_planck_differential_quadrature.jl")
 include("fokker_planck_galerkin.jl")
 

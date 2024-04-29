@@ -1,7 +1,7 @@
 """
-    fokker_planck_finite_element(N::Int64,quadrature_type::String,Ndims::Int64)
+    fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64)
 
-Calculate the Fokker-Planck scattering matrix using finite-element scheme.
+Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 
 # Input Argument(s)
 - 'N::Int64': number of directions.
@@ -23,7 +23,7 @@ Charles Bienvenue
   Operator.
 
 """
-function fokker_planck_finite_element(N::Int64,quadrature_type::String,Ndims::Int64,pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64})
+function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64})
 
 Mn_FP = Mn
 Dn_FP = Dn

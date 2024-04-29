@@ -3,10 +3,6 @@
 
 Computing the weights and evaluation points of requested quadrature.
 
-See also [`compute_flux`](@ref Radiant.compute_flux), [`gauss_legendre`](@ref),
-[`gauss_lobatto`](@ref),[`gauss_legendre_chebychev`](@ref), [`lebedev`](@ref),
-[`carlson`](@ref).
-
 # Input Argument(s)
 - 'N::Int64': quadrature order.
 - 'type::String': type of quadrature.

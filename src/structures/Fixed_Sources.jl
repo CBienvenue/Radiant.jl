@@ -1,8 +1,29 @@
+"""
+    Fixed_Sources
 
+Structure used to define a collection of fixed sources and their properties.
+
+# User-defined field(s)
+
+- ## Mandatory field(s)
+    - `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
+    - `cross_sections`: Cross_Sections structure.
+    - `geometry`: Geometry structure.
+    - `methods`: Methods structure.
+
+- ## Optional field(s) - with default values
+    N/A
+
+# System-defined field(s)
+- `number_of_particles::Int64`: number of particle with fixed sources.
+- `particles::Vector{String}`: particles associated with fixed sources.
+- `normalization_factor::Float64`: normalization over the number of particles.
+- `sources_names`: names (or identifier) of the Source objects
+
+"""
 mutable struct Fixed_Sources
 
     # Variable(s)
-    name                       ::Union{Missing,String}
     number_of_particles        ::Int64
     particles                  ::Vector{String}
     normalization_factor       ::Float64
@@ -17,7 +38,6 @@ mutable struct Fixed_Sources
 
         this = new()
 
-        this.name = missing
         this.number_of_particles = 0
         this.normalization_factor = 0
         this.particles = Vector{String}()
@@ -41,6 +61,26 @@ Base.propertynames(::Fixed_Sources) =
     :get_normalization_factor
 )
 
+"""
+    add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
+
+To add a surface or volume source to the Fixed_Sources structure.
+
+# Input Argument(s)
+- `this::Fixed_Sources`: collection of fixed sources.
+- `fixed_source::Union{Surface_Source,Volume_Source}`: volume or surface source.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> vs = Volume_Source()
+julia> ... # Define the volume source properties
+julia> fs = Fixed_Sources()
+julia> fs.add_source(vs)
+```
+"""
 function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
     particle = fixed_source.get_particle()
     method = this.methods.get_method(particle)

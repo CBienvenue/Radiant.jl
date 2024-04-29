@@ -4,8 +4,6 @@
 Calculate the associated Legendre polynomial Pℓm(x), using Ferrer definition
 (without (-1)ᵐ factor). 
 
-See also [`real_spherical_harmonics`](@ref).
-
 # Input Argument(s)
 - 'ℓ::Int64': order of the associated Legendre polynomial.
 - 'm::Int64': degree of the associated Legendre polynomial.

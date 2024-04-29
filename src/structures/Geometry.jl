@@ -1,4 +1,32 @@
+"""
+    Geometry
 
+Structure used to define the geometry properties of the medium for transport calculations.
+
+# User-defined field(s)
+
+- ## Mandatory field(s)
+    - `name::String`: name (or identifier) of the Geometry structure.
+    - `dimension::Int64`: dimension of the geometry.
+    - `material_per_region::Array{Material}`: multidimensional array of the material per regions.
+    - `boundary_conditions::Dict{String,Int64}`: boundary conditions along each axis.
+    - `number_of_regions::Dict{String,Int64}`: number of regions along each axis.
+    - `voxels_per_region::Dict{String,Vector{Int64}}`: number of voxels inside each regions along each axis.
+    - `region_boundaries::Dict{String,Vector{Float64}}`: boundaries of each regions along each axis.
+
+- ## Optional field(s) - with default values
+    - `type::String="cartesian"`: type of geometry.
+
+# System-defined field(s)
+- `axis::Vector{String}`: vector of the axis related to the geometry.
+- `number_of_voxels::Dict{String,Int64}`: total number of voxels along each axis.
+- `voxels_width::Dict{String,Vector{Float64}}`: width of each voxels along each axis.
+- `voxels_position::Dict{String,Vector{Float64}}`: midpoint positon of each voxels along each axis.
+- `material_per_voxel::Array{Int64}`: array of the material identifier number per voxel
+- `volume_per_voxel::Array{Float64}`: array of the volume per voxel
+- `is_build::Bool`: boolean value defining if the Geometry was build or not.
+
+"""
 mutable struct Geometry
 
     # Variable(s)
@@ -24,7 +52,7 @@ mutable struct Geometry
         this = new()
 
         this.name = missing
-        this.type = missing
+        this.type = "cartesian"
         this.dimension = missing
         this.axis = missing
         this.material_per_region = missing
@@ -64,52 +92,64 @@ Base.propertynames(::Geometry) =
     :build
 )
 
-function println(this::Geometry)
-    entries = ["Name","Type","Dimension","Axis","Material per region","Boundary conditions","Number of regions","Voxels per region","Region boundaries [cm]"]
-    values = [this.name,this.type,this.dimension,this.axis,this.material_per_region,this.boundary_conditions,this.number_of_regions,this.voxels_per_region,this.region_boundaries]
-    N = length(entries); L = length.(entries); Lmax = maximum(L)
-    println("Geometry")
-    for n in range(1,N)
-        println(string("   ",entries[n]," "^(Lmax-L[n])),"  :  ",values[n])
-    end
-end
-
 function is_ready_to_build(this::Geometry)
     if ismissing(this.type) error("The type of geometry has to be specified.") end
     if ismissing(this.dimension) error("The geometry dimension has to be specified.") end
-    if this.type == "Cartesian"
-        if length(size(this.material_per_region)) != this.dimension error("Dimension of the material per region array don't fit the dimension.") end
+    if this.type == "cartesian"
+        if length(size(this.material_per_region)) != this.dimension error("Dimension of the material per region array don`t fit the dimension.") end
         if this.dimension ≥ 1
             if ~haskey(this.boundary_conditions,"X+") || ~haskey(this.boundary_conditions,"X-") error("Boundary conditions are not defined along the x-axis.") end
-            if ~haskey(this.number_of_regions,"X") error("Number of regions are not defined along the x-axis.") end
-            if ~haskey(this.voxels_per_region,"X") error("Number of voxels per region are not defined along the x-axis.") end
-            if ~haskey(this.region_boundaries,"X") error("The region boundaries are not defined along the x-axis.") end
-            if this.number_of_regions["X"] != size(this.material_per_region,1) error("The size of the material per region array don't fit the number of regions along the x-axis.") end
-            if length(this.voxels_per_region["X"]) != this.number_of_regions["X"] error("The length of the voxel per region vector don't fit the number of regions along the x-axis.") end
-            if length(this.region_boundaries["X"]) != this.number_of_regions["X"] + 1 error("The length of the region boundaries vector don't fit the number of regions along the x-axis.") end
+            if ~haskey(this.number_of_regions,"x") error("Number of regions are not defined along the x-axis.") end
+            if ~haskey(this.voxels_per_region,"x") error("Number of voxels per region are not defined along the x-axis.") end
+            if ~haskey(this.region_boundaries,"x") error("The region boundaries are not defined along the x-axis.") end
+            if this.number_of_regions["x"] != size(this.material_per_region,1) error("The size of the material per region array don`t fit the number of regions along the x-axis.") end
+            if length(this.voxels_per_region["x"]) != this.number_of_regions["x"] error("The length of the voxel per region vector don`t fit the number of regions along the x-axis.") end
+            if length(this.region_boundaries["x"]) != this.number_of_regions["x"] + 1 error("The length of the region boundaries vector don`t fit the number of regions along the x-axis.") end
         end
         if this.dimension ≥ 2
             if ~haskey(this.boundary_conditions,"Y+") || ~haskey(this.boundary_conditions,"Y-") error("Boundary conditions are not defined along the y-axis.") end
-            if ~haskey(this.number_of_regions,"Y") error("Number of regions are not defined along the y-axis.") end
-            if ~haskey(this.voxels_per_region,"Y") error("Number of voxels per region are not defined along the y-axis.") end
-            if ~haskey(this.region_boundaries,"Y") error("The region boundaries are not defined along the y-axis.") end
-            if this.number_of_regions["Y"] != size(this.material_per_region,2) error("The size of the material per region array don't fit the number of regions along the y-axis.") end
-            if length(this.voxels_per_region["Y"]) != this.number_of_regions["Y"] error("The length of the voxel per region vector don't fit the number of regions along the y-axis.") end
-            if length(this.region_boundaries["Y"]) != this.number_of_regions["Y"] + 1 error("The length of the region boundaries vector don't fit the number of regions along the y-axis.") end
+            if ~haskey(this.number_of_regions,"y") error("Number of regions are not defined along the y-axis.") end
+            if ~haskey(this.voxels_per_region,"y") error("Number of voxels per region are not defined along the y-axis.") end
+            if ~haskey(this.region_boundaries,"y") error("The region boundaries are not defined along the y-axis.") end
+            if this.number_of_regions["y"] != size(this.material_per_region,2) error("The size of the material per region array don`t fit the number of regions along the y-axis.") end
+            if length(this.voxels_per_region["y"]) != this.number_of_regions["y"] error("The length of the voxel per region vector don`t fit the number of regions along the y-axis.") end
+            if length(this.region_boundaries["y"]) != this.number_of_regions["y"] + 1 error("The length of the region boundaries vector don`t fit the number of regions along the y-axis.") end
         end
         if this.dimension ≥ 3
             if ~haskey(this.boundary_conditions,"Z+") || ~haskey(this.boundary_conditions,"Z-") error("Boundary conditions are not defined along the z-axis.") end
-            if ~haskey(this.number_of_regions,"Z") error("Number of regions are not defined along the z-axis.") end
-            if ~haskey(this.voxels_per_region,"Z") error("Number of voxels per region are not defined along the z-axis.") end
-            if ~haskey(this.region_boundaries,"Z") error("The region boundaries are not defined along the z-axis.") end
-            if this.this.number_of_regions["Z"] != size(this.material_per_region,3) error("The size of the material per region array don't fit the number of regions along the z-axis.") end
-            if length(this.voxels_per_region["Z"]) != this.number_of_regions["Z"] error("The length of the voxel per region vector don't fit the number of regions along the z-axis.") end
-            if length(this.region_boundaries["Z"]) != this.number_of_regions["Z"] + 1 error("The length of the region boundaries vector don't fit the number of regions along the z-axis.") end
+            if ~haskey(this.number_of_regions,"z") error("Number of regions are not defined along the z-axis.") end
+            if ~haskey(this.voxels_per_region,"z") error("Number of voxels per region are not defined along the z-axis.") end
+            if ~haskey(this.region_boundaries,"z") error("The region boundaries are not defined along the z-axis.") end
+            if this.this.number_of_regions["z"] != size(this.material_per_region,3) error("The size of the material per region array don`t fit the number of regions along the z-axis.") end
+            if length(this.voxels_per_region["z"]) != this.number_of_regions["z"] error("The length of the voxel per region vector don`t fit the number of regions along the z-axis.") end
+            if length(this.region_boundaries["z"]) != this.number_of_regions["z"] + 1 error("The length of the region boundaries vector don`t fit the number of regions along the z-axis.") end
         end
     end
 
 end
 
+"""
+    build(this::Geometry,cs::Cross_Sections)
+
+To build the geometry structure.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `cs::Cross_Sections`: cross-sections library.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> ... # Defining the cross-sections library properties
+julia> cs.build()
+julia> geo = Geometry()
+julia> ... # Defining the geometry properties
+julia> geo.build(cs)
+```
+"""
 function build(this::Geometry,cs::Cross_Sections)
 
     # Verification step
@@ -120,11 +160,48 @@ function build(this::Geometry,cs::Cross_Sections)
 
 end
 
+"""
+    set_type(this::Geometry,type::String)
+
+To set the type of geometry.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `type::String`: type of geometry, which can takes the following value:
+    -`type = "cartesian"`: Cartesian geometry.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> geo.set_type("cartesian")
+```
+"""
 function set_type(this::Geometry,type::String)
     if lowercase(type) ∉ ["cartesian"] error("Unknown geometry type.") end
     this.type = lowercase(type)
 end
 
+"""
+    set_dimension(this::Geometry,dimension::Int64)
+
+To set the dimension of geometry.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `dimension::Int64`: dimension of the geometry, which can be either 1, 2 or 3.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> geo.set_dimension(2) # For 2D geometry
+```
+"""
 function set_dimension(this::Geometry,dimension::Int64)
     if dimension == 1
         this.axis = ["x"]
@@ -138,22 +215,128 @@ function set_dimension(this::Geometry,dimension::Int64)
     this.dimension = dimension
 end
 
+"""
+    set_material_per_region(this::Geometry,material_per_region::Array{Material})
+
+To set the material in each regions of the geometry.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `material_per_region::Array{Material}`: array containing the material for each regions. Its size should fit the number of regions per axis.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+# Define material
+julia> mat1 = Material(); mat2 = Material()
+julia> ... # Define the material properties
+
+# 1D geometry case
+julia> geo1D = Geometry()
+julia> geo1D.set_type("cartesian")
+julia> geo1D.set_dimension(1)
+julia> geo1D.set_number_of_regions("x",3)
+julia> geo1D.set_material_per_region([mat1 mat2 mat1])
+
+# 2D geometry case
+julia> geo1D = Geometry()
+julia> geo1D.set_type("cartesian")
+julia> geo1D.set_dimension(2)
+julia> geo1D.set_number_of_regions("x",2)
+julia> geo1D.set_number_of_regions("y",3)
+julia> geo1D.set_material_per_region([mat1 mat2 mat1 ; mat2 mat1 mat2])
+
+```
+"""
 function set_material_per_region(this::Geometry,material_per_region::Array{Material})
     this.material_per_region = material_per_region
 end
 
+"""
+    set_boundary_conditions(this::Geometry,boundary::String,boundary_condition::String)
+
+To set the boundary conditions at the specified boundary.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `boundary::String`: boundary for which the boundary condition is applied, which can takes the following value:
+    - `boundary = "x-"`: the lower bound along x-axis
+    - `boundary = "x+"`: the upper bound along x-axis
+    - `boundary = "y-"`: the lower bound along y-axis
+    - `boundary = "y+"`: the upper bound along y-axis
+    - `boundary = "z-"`: the lower bound along z-axis
+    - `boundary = "z+"`: the upper bound along z-axis
+- `boundary_condition::String`: boundary conditions, which can takes the following value:
+    -`boundary = "void"`: void boundary conditions.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> geo.set_boundary_conditions("x-","void")
+```
+"""
 function set_boundary_conditions(this::Geometry,boundary::String,boundary_condition::String)
     if uppercase(boundary) ∉ ["X-","X+","Y-","Y+","Z-","Z+"] error("Unknown boundary.") end
     if lowercase(boundary_condition) ∉ ["void"] error("Unkown boundary type.") end
     this.boundary_conditions[uppercase(boundary)] = boundary_condition
 end
 
+"""
+    set_number_of_regions(this::Geometry,axis::String,number_of_regions::Int64)
+
+To set the number of regions along a specified axis.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `axis::String`: axis along which the number of regions is specified, which can takes the following values:
+    - `boundary = "x"`: along x-axis
+    - `boundary = "y"`: along y-axis
+    - `boundary = "z"`: along z-axis
+- `number_of_regions::Int64`: number of regions.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> geo.set_number_of_regions("x",3)
+```
+"""
 function set_number_of_regions(this::Geometry,axis::String,number_of_regions::Int64)
     if lowercase(axis) ∉ ["x","y","z"] error("Unknown axis.") end
     if number_of_regions ≤ 0 error("Number of regions should be at least one.") end
     this.number_of_regions[lowercase(axis)] = number_of_regions
 end
 
+"""
+    set_voxels_per_region(this::Geometry,axis::String,voxels_per_region::Vector{Int64})
+
+To set the number of voxels for each regions along a specified axis.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `axis::String`: axis along which the number of regions is specified, which can takes the following values:
+    - `boundary = "x"`: along x-axis
+    - `boundary = "y"`: along y-axis
+    - `boundary = "z"`: along z-axis
+- `voxels_per_region::Vector{Int64}`: vector with the number of voxels for each regions along the specified axis.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> geo.set_number_of_regions("x",3)
+julia> geo.set_voxels_per_region("x",[10,5,2])
+```
+"""
 function set_voxels_per_region(this::Geometry,axis::String,voxels_per_region::Vector{Int64})
     if lowercase(axis) ∉ ["x","y","z"] error("Unknown axis.") end
     if length(voxels_per_region) == 0 || any(x -> x ≤ 0, voxels_per_region) error("Number of voxels per region should be at least one.") end
@@ -161,6 +344,30 @@ function set_voxels_per_region(this::Geometry,axis::String,voxels_per_region::Ve
     this.number_of_voxels[lowercase(axis)] = sum(voxels_per_region)
 end
 
+"""
+    set_region_boundaries(this::Geometry,axis::String,region_boundaries::Vector{Float64})
+
+To set the boundaries of each regions along a specified axis.
+
+# Input Argument(s)
+- `this::Geometry`: geometry.
+- `axis::String`: axis along which the number of regions is specified, which can takes the following values:
+    - `boundary = "x"`: along x-axis
+    - `boundary = "y"`: along y-axis
+    - `boundary = "z"`: along z-axis
+- `region_boundaries::Vector{Float64}`: vector with the regions boundaries along the specified axis in ascending order.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> geo = Geometry()
+julia> geo.set_number_of_regions("x",3)
+julia> geo.set_voxels_per_region("x",[10,5,2])
+julia> geo.set_voxels_per_region("x",[0.0 0.3 0.5 1.0])
+```
+"""
 function set_region_boundaries(this::Geometry,axis::String,region_boundaries::Vector{Float64})
     if lowercase(axis) ∉ ["x","y","z"] error("Unknown axis.") end
     if length(region_boundaries) ≤ 1 error("At least two boundaries are required.") end

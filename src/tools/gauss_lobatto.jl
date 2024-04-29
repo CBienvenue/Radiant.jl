@@ -3,8 +3,6 @@
 
 Computing the Gauss-Lobatto quadrature.
 
-See also [`quadrature`](@ref).
-
 # Input Argument(s)
 - 'N::Int64': quadrature order.
 

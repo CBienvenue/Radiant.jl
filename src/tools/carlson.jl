@@ -3,8 +3,6 @@
 
 Computing the Carlson quadrature on the unit sphere.
 
-See also [`quadrature`](@ref).
-
 # Input Argument(s)
 - 'N::Int64': quadrature order.
 

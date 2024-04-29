@@ -1,4 +1,37 @@
+"""
+Cross_Sections
 
+Structure used to define the parameters to extract or build a multigroup cross-sections library.
+
+# User-defined field(s)
+
+- ## Mandatory field(s)
+    - `name::String`: name (or identifier) of the Cross_Sections structure.
+    - `source::String`: source of the cross-sections.
+    - ### if `source = "FMAC-M"`
+        - `file::String`: file containing cross-sections data.
+        - `materials::Vector{Material}`: material list.
+    - ### if `source = "RADIANT"`
+        - `materials::Vector{Material}`: material list.
+        - `particles::Vector{String}`: particle list.
+        - `energy::Float64`: midpoint energy of the highest energy group [in MeV].
+        - `number_of_groups::Int64`: number of energy groups.
+        - `group_structure::String="log"`: type of group discretization.
+        - `legendre_order::Int64`: maximum order of the angular Legendre moments of the differential cross-sections.
+        - `interactions::Vector{Interaction}`: list of interaction.
+        - `solvers::Vector{String}`: list of solver per particle.
+
+- ## Optional field(s) - with default values
+    - `cutoff::Float64=0.001`: lower energy bound of the lowest energy group (cutoff energy) [in MeV].
+
+# System-defined field(s)
+- `number_of_materials::Int64`: number of material.
+- `number_of_particles::Int64`: number of particles.
+- `energy_boundaries::Vector{Float64}`: vector with energy boundaries of the groups [in MeV].
+- `multigroup_cross_sections::Array{Multigroup_Cross_Sections}`: Multigroup_Cross_Sections structure containing the calculated (or extracted from file) cross-sections data for transport calculations.
+- `is_build::Bool`: boolean value defining if the Multigroup_Cross_Sections was build or not.
+
+"""
 mutable struct Cross_Sections
 
     # Variable(s)
@@ -13,7 +46,7 @@ mutable struct Cross_Sections
     cutoff                    ::Union{Missing,Float64}
     number_of_groups          ::Union{Missing,Vector{Int64}}
     group_structure           ::Union{Missing,Vector{String},String}
-    interactions
+    interactions              ::Union{Missing,Vector{Interaction}}
     solvers                   ::Union{Missing,Vector{String},String}
     legendre_order            ::Union{Missing,Int64}
     energy_boundaries         ::Union{Missing,Vector{Vector{Float64}}}
@@ -33,7 +66,7 @@ mutable struct Cross_Sections
         this.materials = Vector{Material}()
         this.particles = Vector{String}()
         this.energy = missing
-        this.cutoff = missing
+        this.cutoff = 0.001
         this.number_of_groups = missing
         this.group_structure = missing
         this.interactions = missing
@@ -89,18 +122,6 @@ Base.propertynames(::Cross_Sections) =
     :build
 )
 
-function println(this::Cross_Sections)
-    material_names = Vector{String}()
-    for i in range(1,length(this.materials)) push!(material_names,this.materials[i].name) end
-    entries = ["Name","Source","File","Number of materials","Materials","Number of particles","Particles","Energy [MeV]","Cutoff [MeV]","Number of groups","Group structure","Interactions","Solvers","Legendre order","Is build?"]
-    values = [this.name,this.source,this.file,this.number_of_materials,material_names,this.number_of_particles,this.particles,this.energy,this.cutoff,this.number_of_groups,this.group_structure,this.interactions,this.solvers,this.legendre_order,this.is_build]
-    N = length(entries); L = length.(entries); Lmax = maximum(L)
-    println("Cross_Sections")
-    for n in range(1,N)
-        println(string("   ",entries[n]," "^(Lmax-L[n])),"  :  ",values[n])
-    end
-end
-
 function is_ready_to_build(this::Cross_Sections)
     if ismissing(this.source) error("Cannot build multigroup cross-sections data. The source of cross-sections data is not specified.") end
     if uppercase(this.source) == "FMAC-M"
@@ -120,6 +141,24 @@ function is_ready_to_build(this::Cross_Sections)
     if this.number_of_materials == 0 error("Cannot build multigroup cross-sections data. The material names are not specified.") end
 end
 
+"""
+    build(this::Cross_Sections)
+
+To build the cross-section library.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> ... # Defining the cross-sections library properties
+julia> cs.build()
+```
+"""
 function build(this::Cross_Sections)
 
     # Verification step
@@ -137,26 +176,125 @@ function build(this::Cross_Sections)
 
 end
 
+"""
+    write(this::Cross_Sections,file::String)
+
+To write a FMAC-M formatted file containing the cross-sections library.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `file::String`: file name and directory.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> ... # Defining the cross-sections library properties
+julia> cs.write("fmac_m.txt")
+```
+"""
 function write(this::Cross_Sections,file::String)
+    if ~this.is_build this.build() end
     write_fmac_m(this,file)
 end
 
+"""
+    set_source(this::Cross_Sections,source::String)
+
+To define the source of the cross-sections library.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `source::String`: source of the cross-sections library which is either:
+    - `source = "RADIANT"`: multigroup cross-sections are produced by Radiant
+    - `source = "FMAC-M"`: multigroup cross-sections are extracted from FMAC-M file.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_source("FMAC-M")
+```
+"""
 function set_source(this::Cross_Sections,source::String)
     if uppercase(source) ∉ ["FMAC-M","RADIANT"] error("Unkown source of cross-sections data.") end
     if uppercase(source) == "FMAC-M" this.group_structure = "unknown"; this.interactions = "unknown"; this.solvers = "unknown" end
     this.source = source
 end
 
+"""
+    set_file(this::Cross_Sections,file::String)
+
+To read a FMAC-M formatted file containing the cross-sections library.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `file::String`: file name and directory.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_file("fmac_m.txt")
+```
+"""
 function set_file(this::Cross_Sections,file::String)
     this.file = file
 end
 
+"""
+    set_materials(this::Cross_Sections,materials::Vector{Material})
+
+To set the list of material, either contained in FMAC-M file in order, or to produce in Radiant.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `materials::Vector{Material}`: material list.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> mat1 = Material(); mat2 = Material()
+julia> ... # Defining the material properties
+julia> cs = Cross_Sections()
+julia> cs.set_materials([mat1,mat2])
+```
+"""
 function set_materials(this::Cross_Sections,materials::Vector{Material})
     if length(materials) == 0 error("At least one material should be provided.") end
     this.materials = materials
     this.number_of_materials += length(materials)
 end
 
+"""
+    set_particles(this::Cross_Sections,particles::Vector{String})
+
+To set the list of particles for which to produce coupled library of cross-sections.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `particles::Vector{String}`: particles list, where each particle is either:
+    - `particles[i] = "photons"`: photons production and interaction are taken into account.
+    - `particles[i] = "electrons"`: electrons production and interaction are taken into account.
+    - `particles[i] = "positrons"`: positrons production and interaction are taken into account.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_particles(["electrons","photons","positrons"])
+```
+"""
 function set_particles(this::Cross_Sections,particles::Vector{String})
     if length(particles) == 0 error("At least one particle should be provided.") end
     for p in particles if lowercase(p) ∉ ["photons","electrons","positrons"] error("Unknown particle type") end end
@@ -164,21 +302,97 @@ function set_particles(this::Cross_Sections,particles::Vector{String})
     this.number_of_particles += length(particles)
 end
 
+"""
+    set_energy(this::Cross_Sections,energy::Real)
+
+To set the midpoint energy of the highest energy group.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `energy::Real`: midpoint energy of the highest energy group.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_energy(3.0)
+```
+"""
 function set_energy(this::Cross_Sections,energy::Real)
     if energy < 0 error("The midpoint of the highest energy group has to be positive.") end
     this.energy = energy
 end
 
+"""
+    set_cutoff(this::Cross_Sections,cutoff::Real)
+
+To set the cutoff energy (lower bound of the lowest energy group).
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `cutoff::Real`: cutoff energy (lower bound of the lowest energy group)
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_cutoff(0.05)
+```
+"""
 function set_cutoff(this::Cross_Sections,cutoff::Real)
     if cutoff < 0 error("The cutoff energy (lower bound of the lowest energy group) has to be positive.") end
     this.cutoff = cutoff
 end
 
+"""
+    set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int64})
+
+To set the number of energy groups per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `number_of_groups::Vector{Int64}`: number of energy groups per particle in order with the particle list.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_particles(["electrons","photons","positrons"])
+julia> cs.set_number_of_groups([80,20,80]) # 80 groups with leptons, 20 with photons
+```
+"""
 function set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int64})
     for g in number_of_groups if g ≤ 0 error("The number of energy groups should be at least one.") end end
     this.number_of_groups = number_of_groups
 end
 
+"""
+    set_group_structure(this::Cross_Sections,group_structure::Vector{String})
+
+To set the type of energy discretization structure per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `group_structure::Vector{String}`: type of energy discretization structure per particle, where value per particle can take the following value:
+    - `group_structure[i] = "linear"`: linearly spaced discretization.
+    - `group_structure[i] = "log"`: logarithmically spaced discretization.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_particles(["electrons","photons","positrons"])
+julia> cs.set_group_structure(["log","linear","log"]) # 80 groups with leptons, 20 with photons
+```
+"""
 function set_group_structure(this::Cross_Sections,group_structure::Vector{String})
     for g in group_structure if g ∉ ["linear","log"] error("The group structure are either linearly or logarithmically spaced.") end end
     this.group_structure = group_structure
@@ -188,18 +402,78 @@ function set_energy_boundaries(this::Cross_Sections,energy_boundaries::Vector{Ve
     this.energy_boundaries = energy_boundaries
 end
 
-function set_interactions(this::Cross_Sections,interactions)
+"""
+    set_interactions(this::Cross_Sections,interactions::Vector{Interaction})
+
+To set the interaction to take into account in the library of cross-sections.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `interactions::Vector{Interaction}`: list of interactions to use in the production of the cross-sections library.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_particles(["electrons"])
+julia> cs.set_interactions([Elastic_Leptons(),Inelastic_Leptons(),Bremsstrahlung(), Auger()])
+```
+"""
+function set_interactions(this::Cross_Sections,interactions::Vector{Interaction})
     if length(interactions) == 0 error("At least one interaction should be provided.") end
-    #for i in interactions if lowercase(i) ∉ ["moller","bhabha","mott","bremsstrahlung","kolbenstvedt","compton","photoelectric","baro","annihilation","scofield"] error("Unknown interaction type") end end
-    #this.interactions = lowercase.(interactions)
     this.interactions = interactions
 end
 
+"""
+    set_solvers(this::Cross_Sections,solvers::Vector{String})
+
+To set the transport solver per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `solvers::Vector{String}`: list of the transport to use per particle, which is defined by
+    - `solvers[i] = "BTE"`: Boltzmann transport equation
+    - `solvers[i] = "BFP"`: Boltzmann Fokker-Planck equation
+    - `solvers[i] = "BCSD"`: Boltzmann-CSD equation
+    - `solvers[i] = "FP"`: Fokker-Planck equation
+    - `solvers[i] = "CSD"`: Continuous slowing-down only equation
+    - `solvers[i] = "BFP-EF"`: Boltzmann Fokker-Planck without elastic
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_particles(["electrons","photons"])
+julia> cs.set_group_structure("BFP","BTE"]) # BFP for electrons, BTE for photons 
+```
+"""
 function set_solvers(this::Cross_Sections,solvers::Vector{String})
     for solver in solvers if uppercase(solver) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("The solver type is either BTE, BFP, BCSD, FP, CSD or BFP-EF.") end end
     this.solvers = solvers
 end
 
+"""
+    set_legendre_order(this::Cross_Sections,legendre_order::Int64)
+
+To set the maximum order of the Legendre expansion of the differential cross-sections.
+
+# Input Argument(s)
+- `this::Cross_Sections`: cross-sections library.
+- `legendre_order::Int64`: maximum order of the Legendre expansion of the differential cross-sections.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_legendre_order(7)
+```
+"""
 function set_legendre_order(this::Cross_Sections,legendre_order::Int64)
     if legendre_order < 0 error("Polynomial Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
