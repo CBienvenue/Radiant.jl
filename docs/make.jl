@@ -8,9 +8,9 @@ makedocs(
         "Oriented Object User Interface" => [
             "Computation_Unit" => "computation_unit.md",
             "Cross_Sections" => "cross_sections.md",
-            "Discretization" => [
-                "Method" => "method.md"
-                "Methods" => "methods.md"
+            "Solvers" => [
+                "Discrete_Ordinates" => "discrete_ordinates.md"
+                "Coupled_Transport_Solvers" => "coupled_transport_solvers.md"
             ],
             "Geometry" => "geometry.md",
             "Interactions" => [
