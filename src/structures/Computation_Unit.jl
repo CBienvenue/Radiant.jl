@@ -177,31 +177,143 @@ function run(this::Computation_Unit)
     this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources,is_CUDA)
 end
 
-function get_energy_deposition(this::Computation_Unit,type::String,which_generations::Int64=0)
+"""
+    get_energy_deposition(this::Computation_Unit,type::String)
+
+To get the array containing the energy deposition in each voxels.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `type::String`: type of energy deposition, which can takes the following values:
+    - `type = "total"`: total energy deposition.
+    - `type = "photons"`: photons energy deposition.
+    - `type = "electrons"`: electrons energy deposition.
+    - `type = "positrons"`: positrons energy deposition.
+
+# Output Argument(s)
+- `energy_deposition::Array{Float64}`: energy deposition array.
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> energy_deposition = cu.get_energy_deposition("total")
+```
+"""
+function get_energy_deposition(this::Computation_Unit,type::String)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract energy deposition, please use .run() method before.") end
     if type ∉ ["total","electrons","photons","positrons"] error("Unknown type of energy deposition.") end
     if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Energy deposition for the specified particle is not available.") end
     return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,type)
 end
 
-function get_charge_deposition(this::Computation_Unit,type::String,which_generations::Int64=0)
+"""
+    get_charge_deposition(this::Computation_Unit,type::String)
+
+To get the array containing the charge deposition in each voxels.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `type::String`: type of charge deposition, which can takes the following values:
+    - `type = "total"`: total charge deposition.
+    - `type = "photons"`: photons charge deposition.
+    - `type = "electrons"`: electrons charge deposition.
+    - `type = "positrons"`: positrons charge deposition.
+
+# Output Argument(s)
+- `charge_deposition::Array{Float64}`: charge deposition array.
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> charge_deposition = cu.get_charge_deposition("total")
+```
+"""
+function get_charge_deposition(this::Computation_Unit,type::String)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract charge deposition, please use .run() method before.") end
     if type ∉ ["total","electrons","photons","positrons"] error("Unknown type of charge deposition.") end
     if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Charge deposition for the specified particle is not available.") end
     return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,type)
 end
 
-function get_flux(this::Computation_Unit,type::String)
+"""
+    get_flux(this::Computation_Unit,particle::String)
+
+To get the array containing the flux in each voxels and in each energy group for the specified particle.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `particle::String`: flux particle, which can takes the following values:
+    - `particle = "photons"`: photons charge deposition.
+    - `particle = "electrons"`: electrons charge deposition.
+    - `particle = "positrons"`: positrons charge deposition.
+
+# Output Argument(s)
+- `flux::Array{Float64}`: flux array.
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> flux = cu.get_flux("electrons")
+```
+"""
+function get_flux(this::Computation_Unit,particle::String)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract flux, please use .run() method before.") end
-    if type ∉ ["electrons","photons","positrons"] error("Unknown type of flux.") end
-    if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Flux for the specified particle is not available.") end
-    return flux(this.cross_sections,this.geometry,this.flux,type)
+    if particle ∉ ["electrons","photons","positrons"] error("Unknown particle for flux.") end
+    if particle ∈ ["electrons","photons","positrons"] && particle ∉ this.flux.get_particles() error("Flux for the specified particle is not available.") end
+    return flux(this.cross_sections,this.geometry,this.flux,particle)
 end
 
+"""
+    get_voxels_position(this::Computation_Unit,axis::String)
+
+To set the mid-point voxels position along the specified axis.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `axis::String`: axis, which can takes the following values:
+    - `boundary = "x"`: along x-axis
+    - `boundary = "y"`: along y-axis
+    - `boundary = "z"`: along z-axis
+
+# Output Argument(s)
+- `x::Vector{Float64}`: mid-point voxels position along the specified axis.
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> x = cu.get_voxels_position("x")
+```
+"""
 function get_voxels_position(this::Computation_Unit,axis::String)
     return this.geometry.get_voxels_position(axis)
 end
 
+"""
+    get_energies(this::Computation_Unit,particle::String)
+
+To set the mid-point energy in each group for the specified particle.
+
+# Input Argument(s)
+- `this::Computation_Unit`: computation unit.
+- `particle::String`: particle identifier, where each particle is either:
+    - `particle = "photons"`: photons.
+    - `particle = "electrons"`: electrons.
+    - `particle = "positrons"`: positrons.
+
+# Output Argument(s)
+- `E::Vector{Float64}`: mid-point energy in each group for the specified particle.
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> E = cu.get_voxels_position("electrons")
+```
+"""
 function get_energies(this::Computation_Unit,particle::String)
     return this.cross_sections.get_energies(particle)
 end
