@@ -1,6 +1,6 @@
 """
     particle_source(flux::Flux_Per_Particle,cross_sections::Cross_Sections,
-    geometry::Geometry,method_in::Method,method_out::Method)
+    geometry::Geometry,discrete_ordinates_in::Discrete_Ordinates,discrete_ordinates_out::Discrete_Ordinates)
 
 Compute the source of particle produced by interaction of another type of particle with
 matter.
@@ -11,8 +11,8 @@ See also [`map_moments`](@ref), [`transport`](@ref).
 - 'flux::Flux_Per_Particle': flux informations of the incoming particle.
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
-- 'method_in::Method': method informations of the incoming particle.
-- 'method_out::Method': method informations of the outgoing particle.
+- 'discrete_ordinates_in::Discrete_Ordinates': method informations of the incoming particle.
+- 'discrete_ordinates_out::Discrete_Ordinates': method informations of the outgoing particle.
 
 # Output Argument(s)
 - 'ps::Source': source information of the outgoing particle.
@@ -24,27 +24,27 @@ Charles Bienvenue
 N/A
 
 """
-function particle_source(flux::Flux_Per_Particle,cross_sections::Cross_Sections,geometry::Geometry,method_in::Method,method_out::Method)
+function particle_source(flux::Flux_Per_Particle,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates_in::Discrete_Ordinates,discrete_ordinates_out::Discrete_Ordinates)
 
 # Geometry data
 Ndims = geometry.get_dimension()
 Ns = geometry.get_number_of_voxels()
 mat = geometry.get_material_per_voxel()
 
-# Method data
-particle_in = method_in.get_particle()
-particle_out = method_out.get_particle()
-L_in = method_in.get_legendre_order()
-L_out = method_out.get_legendre_order()
-_,𝒪_in,Nm_in = method_in.get_schemes(geometry,true)
-_,𝒪_out,Nm_out = method_out.get_schemes(geometry,true)
+# Discrete_Ordinates data
+particle_in = discrete_ordinates_in.get_particle()
+particle_out = discrete_ordinates_out.get_particle()
+L_in = discrete_ordinates_in.get_legendre_order()
+L_out = discrete_ordinates_out.get_legendre_order()
+_,𝒪_in,Nm_in = discrete_ordinates_in.get_schemes(geometry,true)
+_,𝒪_out,Nm_out = discrete_ordinates_out.get_schemes(geometry,true)
 Nm_in = Nm_in[5]
 Nm_out = Nm_out[5]
-Ω_in,w_in = quadrature(method_in.get_quadrature_order(),method_in.get_quadrature_type(),Ndims)
-Ω_out,w_out = quadrature(method_out.get_quadrature_order(),method_out.get_quadrature_type(),Ndims)
-P_in,Mn_in,Dn_in,pℓ_in,pm_in = angular_polynomial_basis(Ndims,Ω_in,w_in,L_in,method_in.get_quadrature_order(),method_in.get_angular_boltzmann())
-P_out,Mn_out,Dn_out,pℓ_out,pm_out = angular_polynomial_basis(Ndims,Ω_out,w_out,L_out,method_out.get_quadrature_order(),method_out.get_angular_boltzmann())
-P_tr,Mn_tr,Dn_tr,pℓ_tr,pm_tr = angular_polynomial_basis(Ndims,Ω_out,w_out,L_in,method_out.get_quadrature_order(),method_in.get_angular_boltzmann())
+Ω_in,w_in = quadrature(discrete_ordinates_in.get_quadrature_order(),discrete_ordinates_in.get_quadrature_type(),Ndims)
+Ω_out,w_out = quadrature(discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_out.get_quadrature_type(),Ndims)
+P_in,Mn_in,Dn_in,pℓ_in,pm_in = angular_polynomial_basis(Ndims,Ω_in,w_in,L_in,discrete_ordinates_in.get_quadrature_order(),discrete_ordinates_in.get_angular_boltzmann())
+P_out,Mn_out,Dn_out,pℓ_out,pm_out = angular_polynomial_basis(Ndims,Ω_out,w_out,L_out,discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_out.get_angular_boltzmann())
+P_tr,Mn_tr,Dn_tr,pℓ_tr,pm_tr = angular_polynomial_basis(Ndims,Ω_out,w_out,L_in,discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_in.get_angular_boltzmann())
 
 # Cross-sections data
 Nmat = cross_sections.get_number_of_materials()
@@ -74,7 +74,7 @@ for i in range(1,length(map))
 end
 
 # Save source informations
-ps = Source(particle_out,cross_sections,geometry,method_out)
+ps = Source(particle_out,cross_sections,geometry,discrete_ordinates_out)
 ps.add_volume_source(Qℓ_out)
 return ps
 

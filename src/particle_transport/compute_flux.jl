@@ -1,5 +1,5 @@
 """
-    compute_flux(cross_sections::Cross_Sections,geometry::Geometry,method::Method,
+    compute_flux(cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates,
     source::Source)
 
 Solve the transport equation for a given particle.  
@@ -9,7 +9,7 @@ See also [`compute_one_speed`](@ref), [`transport`](@ref).
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
-- 'method::Method': method informations.
+- 'discrete_ordinates::Discrete_Ordinates': discrete_ordinates informations.
 - 'source::Source': source informations.
 
 # Output Argument(s)
@@ -22,7 +22,7 @@ Charles Bienvenue
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,method::Method,source::Source,is_CUDA::Bool)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates,source::Source,is_CUDA::Bool)
 
 #----
 # Geometry data
@@ -38,10 +38,10 @@ mat = geometry.get_material_per_voxel()
 # Preparation of angular discretisation
 #----
 
-L = method.get_legendre_order()
-N = method.get_quadrature_order()
-quadrature_type = method.get_quadrature_type()
-SN_type = method.get_angular_boltzmann()
+L = discrete_ordinates.get_legendre_order()
+N = discrete_ordinates.get_quadrature_order()
+quadrature_type = discrete_ordinates.get_quadrature_type()
+SN_type = discrete_ordinates.get_angular_boltzmann()
 
 # Compute quadrature weights and abscissae
 Ω,w = quadrature(N,quadrature_type,Ndims)
@@ -52,8 +52,8 @@ Nd = length(w)
 # Preparation of cross sections
 #----
 
-part = method.get_particle()
-solver,isCSD = method.get_solver_type()
+part = discrete_ordinates.get_particle()
+solver,isCSD = discrete_ordinates.get_solver_type()
 Nmat = cross_sections.get_number_of_materials()
 Ng = cross_sections.get_number_of_groups(part)
 ΔE = cross_sections.get_energy_width(part)
@@ -88,7 +88,7 @@ end
 if solver ∈ [2,4]
     α = zeros(Ng,Nmat)
     α = cross_sections.get_momentum_transfer(part)
-    fokker_planck_type = method.get_angular_fokker_planck()
+    fokker_planck_type = discrete_ordinates.get_angular_fokker_planck()
     ℳ,λ₀,Mn_FP,Dn_FP,N_Fp = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,pm,P)
     Σtot .+= α .* λ₀/2
 end
@@ -105,14 +105,14 @@ end
 #----
 
 is_full_coupling = true
-schemes,𝒪,Nm = method.get_schemes(geometry,is_full_coupling)
+schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
 ω,𝒞,is_adaptive = scheme_weights(𝒪,schemes)
 
 #----
-# Acceleration method
+# Acceleration discrete_ordinates
 #----
 
-𝒜 = method.get_acceleration()
+𝒜 = discrete_ordinates.get_acceleration()
 
 #----
 # Fixed sources
@@ -125,8 +125,8 @@ volume_sources = source.get_volume_sources()
 # Flux calculations
 #----
 
-ϵ_max = method.get_convergence_criterion()
-I_max = method.get_maximum_iteration()
+ϵ_max = discrete_ordinates.get_convergence_criterion()
+I_max = discrete_ordinates.get_maximum_iteration()
 
 # Initialization flux
 𝚽ℓ = zeros(Ng,P,Nm[5],Ns[1],Ns[2],Ns[3])

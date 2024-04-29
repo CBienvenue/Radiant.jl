@@ -25,7 +25,7 @@ mutable struct Sources
         this.sources_list = Vector{Source}()
 
         this.add_source = function (source) add_source!(this,source) end
-        this.get_source = function (particle,cross_sections,geometry,method) get_source!(this,particle,cross_sections,geometry,method) end
+        this.get_source = function (particle,cross_sections,geometry,discrete_ordinates) get_source!(this,particle,cross_sections,geometry,discrete_ordinates) end
         this.get_particles = function () get_particles(this) end
 
         return this
@@ -50,10 +50,10 @@ function add_source!(this::Sources,source::Source)
     push!(this.sources_list,source)
 end
 
-function get_source!(this::Sources,particle::String,cross_sections::Cross_Sections,geometry::Geometry,method::Method)
+function get_source!(this::Sources,particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
     index = findfirst(x -> x == particle,this.particles)
     if isnothing(index)
-        source = Source(particle,cross_sections,geometry,method)
+        source = Source(particle,cross_sections,geometry,discrete_ordinates)
         return source
     else
         return this.sources_list[index]

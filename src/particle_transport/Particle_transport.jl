@@ -35,13 +35,6 @@ include("constant_linear.jl")
 include("angular_polynomial_basis.jl")
 include("livolant.jl")
 
-# CUDA transport
-#include("compute_sweep_2D_cuda.jl")
-#include("compute_sweep_3D_cuda.jl")
-#include("flux_2D_BTE_cuda.jl")
-#include("flux_2D_BFP_cuda.jl")
-#include("flux_3D_BFP_cuda.jl")
-
 # Print
 include("print_dose.jl")
 include("print_charge.jl")

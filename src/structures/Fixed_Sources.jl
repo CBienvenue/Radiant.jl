@@ -9,7 +9,7 @@ Structure used to define a collection of fixed sources and their properties.
     - `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
     - `cross_sections`: Cross_Sections structure.
     - `geometry`: Geometry structure.
-    - `methods`: Methods structure.
+    - `methods`: Coupled_Transport_Solvers structure.
 
 - **Optional field(s) - with default values**
     N/A
@@ -31,7 +31,7 @@ mutable struct Fixed_Sources
     sources_list               ::Vector{Source}
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
-    methods                    ::Methods
+    methods                    ::Coupled_Transport_Solvers
 
     # Constructor(s)
     function Fixed_Sources(cross_sections,geometry,methods)

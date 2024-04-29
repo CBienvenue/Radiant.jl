@@ -1,30 +1,31 @@
 """
     Computation_Unit
 
-Structure used to consolidate the cross-sections, geometry, methods and sources, execute transport calculations and extract its results.
+Structure used to consolidate the cross-sections, geometry, coupled_transport_solvers and sources, execute transport calculations and extract its results.
 
 # User-defined field(s)
 
 - **Mandatory field(s)**
     - `cross_sections::Cross_Sections`: cross-section library.
     - `geometry::Geometry`: geometry.
-    - `methods::Methods`: methods.
+    - `coupled_transport_solvers::Coupled_Transport_Solvers`: coupled_transport_solvers.
     - `sources::Sources`: fixed sources.
 
 - **Optional field(s) - with default values**
+N/A
 
 # System-defined field(s)
-    - `flux`: flux solution.
+- `flux::Flux`: flux solution.
 
 """
 mutable struct Computation_Unit
 
     # Variable(s)
-    cross_sections           ::Union{Missing,Cross_Sections}
-    geometry                 ::Union{Missing,Geometry}
-    methods                  ::Union{Missing,Methods}
-    sources                  ::Union{Missing,Fixed_Sources}
-    flux                     ::Union{Missing,Flux}
+    cross_sections            ::Union{Missing,Cross_Sections}
+    geometry                  ::Union{Missing,Geometry}
+    coupled_transport_solvers ::Union{Missing,Coupled_Transport_Solvers}
+    sources                   ::Union{Missing,Fixed_Sources}
+    flux                      ::Union{Missing,Flux}
 
     # Constructor(s)
     function Computation_Unit()
@@ -33,7 +34,7 @@ mutable struct Computation_Unit
 
         this.cross_sections = missing
         this.geometry = missing
-        this.methods = missing
+        this.coupled_transport_solvers = missing
         this.sources = missing
         this.flux = missing
 
@@ -106,27 +107,27 @@ function set_geometry(this::Computation_Unit,geometry::Geometry)
 end
 
 """
-    set_methods(this::Computation_Unit,methods::Methods)
+    set_methods(this::Computation_Unit,coupled_transport_solvers::Coupled_Transport_Solvers)
 
-To set the discretization methods for transport calculations.
+To set the discretization coupled_transport_solvers for transport calculations.
 
 # Input Argument(s)
 - `this::Computation_Unit`: computation unit.
-- `methods::Methods`: collection of discretization method per particle.
+- `coupled_transport_solvers::Coupled_Transport_Solvers`: collection of discretization method per particle.
 
 # Output Argument(s)
 N/A
 
 # Examples
 ```jldoctest
-julia> ms = Methods()
-julia> ... # Define all the discretization methods and their properties
+julia> ms = Coupled_Transport_Solvers()
+julia> ... # Define all the discretization coupled_transport_solvers and their properties
 julia> cu = Computation_Unit()
 julia> cu.set_methods(ms)
 ```
 """
-function set_methods(this::Computation_Unit,methods::Methods)
-    this.methods = methods
+function set_methods(this::Computation_Unit,coupled_transport_solvers::Coupled_Transport_Solvers)
+    this.coupled_transport_solvers = coupled_transport_solvers
 end
 
 """
@@ -167,27 +168,27 @@ N/A
 # Examples
 ```jldoctest
 julia> cu = Computation_Unit()
-julia> ... # Define the cross-sections, geometry, fixed sources and discretization methods
+julia> ... # Define the cross-sections, geometry, fixed sources and discretization coupled_transport_solvers
 julia> cu.run()
 ```
 """
 function run(this::Computation_Unit)
     is_CUDA = false
-    this.flux = transport(this.cross_sections,this.geometry,this.methods,this.sources,is_CUDA)
+    this.flux = transport(this.cross_sections,this.geometry,this.coupled_transport_solvers,this.sources,is_CUDA)
 end
 
 function get_energy_deposition(this::Computation_Unit,type::String,which_generations::Int64=0)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract energy deposition, please use .run() method before.") end
     if type ∉ ["total","electrons","photons","positrons"] error("Unknown type of energy deposition.") end
     if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Energy deposition for the specified particle is not available.") end
-    return energy_deposition(this.cross_sections,this.geometry,this.methods,this.sources,this.flux,type)
+    return energy_deposition(this.cross_sections,this.geometry,this.coupled_transport_solvers,this.sources,this.flux,type)
 end
 
 function get_charge_deposition(this::Computation_Unit,type::String,which_generations::Int64=0)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract charge deposition, please use .run() method before.") end
     if type ∉ ["total","electrons","photons","positrons"] error("Unknown type of charge deposition.") end
     if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Charge deposition for the specified particle is not available.") end
-    return charge_deposition(this.cross_sections,this.geometry,this.methods,this.sources,this.flux,type)
+    return charge_deposition(this.cross_sections,this.geometry,this.coupled_transport_solvers,this.sources,this.flux,type)
 end
 
 function get_flux(this::Computation_Unit,type::String)

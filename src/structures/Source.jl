@@ -9,7 +9,7 @@ mutable struct Source
     normalization_factor       ::Float64
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
-    method                     ::Method
+    discrete_ordinates         ::Discrete_Ordinates
 
     # Function(s)
     set_particle               ::Function
@@ -21,7 +21,7 @@ mutable struct Source
     get_particle               ::Function
 
     # Constructor(s)
-    function Source(particle::String,cross_sections::Cross_Sections,geometry::Geometry,method::Method)
+    function Source(particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
         this = new()
 
@@ -30,8 +30,8 @@ mutable struct Source
         this.normalization_factor = 0
         this.cross_sections = cross_sections
         this.geometry = geometry
-        this.method = method
-        initalize_sources!(this,cross_sections,geometry,method)
+        this.discrete_ordinates = discrete_ordinates
+        initalize_sources!(this,cross_sections,geometry,discrete_ordinates)
 
         this.set_particle = function (particle) set_particle!(this,particle) end
         this.add_source = function (source) add_source!(this,source) end
@@ -45,7 +45,7 @@ mutable struct Source
     end
 end
 
-# Method(s)
+# Discrete_Ordinates(s)
 function println(this::Source)
     entries = ["Name","Particle"]
     values = [this.name,this.particle]
@@ -56,7 +56,7 @@ function println(this::Source)
     end
 end
 
-function initalize_sources!(this::Source,cross_sections::Cross_Sections,geometry::Geometry,method::Method)
+function initalize_sources!(this::Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
     particle = this.particle
     if particle ∉ cross_sections.particles error(string("No cross sections available for ",particle," particle.")) end
     index = findfirst(x -> x == particle,cross_sections.particles)
@@ -64,10 +64,10 @@ function initalize_sources!(this::Source,cross_sections::Cross_Sections,geometry
     Nx = geometry.number_of_voxels["x"]
     if geometry.dimension ≥ 2 Ny = geometry.number_of_voxels["y"] else Ny = 1 end
     if geometry.dimension ≥ 3 Nz = geometry.number_of_voxels["z"] else Nz = 1 end
-    Ω,w = quadrature(method.quadrature_order,method.quadrature_type,geometry.dimension)
+    Ω,w = quadrature(discrete_ordinates.quadrature_order,discrete_ordinates.quadrature_type,geometry.dimension)
     number_of_directions = length(w)
-    P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,method.get_legendre_order(),method.quadrature_order,method.get_angular_boltzmann())
-    _,_,Nm = method.get_schemes(geometry,true)
+    P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.quadrature_order,discrete_ordinates.get_angular_boltzmann())
+    _,_,Nm = discrete_ordinates.get_schemes(geometry,true)
 
     this.volume_sources = zeros(Ng,P,Nm[5],Nx,Ny,Nz)
     this.surface_sources = Array{Union{Array{Float64},Float64}}(undef,Ng,number_of_directions,2*geometry.dimension)
@@ -96,12 +96,12 @@ function add_source!(this::Source,surface_sources::Surface_Source)
     Ng = this.cross_sections.number_of_groups[index]
     if this.geometry.dimension ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
     if this.geometry.dimension ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
-    if particle != this.method.particle error(string("No methods available for ",particle," particle.")) end
-    _,w = quadrature(this.method.quadrature_order,this.method.quadrature_type,this.geometry.dimension)
+    if particle != this.discrete_ordinates.particle error(string("No methods available for ",particle," particle.")) end
+    _,w = quadrature(this.discrete_ordinates.quadrature_order,this.discrete_ordinates.quadrature_type,this.geometry.dimension)
     number_of_directions = length(w)
     Q = Array{Union{Array{Float64},Float64}}(undef,Ng,number_of_directions,2*this.geometry.dimension)
     Q .= 0.0
-    Q,norm = surface_source(Q,particle,surface_sources,this.cross_sections,this.geometry,this.method)
+    Q,norm = surface_source(Q,particle,surface_sources,this.cross_sections,this.geometry,this.discrete_ordinates)
 
     d = size(this.surface_sources)
     for i in range(1,d[1]), j in range(1,d[2]), k in range(1,d[3])

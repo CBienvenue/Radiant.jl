@@ -28,8 +28,8 @@ include("Multigroup_Cross_Sections.jl")
 include("Material.jl")
 include("Cross_Sections.jl")
 include("Geometry.jl")
-include("Method.jl")
-include("Methods.jl")
+include("Discrete_Ordinates.jl")
+include("Coupled_Transport_Solvers.jl")
 include("Surface_Source.jl")
 include("Volume_Source.jl")
 include("Source.jl")
@@ -45,8 +45,8 @@ RadiantObject = Union{
     Cross_Sections,
     Multigroup_Cross_Sections,
     Geometry,
-    Method,
-    Methods,
+    Discrete_Ordinates,
+    Coupled_Transport_Solvers,
     Surface_Source,
     Volume_Source,
     Fixed_Sources,

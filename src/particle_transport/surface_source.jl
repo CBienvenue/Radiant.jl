@@ -1,5 +1,5 @@
 """
-    surface_source(Q::Array{Union{Array{Float64},Float64}},particle::String,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,method::Method)
+    surface_source(Q::Array{Union{Array{Float64},Float64}},particle::String,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
 Prepare the volume source produced by fixed sources for transport calculations.
 
@@ -11,7 +11,7 @@ See also [`map_moments`](@ref), [`transport`](@ref).
 - 'source::Volume_Source': volume source information.
 - 'cross_sections::Cross_Sections': cross-sections information.
 - 'geometry::Geometry': geometry information.
-- 'method::Method': method information.
+- 'discrete_ordinates::Discrete_Ordinates': discrete_ordinates information.
 
 # Output Argument(s)
 - 'Q': source density.
@@ -24,14 +24,14 @@ Charles Bienvenue
 N/A
 
 """
-function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::String,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,method::Method)
+function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::String,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
     if particle ∉ cross_sections.particles error(string("No cross sections available for ",particle," particle.")) end
     index = findfirst(x -> x == particle,cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
-    if particle != method.particle error(string("No methods available for ",particle," particle.")) end
-    quadrature_type = method.quadrature_type
-    N = method.quadrature_order 
+    if particle != discrete_ordinates.particle error(string("No methods available for ",particle," particle.")) end
+    quadrature_type = discrete_ordinates.quadrature_type
+    N = discrete_ordinates.quadrature_order 
     norm = 0.0
 
     if geometry.type == "cartesian"
