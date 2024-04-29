@@ -57,7 +57,7 @@ Base.propertynames(::Coupled_Transport_Solvers) =
 """
     add_solver(this::Coupled_Transport_Solvers,method::Discrete_Ordinates)
 
-To add a particle and is associated methods to the Coupled_Transport_Solvers structure.
+To add a particle and is associated methods to the Coupled\\_Transport\\_Solvers structure.
 
 # Input Argument(s)
 - `this::Coupled_Transport_Solvers`: collection of discretization method.

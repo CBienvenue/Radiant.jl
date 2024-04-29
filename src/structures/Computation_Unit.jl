@@ -1,14 +1,14 @@
 """
     Computation_Unit
 
-Structure used to consolidate the cross-sections, geometry, coupled_transport_solvers and sources, execute transport calculations and extract its results.
+Structure used to consolidate the cross-sections, geometry, solvers and sources, execute transport calculations and extract its results.
 
 # User-defined field(s)
 
 - **Mandatory field(s)**
     - `cross_sections::Cross_Sections`: cross-section library.
     - `geometry::Geometry`: geometry.
-    - `coupled_transport_solvers::Coupled_Transport_Solvers`: coupled_transport_solvers.
+    - `coupled_transport_solvers::Coupled_Transport_Solvers`: solvers.
     - `sources::Sources`: fixed sources.
 
 - **Optional field(s) - with default values**
