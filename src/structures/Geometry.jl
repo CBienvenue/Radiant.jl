@@ -5,7 +5,7 @@ Structure used to define the geometry properties of the medium for transport cal
 
 # User-defined field(s)
 
-- ## Mandatory field(s)
+- # Mandatory field(s)
     - `name::String`: name (or identifier) of the Geometry structure.
     - `dimension::Int64`: dimension of the geometry.
     - `material_per_region::Array{Material}`: multidimensional array of the material per regions.
@@ -14,7 +14,7 @@ Structure used to define the geometry properties of the medium for transport cal
     - `voxels_per_region::Dict{String,Vector{Int64}}`: number of voxels inside each regions along each axis.
     - `region_boundaries::Dict{String,Vector{Float64}}`: boundaries of each regions along each axis.
 
-- ## Optional field(s) - with default values
+- # Optional field(s) - with default values
     - `type::String="cartesian"`: type of geometry.
 
 # System-defined field(s)
