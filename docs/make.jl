@@ -10,7 +10,7 @@ makedocs(
             "Cross_Sections" => "cross_sections.md",
             "Solvers" => [
                 "Discrete_Ordinates" => "discrete_ordinates.md"
-                "Coupled_Transport_Solvers" => "coupled_transport_solvers.md"
+                "Coupled\\_Transport\\_Solvers" => "coupled_transport_solvers.md"
             ],
             "Geometry" => "geometry.md",
             "Interactions" => [

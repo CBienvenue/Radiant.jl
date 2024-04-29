@@ -109,7 +109,7 @@ end
 """
     set_methods(this::Computation_Unit,coupled_transport_solvers::Coupled_Transport_Solvers)
 
-To set the discretization coupled_transport_solvers for transport calculations.
+To set the discretization coupled\\_transport\\_solvers for transport calculations.
 
 # Input Argument(s)
 - `this::Computation_Unit`: computation unit.
@@ -121,7 +121,7 @@ N/A
 # Examples
 ```jldoctest
 julia> ms = Coupled_Transport_Solvers()
-julia> ... # Define all the discretization coupled_transport_solvers and their properties
+julia> ... # Define all the discretization solvers and their properties
 julia> cu = Computation_Unit()
 julia> cu.set_methods(ms)
 ```
@@ -168,7 +168,7 @@ N/A
 # Examples
 ```jldoctest
 julia> cu = Computation_Unit()
-julia> ... # Define the cross-sections, geometry, fixed sources and discretization coupled_transport_solvers
+julia> ... # Define the cross-sections, geometry, fixed sources and discretization solvers
 julia> cu.run()
 ```
 """
