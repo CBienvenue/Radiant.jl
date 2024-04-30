@@ -3,8 +3,12 @@ using Documenter
 using Radiant
 
 makedocs(
-    sitename = "Radiant.jl",
+    sitename = "RADIANT",
     pages = [
+        "Examples" => [
+            "Production of cross-sections" => "example_cross_sections.md"
+            "Transport calculations" => "transport_calculations.md"
+        ],
         "User Interface" => [
             "Computation_Unit" => "computation_unit.md",
             "Cross_Sections" => "cross_sections.md",
