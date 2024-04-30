@@ -9,9 +9,6 @@ Compute the gamma function Γ(x).
 # Output Argument(s)
 - 'Γ::Number': gamma function.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Wikipedia contributors (2023) : Gamma function.
 

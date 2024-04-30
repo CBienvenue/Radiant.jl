@@ -9,9 +9,6 @@ Charge of the particle.
 # Output Argument(s)
 - 'charge::Float64': particle charge.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 
 """

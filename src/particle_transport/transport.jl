@@ -4,8 +4,6 @@
 
 Solve transport calculations.
 
-See also [`compute_flux`](@ref).
-
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
@@ -14,9 +12,6 @@ See also [`compute_flux`](@ref).
 
 # Output Argument(s)
 N/A
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

@@ -8,9 +8,6 @@
 
 Compute the flux solution along one direction in 3D geometry.
 
-See also [`compute_one_speed`](@ref), [`compute_sweep_1D`](@ref),
-[`compute_sweep_2D`](@ref).
-
 # Input Argument(s)
 - '𝚽ℓ::Array{Float64,4}': Legendre components of the in-cell flux.
 - 'Qℓ::Array{Float64,4}': Legendre components of the in-cell source.
@@ -39,9 +36,6 @@ See also [`compute_one_speed`](@ref), [`compute_sweep_1D`](@ref),
 # Output Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
 - '𝚽E12::Array{Float64}': outgoing flux along the energy axis.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

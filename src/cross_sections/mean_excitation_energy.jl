@@ -9,9 +9,6 @@ Extract the mean excitation energy for atomic number Z ∈ {1,100}.
 # Output Argument(s)
 - 'I::Float64': mean excitation energy [in mₑc²].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Seltzer (1981) : Evaluation of the Collision Stopping Power of Elements and Compounds for
   Electrons and Positrons.

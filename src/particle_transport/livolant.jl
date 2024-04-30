@@ -11,9 +11,6 @@ Estimate the solution using estimate from Livolant acceleration method.
 # Output Argument(s)
 - '𝚽::Array{Float64}': flux estimated by Livolant acceleration method for iteration (i+1).
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Hébert (2016) : Applied Reactor Physics (Sect. C.1.3 - Iterative approach).
 

@@ -21,9 +21,6 @@ feed function 𝓕ₑ for energy-deposition cross section.
 - '𝓕::Array{Float64}': feed function.
 - '𝓕ₑ::Vector{Float64}': energy weighted feed function.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - MacFarlane (2021) : The NJOY Nuclear Data Processing System, Version 2012.
 

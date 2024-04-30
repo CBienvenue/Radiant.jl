@@ -5,8 +5,6 @@
 
 Calculate the angular Fokker-Planck source term in Cartesian geometry.
 
-See also [`fokker_planck_scattering_matrix`](@ref), [`angular_polynomial_basis`](@ref).
-
 # Input Argument(s)
 - 'N::Int64': number of directions.
 - 'P::Int64': number of angular interpolation basis.
@@ -22,9 +20,6 @@ See also [`fokker_planck_scattering_matrix`](@ref), [`angular_polynomial_basis`]
 
 # Output Argument(s)
 - 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann

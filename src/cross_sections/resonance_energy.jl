@@ -10,9 +10,6 @@ Compute the resonance energy of a set of subshells.
 # Output Argument(s)
 - 'Wi::Vector{Float64}': resonance energy per subshells [in mₑc²].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and
   Photon Transport.

@@ -12,9 +12,6 @@ Computing the Carlson quadrature on the unit sphere.
 - 'ξ::Vector{Float64}': vector with ξᵢ points.
 - 'w::Vector{Float64}': vector with wᵢ weights.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Carlson (1976) : A Method of Characteristics and Other Improvements in Solution Methods
   for the Transport Equation.

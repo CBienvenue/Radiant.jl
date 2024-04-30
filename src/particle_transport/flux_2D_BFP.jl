@@ -8,9 +8,6 @@
 Compute flux solution in a cell in 2D Cartesian geometry for the Boltzmann Fokker-Planck
 equation.
 
-See also [`compute_sweep_2D`](@ref), [`flux_2D_BTE`](@ref), [`flux_1D_BFP`](@ref),
-[`flux_3D_BFP`](@ref).
-
 # Input Argument(s)
 - 'μ::Float64': direction cosine.
 - 'η::Float64': direction cosine.
@@ -42,9 +39,6 @@ See also [`compute_sweep_2D`](@ref), [`flux_2D_BTE`](@ref), [`flux_1D_BFP`](@ref
 - '𝚽x12::Vector{Float64}': outgoing angular flux along x-axis.
 - '𝚽y12::Vector{Float64}': outgoing angular flux along y-axis.
 - '𝚽E12::Vector{Float64}': outgoing angular flux along E-axis.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

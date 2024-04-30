@@ -11,9 +11,6 @@ for Baró cross-sections calculations.
 - 'rs::Float64': screening parameter.
 - 'n∞::Float64': asymptotic triplet contribution factor.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Baró (1994), Analytical cross sections for Monte Carlo simulation of photon transport.
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and

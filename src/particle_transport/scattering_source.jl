@@ -5,8 +5,6 @@
 
 Compute the scattering source terms of the transport equation.
 
-See also [`compute_flux`](@ref), [`compute_one_speed`](@ref), [`particle_source`](@ref).
-
 # Input Argument(s)
 - 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
@@ -24,9 +22,6 @@ See also [`compute_flux`](@ref), [`compute_one_speed`](@ref), [`particle_source`
 
 # Output Argument(s)
 - 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

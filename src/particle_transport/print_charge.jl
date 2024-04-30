@@ -4,8 +4,6 @@
 
 Calculate the charge deposition and print it in the output file. 
 
-See also [`energy_deposition`](@ref).
-
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
@@ -17,9 +15,6 @@ See also [`energy_deposition`](@ref).
 # Output Argument(s)
 - 'Ctot::Array{Float64}': charge deposition per voxel [MeV/g × cmⁿ per particle], where
    n is the geometry dimension. 
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Morel (1996) : A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for Solving the

@@ -9,9 +9,6 @@ Read FMAC-M cross sections file and save their content in a Cross_Sections struc
 # Output Argument(s)
 - 'cross_sections::Cross_Sections': cross sections with actualized informations.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

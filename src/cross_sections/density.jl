@@ -9,9 +9,6 @@ Extract the mass density for atomic number Z ∈ {1,100}.
 # Output Argument(s)
 - 'ρ::Float64': density [in g/cm³].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Kawrakow (2021), The EGSnrc Code System: Monte Carlo Simulation of Electron and Photon
   Transport.

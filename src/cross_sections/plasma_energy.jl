@@ -11,9 +11,6 @@ Calculate the plasma energy of a free-electron gas with the electron density of 
 # Output Argument(s)
 - 'Ωp::Float64': plasma energy [in mₑc²].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and
   Photon Transport.

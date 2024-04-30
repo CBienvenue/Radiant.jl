@@ -12,9 +12,6 @@ Calculate the Fokker-Planck scattering matrix using differential quadrature.
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
 - 'λ₀::Float64': correction factor for total cross-section.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Warsa (2012) : Moment-Preserving SN Discretizations for the One-Dimensional Fokker-Planck
   Equation.

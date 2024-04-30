@@ -13,9 +13,6 @@ Calculate the associated Legendre polynomial Pℓm(x), using Ferrer definition
 - 'Pℓm::Float64': associated Legendre polynomials of order ℓ and degree m evaluated at
    point x.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Hébert (2016): Applied Reactor Physics
 

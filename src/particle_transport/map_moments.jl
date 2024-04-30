@@ -3,17 +3,12 @@
 
 Produce a map between different space/energy moments configuration of the angular flux.
 
-See also [`particle_source`](@ref).
-
 # Input Argument(s)
 - '𝒪i::Vector{Int64}': incoming moment orders in space and energy.
 - '𝒪f::Vector{Int64}': outgoing moment orders in space and energy.
 
 # Output Argument(s)
 - 'map::Vector{Int64}': vector of correspondance between the incoming and outgoing moments.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

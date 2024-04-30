@@ -9,9 +9,6 @@ Heaviside step function H(x).
 # Output Argument(s)
 - 'H::Number': Heaviside function H(x).
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

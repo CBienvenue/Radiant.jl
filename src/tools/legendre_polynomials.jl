@@ -10,9 +10,6 @@ Calculate the Legendre polynomials Pℓ(x) values for ℓ=0,L.
 # Output Argument(s)
 - 'Pℓ::Vector{Float64}': Legendre polynomials.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Weisstein (2023) : Legendre Polynomial [MathWorld - A Wolfram Web Resource].
 

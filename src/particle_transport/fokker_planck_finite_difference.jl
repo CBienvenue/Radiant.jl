@@ -12,9 +12,6 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
 - 'λ₀::Float64': correction factor for total cross-section.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Morel (1985) : An Improved Fokker-Planck Angular Differencing Scheme.
 - Landesman (1988) : Angular Fokker-Pianck Decomposition and Representation Techniques.

@@ -12,9 +12,6 @@ Calculate the real spherical harmonics components Rℓm(μ,ϕ).
 # Output Argument(s)
 - 'Rℓm::Float64': real spherical harmonics of order ℓ and degree m evaluated at μ and ϕ.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Hébert (2016): Applied Reactor Physics
 

@@ -10,9 +10,6 @@ Computing the Gauss-Legendre quadrature.
 - 'μ::Vector{Float64}': vector with μᵢ points.
 - 'w::Vector{Float64}': vector with wᵢ weights.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Hale (2013), Fast and accurate computation of Gauss-Legendre and Gauss-Jacobi quadrature
   nodes and weights.

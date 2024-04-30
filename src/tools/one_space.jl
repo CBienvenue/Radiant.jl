@@ -9,9 +9,6 @@ Transform any space in the input string into one unique space.
 # Output Argument(s)
 - 'line_new::String': line only with "one space" spaces.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

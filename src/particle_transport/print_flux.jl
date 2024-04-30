@@ -3,8 +3,6 @@
 
 Calculate the flux solution and print it in the output file.
 
-See also [`transport`](@ref).
-
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
@@ -13,9 +11,6 @@ See also [`transport`](@ref).
 
 # Output Argument(s)
 - 'F::Array{Float64}': integrated flux [particle per cm² per s] per group and per voxel.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

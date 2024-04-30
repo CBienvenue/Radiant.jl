@@ -11,9 +11,6 @@
 
 Solve the one-speed transport equation for a given particle.  
 
-See also [`compute_flux`](@ref), [`compute_sweep_1D`](@ref), [`compute_sweep_2D`](@ref),
-[`compute_sweep_3D`](@ref).
-
 # Input Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
 - 'Qℓout::Array{Float64}': Legendre components of the out-of-group in-cell source.
@@ -55,9 +52,6 @@ See also [`compute_flux`](@ref), [`compute_sweep_1D`](@ref), [`compute_sweep_2D`
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
 - '𝚽E12::Array{Float64}': outgoing flux along the energy axis.
 - 'ρ_in::Float64': estimated spectral radius.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.

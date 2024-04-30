@@ -12,9 +12,6 @@ Mixed Newton-bissection iterative root-finding method.
 # Output Argument(s)
 - 'x::Real': root of f(x).
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 
 """

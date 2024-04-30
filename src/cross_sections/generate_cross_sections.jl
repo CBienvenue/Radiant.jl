@@ -9,9 +9,6 @@ Generate cross sections and save their content in a Cross_Sections structure.
 # Output Argument(s)
 - 'cross_sections::Cross_Sections': cross sections with actualized informations.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

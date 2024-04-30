@@ -5,9 +5,6 @@
 Compute flux solution in a cell in 1D Cartesian geometry for the Boltzmann transport
 equation.
 
-See also [`compute_sweep_1D`](@ref), [`flux_1D_BFP`](@ref), [`flux_2D_BTE`](@ref),
-[`flux_3D_BTE`](@ref).
-
 # Input Argument(s)
 - 'μ::Float64': direction cosine.
 - 'Σt::Float64': total cross-sections.
@@ -22,9 +19,6 @@ See also [`compute_sweep_1D`](@ref), [`flux_1D_BFP`](@ref), [`flux_2D_BTE`](@ref
 # Output Argument(s)
 - '𝚽n::Vector{Float64}': angular in-cell flux.
 - '𝚽x12::Float64': outgoing angular flux along x-axis.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

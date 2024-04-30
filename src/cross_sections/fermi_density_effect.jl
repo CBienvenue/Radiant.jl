@@ -14,9 +14,6 @@ Compute the Fermi density effect correction.
 # Output Argument(s)
 - 'δF::Float64': Fermi density effect correction.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and
   Photon Transport.

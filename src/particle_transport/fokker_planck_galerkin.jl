@@ -15,9 +15,6 @@ Compute the angular Fokker-Planck scattering matrix using Galerkin quadrature.
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
 - 'λ₀::Float64': correction factor for total cross-section.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
   Transport Equation.

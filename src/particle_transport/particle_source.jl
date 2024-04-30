@@ -5,8 +5,6 @@
 Compute the source of particle produced by interaction of another type of particle with
 matter.
 
-See also [`map_moments`](@ref), [`transport`](@ref).
-
 # Input Argument(s)
 - 'flux::Flux_Per_Particle': flux informations of the incoming particle.
 - 'cross_sections::Cross_Sections': cross section informations.
@@ -16,9 +14,6 @@ See also [`map_moments`](@ref), [`transport`](@ref).
 
 # Output Argument(s)
 - 'ps::Source': source information of the outgoing particle.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

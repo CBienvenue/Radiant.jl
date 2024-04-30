@@ -22,9 +22,6 @@ Produce the multigroup macroscopic cross sections.
 - 'S::Vector{Float64}': stopping power [MeV × cm⁻¹].
 - 'α::Vector{Float64}': momentum transfer [in cm⁻¹].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Lorence (1989), Physics Guide to CEPXS: A Multigroup Coupled Electron-Photon
   Cross-Section Generating Code.

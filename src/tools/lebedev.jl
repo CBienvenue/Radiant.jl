@@ -12,10 +12,8 @@ Computing the Lebedev quadrature on the unit sphere.
 - 'ξ::Vector{Float64}': vector with ξᵢ points.
 - 'w::Vector{Float64}': vector with wᵢ weights.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
+- Extracted from (and sightly modified): https://github.com/stefabat/Lebedev.jl
 - Lebedev and Laikov (1999) : A quadrature formula for the sphere of the 131st algebraic
   order of accuracy.
 

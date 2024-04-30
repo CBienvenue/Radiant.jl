@@ -3,8 +3,6 @@
 
 Compute the weighting parameters for adaptative calculations over a 1D finite-element. 
 
-See also [`adaptive_2D`](@ref).
-
 # Input Argument(s)
 - '𝒪::Int64': order of the flux polynomial expansion.
 - 'ω::Vector{Float64}': vector containing the (𝒪+1) weighting factors.
@@ -16,9 +14,6 @@ See also [`adaptive_2D`](@ref).
 # Output Argument(s)
 - 'isFixed::Bool': indicate if adaptive calculation is completed or not.
 - 'ω': corrected weighting factors.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Alcouffe (1993) : An adaptive weighted diamond differencing method for three-dimensional

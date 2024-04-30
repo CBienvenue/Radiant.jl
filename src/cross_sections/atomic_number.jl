@@ -9,9 +9,6 @@ Extract the atomic number for element.
 # Output Argument(s)
 - 'Z::Int64': atomic number of the element.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

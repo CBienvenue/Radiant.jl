@@ -12,9 +12,6 @@ Computing the weights and evaluation points of requested quadrature.
 - 'Ω::Vector{Vector{Float64}}': evaluation points.
 - 'w::Vector{Float64}': weights.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

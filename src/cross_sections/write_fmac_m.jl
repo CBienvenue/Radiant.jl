@@ -11,9 +11,6 @@ See also [`generate_cross_sections`](@ref).
 # Output Argument(s)
 - 'cross_sections::Cross_Sections': cross sections with actualized informations.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

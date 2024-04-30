@@ -4,8 +4,6 @@
 
 Solve the transport equation for a given particle.  
 
-See also [`compute_one_speed`](@ref), [`transport`](@ref).
-
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
@@ -14,9 +12,6 @@ See also [`compute_one_speed`](@ref), [`transport`](@ref).
 
 # Output Argument(s)
 - 'flux::Flux_Per_Particle': flux informations.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

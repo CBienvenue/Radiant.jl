@@ -3,8 +3,6 @@
 
 Prepare the volume source produced by fixed sources for transport calculations.
 
-See also [`map_moments`](@ref), [`transport`](@ref).
-
 # Input Argument(s)
 - 'Q': source density.
 - 'particle::String': particule type.
@@ -16,9 +14,6 @@ See also [`map_moments`](@ref), [`transport`](@ref).
 # Output Argument(s)
 - 'Q': source density.
 - 'norm': normalization factor.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

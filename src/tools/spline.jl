@@ -10,9 +10,6 @@ Produce the natural cubic spline function for (x,y) dataset.
 # Output Argument(s)
 - 'f::function': monotone cubic hermite spline function
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 
 """

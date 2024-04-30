@@ -12,9 +12,6 @@ Computing the product of Gauss-Legendre and Gauss-Chebyshev quadratures on the u
 - 'ξ::Vector{Float64}': vector with ξᵢ points.
 - 'w::Vector{Float64}': vector with wᵢ weights.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

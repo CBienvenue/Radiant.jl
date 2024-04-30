@@ -3,8 +3,6 @@
 
 Compute the weights of the closure relations. 
 
-See also [`compute_flux`](@ref).
-
 # Input Argument(s)
 - '𝒪::Vector{Int64}': vector of orders of the flux polynomial expansion.
 - 'schemes::Vector{String}': vector of types of the closure relation.
@@ -13,9 +11,6 @@ See also [`compute_flux`](@ref).
 - 'ω::Vector{Array{Float64}}': weighting factors of the scheme.
 - '𝒞::Vector{Float64}': constants related to normalized Legendre expansion.
 - 'is_adaptive::Vector{Bool}': booleans for adaptive calculations.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Voloschenko (2011) : Some improvements in solving the transport equation by the use of

@@ -14,9 +14,6 @@ Extract atomic electron subshells subshells, number and energies for atomic numb
 - 'Nshells::Int64': number of electron subshells.
 - 'subshells::Vector{String}': subshells subshells.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Carlson (1975) : Photoelectron and Auger Spectroscopy (p.337-343).
 - Perkins (1991) : Tables and graphs of atomic subshell and relaxation data derived from

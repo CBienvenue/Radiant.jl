@@ -12,9 +12,6 @@ Generate the group structure for multigroup calculations.
 # Output Argument(s)
 - 'Eᵇ::Vector{Float64}': vector containing the (Ng+1)-boundaries of the group structure.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 N/A
 

@@ -3,17 +3,12 @@
 
 Compute the geometry properties for transport calculations. 
 
-See also [`transport`](@ref).
-
 # Input Argument(s)
 - 'geo::Geometry': geometry informations.
 - 'cs::Cross_Sections': cross section informations.
 
 # Output Argument(s)
 - 'geo::Geometry': geometry informations.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 N/A

@@ -10,9 +10,6 @@ Compute the nuclei density for atomic number Z ∈ {1,100} in a material of dens
 # Output Argument(s)
 - '𝒩::Float64': nuclei density [in cm⁻³].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Hébert (2016) : Applied Reactor Physics.
 

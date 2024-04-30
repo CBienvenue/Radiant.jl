@@ -5,8 +5,6 @@
 
 Calculate the Fokker-Planck scattering matrix.
 
-See also [`fokker_planck_source`](@ref), [`angular_polynomial_basis`](@ref).
-
 # Input Argument(s)
 - 'N::Int64': number of directions.
 - 'Ω::Union{Vector{Vector{Float64}},Vector{Float64}}': director cosines.
@@ -21,9 +19,6 @@ See also [`fokker_planck_source`](@ref), [`angular_polynomial_basis`](@ref).
 # Output Argument(s)
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
 - 'λ₀::Float64': correction factor for total cross-section.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Warsa (2012) : Moment-Preserving SN Discretizations for the One-Dimensional Fokker-Planck

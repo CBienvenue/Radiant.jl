@@ -12,9 +12,6 @@ Compute the integral I = ∫(xⁿ/R²)dx, where R = a + bx, evaluated at x.
 # Output Argument(s)
 - 'v::Vector{Float64}': integral evaluated at x for 0 ≤ n ≤ N.
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
 

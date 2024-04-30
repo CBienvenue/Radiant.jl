@@ -9,9 +9,6 @@ Extract the atomic weight for atomic number Z ∈ {1,100}.
 # Output Argument(s)
 - 'A::Float64': atomic weight [u].
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
 - Kawrakow (2021), The EGSnrc Code System: Monte Carlo Simulation of Electron and Photon
   Transport.

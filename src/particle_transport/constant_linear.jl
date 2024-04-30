@@ -3,8 +3,6 @@
 
 Compute weighting factors for linear flux expansion on 2D finite-element.
 
-See also [`adaptive_2D`](@ref).
-
 # Input Argument(s)
 - 'x::Float64': centroid x-position of the linear part.
 - 'y::Float64': centroid y-position of the linear part.
@@ -12,9 +10,6 @@ See also [`adaptive_2D`](@ref).
 # Output Argument(s)
 - 'Q::Vector{Float64}': vector containing Q-values.
 - 'T::Vector{Float64}': vector containing T-values.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness

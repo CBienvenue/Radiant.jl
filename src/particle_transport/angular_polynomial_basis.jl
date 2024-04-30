@@ -5,8 +5,6 @@
 Compute the polynomial interpolation basis, based on a choice of quadrature and
 discretization, and produce both discrete-to-moments and moments-to-discrete matrices.  
 
-See also [`fokker_planck_scattering_matrix`](@ref).
-
 # Input Argument(s)
 - 'Ndims::Int64': geometry dimension.
 - 'Ω::Union{Vector{Vector{Float64}}': director cosines.
@@ -20,9 +18,6 @@ See also [`fokker_planck_scattering_matrix`](@ref).
 - 'Mn::Array{Float64}': discrete-to-moment matrix.
 - 'Dn::Array{Float64}': moment-to-discrete matrix.
 - 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis.
-
-# Author(s)
-Charles Bienvenue
 
 # Reference(s)
 - Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
