@@ -3,19 +3,14 @@
 
 Structure used to consolidate the cross-sections, geometry, solvers and sources, execute transport calculations and extract its results.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `cross_sections::Cross_Sections`: cross-section library.
+- `geometry::Geometry`: geometry.
+- `solvers::Solvers`: solvers.
+- `sources::Sources`: fixed sources.
 
-- **Mandatory field(s)**
-    - `cross_sections::Cross_Sections`: cross-section library.
-    - `geometry::Geometry`: geometry.
-    - `solvers::Solvers`: solvers.
-    - `sources::Sources`: fixed sources.
-
-- **Optional field(s) - with default values**
-N/A
-
-# System-defined field(s)
-- `flux::Flux`: flux solution.
+# Optional field(s) - with default values
+- N/A
 
 """
 mutable struct Computation_Unit

@@ -3,22 +3,14 @@
 
 Structure used to define a collection of fixed sources and their properties.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
+- `cross_sections`: Cross_Sections structure.
+- `geometry`: Geometry structure.
+- `solvers`: Solvers structure.
 
-- **Mandatory field(s)**
-    - `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
-    - `cross_sections`: Cross_Sections structure.
-    - `geometry`: Geometry structure.
-    - `solvers`: Solvers structure.
-
-- **Optional field(s) - with default values**
-    N/A
-
-# System-defined field(s)
-- `number_of_particles::Int64`: number of particle with fixed sources.
-- `particles::Vector{String}`: particles associated with fixed sources.
-- `normalization_factor::Float64`: normalization over the number of particles.
-- `sources_names`: names (or identifier) of the Source objects
+# Optional field(s) - with default values
+- N/A
 
 """
 mutable struct Fixed_Sources

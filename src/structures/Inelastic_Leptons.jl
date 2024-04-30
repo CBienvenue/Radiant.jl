@@ -1,4 +1,19 @@
+"""
+Inelastic_Leptons
 
+Structure used to define parameters for production of multigroup inelastic collisional cross-sections for leptons.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("positrons","positrons") => ["S"],("positrons","electrons") => ["P"],("electrons","electrons") => ["S","P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("positrons","positrons") => ["S"]`: scattering of incident positrons
+    - `("electrons","electrons") => ["S"]`: scattering of incident electrons
+    - `("positrons","electrons") => ["P"]`: production of electrons by incident positrons
+    - `("electrons","electrons") => ["P"]`: production of electrons by incident electrons
+
+"""
 mutable struct Inelastic_Leptons <: Interaction
 
     # Variable(s)
@@ -39,6 +54,32 @@ mutable struct Inelastic_Leptons <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for inelastic leptons processes.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons`: inelastic leptons structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("positrons","positrons") => ["S"]`: scattering of incident positrons
+    - `("electrons","electrons") => ["S"]`: scattering of incident electrons
+    - `("positrons","electrons") => ["P"]`: production of electrons by incident positrons
+    - `("electrons","electrons") => ["P"]`: production of electrons by incident electrons
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Inelastic_Leptons()
+julia> elastic_leptons.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # No knock-on electrons.
+```
+"""
+function set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
 function in_distribution(this::Inelastic_Leptons)
     is_dirac = false
     N = 8

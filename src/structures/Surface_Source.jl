@@ -3,23 +3,16 @@
 
 Structure used to define a directionnal boundary source and its properties.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `name::String`: name (or identifier) of the Surface_Source structure.
+- `particle::String`: type of particle emitted.
+- `energy_group::Int64`: energy group index in which the particle are emitted.
+- `direction::Vector{Float64}`: direction cosine.
+- `location::String`: boundary at which the source is located.
+- `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
 
-- **Mandatory field(s)**
-    - `name::String`: name (or identifier) of the Surface_Source structure.
-    - `particle::String`: type of particle emitted.
-    - `energy_group::Int64`: energy group index in which the particle are emitted.
-    - `direction::Vector{Float64}`: direction cosine.
-    - `location::String`: boundary at which the source is located.
-    - `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
-
-- **Optional field(s) - with default values**
-    - `intensity::Float64=1.0`: intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
-
-# System-defined field(s)
-- `is_build::Bool`: boolean value defining if the Multigroup_Cross_Sections was build or not.
-- `surface_sources::Array{Union{Array{Float64},Float64}}`: formatted object for transport calculations.
-- `normalization_factor::Float64`: normalization over the number of particles.
+# Optional field(s) - with default values
+- `intensity::Float64=1.0`: intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
 
 """
 mutable struct Surface_Source

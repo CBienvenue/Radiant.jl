@@ -3,21 +3,14 @@
 
 Structure used to define an isotropic volume source and its properties.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `name::String`: name (or identifier) of the Volume_Source structure.
+- `particle::String`: type of particle emitted.
+- `energy_group::Int64`: energy group index in which the particle are emitted.
+- `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
 
-- **Mandatory field(s)**
-    - `name::String`: name (or identifier) of the Volume_Source structure.
-    - `particle::String`: type of particle emitted.
-    - `energy_group::Int64`: energy group index in which the particle are emitted.
-    - `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
-
-- **Optional field(s) - with default values**
-    - `intensity::Float64=1.0`: intensity [# particles/cmᴺ, where N is the geometry dimension].
-
-# System-defined field(s)
-- `is_build::Bool`: boolean value defining if the Multigroup_Cross_Sections was build or not.
-- `volume_sources::Array{Float64}`: formatted array for transport calculations. 
-- `normalization_factor::Float64`: normalization over the number of particles.
+# Optional field(s) - with default values
+- `intensity::Float64=1.0`: intensity [# particles/cmᴺ, where N is the geometry dimension].
 
 """
 mutable struct Volume_Source

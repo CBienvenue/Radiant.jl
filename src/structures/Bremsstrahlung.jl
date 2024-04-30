@@ -1,4 +1,22 @@
+"""
+    Bremsstrahlung
 
+Structure used to define parameters for production of multigroup bremsstrahlung cross-sections.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("electrons","electrons") => ["S"],("electrons","photons") => ["P"],("positrons","positrons") => ["S"],("positrons","photons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("electrons","electrons") => ["S"]`: scattering of incident electron following Bremsstrahlung interaction.
+    - `("electrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident electron.
+    - `("positrons","positrons") => ["S"]`: scattering of incident positron following Bremsstrahlung interaction.
+    - `("positrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident positron.
+- `angular_scattering_type::String=modified_dipole`: type of angular scattering, which can takes the following values:
+    - `angular_scattering_type = modified_dipole`: modified dipôle distribution, based on Poskus (2019) shape functions.
+    - `angular_scattering_type = sommerfield`: Sommerfield distribution.
+
+"""
 mutable struct Bremsstrahlung <: Interaction
 
     # Variable(s)
@@ -36,6 +54,55 @@ mutable struct Bremsstrahlung <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Bremsstrahlung,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for bremsstrahlung processes.
+
+# Input Argument(s)
+- `this::Bremsstrahlung`: bremsstrahlung structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("electrons","electrons") => ["S"]`: scattering of incident electron following Bremsstrahlung interaction.
+    - `("electrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident electron.
+    - `("positrons","positrons") => ["S"]`: scattering of incident positron following Bremsstrahlung interaction.
+    - `("positrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident positron.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> bremsstrahlung = Bremsstrahlung()
+julia> bremsstrahlung.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # Only electron scattering, with photon absorption.
+```
+"""
+function set_interaction_types(this::Bremsstrahlung,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
+"""
+    set_angular_scattering_type(this::Bremsstrahlung,angular_scattering_type::String)
+
+To define the bremsstrahlung photons angular distribution.
+
+# Input Argument(s)
+- `this::Bremsstrahlung`: bremsstrahlung structure.
+- `angular_scattering_type::String`: angular scattering type.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> bremsstrahlung = Bremsstrahlung()
+julia> bremsstrahlung.set_angular_scattering_type("sommerfield")
+```
+"""
+function set_angular_scattering_type(this::Bremsstrahlung,angular_scattering_type::String)
+    if lowercase(angular_scattering_type) ∉ ["modified_dipole","sommerfield"] error("Undefined angular distribution.") end
+    this.angular_scattering_type = lowercase(angular_scattering_type)
+end
+
 function in_distribution(this::Bremsstrahlung)
     is_dirac = false
     N = 8

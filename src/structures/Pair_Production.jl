@@ -1,4 +1,21 @@
+"""
+    Pair_Production
 
+Structure used to define parameters for production of multigroup pair production cross-sections.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"],("photons","positrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("photons","photons") => ["A"]`: absorption of incoming photon.
+    - `("photons","electrons") => ["P"]`: produced electron.
+    - `("photons","positrons") => ["P"]`: produced positron.
+- `angular_scattering_type::String=modified_dipole`: type of angular scattering, which can takes the following values:
+    - `angular_scattering_type = modified_dipole`: modified dipôle distribution, based on Poskus (2019) shape functions.
+    - `angular_scattering_type = sommerfield`: Sommerfield distribution.
+
+"""
 mutable struct Pair_Production <: Interaction
 
     # Variable(s)
@@ -35,6 +52,54 @@ mutable struct Pair_Production <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Pair_Production,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for pair production processes.
+
+# Input Argument(s)
+- `this::Pair_Production`: pair production structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("photons","photons") => ["A"]`: absorption of incoming photon.
+    - `("photons","electrons") => ["P"]`: produced electron.
+    - `("photons","positrons") => ["P"]`: produced positron.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> pair_production = Pair_Production()
+julia> pair_production.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # Only electron scattering, with photon absorption.
+```
+"""
+function set_interaction_types(this::Pair_Production,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
+"""
+    set_angular_scattering_type(this::Pair_Production,angular_scattering_type::String)
+
+To define the pair_production photons angular distribution.
+
+# Input Argument(s)
+- `this::Pair_Production`: pair_production structure.
+- `angular_scattering_type::String`: angular scattering type.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> pair_production = Pair_Production()
+julia> pair_production.set_angular_scattering_type("sommerfield")
+```
+"""
+function set_angular_scattering_type(this::Pair_Production,angular_scattering_type::String)
+    if lowercase(angular_scattering_type) ∉ ["modified_dipole","sommerfield"] error("Undefined angular distribution.") end
+    this.angular_scattering_type = lowercase(angular_scattering_type)
+end
+
 function in_distribution(this::Pair_Production)
     is_dirac = false
     N = 8

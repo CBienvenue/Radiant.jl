@@ -1,4 +1,19 @@
+"""
+    Fluorescence
 
+Structure used to define parameters for production of multigroup fluorescence cross-sections.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["P"],("electrons","photons") => ["P"],("positrons","photons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("photons","photons") => ["P"]`: production of fluorescence following incident photon ionization of subshells (by photoelectric effect).
+    - `("electrons","photons") => ["P"]`: production of fluorescence following incident electrons ionization of subshells (by Møller interaction).
+    - `("positrons","photons") => ["P"]`: production of fluorescence following incident positrons ionization of subshells (by Bhabha interaction).
+- `ηmin::Float64=0.001`: minimum probability of the production of specific fluorescence photon following electron cascades.
+
+"""
 mutable struct Fluorescence <: Interaction
 
     # Variable(s)
@@ -37,6 +52,54 @@ mutable struct Fluorescence <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Fluorescence,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for fluorescence processes.
+
+# Input Argument(s)
+- `this::Fluorescence`: fluorescence structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("photons","photons") => ["P"]`: production of fluorescence following incident photon ionization of subshells (by photoelectric effect).
+    - `("electrons","photons") => ["P"]`: production of fluorescence following incident electrons ionization of subshells (by Møller interaction).
+    - `("positrons","photons") => ["P"]`: production of fluorescence following incident positrons ionization of subshells (by Bhabha interaction).
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> fluorescence = Fluorescence()
+julia> fluorescence.set_interaction_types( Dict(("electrons","photons") => ["P"]) ) # Only cascades following Møller interactions.
+```
+"""
+function set_interaction_types(this::Fluorescence,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
+"""
+    set_minimum_probability(this::Fluorescence,ηmin::Real)
+
+To define the minimum probability of a specific fluorescence production.
+
+# Input Argument(s)
+- `this::Fluorescence`: fluorescence structure.
+- `ηmin::Real`: minimum probability of a specific fluorescence production.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> fluorescence = Fluorescence()
+julia> fluorescence.set_minimum_probability(0.1) # Only fluorescence photons with probability greater than 10%.
+```
+"""
+function set_minimum_probability(this::Fluorescence,ηmin::Real)
+    if ~(0 ≤ ηmin ≤ 1) error("Probability should be between 0 and 1.") end
+    this.ηmin = ηmin
+end
+
 function in_distribution(this::Fluorescence)
     is_dirac = false
     N = 8

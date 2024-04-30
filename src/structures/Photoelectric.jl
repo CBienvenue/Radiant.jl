@@ -1,4 +1,17 @@
+"""
+    Photoelectric
 
+Structure used to define parameters for production of multigroup photoelectric cross-sections.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("photons","photons") => ["A"]`: absorption of incoming photon.
+    - `("photons","electrons") => ["P"]`: produced photo-electron.
+
+"""
 mutable struct Photoelectric <: Interaction
 
     # Variable(s)
@@ -40,6 +53,30 @@ mutable struct Photoelectric <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for photoelectric processes.
+
+# Input Argument(s)
+- `this::Photoelectric`: photoelectric structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("photons","photons") => ["A"]`: absorption of incoming photon.
+    - `("photons","electrons") => ["P"]`: produced photo-electron.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> photoelectric = Photoelectric()
+julia> photoelectric.set_interaction_types( Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"]) ) # Full photoelectric phenomenon (default case).
+```
+"""
+function set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
 function in_distribution(this::Photoelectric)
     is_dirac = false
     N = 8

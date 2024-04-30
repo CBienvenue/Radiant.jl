@@ -1,4 +1,17 @@
+"""
+    Elastic_Leptons
 
+Structure used to define parameters for production of multigroup elastic cross-sections for leptons.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("electrons","electrons") => ["S"]`: elastic interaction of electrons.
+    - `("positrons","positrons") => ["S"]`: elastic interaction of positrons.
+
+"""
 mutable struct Elastic_Leptons <: Interaction
 
     # Variable(s)
@@ -41,6 +54,30 @@ mutable struct Elastic_Leptons <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for Elastic_Leptons processes.
+
+# Input Argument(s)
+- `this::Elastic_Leptons`: elastic leptons structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("electrons","electrons") => ["S"]`: elastic interaction of electrons.
+    - `("positrons","positrons") => ["S"]`: elastic interaction of positrons.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Elastic_Leptons()
+julia> elastic_leptons.set_interaction_types( Dict(("positrons","positrons") => ["S"]) ) # Elastic only for positrons
+```
+"""
+function set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
 function in_distribution(this::Elastic_Leptons)
     is_dirac = false
     N = 8

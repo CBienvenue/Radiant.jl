@@ -3,19 +3,12 @@
 
 Structure used to define the collection of discretization methods for transport calculations associated with each of the particle and additionnal coupled transport informations.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `methods_list::Vector{Discrete_Ordinates}`: list of the particle methods
+- `number_of_generations::Int64`: number of particle generations to transport.
 
-- **Mandatory field(s)**
-    - `methods_list::Vector{Discrete_Ordinates}`: list of the particle methods
-    - `number_of_generations::Int64`: number of particle generations to transport.
-
-- **Optional field(s) - with default values**
-    N/A
-
-# System-defined field(s)
-- `number_of_particles::Int64`: number of particle for which methods are described
-- `particles::Vector{String}`: vector of the particle for which methods are described
-- `methods_names::Vector{String}`: vector of the names of the particle methods
+# Optional field(s) - with default values
+- N/A
 
 """
 mutable struct Solvers

@@ -3,33 +3,24 @@ Cross_Sections
 
 Structure used to define the parameters to extract or build a multigroup cross-sections library.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `name::String`: name (or identifier) of the Cross_Sections structure.
+- `source::String`: source of the cross-sections.
+- **if `source = "FMAC-M"`**
+    - `file::String`: file containing cross-sections data.
+    - `materials::Vector{Material}`: material list.
+- **if `source = "RADIANT"`**
+    - `materials::Vector{Material}`: material list.
+    - `particles::Vector{String}`: particle list.
+    - `energy::Float64`: midpoint energy of the highest energy group [in MeV].
+    - `number_of_groups::Int64`: number of energy groups.
+    - `group_structure::String="log"`: type of group discretization.
+    - `legendre_order::Int64`: maximum order of the angular Legendre moments of the differential cross-sections.
+    - `interactions::Vector{Interaction}`: list of interaction.
+    - `solvers::Vector{String}`: list of solver per particle.
 
-- **Mandatory field(s)**
-    - `name::String`: name (or identifier) of the Cross_Sections structure.
-    - `source::String`: source of the cross-sections.
-    - **if `source = "FMAC-M"`**
-        - `file::String`: file containing cross-sections data.
-        - `materials::Vector{Material}`: material list.
-    - **if `source = "RADIANT"`**
-        - `materials::Vector{Material}`: material list.
-        - `particles::Vector{String}`: particle list.
-        - `energy::Float64`: midpoint energy of the highest energy group [in MeV].
-        - `number_of_groups::Int64`: number of energy groups.
-        - `group_structure::String="log"`: type of group discretization.
-        - `legendre_order::Int64`: maximum order of the angular Legendre moments of the differential cross-sections.
-        - `interactions::Vector{Interaction}`: list of interaction.
-        - `solvers::Vector{String}`: list of solver per particle.
-
-- **Optional field(s) - with default values**
-    - `cutoff::Float64=0.001`: lower energy bound of the lowest energy group (cutoff energy) [in MeV].
-
-# System-defined field(s)
-- `number_of_materials::Int64`: number of material.
-- `number_of_particles::Int64`: number of particles.
-- `energy_boundaries::Vector{Float64}`: vector with energy boundaries of the groups [in MeV].
-- `multigroup_cross_sections::Array{Multigroup_Cross_Sections}`: Multigroup_Cross_Sections structure containing the calculated (or extracted from file) cross-sections data for transport calculations.
-- `is_build::Bool`: boolean value defining if the Multigroup_Cross_Sections was build or not.
+# Optional field(s) - with default values
+- `cutoff::Float64=0.001`: lower energy bound of the lowest energy group (cutoff energy) [in MeV].
 
 """
 mutable struct Cross_Sections

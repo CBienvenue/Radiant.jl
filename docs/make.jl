@@ -5,7 +5,7 @@ using Radiant
 makedocs(
     sitename = "Radiant.jl",
     pages = [
-        "Oriented Object User Interface" => [
+        "User Interface" => [
             "Computation_Unit" => "computation_unit.md",
             "Cross_Sections" => "cross_sections.md",
             "Solvers" => [

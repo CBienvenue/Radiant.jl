@@ -3,20 +3,14 @@
 
 Structure used to define a material and its properties.
 
-# User-defined field(s)
+# Mandatory field(s)
+- `name::String`: name (or identifier) of the Material structure.
+- `density::Float64`: density [in g/cm³].
+- `elements::Vector{String}`: vector of the element in the composition of the material.
+- `weight_fractions::Vector{Float64}`: vector of the weight fraction for each element in the composition of the material.
 
-- **Mandatory field(s)**
-    - `name::String`: name (or identifier) of the Material structure.
-    - `density::Float64`: density [in g/cm³].
-    - `elements::Vector{String}`: vector of the element in the composition of the material.
-    - `weight_fractions::Vector{Float64}`: vector of the weight fraction for each element in the composition of the material.
-
-- **Optional field(s) - with default values**
-    - `state_of_matter::String = "solid"`: state of the matter.
-
-# System-defined field(s)
-- `number_of_elements::Int64`: number of elements in the composition of the material.
-- `atomic_numbers::Vector{Int64}`: vector of the atomic number corresponding to the element in the composition of the material.
+# Optional field(s) - with default values
+- `state_of_matter::String = "solid"`: state of the matter.
 
 """
 mutable struct Material

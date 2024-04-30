@@ -1,4 +1,17 @@
+"""
+    Compton
 
+Structure used to define parameters for production of multigroup Compton cross-sections.
+
+# Mandatory field(s)
+- N/A
+
+# Optional field(s) - with default values
+- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `("photons","photons") => ["S"]`: scattering of incident photon following Compton interaction.
+    - `("photons","electrons") => ["P"]`: produced electron following Compton interaction.
+
+"""
 mutable struct Compton <: Interaction
 
     # Variable(s)
@@ -34,6 +47,30 @@ mutable struct Compton <: Interaction
 end
 
 # Method(s)
+"""
+    set_interaction_types(this::Compton,interaction_types::Dict{Tuple{String,String},Vector{String}})
+
+To define the interaction types for Compton processes.
+
+# Input Argument(s)
+- `this::Compton`: compton structure.
+- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `("photons","photons") => ["S"]`: scattering of incident photon following Compton interaction.
+    - `("photons","electrons") => ["P"]`: produced electron following Compton interaction.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> compton = Compton()
+julia> compton.set_interaction_types( Dict(("photons","photons") => ["S"]) ) # Electron are absorbed following Compton interaction.
+```
+"""
+function set_interaction_types(this::Compton,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    this.interaction_types = interaction_types
+end
+
 function in_distribution(this::Compton)
     is_dirac = false
     N = 8
