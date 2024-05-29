@@ -85,7 +85,6 @@ function is_ready_to_build(this::Geometry)
     if ismissing(this.type) error("The type of geometry has to be specified.") end
     if ismissing(this.dimension) error("The geometry dimension has to be specified.") end
     if this.type == "cartesian"
-        if length(size(this.material_per_region)) != this.dimension error("Dimension of the material per region array don`t fit the dimension.") end
         if this.dimension ≥ 1
             if ~haskey(this.boundary_conditions,"X+") || ~haskey(this.boundary_conditions,"X-") error("Boundary conditions are not defined along the x-axis.") end
             if ~haskey(this.number_of_regions,"x") error("Number of regions are not defined along the x-axis.") end
