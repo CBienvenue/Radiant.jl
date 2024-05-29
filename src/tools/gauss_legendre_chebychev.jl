@@ -18,8 +18,6 @@ N/A
 """
 function gauss_legendre_chebychev(N::Int64)
 
-if (mod(N,2)!=0) error("Gauss-Chebychev product-type quadrature order in not even.") end
-
 μ = zeros(2*N^2); η = zeros(2*N^2); ξ = zeros(2*N^2); w = zeros(2*N^2)
 
 μn,wn = gauss_legendre(N)
