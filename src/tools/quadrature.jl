@@ -48,9 +48,19 @@ else
         μ₀ = Ω[1][condition]
         η₀ = Ω[2][condition]
         ξ₀ = Ω[3][condition]
-        w₀ = w[condition]
+        w₀ = copy(w)
+        Nd = length(w)
+        for i in range(1,Nd)
+            if ~condition[i]
+                for j in range(1,Nd)
+                    if abs(Ω[1][i] - Ω[1][j]) < 1e-5 && abs(Ω[2][i] - Ω[2][j]) < 1e-5 && abs(Ω[3][i] + Ω[3][j]) < 1e-5
+                        w₀[j] += w₀[i]
+                    end
+                end
+            end
+        end
+        w = w₀[condition]
         Ω = [μ₀,η₀,ξ₀]
-        w = w₀
     end
 end
 
