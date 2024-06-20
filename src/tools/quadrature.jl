@@ -52,11 +52,11 @@ else
         Nd = length(w)
         for i in range(1,Nd)
             if ~condition[i]
+                ϵ_ξ = zeros(Nd)
                 for j in range(1,Nd)
-                    if abs(Ω[1][i] - Ω[1][j]) < 1e-5 && abs(Ω[2][i] - Ω[2][j]) < 1e-5 && abs(Ω[3][i] + Ω[3][j]) < 1e-5
-                        w₀[j] += w₀[i]
-                    end
+                    ϵ_ξ[j] = abs(Ω[1][i] - Ω[1][j])^2 + abs(Ω[2][i] - Ω[2][j])^2 + abs(Ω[3][i] + Ω[3][j])^2
                 end
+                w₀[argmin(ϵ_ξ)] += w₀[i]
             end
         end
         w = w₀[condition]
