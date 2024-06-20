@@ -90,7 +90,6 @@ function is_ready_to_build(this::Geometry)
             if ~haskey(this.number_of_regions,"x") error("Number of regions are not defined along the x-axis.") end
             if ~haskey(this.voxels_per_region,"x") error("Number of voxels per region are not defined along the x-axis.") end
             if ~haskey(this.region_boundaries,"x") error("The region boundaries are not defined along the x-axis.") end
-            #if this.number_of_regions["x"] != size(this.material_per_region,1) error("The size of the material per region array don`t fit the number of regions along the x-axis.") end
             if length(this.voxels_per_region["x"]) != this.number_of_regions["x"] error("The length of the voxel per region vector don`t fit the number of regions along the x-axis.") end
             if length(this.region_boundaries["x"]) != this.number_of_regions["x"] + 1 error("The length of the region boundaries vector don`t fit the number of regions along the x-axis.") end
         end
@@ -99,7 +98,6 @@ function is_ready_to_build(this::Geometry)
             if ~haskey(this.number_of_regions,"y") error("Number of regions are not defined along the y-axis.") end
             if ~haskey(this.voxels_per_region,"y") error("Number of voxels per region are not defined along the y-axis.") end
             if ~haskey(this.region_boundaries,"y") error("The region boundaries are not defined along the y-axis.") end
-            #if this.number_of_regions["y"] != size(this.material_per_region,2) error("The size of the material per region array don`t fit the number of regions along the y-axis.") end
             if length(this.voxels_per_region["y"]) != this.number_of_regions["y"] error("The length of the voxel per region vector don`t fit the number of regions along the y-axis.") end
             if length(this.region_boundaries["y"]) != this.number_of_regions["y"] + 1 error("The length of the region boundaries vector don`t fit the number of regions along the y-axis.") end
         end
@@ -108,7 +106,6 @@ function is_ready_to_build(this::Geometry)
             if ~haskey(this.number_of_regions,"z") error("Number of regions are not defined along the z-axis.") end
             if ~haskey(this.voxels_per_region,"z") error("Number of voxels per region are not defined along the z-axis.") end
             if ~haskey(this.region_boundaries,"z") error("The region boundaries are not defined along the z-axis.") end
-            #if this.this.number_of_regions["z"] != size(this.material_per_region,3) error("The size of the material per region array don`t fit the number of regions along the z-axis.") end
             if length(this.voxels_per_region["z"]) != this.number_of_regions["z"] error("The length of the voxel per region vector don`t fit the number of regions along the z-axis.") end
             if length(this.region_boundaries["z"]) != this.number_of_regions["z"] + 1 error("The length of the region boundaries vector don`t fit the number of regions along the z-axis.") end
         end

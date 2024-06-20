@@ -149,13 +149,6 @@ elseif Ndims == 2
         Mn = zeros(N,N)
         Dn = zeros(N,N)
 
-        N_cos = 1
-        N_sin = 0
-        N_ℓ_even = 1
-        N_ℓ_odd = 0
-        N_m_even = 1
-        N_m_odd = 0
-
         # Gram-Schmidt procedure to find strongly independant
         # set of spherical harmonics
 
@@ -169,17 +162,9 @@ elseif Ndims == 2
         i = 1; k = 2;
         norms = zeros(N)
         norms[1] = norm(Rℓm[:,1,1])
-
-        vℓ = zeros(Int64,N)
-        vm = zeros(Int64,N)
-        vℓ[1] = 0
-        vm[1] = 0
-
-        ℓi = 1
-        mi = 0
         
         # Iterate over the spherical harmonics
-        for ℓ in range(ℓi,L), m in range(mi,ℓ)
+        for ℓ in range(1,L), m in range(-ℓ,ℓ)
 
             R = Rℓm[:,ℓ+1,m+ℓ+1]
             S = zeros(N)
@@ -187,7 +172,6 @@ elseif Ndims == 2
             vk = R - S
 
             # If the set is strongly independant, keep it, otherwise go to next
-            #println(i,"  Norme: ",norm(vk),"  ℓ: ",ℓ,"  m: ",m)
             if norm(vk) > 1e-5
                 i += 1 
                 norms[i] = norm(vk)
@@ -195,11 +179,6 @@ elseif Ndims == 2
                 Mn[:,i] = (2*ℓ+1)/(4*π) * R
                 pℓ[i] = ℓ
                 pm[i] = m
-                if (m ≥ 0) N_cos += 1 else N_sin += 1 end
-                if (mod(ℓ,2)==0) N_ℓ_even += 1 else N_ℓ_odd += 1 end
-                if (mod(m,2)==0) N_m_even += 1 else N_m_odd += 1 end
-                vℓ[i] = ℓ
-                vm[i] = m
             end
 
             # End of execution
@@ -211,8 +190,6 @@ elseif Ndims == 2
             if k > 5000 error("Too much iterations.") end
         end
 
-        #println(N_cos," ",N_sin," ",N_ℓ_even," ",N_ℓ_odd," ",N_m_even," ",N_m_odd)
-
         P = N
         Dn = inv(Mn)
 
@@ -223,13 +200,6 @@ elseif Ndims == 2
         pm = zeros(Int64,N)
         Mn = zeros(N,N)
         Dn = zeros(N,N)
-
-        Ncos = 1
-        Nsin = 0
-        ℓ_even = 1 
-        ℓ_odd = 0
-        m_even = 1
-        m_odd = 0
 
         # Gram-Schmidt procedure to find strongly independant
         # set of spherical harmonics
@@ -255,9 +225,6 @@ elseif Ndims == 2
 
             # If the set is strongly independant, keep it, otherwise go to next
             if norm(vk) > 1e-5
-                if m ≥ 0 Ncos += 1 else Nsin += 1 end
-                if mod(ℓ,2) == 0 ℓ_even += 1 else ℓ_odd += 1 end
-                if mod(m,2) == 0 m_even += 1 else m_odd += 1 end
                 i += 1 
                 norms[i] = norm(vk)
                 u[:,i] = vk/norm(vk)
@@ -269,8 +236,6 @@ elseif Ndims == 2
             if (N == i) break end
             if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
         end
-
-        #println([Ncos,Nsin,ℓ_even,ℓ_odd,m_even,m_odd])
 
         P = N
         Mn = inv(Dn)
@@ -303,7 +268,55 @@ elseif Ndims == 3
 
     elseif type == "galerkin-m"
 
-        error()
+        P = N
+        pℓ = zeros(Int64,N)
+        pm = zeros(Int64,N)
+        Mn = zeros(N,N)
+        Dn = zeros(N,N)
+
+        # Gram-Schmidt procedure to find strongly independant
+        # set of spherical harmonics
+
+        # Initialisation
+        Mn[:,1] = 1/(4*π) * Rℓm[:,1,1]
+        pℓ[1] = 0
+        pm[1] = 0
+
+        u = zeros(N,N)
+        u[:,1] = Rℓm[:,1,1]/norm(Rℓm[:,1,1])
+        i = 1; k = 2;
+        norms = zeros(N)
+        norms[1] = norm(Rℓm[:,1,1])
+        
+        # Iterate over the spherical harmonics
+        for ℓ in range(1,L), m in range(-ℓ,ℓ)
+
+            R = Rℓm[:,ℓ+1,m+ℓ+1]
+            S = zeros(N)
+            for n in range(1,i) S .+= inner_product(u[:,n],R) * u[:,n] end
+            vk = R - S
+
+            # If the set is strongly independant, keep it, otherwise go to next
+            if norm(vk) > 1e-5
+                i += 1 
+                norms[i] = norm(vk)
+                u[:,i] = vk/norm(vk)
+                Mn[:,i] = (2*ℓ+1)/(4*π) * R
+                pℓ[i] = ℓ
+                pm[i] = m
+            end
+
+            # End of execution
+            if N == i break end
+
+            # Errors
+            k += 1
+            if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
+            if k > 5000 error("Too much iterations.") end
+        end
+
+        P = N
+        Dn = inv(Mn)
 
     elseif type == "galerkin-d"
     

@@ -93,6 +93,7 @@ isInnerConv=false
     #----
     # Loop over all discrete ordinates
     #----
+    #println(string(i_in," ",ϵ_in))
     𝚽ℓ = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
     @inbounds for n in range(1,N)
         if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end

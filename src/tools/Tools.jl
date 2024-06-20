@@ -19,6 +19,7 @@ include("gamma.jl")
 include("interpolation.jl")
 include("integrals.jl")
 include("spline.jl")
+include("voronoi.jl")
 
 # Iterative method
 include("newton_bissection.jl")
