@@ -159,9 +159,8 @@ end
 
 # Adaptive correction of weighting parameters
 if isAdapt
-    error("Not implemented yet.")
-    #isFixed, ω = adaptive(3,[𝒪E,𝒪x,𝒪y],[ωE,ωx,ωy],𝚽n,[𝚽E12,𝚽x12,𝚽y12],[-1.0,sign(μ),sign(η)],[Λ,1.0,1.0],[0.0,0.0,0.0])
-    #ωE = ω[1]; ωx = ω[2]; ωy = ω[3];
+    isFixed, ω = adaptive_3D([𝒪E,𝒪x,𝒪y],[ωE,ωx,ωy],𝚽n,[𝚽E12,𝚽x12,𝚽y12],[Λ,1.0,1.0])
+    ωE = ω[1]; ωx = ω[2]; ωy = ω[3];
 else
     isFixed = true
 end
