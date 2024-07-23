@@ -141,7 +141,7 @@ end
 
 # Adaptive correction of weighting parameters
 if isAdapt
-    isFixed, ω, T = adaptive_2D([𝒪E,𝒪x],[ωE,ωx],𝚽n,[𝚽E12,𝚽x12],[-1.0,sign(μ)],[Λ,1.0],[TE,Tx])
+    isFixed, ω, T = adaptive_2D([𝒪E,𝒪x],[ωE,ωx],𝚽n,[𝚽E12,𝚽x12],[-1.0,sign(μ)],[Λ,1.0],[TE,Tx],Qn,[1/(ΔE*Σt),abs(μ)/(Δx*Σt)],Q)
     ωE = ω[1]; ωx = ω[2]; TE = T[1]; Tx = T[2];
 else
     isFixed = true
@@ -345,3 +345,150 @@ return 𝚽n, 𝚽x12, 𝚽E12
 
 end 
 end
+
+#=
+#----
+# Full coupling
+#----
+if isFC
+
+# Initialization
+S = zeros(𝒪x*𝒪E,𝒪x*𝒪E)
+Q = zeros(𝒪x*𝒪E)
+𝚽n = Q
+TE = 0.0; Tx = 0.0
+
+# Galerkin energy scheme weights
+Λ = 1 #β⁻/β⁺
+if abs(ωE[1,1]) > 0
+    ωE[1,1] = ωE[1,1]*Λ
+    ωE[2:𝒪E+1,1] = (ωE[2:𝒪E+1,1].-1).*Λ.+1
+end
+
+hx = abs(μ/(Σt*Δx))
+hE = abs(-(β⁺+β⁻)/(2*Σt))
+sx = sign(μ)
+sE = -1
+
+# Adaptive loop
+isAdapt = isAdaptE && isAdaptx
+isFixed = false
+while ~isFixed
+
+# Matrix of Legendre moment coefficients of the flux
+@inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x), iE in range(1,𝒪E), jE in range(1,𝒪E)
+    i = 𝒪E*(ix-1)+iE
+    j = 𝒪E*(jx-1)+jE
+    # Diagonal terms
+    if i == j
+        S[i,j] = 1 + CE[iE]^2 * hE * ωE[jE+1,jx] + Cx[ix]^2 * hx * ωx[jx+1,jE]
+    # Upper diagonal terms
+    elseif i < j
+    # Energy terms - E
+    if ix == jx
+    if mod(iE+jE,2) == 1
+        S[i,j] = CE[iE] * CE[jE] * sE * hE * ωE[jE+1,jx]
+    else
+        S[i,j] = CE[iE] * CE[jE] * hE * ωE[jE+1,jx]
+    end
+    # Space terms - x
+    elseif  iE == jE 
+    if mod(ix+jx,2) == 1
+        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jE] * sx * hx
+    else
+        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jE] * hx
+    end
+    end
+    # Under diagonal terms
+    else
+    # Energy terms - E
+    if ix == jx
+    if mod(iE+jE,2) == 1
+        S[i,j] = CE[iE] * CE[jE] * (ωE[jE+1,jx]-2) * sE * hE
+    else
+        S[i,j] = CE[iE] * CE[jE] * ωE[jE+1,jx] * hE
+    end
+    # Space terms - x
+    elseif  iE == jE 
+    if mod(ix+jx,2) == 1
+        S[i,j] = Cx[ix] * Cx[jx] * (ωx[jx+1,jE]-2) * sx * hx
+    else
+        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jE] * hx
+    end
+    end
+    end
+
+    # T-factors
+    if 𝒪x == 2 && 𝒪E == 2
+        if i == 2 && j == 3
+            S[i,j] += hx * sx * sE * Tx
+        elseif i == 3 && j == 2
+            S[i,j] += hE * sx * sE * TE
+        elseif i == 4 && j == 2
+            S[i,j] += sqrt(3) * sx * hE * TE
+        elseif i == 4 && j == 3
+            S[i,j] += sqrt(3) * sE * hx * Tx
+        end
+    end
+
+end
+
+# Source vector
+@inbounds for ix in range(1,𝒪x), iE in range(1,𝒪E)
+    i = 𝒪E*(ix-1)+iE
+    Q[i] = Qn[i]/Σt
+    # Energy terms - E
+    if mod(iE,2) == 1
+        Q[i] += CE[iE] * (1-ωE[1,ix]) * 𝚽E12[ix] * hE
+    else
+        Q[i] += -CE[iE] * (1+ωE[1,ix]) * 𝚽E12[ix] * sE * hE
+    end
+    # Space terms - x
+    if mod(ix,2) == 1
+        Q[i] += Cx[ix] * (1-ωx[1,iE]) * 𝚽x12[iE] * hx
+    else
+        Q[i] += -Cx[ix] * (1+ωx[1,iE]) * 𝚽x12[iE] * sx * hx
+    end
+end
+
+𝚽n = S\Q
+
+# Adaptive correction of weighting parameters
+if isAdapt
+    isFixed, ω, T = adaptive_2D([𝒪E,𝒪x],[ωE,ωx],𝚽n,[𝚽E12,𝚽x12],[-1.0,sign(μ)],[Λ,1.0],[TE,Tx],Q)
+    ωE = ω[1]; ωx = ω[2]; TE = T[1]; Tx = T[2];
+else
+    isFixed = true
+end
+
+end # End of adaptive loop
+
+# Closure relation
+@inbounds for ix in range(1,𝒪x), iE in range(1,𝒪E)
+    if (iE == 1) 𝚽E12[ix] = ωE[1,ix] * 𝚽E12[ix] end
+    if (ix == 1) 𝚽x12[iE] = ωx[1,iE] * 𝚽x12[iE] end
+end
+@inbounds for ix in range(1,𝒪x), iE in range(1,𝒪E)
+    i = 𝒪E*(ix-1)+iE
+    # Energy terms - E
+    if mod(iE,2) == 1
+        𝚽E12[ix] += CE[iE] * ωE[iE+1,ix] * 𝚽n[i]
+    else
+        𝚽E12[ix] += CE[iE] * ωE[iE+1,ix] * 𝚽n[i] * sE
+    end  
+    # Space terms - x
+    if mod(ix,2) == 1
+        𝚽x12[iE] += Cx[ix] * ωx[ix+1,iE] * 𝚽n[i]
+    else
+        𝚽x12[iE] += Cx[ix] * ωx[ix+1,iE] * 𝚽n[i] * sx
+    end
+end
+if 𝒪x == 2 && 𝒪E == 2
+    𝚽E12[2] += sx * sE * TE * 𝚽n[2]
+    𝚽x12[2] += sx * sE * Tx * 𝚽n[3]
+end
+𝚽E12 .= 𝚽E12/ΔE
+
+# Returning solutions
+return 𝚽n, 𝚽x12, 𝚽E12
+=#

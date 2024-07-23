@@ -557,8 +557,6 @@ end
 #display(Mn*Dn_FP*ℳ*Mn_FP*Dn)
 #println(eigvals(-ℳ))
 
-#error()
-
 return ℳ, λ₀, Mn_FP, Dn_FP, N_FP
 
 end

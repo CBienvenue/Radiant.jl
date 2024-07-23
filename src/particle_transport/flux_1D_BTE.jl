@@ -71,7 +71,7 @@ end
 
 # Adaptive correction of weighting parameters
 if isAdaptx
-    isFixed, ωx = adaptive_1D(𝒪x,ωx,𝚽n,𝚽x12,sign(μ),1.0)
+    isFixed, ωx = adaptive_1D(𝒪x,ωx,𝚽n,𝚽x12,sign(μ),1.0,Q,abs(μ)/(Δx * Σt))
 else
     isFixed = true
 end

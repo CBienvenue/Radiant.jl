@@ -27,7 +27,7 @@ Compute the weighting parameters for adaptative calculations over a 1D finite-el
   for Charged Particle Transport.
 
 """
-function adaptive_1D(𝒪::Int64,ω::Vector{Float64},𝚽n::Vector{Float64},𝚽12::Float64,s::Float64,Λ::Float64)
+function adaptive_1D(𝒪::Int64,ω::Vector{Float64},𝚽n::Vector{Float64},𝚽12::Float64,s::Float64,Λ::Float64,Qn,hx)
 
 # Initialization
 isFixed = false
@@ -73,6 +73,25 @@ elseif 𝒪 == 2
 
     if abs(P-0) < ϵ && abs(Q-1) < ϵ
 
+        u = s[1]*sqrt(3)*Qn[2]
+        if Qn[1] != 0
+            u = u/abs(Qn[1])
+        else
+            u = Inf * sign(u)
+        end
+        if isnan(u) u = 0 end
+
+        if u < -2.9999
+            Q = 1/3
+        elseif u > 2.9999
+            Q = (hx*(3+2.9999)-(3-2.9999))/(3*hx*(3-2.9999))
+        elseif 2.9999 > u ≥ (6*hx+3)/(4*hx+1)
+            Q = (hx*(3+u)-(3-u))/(3*hx*(3-u))
+        elseif -2.9999 < u < -(6*hx+1) 
+            Q = -1/(6*hx+u)
+        end
+
+        #=
         # Flux variation in the cell
         u0 = (𝚽12-𝚽n[1])
         u1 = -s[1]*sqrt(3)*𝚽n[2]
@@ -96,6 +115,7 @@ elseif 𝒪 == 2
             Q = 1000*abs(u1)/(1+u0)
         end
         Q = min(max(Q,10),1/3)
+        =#
 
         # Output data
         if abs(Q - 1) < ϵ && abs(P - 0) < ϵ

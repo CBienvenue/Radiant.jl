@@ -156,7 +156,7 @@ julia> ss.set_direction([1.0,0.0,0.0])
 """
 function set_direction(this::Surface_Source,direction::Vector{Float64})
     if length(direction) != 3 error("Three director cosines has to be provided.") end
-    if abs(sum(direction).^2-1) > 1e-3 error("The sum of the squared three director cosines is not equal to 1.") end
+    if abs(sum(direction.^2)-1) > 1e-3 error("The sum of the squared three director cosines is not equal to 1.") end
     this.direction = direction
 end
 

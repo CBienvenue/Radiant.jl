@@ -213,7 +213,6 @@ julia> cs.set_source("FMAC-M")
 """
 function set_source(this::Cross_Sections,source::String)
     if uppercase(source) ∉ ["FMAC-M","RADIANT"] error("Unkown source of cross-sections data.") end
-    if uppercase(source) == "FMAC-M" this.group_structure = "unknown"; this.interactions = "unknown"; this.solvers = "unknown" end
     this.source = source
 end
 

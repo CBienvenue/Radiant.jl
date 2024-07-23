@@ -29,7 +29,7 @@ Compute the weighting parameters for adaptative calculations over a 2D finite-el
   for Charged Particle Transport.
 
 """
-function adaptive_2D(𝒪::Vector{Int64},ω::Vector{Matrix{Float64}},𝚽n::Vector{Float64},𝚽12::Vector{Vector{Float64}},s::Vector{Float64},Λ::Vector{Float64},Ti::Vector{Float64})
+function adaptive_2D(𝒪::Vector{Int64},ω::Vector{Matrix{Float64}},𝚽n::Vector{Float64},𝚽12::Vector{Vector{Float64}},s::Vector{Float64},Λ::Vector{Float64},Ti::Vector{Float64},Qn,h,QQ)
 
 # Initialization
 isFixed = zeros(Bool,2)
@@ -168,21 +168,47 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
         T = Ti[i]
         if abs(P-0) < ϵ && abs(Q-1) < ϵ && abs(T-0) < ϵ
 
-            if (i == 1) 𝚽 = 𝚽n[1:1:𝒪[1]] elseif (i == 2) 𝚽 = 𝚽n[1:𝒪[1]:𝒪[1]*𝒪[2]] end
+            #if (i == 1) 𝚽 = 𝚽n[1:1:𝒪[1]] elseif (i == 2) 𝚽 = 𝚽n[1:𝒪[1]:𝒪[1]*𝒪[2]] end
+
+            if i == 1
+                𝚽 = [ Qn[1] + h[1]*𝚽12[1][1] + h[2]*𝚽12[2][1] , Qn[2] - sqrt(3)*h[1]*s[1]*𝚽12[1][1] + h[2]*𝚽12[2][2] ]
+            else
+                𝚽 = [ Qn[1] + h[1]*𝚽12[1][1] + h[2]*𝚽12[2][1] , Qn[3] + h[1]*𝚽12[1][2] - sqrt(3)*h[2]*s[2]*𝚽12[2][1] ]
+            end
 
             # Flux variation in the cell
-            u1 = -s[i]*sqrt(3)*𝚽[2]
+            u1 = s[i]*sqrt(3)*𝚽[2]
             if 𝚽[1] != 0
                 u1 = u1/abs(𝚽[1])
+            elseif abs(u1) < 1e-8
+                u1 = 0
             else
                 u1 = Inf * sign(u1)
             end
             if isnan(u1) u1 = 0 end
 
+            if u1 > 2.999 u1 = 2.999 end
+            if u1 < -2.999 u1 = -2.999 end
+
             # Estimate the centroid positions
             x_CM_max = 49/100
             u1_temp = copy(u1)
-            u1 += 0.5*sign(u1_temp)
+            u1 += 3/2*sign(u1_temp)
+            if u1 > 3/2
+                if u1 > 3
+                    x_CM[i] = x_CM_max
+                else
+                    x_CM[i] = min(x_CM_max, (2*u1-3+sqrt(12*u1^2-27))/(4*(3*u1)) )
+                end
+            end
+            u1 = u1_temp
+            u1 += sign(u1_temp)
+            if u1 < -1
+                x_CM[i] = max(-x_CM_max,(1+u1)/4)
+            end
+
+            #=
+            u1 += sign(u1_temp)
             if u1 > 1
                 if u1 < 3
                     Qm = max(1/(u1^u1),1/3)
@@ -204,6 +230,7 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
                     x_CM[i] = min((3*Qm-2+sqrt(9*Qm^2-12*Qm+1))/(18*Qm),x_CM_max)
                 end
             end
+            =#
         else
             isFixed[i] = true
         end
@@ -214,7 +241,7 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
     if ~all(isFixed) 
         P = zeros(2)
         Q,T = constant_linear(x_CM[1],x_CM[2])
-        T *= prod(s)
+        #T *= prod(s)
 
         # Output data
         for i in range(1,2)
