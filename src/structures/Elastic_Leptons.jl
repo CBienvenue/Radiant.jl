@@ -225,7 +225,8 @@ function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::
 
     # Load Boschini data for Mott cross-sections
     if this.formula_type == "mott"
-        data = load("./data/mott_data_boschini_2013.jld2")
+        path = joinpath(find_package_root(), "data", "mott_data_boschini_2013.jld2")
+        data = load(path)
         if ~haskey(data,particle) error("Mott cross-sections are only available for electrons and positrons.") end
         Nz = length(Z)
         this.bjk_boschini = Vector{Array{Float64}}(undef,Nz)

@@ -182,7 +182,8 @@ function preload_photoelectric_cross_sections(this::Photoelectric,Z::Vector{Int6
 
     if this.model == "jendl5"
 
-        data = load("./data/photoelectric_JENDL5.jld2")
+        path = joinpath(find_package_root(), "data", "photoelectric_JENDL5.jld2")
+        data = load(path)
         Nz = length(Z)
         E = Vector{Dict{String,Vector{Float64}}}(undef,Nz)
         σ = Vector{Dict{String,Vector{Float64}}}(undef,Nz)
@@ -207,7 +208,8 @@ function preload_photoelectric_cross_sections(this::Photoelectric,Z::Vector{Int6
 
     elseif this.model == "biggs_lighthill"
 
-        data = load("./data/photoelectric_biggs_lighthill_1988.jld2")
+        path = joinpath(find_package_root(), "data", "photoelectric_biggs_lighthill_1988.jld2")
+        data = load(path)
         Nz = length(Z)
         E⁻ = Vector{Vector{Float64}}(undef,Nz)
         M = Vector{Array{Float64}}(undef,Nz)

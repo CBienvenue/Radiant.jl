@@ -63,7 +63,8 @@ function atomic_electron_cascades(type::String,Z::Vector{Int64},Ecutoff::Float64
     Nz = length(Z)
     vec_ΔE = Vector{Vector{Vector{Float64}}}(undef,Nz)
     vec_η = Vector{Vector{Vector{Float64}}}(undef,Nz)
-    data = load("./data/relaxation_JENDL5.jld2")
+    path = joinpath(find_package_root(), "data", "relaxation_JENDL5.jld2")
+    data = load(path)
     
     for iz in range(1,Nz)
 

@@ -291,7 +291,8 @@ function preload_data(this::Compton,L::Int64,Z::Vector{Int64})
     S = Vector{Vector{Float64}}(undef,Nz)
     S_spline = Vector{Function}(undef,Nz)
     for iz in range(1,Nz)
-        data = load("./data/compton_factors_JENDL5.jld2")
+        path = joinpath(find_package_root(), "data", "compton_factors_JENDL5.jld2")
+        data = load(path)
         x[iz] = data["x"][Z[iz]]
         S[iz] = data["F"][Z[iz]]
         S_spline[iz] = cubic_hermite_spline(x[iz],S[iz])

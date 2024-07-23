@@ -327,18 +327,19 @@ function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz:
     spline_Cz = Vector{Function}(undef,Nz)
 
     # Read shell correction data
-    file = "./data/shell_corrections_salvat_2023.jld2"
+    path = joinpath(find_package_root(), "data", "shell_corrections_salvat_2023.jld2")
+    data = load(path)
     for iz in range(1,Nz)
-        data = load(file)[particle][Z[iz]]
+        datai = data[particle][Z[iz]]
         for n in range(1,153)
-            Cz_prime[iz,n] = data["modified_shell_corrections"][n]
-            E[iz,n] = data["energies"][n]
+            Cz_prime[iz,n] = datai["modified_shell_corrections"][n]
+            E[iz,n] = datai["energies"][n]
         end
-        Ec[iz] = data["cutoff_energy"]
+        Ec[iz] = datai["cutoff_energy"]
         for n in range(1,6)
-            pn[iz,n] = data["fit_parameters"][n]
+            pn[iz,n] = datai["fit_parameters"][n]
         end
-        S₀[iz] = data["S₀"]
+        S₀[iz] = datai["S₀"]
 
         spline_Cz[iz] = cubic_hermite_spline(E[iz,:],Cz_prime[iz,:])
     end

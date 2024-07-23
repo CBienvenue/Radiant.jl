@@ -427,8 +427,8 @@ end
 function preload_angular_distribution(this::Bremsstrahlung,Z::Vector{Int64})
 
     # Extract vectors
-    file = "./data/bremsstrahlung_photons_distribution_poskus_2019.jld2"
-    data = load(file)
+    path = joinpath(find_package_root(), "data", "bremsstrahlung_photons_distribution_poskus_2019.jld2")
+    data = load(path)
 
     # Extract scaled cross-sections
     Nz = length(Z)

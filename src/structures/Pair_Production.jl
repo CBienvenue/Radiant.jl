@@ -301,7 +301,8 @@ function preload_data(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin:
 end
 
 function preload_normalization_factor(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin::Float64,E_out::Vector{Float64})
-    data = load("./data/pair_production_JENDL5.jld2")
+    path = joinpath(find_package_root(), "data", "pair_production_JENDL5.jld2")
+    data = load(path)
     Nz = length(Z)
     E = Vector{Vector{Float64}}(undef,Nz)
     A = Vector{Vector{Float64}}(undef,Nz)
@@ -338,8 +339,8 @@ end
 function preload_angular_distribution(this::Pair_Production,Z::Vector{Int64})
 
     # Extract vectors
-    file = "./data/bremsstrahlung_photons_distribution_poskus_2019.jld2"
-    data = load(file)
+    path = joinpath(find_package_root(), "data", "bremsstrahlung_photons_distribution_poskus_2019.jld2")
+    data = load(path)
 
     # Extract scaled cross-sections
     Nz = length(Z)

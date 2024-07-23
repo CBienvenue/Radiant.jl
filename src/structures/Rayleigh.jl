@@ -96,7 +96,8 @@ end
 
 function preload_rayleigh_cross_sections(this::Rayleigh,Z::Vector{Int64})
 
-    data = load("./data/rayleigh_factors_JENDL5.jld2")
+    path = joinpath(find_package_root(), "data", "rayleigh_factors_JENDL5.jld2")
+    data = load(path)
     Nz = length(Z)
     x = Vector{Vector{Float64}}(undef,Nz)
     F = Vector{Vector{Float64}}(undef,Nz)
