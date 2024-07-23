@@ -27,10 +27,11 @@ mutable struct Compton <: Interaction
     is_elastic::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
+    is_waller_hartree_factor::Bool
     incoherent_scattering_factor::Function
 
     # Constructor(s)
-    function Compton()
+    function Compton(is_waller_hartree_factor::Bool=true)
         this = new()
         this.name = "compton"
         this.interaction_types = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])
@@ -42,6 +43,7 @@ mutable struct Compton <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
+        this.is_waller_hartree_factor = set_is_waller_hartree_factor(this,is_waller_hartree_factor)
         return this
     end
 end
@@ -69,6 +71,10 @@ julia> compton.set_interaction_types( Dict(("photons","photons") => ["S"]) ) # E
 """
 function set_interaction_types(this::Compton,interaction_types::Dict{Tuple{String,String},Vector{String}})
     this.interaction_types = interaction_types
+end
+
+function set_is_waller_hartree_factor(this::Compton,is_waller_hartree_factor::Bool)
+    this.is_waller_hartree_factor = is_waller_hartree_factor
 end
 
 function in_distribution(this::Compton)
@@ -161,7 +167,11 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
             # Compute the Legendre moments of the flux
             if σs != 0
                 μ = max(min(1 + 1/Ei - 1/Ef,1),-1)
-                S = this.incoherent_scattering_factor(iz,Ei,μ)
+                if this.is_waller_hartree_factor
+                    S = this.incoherent_scattering_factor(iz,Ei,μ)
+                else
+                    S = 1
+                end
                 Pℓμ = legendre_polynomials(L,μ)
                 for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * S end
             end
@@ -219,7 +229,11 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
             if σs != 0
                 μ = max(min((1 + Ei)/Ei * 1/sqrt(2/Eₑ+1),1),-1)
                 μγ = max(min(1 + 1/Ei - 1/Ef,1),-1)
-                S = this.incoherent_scattering_factor(iz,Ei,μγ)
+                if this.is_waller_hartree_factor
+                    S = this.incoherent_scattering_factor(iz,Ei,μγ)
+                else
+                    S = 1
+                end
                 Pℓμ = legendre_polynomials(L,μ)
                 for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * S end
             end
@@ -258,7 +272,11 @@ function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
             # Compute the differential scattering cross section
             if Ei/(1+2*Ei) ≤ Ef ≤ Ei
                 μ = max(min(1 + 1/Ei - 1/Ef,1),-1)
-                S = this.incoherent_scattering_factor(iz,Ei,μ)
+                if this.is_waller_hartree_factor
+                    S = this.incoherent_scattering_factor(iz,Ei,μ)
+                else
+                    S = 1
+                end
                 σs = S * π * rₑ^2 / Ei^2 * (Ei/Ef + Ef/Ei - 2*(1/Ef-1/Ei) + (1/Ef-1/Ei)^2)
             end
             
@@ -286,22 +304,24 @@ function preload_data(this::Compton,L::Int64,Z::Vector{Int64})
     end
     
     # Incoherent scattering factor
-    Nz = length(Z)
-    x = Vector{Vector{Float64}}(undef,Nz)
-    S = Vector{Vector{Float64}}(undef,Nz)
-    S_spline = Vector{Function}(undef,Nz)
-    for iz in range(1,Nz)
-        path = joinpath(find_package_root(), "data", "compton_factors_JENDL5.jld2")
-        data = load(path)
-        x[iz] = data["x"][Z[iz]]
-        S[iz] = data["F"][Z[iz]]
-        S_spline[iz] = cubic_hermite_spline(x[iz],S[iz])
-    end
-    this.incoherent_scattering_factor = function incoherent_scattering_factor(iz::Int64,Ei::Float64,μ::Float64)
-        hc = 1/20.60744 # (hc in mₑc² × Å)
-        xi = 2*Ei/(hc)*sqrt((1-μ)/2) * sqrt((1+(Ei^2+2*Ei)*(1-μ)/2))/(1+Ei*(1-μ))
-        Si = S_spline[iz](xi)
-        return Si
+    if this.is_waller_hartree_factor
+        Nz = length(Z)
+        x = Vector{Vector{Float64}}(undef,Nz)
+        S = Vector{Vector{Float64}}(undef,Nz)
+        S_spline = Vector{Function}(undef,Nz)
+        for iz in range(1,Nz)
+            path = joinpath(find_package_root(), "data", "compton_factors_JENDL5.jld2")
+            data = load(path)
+            x[iz] = data["x"][Z[iz]]
+            S[iz] = data["F"][Z[iz]]
+            S_spline[iz] = cubic_hermite_spline(x[iz],S[iz])
+        end
+        this.incoherent_scattering_factor = function incoherent_scattering_factor(iz::Int64,Ei::Float64,μ::Float64)
+            hc = 1/20.60744 # (hc in mₑc² × Å)
+            xi = 2*Ei/(hc)*sqrt((1-μ)/2) * sqrt((1+(Ei^2+2*Ei)*(1-μ)/2))/(1+Ei*(1-μ))
+            Si = S_spline[iz](xi)
+            return Si
+        end
     end
     
 end

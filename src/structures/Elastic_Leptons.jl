@@ -26,7 +26,7 @@ mutable struct Elastic_Leptons <: Interaction
     is_preload_data::Bool
     is_subshells_dependant::Bool
     is_kawrakow_correction::Bool
-    formula_type::String
+    model::String
     plasma_energy::Float64
     effective_mean_excitation_energy::Float64
     bjk_boschini::Vector{Array{Float64}}
@@ -34,7 +34,7 @@ mutable struct Elastic_Leptons <: Interaction
     Cℓki::Array{Float64}
 
     # Constructor(s)
-    function Elastic_Leptons()
+    function Elastic_Leptons(model="mott",is_kawrakow_correction=true,is_ETC=true,is_AFP=true)
         this = new()
         this.name = "elastic_leptons"
         this.interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
@@ -42,12 +42,12 @@ mutable struct Elastic_Leptons <: Interaction
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_elastic = true
-        this.is_ETC = true
-        this.is_AFP = true
+        this.is_ETC = set_transport_correction(this,is_ETC)
+        this.is_AFP = set_angular_fokker_planck(this,is_AFP)
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.is_kawrakow_correction = true
-        this.formula_type = "mott"
+        this.is_kawrakow_correction = set_kawrakow_correction(this,is_kawrakow_correction)
+        this.model = set_model(this,model)
         return this
     end
 
@@ -76,6 +76,23 @@ julia> elastic_leptons.set_interaction_types( Dict(("positrons","positrons") => 
 """
 function set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
     this.interaction_types = interaction_types
+end
+
+function set_model(this::Elastic_Leptons,model::String)
+    if lowercase(model) ∉ ["rutherford","mott"] error("Unkown elastic model: '$model'.") end
+    this.model = lowercase(model)
+end
+
+function set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool)
+    this.is_kawrakow_correction = is_kawrakow_correction
+end
+
+function set_transport_correction(this::Elastic_Leptons,is_ETC::Bool)
+    this.is_ETC = is_ETC
+end
+
+function set_angular_fokker_planck(this::Elastic_Leptons,is_AFP::Bool)
+    this.is_AFP = is_AFP
 end
 
 function in_distribution(this::Elastic_Leptons)
@@ -109,12 +126,12 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
     σℓ = zeros(L+1)
     η = Z^(2/3) * α^2 * (1.13 + 3.76 * (Z*α)^2/β² ) / (4 * (9*π^2/128)^(2/3) * Ei * (Ei+2) )
     ai = zeros(5)
-    if this.formula_type == "mott"
+    if this.model == "mott"
         b = this.bjk_boschini[iz]
         for j in range(0,4), k in range(1,6)
             ai[j+1] += b[j+1,k] * (β-β₀)^(k-1)
         end
-    elseif this.formula_type == "rutherford"
+    elseif this.model == "rutherford"
         ai[1] = 1
     else
         error("Unknown elastic formula.")
@@ -161,14 +178,12 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
             if particle == "electrons"
                 Wmax = (Ei-Ui[δi])/2
                 if Wc < Wmax
-                    Pi = 1 #Ei/(Ei+Ui[δi]+Ti[δi])
                     Jm₁(x) = ((Ei+2)*((Ei+2)*(x+Ui[δi])*log(x+Ui[δi])-(Ei+2)*(x+Ui[δi])*log(Ei-x+2)+Ui[δi]^2+(Ei+2)*Ui[δi]))/((Ui[δi]+Ei+2)^2*(x+Ui[δi]))
                     Jm₂(x) = ((Ei+2)^2*log(Ei-x)-(Ei+2)^2*log(Ei-x+2))/4-(Ei*(Ei+2))/(2*(x-Ei))
                     Jm₃(x) = -((Ei+2)*((Ei+2)*log(Ei-x+2)+x))/(Ei+1)^2
                     Jm₄(x) = ((Ei+2)*(2*Ei+1)*(2*Ui[δi]*log(x+Ui[δi])+Ei*(Ui[δi]+Ei+2)*log(Ei-x)-(Ei+2)*(Ui[δi]+Ei)*log(Ei-x+2)))/(2*(Ei+1)^2*(Ui[δi]+Ei)*(Ui[δi]+Ei+2))
-                    Jm₅(x) = 0 #4*Ti[δi]/3 * ( -((-Ei-2)*(Ei+2)*log(x+Ui[δi]))/(Ui[δi]^3+(3*Ei+6)*Ui[δi]^2+(3*Ei^2+12*Ei+12)*Ui[δi]+Ei^3+6*Ei^2+12*Ei+8)+((-Ei-2)*(Ei+2)*log(Ei-x))/8-((-Ei-2)*((Ei+2)*Ui[δi]^3+(3*Ei^2+12*Ei+12)*Ui[δi]^2+(3*Ei^3+18*Ei^2+36*Ei+24)*Ui[δi]+Ei^4+8*Ei^3+24*Ei^2+24*Ei)*log(Ei-x+2))/(8*Ui[δi]^3+(24*Ei+48)*Ui[δi]^2+(24*Ei^2+96*Ei+96)*Ui[δi]+8*Ei^3+48*Ei^2+96*Ei+64)+((-Ei-2)*(Ei+2))/((Ui[δi]^2+(2*Ei+4)*Ui[δi]+Ei^2+4*Ei+4)*(x+Ui[δi]))-((-Ei-2)*Ui[δi])/(2*(Ui[δi]+Ei+2)*(x+Ui[δi])^2)-((-Ei-2)*(Ei+2))/(4*(x-Ei))-((-Ei-2)*Ei)/(4*(x-Ei)^2) )
-                    Jm(x) = Jm₁(x) + Jm₂(x) + Jm₃(x) + Jm₄(x) + Jm₅(x)
-                    gM += Zi[δi]/Z * Pi * (Jm(Wmax) - Jm(Wc))
+                    Jm(x) = Jm₁(x) + Jm₂(x) + Jm₃(x) + Jm₄(x)
+                    gM += Zi[δi]/Z * (Jm(Wmax) - Jm(Wc))
                 end
             elseif particle == "positrons"
                 γ = Ei+1
@@ -192,9 +207,9 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
             end
 
         end
-        if this.formula_type == "mott"
+        if this.model == "mott"
             gR = 1/3 * ((30*(16*ai[5]*η^3+12*ai[5]*η^2-6*ai[3]*η^2-4*ai[3]*η+2*ai[1]*η+ai[1])*log(2*(η+1))-30*(16*ai[5]*η^3+12*ai[5]*η^2-6*ai[3]*η^2-4*ai[3]*η+2*ai[1]*η+ai[1])*log(2*η)+15*2^(3/2)*atan(1/sqrt(η))*sqrt(η)*(14*ai[4]*η^2+10*ai[4]*η-5*ai[2]*η-3*ai[2])-15*(32*ai[5]+7*2^(5/2)*ai[4])*η^2-5*(24*ai[5]+2^(11/2)*ai[4]-36*ai[3]-15*2^(3/2)*ai[2])*η+20*ai[5]+2^(9/2)*ai[4]+30*ai[3]+5*2^(7/2)*ai[2]-60*ai[1])/10)
-        elseif this.formula_type == "rutherford"
+        elseif this.model == "rutherford"
             gR = (1+2*η)*log(1+1/η)-2
         end
         ξ = 1 - gM/gR
@@ -224,7 +239,7 @@ end
 function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::String)
 
     # Load Boschini data for Mott cross-sections
-    if this.formula_type == "mott"
+    if this.model == "mott"
         path = joinpath(find_package_root(), "data", "mott_data_boschini_2013.jld2")
         data = load(path)
         if ~haskey(data,particle) error("Mott cross-sections are only available for electrons and positrons.") end

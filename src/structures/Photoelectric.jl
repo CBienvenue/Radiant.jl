@@ -29,7 +29,7 @@ mutable struct Photoelectric <: Interaction
     Cℓk::Array{Float64}
 
     # Constructor(s)
-    function Photoelectric()
+    function Photoelectric(model="jendl5")
         this = new()
         this.name = "photoelectric"
         this.interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"])
@@ -39,7 +39,7 @@ mutable struct Photoelectric <: Interaction
         this.is_AFP = false
         this.is_elastic = false
         this.is_preload_data = true
-        this.model = "jendl5"
+        this.model =set_model(this,model)
         if this.model == "jendl5"
             this.is_subshells_dependant = true
         elseif this.model == "biggs_lighthill"
@@ -75,6 +75,11 @@ julia> photoelectric.set_interaction_types( Dict(("photons","photons") => ["A"],
 """
 function set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple{String,String},Vector{String}})
     this.interaction_types = interaction_types
+end
+
+function set_model(this::Photoelectric,model::String)
+    if lowercase(model) ∉ ["jendl5","biggs_lighthill"] error("Unkown elastic model: '$model'.") end
+    this.model = lowercase(model)
 end
 
 function in_distribution(this::Photoelectric)

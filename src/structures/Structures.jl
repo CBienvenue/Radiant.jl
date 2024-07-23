@@ -64,6 +64,7 @@ RadiantObject = Union{
     Flux,
     Interaction
 }
+
 function Base.getproperty(object::RadiantObject,s::Symbol)
     if hasfield(typeof(object),s)
         return getfield(object,s)
@@ -72,10 +73,12 @@ function Base.getproperty(object::RadiantObject,s::Symbol)
             try
                 return function (x...) @eval $s($object,$x...) end
             catch
-                error("type RadiantObject has no field $s")
+                type = typeof(object)
+                error("The object of type '$type' has no function '$s'.")
             end
         else
-            error("type RadiantObject has no field $s")
+            type = typeof(object)
+            error("The object of type '$type' has no function '$s'.")
         end
     end
 end

@@ -150,9 +150,7 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
     # Close collisions
     if W ≥ 0 #Ui
         if particle == "electrons"
-           Pi = 1 #Ei/(Ei+Ui+Ti)
-           Gi = 0 #4*Ti/3 * (1/(W+Ui)^3 + 1/(Ei-W)^3)
-           F = Pi * ( 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui)) + Gi )
+           F = ( 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui)) )
         elseif particle == "positrons"
             b = ((γ-1)/γ)^2
             b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
@@ -198,10 +196,8 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::String,Z:
             Wmax = (Ei-Ui[δi])/2
             Wmin = Ei-Ec
             if Wmax > Wmin
-                Pi = 1 #Ei/(Ei+Ui[δi]+Ti[δi])
                 J₀⁻(x) = -1/(x+Ui[δi]) + 1/(Ei-x) + x/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * (log(x+Ui[δi])-log(Ei-x))/(Ei+Ui[δi])
-                #+ 4*Ti[δi]/3 * (1/(2*(Ei-x)^2)-1/(2*(x+Ui[δi])^2))
-                σt += 2*π*rₑ^2/β² * Zi[δi] * Pi * (J₀⁻(Wmax)-J₀⁻(Wmin))
+                σt += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁻(Wmax)-J₀⁻(Wmin))
             end
         end
     elseif particle == "positrons"
@@ -214,7 +210,7 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::String,Z:
             Wmax = Ei-Ui[δi]
             Wmin = Ei-Ec
             if Wmax > Wmin
-                J₀⁺(x) = -1/(x+Ui[δi]) - b1*log(x+Ui[δi])/Ei + b2*x/Ei^2 - b3*(x^2/2+Ui[δi]*x)/Ei^3 + b4*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^4   #-1/x - b1*log(x)/Ei + b2*x/Ei^2 - b3*x^2/(2*Ei^3) + b4*x^3/(3*Ei^4)
+                J₀⁺(x) = -1/(x+Ui[δi]) - b1*log(x+Ui[δi])/Ei + b2*x/Ei^2 - b3*(x^2/2+Ui[δi]*x)/Ei^3 + b4*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^4
                 σt += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁺(Wmax)-J₀⁺(Wmin))
             end
         end
@@ -256,9 +252,8 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
                 Wmax = (Ei-Ui[δi])/2
                 Wmin = Ei-Ec
                 if Wmax > Wmin
-                    Pi = 1 #Ei/(Ei+Ui[δi]+Ti[δi])
-                    J₁⁻(x) = log(x+Ui[δi]) + log(Ei-x) + (Ei+Ui[δi])/(Ei-x) + x*(x+2*Ui[δi])/(2*(Ei+1)^2) + (2*Ei+1)/(Ei+1)^2 * log(Ei-x) #+ 4*Ti[δi]/3 * ( (Ui[δi]+Ei)*(3*x+Ui[δi]-2*Ei)/(2*(x^3+(Ui[δi]-2*Ei)*x^2+(Ei^2-2*Ei*Ui[δi])*x+Ei^2*Ui[δi])) )
-                    Sc += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * Pi * (J₁⁻(Wmax)-J₁⁻(Wmin))
+                    J₁⁻(x) = log(x+Ui[δi]) + log(Ei-x) + (Ei+Ui[δi])/(Ei-x) + x*(x+2*Ui[δi])/(2*(Ei+1)^2) + (2*Ei+1)/(Ei+1)^2 * log(Ei-x)
+                    Sc += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * (J₁⁻(Wmax)-J₁⁻(Wmin))
                 end
             end
         elseif particle == "positrons"
@@ -271,7 +266,7 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
                 Wmax = Ei-Ui[δi]
                 Wmin = Ei-Ec
                 if Wmax > Wmin
-                    J₁⁺(x) = log(x+Ui[δi]) - b1*x/Ei + b2*(x^2/2+Ui[δi]*x)/Ei^2 - b3*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^3 + b4*(x^4/4+Ui[δi]*x^3+3*Ui[δi]^2*x^2/2+Ui[δi]^3*x)/Ei^4 #log(x)-Ui[δi]/x - b1*(Ui[δi]*log(x)+x)/Ei + b2*(x^2+2*Ui[δi]*x)/(2*Ei^2) - b3*x^2*(2*x+3*Ui[δi])/(6*Ei^3) + b4*x^3*(3*x+4*Ui[δi])/(12*Ei^4)
+                    J₁⁺(x) = log(x+Ui[δi]) - b1*x/Ei + b2*(x^2/2+Ui[δi]*x)/Ei^2 - b3*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^3 + b4*(x^4/4+Ui[δi]*x^3+3*Ui[δi]^2*x^2/2+Ui[δi]^3*x)/Ei^4
                     Sc += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * (J₁⁺(Wmax)-J₁⁺(Wmin))
                 end
             end
