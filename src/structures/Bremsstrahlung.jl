@@ -334,8 +334,8 @@ function preload_bremsstrahlung_cross_sections(this::Bremsstrahlung,Z::Vector{In
     χ = Vector{Array{Float64}}()
 
     # Extract vectors
-    file = "./data/bremsstrahlung_data_seltzer_berger_1986.jld2"
-    data = load(file)
+    path = joinpath(find_package_root(), "data", "bremsstrahlung_data_seltzer_berger_1986.jld2")
+    data = load(path)
     E = data["incident_electron_energy"] # (in mₑc²)
     r = data["radiative_energy_fraction"]
     if ( Emin < E[1] || Emax > E[end]) error("Energy less than 1 keV or more than 10 GeV not tabulated.") end
@@ -386,8 +386,8 @@ function preload_bremsstrahlung_stopping_powers(this::Bremsstrahlung,Z::Vector{I
     ϕ = Vector{Vector{Float64}}()
 
     # Extract vectors
-    file = "./data/bremsstrahlung_data_seltzer_berger_1986.jld2"
-    data = load(file)
+    path = joinpath(find_package_root(), "data", "bremsstrahlung_data_seltzer_berger_1986.jld2")
+    data = load(path)
     E = data["incident_electron_energy"] # (in mₑc²)
     if ( Emin < E[1] || Emax > E[end]) error("Energy less than 1 keV or more than 10 GeV not tabulated.") end
 
