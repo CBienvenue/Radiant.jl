@@ -204,7 +204,7 @@ function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Fl
                     break
                 end
             end
-            if ismissing(interaction) error("No inelastic leptons cross-sections defined.") end
+            if ismissing(interaction) interaction = Inelastic_Leptons() end
         elseif type == "P_brems"
             # Get impact ionization information for inelastic scattering
             for i in interactions
@@ -213,7 +213,7 @@ function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Fl
                     break
                 end
             end
-            if ismissing(interaction) error("No bremsstrahlung cross-sections defined.") end
+            if ismissing(interaction) interaction = Bremsstrahlung() end
             interaction.preload_data(Z,Emax,Emin,L)
         elseif type == "P_pp"
             # Get impact ionization information for inelastic scattering
@@ -223,7 +223,7 @@ function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Fl
                     break
                 end
             end
-            if ismissing(interaction) error("No pair production cross-sections defined.") end
+            if ismissing(interaction) interaction = Pair_Production() end
             interaction.preload_data(Z,Emax,Emin,Eout,L)
         end
         this.prior_interaction = interaction
