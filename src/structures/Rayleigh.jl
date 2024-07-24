@@ -24,8 +24,8 @@ mutable struct Rayleigh <: Interaction
     is_preload_data::Bool
     is_subshells_dependant::Bool
     is_ETC::Bool
-
     rayleigh_cross_sections::Function
+    scattering_model::String
 
     # Constructor(s)
     function Rayleigh()
@@ -40,6 +40,7 @@ mutable struct Rayleigh <: Interaction
         this.is_preload_data = true
         this.is_subshells_dependant = false
         this.is_ETC = true
+        this.scattering_model = "BTE"
         return this
     end
 

@@ -29,6 +29,7 @@ mutable struct Compton <: Interaction
     is_subshells_dependant::Bool
     is_waller_hartree_factor::Bool
     incoherent_scattering_factor::Function
+    scattering_model::String
 
     # Constructor(s)
     function Compton(;
@@ -49,6 +50,7 @@ mutable struct Compton <: Interaction
         this.is_preload_data = true
         this.is_subshells_dependant = false
         this.set_is_waller_hartree_factor(is_waller_hartree_factor)
+        this.scattering_model = "BTE"
         return this
     end
 end

@@ -10,7 +10,6 @@ Produce the multigroup macroscopic cross sections.
 - 'Efᵇ::Vector{Float64}': energy boundaries of the outgoing particle [in MeV].
 - 'L::Int64': Legendre truncation order.
 - 'interaction::Interaction': structure containing information about the interaction.
-- 'solver::String': type of transport solver.
 
 # Output Argument(s)
 - 'Σsℓ::Array{Float64,3}': Legendre moments of the differential cross section [in cm⁻¹].
@@ -27,7 +26,7 @@ Produce the multigroup macroscopic cross sections.
   Cross-Section Generating Code.
 
 """
-function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::String,scattered_particle::String,solver::String,particles::Vector{String},Npts::Int64,isStandard)
+function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::String,scattered_particle::String,particles::Vector{String},Npts::Int64,isStandard)
 
 if isStandard
     println("Start of ",interaction.name," calculations.") 
@@ -72,10 +71,10 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
         # Boundary between catastrophic and soft interactions
         ΔE_soft = (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺) + (Ei⁻-2*Ei⁺+Ei²⁺)/(Ei⁻-Ei⁺) * Ei
         Ec = Ei-ΔE_soft
-        if (solver ∈ ["FP","CSD"]) Ec = 0.0 end
+        if (interaction.scattering_model == "FP") Ec = 0.0 end
 
         # Total cross sections
-        if type != "P" && ~(solver ∈ ["FP","CSD"] && type == "S")
+        if type != "P" && ~(interaction.scattering_model == "FP" && type == "S")
             Nz = length(Z)
             Σtᵢ = 0.0
             for i in range(1,Nz)
@@ -96,7 +95,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
 
         # Scattering cross sections
         if type == "A" continue end # No scattering for absorption interaction
-        if ~(solver ∈ ["FP","CSD"] && type == "S")
+        if ~(interaction.scattering_model == "FP" && type == "S")
             𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,Npts,full_type,incoming_particle,scattered_particle,E_in,Ec)
             if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
             for gf in range(1,Ngf)
@@ -106,7 +105,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
         end
 
         # Momentum transfer
-        if  (interaction.name == "mott" && solver ∈ ["FP","CSD"]) || (interaction.is_CSD && type != "P") && solver ∉ ["BCSD","BFP-EF"]
+        if  (interaction.name == "mott" && interaction.scattering_model == "FP") || (interaction.is_CSD && type != "P")
             Nz = length(Z)
             α[gi] = 0.0
             for i in range(1,Nz)
@@ -115,7 +114,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
             if is_dirac α[gi] ./= ΔEi end
         end
 
-         # Stopping power
+        # Stopping power
         if (interaction.is_CSD) && type != "P"
             Sm[gi] += 1/2 * w[ni] * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_in[end],E_out)
             if is_dirac Sm[gi] ./= ΔEi end
@@ -130,7 +129,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
     end
 
     # Elastic transport corrections
-    Σt[gi],Σsℓ[gi,gi,:],α[gi] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:],α[gi],solver)
+    Σt[gi],Σsℓ[gi,gi,:],α[gi] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:],α[gi],interaction.scattering_model)
 
 end
 

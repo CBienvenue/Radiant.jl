@@ -31,10 +31,12 @@ mutable struct Inelastic_Leptons <: Interaction
     plasma_energy::Float64
     effective_mean_excitation_energy::Float64
     shell_correction::Function
+    scattering_model::String
 
     # Constructor(s)
     function Inelastic_Leptons(;
         ### Initial values ###
+        scattering_model="BFP",
         is_subshells_dependant = true,
         is_shell_correction = true,
         density_correction = "fano",
@@ -53,6 +55,7 @@ mutable struct Inelastic_Leptons <: Interaction
         this.is_preload_data = true
         this.set_is_subshells_dependant(is_subshells_dependant)
         this.set_is_shell_correction(is_shell_correction)
+        this.set_scattering_model(scattering_model)
         return this
     end
 end
@@ -152,6 +155,32 @@ julia> elastic_leptons.set_is_subshells_dependant(false)
 """
 function set_is_subshells_dependant(this::Inelastic_Leptons,is_subshells_dependant::Bool)
     this.is_subshells_dependant = is_subshells_dependant
+end
+
+"""
+    scattering_model(this::Inelastic_Leptons,scattering_model::String)
+
+To define the solver for inelastic scattering.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons`: inelastic structure.
+- `solver::String`: solver for inelastic scattering, which can be:
+    - `BFP`: Boltzmann Fokker-Planck solver.
+    - `FP`: Fokker-Planck solver.
+    - `BTE`: Boltzmann solver.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Inelastic_Leptons()
+julia> elastic_leptons.set_scattering_model("FP")
+```
+"""
+function set_scattering_model(this::Inelastic_Leptons,scattering_model::String)
+    if uppercase(scattering_model) ∉ ["BFP","FP","BTE"] error("Unknown scattering model (should be BFP, FP or BTE).") end
+    this.scattering_model = uppercase(scattering_model)
 end
 
 function in_distribution(this::Inelastic_Leptons)

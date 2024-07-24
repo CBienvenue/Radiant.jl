@@ -27,6 +27,7 @@ mutable struct Photoelectric <: Interaction
     photoelectric_cross_sections::Function
     model::String
     Cℓk::Array{Float64}
+    scattering_model::String
 
     # Constructor(s)
     function Photoelectric(;
@@ -52,6 +53,7 @@ mutable struct Photoelectric <: Interaction
         else    
             error("Unknown photoelectric model.")
         end
+        this.scattering_model = "BTE"
         return this
     end
 

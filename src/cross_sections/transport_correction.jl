@@ -1,6 +1,6 @@
 function transport_correction(interaction::Interaction,L::Int64,Σt::Float64,Σsℓ::Vector{Float64},α::Float64,solver)
 
-if interaction.is_elastic && solver ∈ ["BFP","BCSD","BFP-EF"]
+if interaction.is_elastic && solver ∈ ["BFP","BTE"]
 
     # Find the last non-zero Legendre moment
     ℓmax = L

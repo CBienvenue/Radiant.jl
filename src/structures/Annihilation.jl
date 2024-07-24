@@ -29,6 +29,7 @@ mutable struct Annihilation <: Interaction
     is_preload_data::Bool
     is_subshells_dependant::Bool
     prior_interaction::Interaction
+    scattering_model::String
 
     # Constructor(s)
     function Annihilation(;
@@ -46,6 +47,7 @@ mutable struct Annihilation <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
+        this.scattering_model = "BTE"
         return this
     end
 end

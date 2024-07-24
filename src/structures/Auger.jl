@@ -28,10 +28,10 @@ mutable struct Auger <: Interaction
     is_subshells_dependant::Bool
     photoelectric_cross_sections::Function
     inelastic::Vector{Vector{Function}}
-
     η::Vector{Vector{Vector{Float64}}}
     ΔE::Vector{Vector{Vector{Float64}}}
     ηmin::Float64
+    scattering_model::String
 
     # Constructor(s)
     function Auger(;
@@ -51,6 +51,7 @@ mutable struct Auger <: Interaction
         this.is_preload_data = true
         this.is_subshells_dependant = true
         this.set_minimum_probability(ηmin)
+        this.scattering_model = "BTE"
         return this
     end
 

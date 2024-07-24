@@ -33,6 +33,7 @@ mutable struct Elastic_Leptons <: Interaction
     bjk_boschini::Vector{Array{Float64}}
     Cℓk::Array{Float64}
     Cℓki::Array{Float64}
+    scattering_model::String
 
     # Constructor(s)
     function Elastic_Leptons(;
@@ -58,6 +59,7 @@ mutable struct Elastic_Leptons <: Interaction
         this.is_subshells_dependant = false
         this.set_kawrakow_correction(is_kawrakow_correction,subshell_dependant_inelastic)
         this.set_model(model)
+        this.scattering_model = "BFP"
         return this
     end
 

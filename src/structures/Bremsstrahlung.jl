@@ -34,10 +34,12 @@ mutable struct Bremsstrahlung <: Interaction
     bremsstrahlung_cross_sections::Function
     bremsstrahlung_stopping_powers::Function
     bremsstrahlung_photons_distribution::Function
+    scattering_model::String
 
     # Constructor(s)
     function Bremsstrahlung(;
         ### Initial values ###
+        scattering_model="BFP",
         angular_scattering_type="modified_dipole",
         interaction_types = Dict(("electrons","electrons") => ["S"],("electrons","photons") => ["P"],("positrons","positrons") => ["S"],("positrons","photons") => ["P"])
         ######################
@@ -53,6 +55,7 @@ mutable struct Bremsstrahlung <: Interaction
         this.is_preload_data = true
         this.is_subshells_dependant = false
         this.set_angular_scattering_type(angular_scattering_type)
+        this.set_scattering_model(scattering_model)
         return this
     end
 
@@ -106,6 +109,32 @@ julia> bremsstrahlung.set_angular_scattering_type("sommerfield")
 function set_angular_scattering_type(this::Bremsstrahlung,angular_scattering_type::String)
     if lowercase(angular_scattering_type) ∉ ["modified_dipole","sommerfield"] error("Undefined angular distribution.") end
     this.angular_scattering_type = lowercase(angular_scattering_type)
+end
+
+"""
+    scattering_model(this::Bremsstrahlung,scattering_model::String)
+
+To define the solver for bremsstrahlung scattering.
+
+# Input Argument(s)
+- `this::Bremsstrahlung`: bremsstrahlung structure.
+- `solver::String`: solver for bremsstrahlung scattering, which can be:
+    - `BFP`: Boltzmann Fokker-Planck solver.
+    - `FP`: Fokker-Planck solver.
+    - `BTE`: Boltzmann solver.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> bremsstrahlung = Bremsstrahlung()
+julia> bremsstrahlung.set_scattering_model("FP")
+```
+"""
+function set_scattering_model(this::Bremsstrahlung,scattering_model::String)
+    if uppercase(scattering_model) ∉ ["BFP","FP","BTE"] error("Unknown scattering model (should be BFP, FP or BTE).") end
+    this.scattering_model = uppercase(scattering_model)
 end
 
 function in_distribution(this::Bremsstrahlung)

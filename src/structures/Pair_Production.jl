@@ -33,6 +33,7 @@ mutable struct Pair_Production <: Interaction
     normalization_factor::Function
     angular_distribution::Function
     is_triplet_contribution::Bool
+    scattering_model::String
 
     # Constructor(s)
     function Pair_Production(;
@@ -52,6 +53,7 @@ mutable struct Pair_Production <: Interaction
         this.is_preload_data = true
         this.is_subshells_dependant = false
         this.set_angular_scattering_type(angular_scattering_type)
+        this.scattering_model = "BTE"
         return this
     end
 end

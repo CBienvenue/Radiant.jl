@@ -17,7 +17,6 @@ Structure used to define the parameters to extract or build a multigroup cross-s
     - `group_structure::String="log"`: type of group discretization.
     - `legendre_order::Int64`: maximum order of the angular Legendre moments of the differential cross-sections.
     - `interactions::Vector{Interaction}`: list of interaction.
-    - `solvers::Vector{String}`: list of solver per particle.
 
 # Optional field(s) - with default values
 - `cutoff::Float64=0.001`: lower energy bound of the lowest energy group (cutoff energy) [in MeV].
@@ -38,7 +37,6 @@ mutable struct Cross_Sections
     number_of_groups          ::Union{Missing,Vector{Int64}}
     group_structure           ::Union{Missing,Vector{String},String}
     interactions              ::Union{Missing,Vector{Interaction}}
-    solvers                   ::Union{Missing,Vector{String},String}
     legendre_order            ::Union{Missing,Int64}
     energy_boundaries         ::Union{Missing,Vector{Vector{Float64}}}
     multigroup_cross_sections ::Union{Missing,Array{Multigroup_Cross_Sections}}
@@ -61,7 +59,6 @@ mutable struct Cross_Sections
         this.number_of_groups = missing
         this.group_structure = missing
         this.interactions = missing
-        this.solvers = missing
         this.legendre_order = missing
         this.is_build = false
         this.multigroup_cross_sections = missing
@@ -83,12 +80,21 @@ function is_ready_to_build(this::Cross_Sections)
         if ismissing(this.number_of_groups) error("Cannot build multigroup cross-sections data. The number of energy group is not specified.") end
         if ismissing(this.group_structure) error("Cannot build multigroup cross-sections data. The multigroup structure is not specified.") end
         if ismissing(this.interactions) error("Cannot build multigroup cross-sections data. The type of interaction(s) between particle(s) and the material are not specified.") end
-        if ismissing(this.solvers) error("Cannot build multigroup cross-sections data. The type of solver(s) for each particle transport are not specified.") end
         if ismissing(this.legendre_order) error("Cannot build multigroup cross-sections data. The order for the Legendre expansion of differential scattering cross-sections is not specified.") end
     else
         error("Unkown source of cross-sections data.")
     end
+    if length(this.number_of_groups) == 1
+        this.number_of_groups = fill(this.number_of_groups[1],this.number_of_particles)
+    elseif length(this.number_of_groups) != this.number_of_particles
+        error("The number of groups information do not fit the number of particles.")
+    end
     if this.number_of_materials == 0 error("Cannot build multigroup cross-sections data. The material names are not specified.") end
+    if length(this.group_structure) == 1
+        this.group_structure = fill(this.group_structure[1],this.number_of_particles)
+    elseif length(this.group_structure) != this.number_of_particles
+        error("The number of groups structure information do not fit the number of particles.")
+    end
 end
 
 """
@@ -217,7 +223,8 @@ julia> cs = Cross_Sections()
 julia> cs.set_materials([mat1,mat2])
 ```
 """
-function set_materials(this::Cross_Sections,materials::Vector{Material})
+function set_materials(this::Cross_Sections,materials::Union{Vector{Material},Material})
+    if typeof(materials) == Material materials = [materials] end
     if length(materials) == 0 error("At least one material should be provided.") end
     this.materials = materials
     this.number_of_materials += length(materials)
@@ -317,9 +324,10 @@ julia> cs.set_particles(["electrons","photons","positrons"])
 julia> cs.set_number_of_groups([80,20,80]) # 80 groups with leptons, 20 with photons
 ```
 """
-function set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int64})
+function set_number_of_groups(this::Cross_Sections,number_of_groups::Union{Vector{Int64},Int64})
+    if (typeof(number_of_groups) == Int64) number_of_groups = [number_of_groups] end
     for g in number_of_groups if g ≤ 0 error("The number of energy groups should be at least one.") end end
-    this.number_of_groups = number_of_groups
+    this.number_of_groups =  number_of_groups
 end
 
 """
@@ -376,37 +384,6 @@ function set_interactions(this::Cross_Sections,interactions::Union{Vector{<:Inte
     if (typeof(interactions) <: Interaction) interactions = [interactions] end
     if length(interactions) == 0 error("At least one interaction should be provided.") end
     this.interactions = interactions
-end
-
-"""
-    set_solvers(this::Cross_Sections,solvers::Vector{String})
-
-To set the transport solver per particle.
-
-# Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `solvers::Vector{String}`: list of the transport to use per particle, which is defined by
-    - `solvers[i] = "BTE"`: Boltzmann transport equation
-    - `solvers[i] = "BFP"`: Boltzmann Fokker-Planck equation
-    - `solvers[i] = "BCSD"`: Boltzmann-CSD equation
-    - `solvers[i] = "FP"`: Fokker-Planck equation
-    - `solvers[i] = "CSD"`: Continuous slowing-down only equation
-    - `solvers[i] = "BFP-EF"`: Boltzmann Fokker-Planck without elastic
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> cs = Cross_Sections()
-julia> cs.set_particles(["electrons","photons"])
-julia> cs.set_group_structure("BFP","BTE"]) # BFP for electrons, BTE for photons 
-```
-"""
-function set_solvers(this::Cross_Sections,solvers::Union{Vector{String},String})
-    if typeof(solvers) == String solvers = [solvers] end 
-    for solver in solvers if uppercase(solver) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("The solver type is either BTE, BFP, BCSD, FP, CSD or BFP-EF.") end end
-    this.solvers = solvers
 end
 
 """
@@ -586,10 +563,6 @@ end
 
 function get_legendre_order(this::Cross_Sections)
     return this.legendre_order
-end
-
-function get_solvers(this::Cross_Sections)
-    return this.solvers
 end
 
 function get_group_structure(this::Cross_Sections)
