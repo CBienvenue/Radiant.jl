@@ -28,7 +28,7 @@ julia> using Pkg
 julia> Pkg.add("Radiant")
 ```
 or
-```julia
+```
 julia> ]
 pkg> add Radiant
 ```
@@ -63,7 +63,7 @@ Open Julia REPL interactive session by launching Julia from a terminal or comman
 > julia
 ```
 in it. Create a new environment in the project directory using
-```julia
+```
 julia> ]
 pkg> activate .
 ```
