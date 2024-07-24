@@ -5,6 +5,7 @@ using Radiant
 makedocs(
     sitename = "RADIANT",
     pages = [
+        "Installation Guide" => ["Quick Start" => "quick_start.md"],
         "Examples" => [
             "Production of cross-sections" => "example_cross_sections.md"
             "Transport calculations" => "transport_calculations.md"
