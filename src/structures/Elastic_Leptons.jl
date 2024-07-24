@@ -40,7 +40,6 @@ mutable struct Elastic_Leptons <: Interaction
         ### Initial values ###
         model="mott",
         is_kawrakow_correction=true,
-        subshell_dependant_inelastic=true,
         is_ETC=true,
         is_AFP=true,
         interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
@@ -57,7 +56,7 @@ mutable struct Elastic_Leptons <: Interaction
         this.set_angular_fokker_planck(is_AFP)
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.set_kawrakow_correction(is_kawrakow_correction,subshell_dependant_inelastic)
+        this.set_kawrakow_correction(is_kawrakow_correction)
         this.set_model(model)
         this.scattering_model = "BFP"
         return this
@@ -133,9 +132,9 @@ julia> elastic_leptons = Elastic_Leptons()
 julia> elastic_leptons.set_kawrakow_correction(false)
 ```
 """
-function set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool,subshell_dependant_inelastic::Bool=true)
+function set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool)
     this.is_kawrakow_correction = is_kawrakow_correction
-    this.subshell_dependant_inelastic = subshell_dependant_inelastic
+    this.subshell_dependant_inelastic = true
 end
 
 """
@@ -327,7 +326,7 @@ function tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::String,Ecutoff
     return σt
 end
 
-function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::String)
+function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::String,interactions::Vector{Interaction})
 
     # Load Boschini data for Mott cross-sections
     if this.model == "mott"
@@ -348,6 +347,16 @@ function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::
         this.Cℓk[ℓ+1,k+1] = (-1)^k * exp( sum(log.(1:2*ℓ-2*k)) - sum(log.(1:k)) - sum(log.(1:ℓ-k)) - sum(log.(1:ℓ-2*k)) )
         for i in range(0,1), g in range(0,ℓ-2*k+i)
             this.Cℓki[ℓ+1,k+1,i+1,g+1] = 2 * exp( sum(log.(1:ℓ-2*k+i)) - sum(log.(1:g)) - sum(log.(1:ℓ-2*k+i-g)) ) * (-1)^g
+        end
+    end
+
+    # Get impact ionization information for inelastic scattering
+    if this.is_kawrakow_correction
+        for interaction in interactions
+            if typeof(interaction) == Inelastic_Leptons
+                this.subshell_dependant_inelastic = interaction.is_subshells_dependant
+                break
+            end
         end
     end
     

@@ -171,16 +171,16 @@ function mt_dispatch(interaction::Interaction,Ei::Float64,Ec::Float64)
     end
 end
 
-function preload_data_dispatch(interaction::Interaction,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,ωz::Vector{Float64},ρ::Float64,Eout::Vector{Float64},particle::String,type::String,Ein::Vector{Float64})
+function preload_data_dispatch(interaction::Interaction,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,ωz::Vector{Float64},ρ::Float64,Eout::Vector{Float64},particle::String,type::String,Ein::Vector{Float64},interactions::Vector{Interaction})
     itype = typeof(interaction)
     if itype == Annihilation
-        return  preload_data(interaction,Z,Emax,Emin,L,type,Eout,Ein)
+        return  preload_data(interaction,Z,Emax,Emin,L,type,Eout,Ein,interactions)
     elseif itype == Bremsstrahlung
         return preload_data(interaction,Z,Emax,Emin,L)
     elseif itype == Compton
         return preload_data(interaction,L,Z)
     elseif itype == Elastic_Leptons
-        return preload_data(interaction,Z,L,particle)
+        return preload_data(interaction,Z,L,particle,interactions)
     elseif itype == Inelastic_Leptons
         return preload_data(interaction,Z,ωz,ρ,particle)
     elseif itype == Pair_Production

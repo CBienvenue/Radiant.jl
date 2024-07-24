@@ -26,7 +26,7 @@ Produce the multigroup macroscopic cross sections.
   Cross-Section Generating Code.
 
 """
-function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::String,scattered_particle::String,particles::Vector{String},Npts::Int64,isStandard)
+function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::String,scattered_particle::String,particles::Vector{String},Npts::Int64,isStandard,interactions::Vector{Interaction})
 
 if isStandard
     println("Start of ",interaction.name," calculations.") 
@@ -52,7 +52,7 @@ is_dirac, Np, q_type = in_distribution_dispatch(interaction,full_type)
 if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
 
 # Preloading data for calculations
-if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_in[end],L,ωz,ρ,E_out,incoming_particle,full_type,E_in) end
+if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_in[end],L,ωz,ρ,E_out,incoming_particle,full_type,E_in,interactions) end
 
 # Compute cross sections in each energy group
 @inbounds for gi in range(1,Ngi)

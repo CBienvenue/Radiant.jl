@@ -63,7 +63,7 @@ for i in range(1,Npart), n in range(1,Nmat)
                 if pin != particles[i] || pout != particles[j] continue end
                 for type in interaction.get_types(pin,pout)
                     println([type,particles[i],particles[j]])
-                    Σsℓi, Σti, Σai, Σsi, Σei, Σci, Si, αi = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,pin,pout,particles,8,true)
+                    Σsℓi, Σti, Σai, Σsi, Σei, Σci, Si, αi = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,pin,pout,particles,8,true,interactions)
                     Σsℓ .+= Σsℓi; Σt .+= Σti; Σa .+= Σai; Σs .+= Σsi; Σe .+= Σei; Σc .+= Σci; S .+= Si; α .+= αi;
                 end
             end

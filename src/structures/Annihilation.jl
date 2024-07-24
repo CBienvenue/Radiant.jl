@@ -190,17 +190,40 @@ function tcs(this::Annihilation,Ei::Float64,Z::Int64)
     return σt
 end
 
-function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,type::String,Eout::Vector{Float64},Ein::Vector{Float64})
+function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,type::String,Eout::Vector{Float64},Ein::Vector{Float64},interactions::Vector{Interaction})
+    
 
     # Preload interaction prior to positron scattering under the cutoff
+    interaction = missing
     if type ∈ ["P_inel","P_brems","P_pp"]
         if type == "P_inel"
-            interaction = Inelastic_Leptons()
+            # Get impact ionization information for inelastic scattering
+            for i in interactions
+                if typeof(i) == Inelastic_Leptons
+                    interaction = i
+                    break
+                end
+            end
+            if ismissing(interaction) error("No inelastic leptons cross-sections defined.") end
         elseif type == "P_brems"
-            interaction = Bremsstrahlung()
+            # Get impact ionization information for inelastic scattering
+            for i in interactions
+                if typeof(i) == Bremsstrahlung
+                    interaction = i
+                    break
+                end
+            end
+            if ismissing(interaction) error("No bremsstrahlung cross-sections defined.") end
             interaction.preload_data(Z,Emax,Emin,L)
         elseif type == "P_pp"
-            interaction = Pair_Production()
+            # Get impact ionization information for inelastic scattering
+            for i in interactions
+                if typeof(i) == Pair_Production
+                    interaction = i
+                    break
+                end
+            end
+            if ismissing(interaction) error("No pair production cross-sections defined.") end
             interaction.preload_data(Z,Emax,Emin,Eout,L)
         end
         this.prior_interaction = interaction
