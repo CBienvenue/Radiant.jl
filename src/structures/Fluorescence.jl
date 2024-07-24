@@ -34,10 +34,15 @@ mutable struct Fluorescence <: Interaction
     ηmin::Float64
 
     # Constructor(s)
-    function Fluorescence()
+    function Fluorescence(;
+        ### Initial values ###
+        ηmin = 0.001,
+        interaction_types = Dict(("photons","photons") => ["P"],("electrons","photons") => ["P"],("positrons","photons") => ["P"])
+        ######################
+        )
         this = new()
         this.name = "fluorescence"
-        this.interaction_types = Dict(("photons","photons") => ["P"],("electrons","photons") => ["P"],("positrons","photons") => ["P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -45,7 +50,7 @@ mutable struct Fluorescence <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = true
-        this.ηmin = 0.001
+        this.set_minimum_probability(ηmin)
         return this
     end
 

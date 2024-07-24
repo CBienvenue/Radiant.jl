@@ -72,47 +72,6 @@ mutable struct Cross_Sections
 end
 
 # Method(s)
-Base.propertynames(::Cross_Sections) = 
-(
-    fieldnames(Cross_Sections)...,
-    :set_source,
-    :set_file,
-    :set_materials,
-    :set_particles,
-    :set_energy,
-    :set_cutoff,
-    :set_number_of_groups,
-    :set_group_structure,
-    :set_energy_boundaries,
-    :set_interactions,
-    :set_solvers,
-    :set_legendre_order,
-    :set_multigroup_cross_sections,
-    :get_file,
-    :get_materials,
-    :get_number_of_materials,
-    :get_particles,
-    :get_number_of_groups,
-    :get_energy_boundaries,
-    :get_energies,
-    :get_energy_width,
-    :get_total,
-    :get_absorption,
-    :get_scattering,
-    :get_stopping_powers,
-    :get_momentum_transfer,
-    :get_energy_deposition,
-    :get_charge_deposition,
-    :get_densities,
-    :get_energy,
-    :get_cutoff,
-    :get_legendre_order,
-    :get_solvers,
-    :get_group_structure,
-    :get_interactions,
-    :build
-)
-
 function is_ready_to_build(this::Cross_Sections)
     if ismissing(this.source) error("Cannot build multigroup cross-sections data. The source of cross-sections data is not specified.") end
     if uppercase(this.source) == "FMAC-M"
@@ -265,7 +224,7 @@ function set_materials(this::Cross_Sections,materials::Vector{Material})
 end
 
 """
-    set_particles(this::Cross_Sections,particles::Vector{String})
+    set_particles(this::Cross_Sections,particles::Union{Vector{String},String})
 
 To set the list of particles for which to produce coupled library of cross-sections.
 
@@ -285,7 +244,8 @@ julia> cs = Cross_Sections()
 julia> cs.set_particles(["electrons","photons","positrons"])
 ```
 """
-function set_particles(this::Cross_Sections,particles::Vector{String})
+function set_particles(this::Cross_Sections,particles::Union{Vector{String},String})
+    if typeof(particles) == String particles = [particles] end 
     if length(particles) == 0 error("At least one particle should be provided.") end
     for p in particles if lowercase(p) ∉ ["photons","electrons","positrons"] error("Unknown particle type") end end
     this.particles = particles
@@ -363,7 +323,7 @@ function set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int6
 end
 
 """
-    set_group_structure(this::Cross_Sections,group_structure::Vector{String})
+    set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String})
 
 To set the type of energy discretization structure per particle.
 
@@ -383,7 +343,8 @@ julia> cs.set_particles(["electrons","photons","positrons"])
 julia> cs.set_group_structure(["log","linear","log"]) # 80 groups with leptons, 20 with photons
 ```
 """
-function set_group_structure(this::Cross_Sections,group_structure::Vector{String})
+function set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String})
+    if typeof(group_structure) == String group_structure = [group_structure] end 
     for g in group_structure if g ∉ ["linear","log"] error("The group structure are either linearly or logarithmically spaced.") end end
     this.group_structure = group_structure
 end
@@ -411,7 +372,8 @@ julia> cs.set_particles(["electrons"])
 julia> cs.set_interactions([Elastic_Leptons(),Inelastic_Leptons(),Bremsstrahlung(), Auger()])
 ```
 """
-function set_interactions(this::Cross_Sections,interactions::Vector{Interaction})
+function set_interactions(this::Cross_Sections,interactions::Union{Vector{<:Interaction},<:Interaction})
+    if (typeof(interactions) <: Interaction) interactions = [interactions] end
     if length(interactions) == 0 error("At least one interaction should be provided.") end
     this.interactions = interactions
 end
@@ -441,7 +403,8 @@ julia> cs.set_particles(["electrons","photons"])
 julia> cs.set_group_structure("BFP","BTE"]) # BFP for electrons, BTE for photons 
 ```
 """
-function set_solvers(this::Cross_Sections,solvers::Vector{String})
+function set_solvers(this::Cross_Sections,solvers::Union{Vector{String},String})
+    if typeof(solvers) == String solvers = [solvers] end 
     for solver in solvers if uppercase(solver) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("The solver type is either BTE, BFP, BCSD, FP, CSD or BFP-EF.") end end
     this.solvers = solvers
 end

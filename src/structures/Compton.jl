@@ -31,10 +31,15 @@ mutable struct Compton <: Interaction
     incoherent_scattering_factor::Function
 
     # Constructor(s)
-    function Compton(is_waller_hartree_factor::Bool=true)
+    function Compton(;
+        ### Initial values ###
+        is_waller_hartree_factor=true,
+        interaction_types = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])
+        ######################
+        )
         this = new()
         this.name = "compton"
-        this.interaction_types = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.energy_integration_method = "quadrature"
@@ -43,7 +48,7 @@ mutable struct Compton <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.is_waller_hartree_factor = set_is_waller_hartree_factor(this,is_waller_hartree_factor)
+        this.set_is_waller_hartree_factor(is_waller_hartree_factor)
         return this
     end
 end
@@ -73,6 +78,24 @@ function set_interaction_types(this::Compton,interaction_types::Dict{Tuple{Strin
     this.interaction_types = interaction_types
 end
 
+"""
+    set_is_waller_hartree_factor(this::Compton,is_waller_hartree_factor::Bool)
+
+To active or desactivate the Waller-Hartree incohent scattering factor.
+
+# Input Argument(s)
+- `this::Compton`: compton structure.
+- `is_waller_hartree_factor::Bool`: enable (true) or disable (false) the Waller-Hartree factor.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> compton = Compton()
+julia> compton.set_is_waller_hartree_factor(false)
+```
+"""
 function set_is_waller_hartree_factor(this::Compton,is_waller_hartree_factor::Bool)
     this.is_waller_hartree_factor = is_waller_hartree_factor
 end

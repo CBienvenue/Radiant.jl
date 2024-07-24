@@ -29,10 +29,15 @@ mutable struct Photoelectric <: Interaction
     Cℓk::Array{Float64}
 
     # Constructor(s)
-    function Photoelectric(model="jendl5")
+    function Photoelectric(;
+        ### Initial values ###
+        model="jendl5",
+        interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"])
+        ######################
+        )
         this = new()
         this.name = "photoelectric"
-        this.interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -77,6 +82,26 @@ function set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple
     this.interaction_types = interaction_types
 end
 
+"""
+    set_model(this::Photoelectric,model::String)
+
+To define the photoelectric model.
+
+# Input Argument(s)
+- `this::Photoelectric`: photoelectric structure.
+- `model::String`: cross-section model:
+    - `jendl5`: evaluated subshell-dependent cross-sections.
+    - `biggs_lighthill`: Biggs and Lighthill cross-sections.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> photoelectric = Photoelectric()
+julia> photoelectric.set_model("biggs_lighthill")
+```
+"""
 function set_model(this::Photoelectric,model::String)
     if lowercase(model) ∉ ["jendl5","biggs_lighthill"] error("Unkown elastic model: '$model'.") end
     this.model = lowercase(model)

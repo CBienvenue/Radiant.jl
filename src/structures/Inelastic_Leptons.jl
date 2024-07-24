@@ -27,30 +27,34 @@ mutable struct Inelastic_Leptons <: Interaction
     is_preload_data::Bool
     is_subshells_dependant::Bool
     is_shell_correction::Bool
-    is_density_correction::Bool
-    density_correction_type::String
+    density_correction::String
     plasma_energy::Float64
     effective_mean_excitation_energy::Float64
     shell_correction::Function
 
     # Constructor(s)
-    function Inelastic_Leptons()
+    function Inelastic_Leptons(;
+        ### Initial values ###
+        is_subshells_dependant = true,
+        is_shell_correction = true,
+        density_correction = "fano",
+        interaction_types = Dict(("positrons","positrons") => ["S"],("positrons","electrons") => ["P"],("electrons","electrons") => ["S","P"])
+        ######################
+        )
         this = new()
         this.name = "inelastic_leptons"
-        this.interaction_types = Dict(("positrons","positrons") => ["S"],("positrons","electrons") => ["P"],("electrons","electrons") => ["S","P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
-        this.density_correction_type = "fano"
+        this.set_density_correction(density_correction)
         this.is_CSD = true
         this.is_AFP = true
         this.is_elastic = false
         this.is_preload_data = true
-        this.is_subshells_dependant = true
-        this.is_shell_correction = true
-        this.is_density_correction = true
+        this.set_is_subshells_dependant(is_subshells_dependant)
+        this.set_is_shell_correction(is_shell_correction)
         return this
     end
-
 end
 
 # Method(s)
@@ -78,6 +82,76 @@ julia> elastic_leptons.set_interaction_types( Dict(("electrons","electrons") => 
 """
 function set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
     this.interaction_types = interaction_types
+end
+
+"""
+    set_density_correction(this::Inelastic_Leptons,density_correction::String)
+
+Set the Fermi density correction.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons`: inelastic leptons structure.
+- `density_correction::String`: type of density effect:
+    - `fano`: Fano density effect.
+    - `sternheimer`: Sternheimer semi-empirical density effect.
+    - `none`: no density effect.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Inelastic_Leptons()
+julia> elastic_leptons.set_density_correction("sternheimer")
+```
+"""
+function set_density_correction(this::Inelastic_Leptons,density_correction::String)
+    if lowercase(density_correction) ∉ ["fano","sternheimer","none"] error("Unknown '$density_correction' density correction.") end
+    this.density_correction = lowercase(density_correction)
+end
+
+"""
+    set_is_shell_correction(this::Inelastic_Leptons,is_shell_correction::Bool)
+
+Activate or desactivate shell correction for stopping powers.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons`: inelastic leptons structure.
+- `is_shell_correction::Bool`: activate (true) or desactivate (false) the shell correction.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Inelastic_Leptons()
+julia> elastic_leptons.set_is_shell_correction(false)
+```
+"""
+function set_is_shell_correction(this::Inelastic_Leptons,is_shell_correction::Bool)
+    this.is_shell_correction = is_shell_correction
+end
+
+"""
+    set_is_subshells_dependant(this::Inelastic_Leptons,is_subshells_dependant::Bool)
+
+Compute the inelastic cross-sections assuming bounded or unbounded electrons.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons`: inelastic leptons structure.
+- `is_subshells_dependant::Bool`: bounded (true) or unbounded (false) electrons.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Inelastic_Leptons()
+julia> elastic_leptons.set_is_subshells_dependant(false)
+```
+"""
+function set_is_subshells_dependant(this::Inelastic_Leptons,is_subshells_dependant::Bool)
+    this.is_subshells_dependant = is_subshells_dependant
 end
 
 function in_distribution(this::Inelastic_Leptons)
@@ -129,7 +203,7 @@ function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float6
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::String,Ui::Float64,Zi::Float64,Ti::Float64)
+function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::String,Ui::Float64,Zi::Real,Ti::Float64)
 
     # Initialization
     rₑ = 2.81794092e-13 # (in cm)
@@ -148,7 +222,7 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
     end
 
     # Close collisions
-    if W ≥ 0 #Ui
+    if W ≥ 0
         if particle == "electrons"
            F = ( 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui)) )
         elseif particle == "positrons"
@@ -229,7 +303,7 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
     𝒩ₑ = Z.*nuclei_density.(Z,ρ)        # (in cm⁻³)
     𝒩ₑ_eff = sum(ωz.*𝒩ₑ)               # (in cm⁻³)
     I = this.effective_mean_excitation_energy
-    if (this.is_density_correction) δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,this.density_correction_type) else δF = 0 end
+    δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,this.density_correction)
     if (this.is_shell_correction) Cz = this.shell_correction(Z,ωz,Ei) else Cz = 0 end
 
     # Compute the total stopping power
@@ -286,7 +360,7 @@ end
 function preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::String)
     this.plasma_energy = plasma_energy(Z,ωz,ρ)
     this.effective_mean_excitation_energy = effective_mean_excitation_energy(Z,ωz)
-    this.preload_shell_corrections(Z,ωz,particle)
+    if (this.is_shell_correction) this.preload_shell_corrections(Z,ωz,particle) end
 end
 
 """

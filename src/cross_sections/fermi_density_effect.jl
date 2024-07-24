@@ -110,8 +110,10 @@ elseif type == "sternheimer"
     end
     δF = D
 
-else
-    error("Unknown type of Fermi density effect calculations")
+elseif type == "none"
+    δF = 0
+else    
+    error("Unknown '$type' of Fermi density effect calculations")
 end
 
 return δF

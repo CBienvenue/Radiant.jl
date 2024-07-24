@@ -72,7 +72,7 @@ function out_distribution_dispatch(interaction::Interaction,type::String)
     end
 end
 
-function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Wi::Float64,Z::Int64,Ein::Vector{Float64},Ngi::Int64,Ec::Float64,particle::String)
+function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Z::Int64,Ein::Vector{Float64},Ngi::Int64,Ec::Float64,particle::String)
     itype = typeof(interaction)
     if itype == Annihilation
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
@@ -99,7 +99,7 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
     end
 end
 
-function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,particles::Vector{String},Ein::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,ΔEf::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,subshells::Vector{String},Ec::Float64,gi::Int64,incoming_particle::String,Wi::Float64,δF::Real)
+function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,particles::Vector{String},Ein::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,ΔEf::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,subshells::Vector{String},Ec::Float64,gi::Int64,incoming_particle::String)
     itype = typeof(interaction)
     if itype == Annihilation
         return dcs(interaction,L,Ei,Ef,type,gi,vec_Z,ωz,ρ,iz,Ein)

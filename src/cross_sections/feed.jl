@@ -49,24 +49,15 @@ Nz = length(Z)
     # Loop over subshells
     if interaction.is_subshells_dependant
         Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[i])
-        if typeof(interaction) == Inelastic_Leptons
-            Ωp = interaction.plasma_energy
-            I = interaction.effective_mean_excitation_energy
-            Wi = resonance_energy(Z[i],Ωp,I)
-            δF = fermi_density_effect(Z,ωz,ρ,Ei,"solid",interaction.density_correction_type) 
-        else 
-            Wi = [0.0]
-            δF = 0.0
-         end
     else
-        Ui = [0.0]; Nshells = 1; Zi = Z[i]; Ti = [0.0]; ri = [0.0]; subshells = [""]; Wi = [0.0]; δF = 0.0; # Free atomic electron
+        Ui = [0.0]; Nshells = 1; Zi = Z[i]; Ti = [0.0]; ri = [0.0]; subshells = [""]; # Free atomic electron
     end
 
     for gf in range(1,Ng), δi in range(1,Nshells)
         
         # Final energy group
         Ef⁻ = Eout[gf]; Ef⁺ = Eout[gf+1]
-        Ef⁻,Ef⁺,isSkip = bounds_dispatch(interaction,Ef⁻,Ef⁺,Ei,gi,gf,type,Ui[δi],Wi[δi],Z[i],Ein,Ngi,Ec,incoming_particle)
+        Ef⁻,Ef⁺,isSkip = bounds_dispatch(interaction,Ef⁻,Ef⁺,Ei,gi,gf,type,Ui[δi],Z[i],Ein,Ngi,Ec,incoming_particle)
         if isSkip continue end
         ΔEf = Ef⁻ - Ef⁺
         
@@ -78,7 +69,7 @@ Nz = length(Z)
             if ΔEf > 0
 
                 # Compute Legendre angular flux moments
-                Σsᵢ = w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,ωz,ρ,ΔEf,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],ri[δi],subshells,Ec,gi,incoming_particle,Wi[δi],δF) * nuclei_density(Z[i],ρ) * ωz[i]
+                Σsᵢ = w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,ωz,ρ,ΔEf,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],ri[δi],subshells,Ec,gi,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
 
                 if ~is_dirac Σsᵢ *= ΔEf  end
                 𝓕i .+= Σsᵢ

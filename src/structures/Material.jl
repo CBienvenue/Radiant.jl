@@ -26,9 +26,7 @@ mutable struct Material
 
     # Constructor(s)
     function Material()
-        
         this = new()
-
         this.name = missing
         this.density = missing
         this.state_of_matter = "solid"
@@ -36,24 +34,20 @@ mutable struct Material
         this.elements = Vector{String}()
         this.atomic_numbers = Vector{Int64}()
         this.weight_fractions = Vector{Float64}()
-
         return this
     end
 end
 
 # Method(s)
-Base.propertynames(::Material) = 
-(
-    fieldnames(Material)...,
-    :set_name,
-    :set_density,
-    :set_state_of_matter,
-    :add_element,
-    :get_density,
-    :get_atomic_numbers,
-    :weight_fractions
-    :get_name
-)
+function println(this::Material)
+    println("Material:")
+    println("   Name:                         $(this.name)")
+    println("   Density (g/cm³):              $(this.density)")
+    println("   State of matter:              $(this.state_of_matter)")
+    println("   Elements in the compound:     $(this.elements)")
+    println("   Weight fractions:             $(this.weight_fractions)")
+end
+
 
 """
     set_name(this::Material,name::String)

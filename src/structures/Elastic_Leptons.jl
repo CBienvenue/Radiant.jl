@@ -26,6 +26,7 @@ mutable struct Elastic_Leptons <: Interaction
     is_preload_data::Bool
     is_subshells_dependant::Bool
     is_kawrakow_correction::Bool
+    subshell_dependant_inelastic::Bool
     model::String
     plasma_energy::Float64
     effective_mean_excitation_energy::Float64
@@ -34,20 +35,29 @@ mutable struct Elastic_Leptons <: Interaction
     Cℓki::Array{Float64}
 
     # Constructor(s)
-    function Elastic_Leptons(model="mott",is_kawrakow_correction=true,is_ETC=true,is_AFP=true)
+    function Elastic_Leptons(;
+        ### Initial values ###
+        model="mott",
+        is_kawrakow_correction=true,
+        subshell_dependant_inelastic=true,
+        is_ETC=true,
+        is_AFP=true,
+        interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
+        ######################
+        )
         this = new()
         this.name = "elastic_leptons"
-        this.interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_elastic = true
-        this.is_ETC = set_transport_correction(this,is_ETC)
-        this.is_AFP = set_angular_fokker_planck(this,is_AFP)
+        this.set_transport_correction(is_ETC)
+        this.set_angular_fokker_planck(is_AFP)
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.is_kawrakow_correction = set_kawrakow_correction(this,is_kawrakow_correction)
-        this.model = set_model(this,model)
+        this.set_kawrakow_correction(is_kawrakow_correction,subshell_dependant_inelastic)
+        this.set_model(model)
         return this
     end
 
@@ -78,19 +88,94 @@ function set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tup
     this.interaction_types = interaction_types
 end
 
+"""
+    set_model(this::Elastic_Leptons,model::String)
+
+To define the elastic scattering model.
+
+# Input Argument(s)
+- `this::Elastic_Leptons`: elastic leptons structure.
+- `model::String`: model of elastic scattering:
+    - `rutherford`: screened Rutherford cross-sections.
+    - `mott`: screened Mott cross-sections.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Elastic_Leptons()
+julia> elastic_leptons.set_model("rutherford")
+```
+"""
 function set_model(this::Elastic_Leptons,model::String)
     if lowercase(model) ∉ ["rutherford","mott"] error("Unkown elastic model: '$model'.") end
     this.model = lowercase(model)
 end
 
-function set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool)
+"""
+    set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool)
+
+Apply Kawrakow's correction to elastic cross-sections.
+
+# Input Argument(s)
+- `this::Elastic_Leptons`: elastic leptons structure.
+- `is_kawrakow_correction::Bool`: Apply Karakow's correction (true) or not (false).
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Elastic_Leptons()
+julia> elastic_leptons.set_kawrakow_correction(false)
+```
+"""
+function set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool,subshell_dependant_inelastic::Bool=true)
     this.is_kawrakow_correction = is_kawrakow_correction
+    this.subshell_dependant_inelastic = subshell_dependant_inelastic
 end
 
+"""
+    set_transport_correction(this::Elastic_Leptons,is_ETC::Bool)
+
+Enable or not extended transport correcton.
+
+# Input Argument(s)
+- `this::Elastic_Leptons`: elastic leptons structure.
+- `is_ETC::Bool`: Enable (true) or not (false) extended transport correcton.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Elastic_Leptons()
+julia> elastic_leptons.is_ETC(false)
+```
+"""
 function set_transport_correction(this::Elastic_Leptons,is_ETC::Bool)
     this.is_ETC = is_ETC
 end
 
+"""
+    set_angular_fokker_planck(this::Elastic_Leptons,is_AFP::Bool)
+
+Enable or not the extraction of the angular Fokker-Planck.
+
+# Input Argument(s)
+- `this::Elastic_Leptons`: elastic leptons structure.
+- `is_AFP::Bool`: Enable (true) or not (false) t the extraction of the angular Fokker-Planck.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> elastic_leptons = Elastic_Leptons()
+julia> elastic_leptons.is_AFP(false)
+```
+"""
 function set_angular_fokker_planck(this::Elastic_Leptons,is_AFP::Bool)
     this.is_AFP = is_AFP
 end
@@ -171,7 +256,11 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
 
     # Kawrakow correction
     if this.is_kawrakow_correction
-        Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z)
+        if this.subshell_dependant_inelastic
+            Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z)
+        else
+            Ui = [0.0]; Nshells = 1; Zi = Z[i]; Ti = [0.0]; # Free atomic electron
+        end
         gM = 0
         for δi in range(1,Nshells)
             Wc = Ecutoff # Knock-on production cutoff with Møller or Bhabha

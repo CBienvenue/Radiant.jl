@@ -35,10 +35,15 @@ mutable struct Pair_Production <: Interaction
     is_triplet_contribution::Bool
 
     # Constructor(s)
-    function Pair_Production(angular_scattering_type="modified_dipole")
+    function Pair_Production(;
+        ### Initial values ###
+        angular_scattering_type="modified_dipole",
+        interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"],("photons","positrons") => ["P"])
+        ######################
+        )
         this = new()
         this.name = "pair_production"
-        this.interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"],("photons","positrons") => ["P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -46,7 +51,7 @@ mutable struct Pair_Production <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.angular_scattering_type = set_angular_scattering_type(this,angular_scattering_type)
+        this.set_angular_scattering_type(angular_scattering_type)
         return this
     end
 end
@@ -136,23 +141,12 @@ function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,par
     rs, n∞ = baro_coefficient(Z)
     η = 0
 
-    #=
-    if Ei ≥ 4 && this.is_triplet_contribution
-        a = α*Z
-        ν = (0.2840-0.1909*a)*log(4/Ei) + (0.1095+0.2206*a)*(log(4/Ei))^2 + (0.02888-0.04269*a)*(log(4/Ei))^3 + (0.002527+0.002623*a)*(log(4/Ei))^4
-        η = (1-exp(-ν))*n∞
-    else
-        η = 0
-    end
-    =#
-
     # Electron/Positron production
     if type == "P"
         if 0 < Ef < Ei-2
 
             # High-energy Coulomb correction
             fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
-            #F₀ = (-0.1774-12.10*a+11.18*a^2)*sqrt(2/Ei) + (8.523+73.26*a-44.41*a^2)*(2/Ei) - (13.52+121.1*a-96.41*a^2)*(2/Ei)^(3/2) + (8.946+62.05*a-63.41*a^2)*(2/Ei)^2
 
             # Normalization factor
             A = this.normalization_factor(iz,Ei)
@@ -233,21 +227,10 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
     rs, n∞ = baro_coefficient(Z)
     η = 0
 
-    #=
-    if Ei ≥ 4 && this.is_triplet_contribution
-        a = α*Z
-        ν = (0.2840-0.1909*a)*log(4/Ei) + (0.1095+0.2206*a)*(log(4/Ei))^2 + (0.02888-0.04269*a)*(log(4/Ei))^3 + (0.002527+0.002623*a)*(log(4/Ei))^4
-        η = (1-exp(-ν))*n∞
-    else
-        η = 0
-    end
-    =#
-
     if Ei > 2
 
         # High-energy Coulomb correction
         fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
-        #F₀ = (-0.1774-12.10*a+11.18*a^2)*sqrt(2/Ei) + (8.523+73.26*a-44.41*a^2)*(2/Ei) - (13.52+121.1*a-96.41*a^2)*(2/Ei)^(3/2) + (8.946+62.05*a-63.41*a^2)*(2/Ei)^2
 
         # Normalization factor
         A = this.normalization_factor(iz,Ei)

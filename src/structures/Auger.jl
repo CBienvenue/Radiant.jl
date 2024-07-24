@@ -34,10 +34,15 @@ mutable struct Auger <: Interaction
     ηmin::Float64
 
     # Constructor(s)
-    function Auger()
+    function Auger(;
+        ### Initial values ###
+        ηmin = 0.001,
+        interaction_types = Dict(("photons","electrons") => ["P"],("electrons","electrons") => ["P"],("positrons","electrons") => ["P"])
+        ######################
+        )
         this = new()
         this.name = "auger"
-        this.interaction_types = Dict(("photons","electrons") => ["P"],("electrons","electrons") => ["P"],("positrons","electrons") => ["P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -45,7 +50,7 @@ mutable struct Auger <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = true
-        this.ηmin = 0.001
+        this.set_minimum_probability(ηmin)
         return this
     end
 

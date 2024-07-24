@@ -31,10 +31,14 @@ mutable struct Annihilation <: Interaction
     prior_interaction::Interaction
 
     # Constructor(s)
-    function Annihilation()
+    function Annihilation(;
+        ### Initial values ###
+        interaction_types = Dict(("positrons","positrons") => ["A"],("positrons","photons") => ["P₋","P₊","P_inel","P_brems"],("photons","photons") => ["P_pp"])
+        ######################
+        )
         this = new()
         this.name = "annihilation"
-        this.interaction_types = Dict(("positrons","positrons") => ["A"],("positrons","photons") => ["P₋","P₊","P_inel","P_brems"],("photons","photons") => ["P_pp"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -112,6 +116,7 @@ function bounds(this::Annihilation,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,typ
     end
     return Ef⁻,Ef⁺,isSkip
 end
+
 function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi::Int64,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,iz::Int64,Ein::Vector{Float64})
 
     # Initialization

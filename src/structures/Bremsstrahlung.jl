@@ -36,10 +36,15 @@ mutable struct Bremsstrahlung <: Interaction
     bremsstrahlung_photons_distribution::Function
 
     # Constructor(s)
-    function Bremsstrahlung(angular_scattering_type="modified_dipole")
+    function Bremsstrahlung(;
+        ### Initial values ###
+        angular_scattering_type="modified_dipole",
+        interaction_types = Dict(("electrons","electrons") => ["S"],("electrons","photons") => ["P"],("positrons","positrons") => ["S"],("positrons","photons") => ["P"])
+        ######################
+        )
         this = new()
         this.name = "bremsstrahlung"
-        this.interaction_types = Dict(("electrons","electrons") => ["S"],("electrons","photons") => ["P"],("positrons","positrons") => ["S"],("positrons","photons") => ["P"])
+        this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = true
@@ -47,7 +52,7 @@ mutable struct Bremsstrahlung <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.angular_scattering_type = set_angular_scattering_type(this,angular_scattering_type)
+        this.set_angular_scattering_type(angular_scattering_type)
         return this
     end
 
