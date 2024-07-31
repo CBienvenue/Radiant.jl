@@ -26,39 +26,33 @@ mutable struct Elastic_Leptons <: Interaction
     is_preload_data::Bool
     is_subshells_dependant::Bool
     is_kawrakow_correction::Bool
+    is_seltzer_correction::Bool
     subshell_dependant_inelastic::Bool
     model::String
-    plasma_energy::Float64
-    effective_mean_excitation_energy::Float64
     bjk_boschini::Vector{Array{Float64}}
     Cℓk::Array{Float64}
     Cℓki::Array{Float64}
+    solver::String
     scattering_model::String
 
     # Constructor(s)
-    function Elastic_Leptons(;
-        ### Initial values ###
-        model="mott",
-        is_kawrakow_correction=true,
-        is_ETC=true,
-        is_AFP=true,
-        interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
-        ######################
-        )
+    function Elastic_Leptons()
         this = new()
         this.name = "elastic_leptons"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_elastic = true
-        this.set_transport_correction(is_ETC)
-        this.set_angular_fokker_planck(is_AFP)
+        this.is_ETC = true
+        this.is_AFP = true
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.set_kawrakow_correction(is_kawrakow_correction)
-        this.set_model(model)
-        this.scattering_model = "BFP"
+        this.model = "mott"
+        this.is_kawrakow_correction = true
+        this.is_seltzer_correction = false
+        this.solver = "BFP"
+        this.scattering_model="BFP"
         return this
     end
 
@@ -90,7 +84,7 @@ function set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tup
 end
 
 """
-    set_model(this::Elastic_Leptons,model::String)
+    set_model(this::Elastic_Leptons,model::String,is_KC::Bool=true)
 
 To define the elastic scattering model.
 
@@ -99,6 +93,8 @@ To define the elastic scattering model.
 - `model::String`: model of elastic scattering:
     - `rutherford`: screened Rutherford cross-sections.
     - `mott`: screened Mott cross-sections.
+- `is_KC::Bool`: Apply Karakow's Correction (true) or not (false).
+- `is_SC::Bool`: Apply Seltzer's Correction (true) or not (false).
 
 # Output Argument(s)
 N/A
@@ -109,32 +105,11 @@ julia> elastic_leptons = Elastic_Leptons()
 julia> elastic_leptons.set_model("rutherford")
 ```
 """
-function set_model(this::Elastic_Leptons,model::String)
+function set_model(this::Elastic_Leptons,model::String,is_KC::Bool=false,is_SC::Bool=false)
     if lowercase(model) ∉ ["rutherford","mott"] error("Unkown elastic model: '$model'.") end
     this.model = lowercase(model)
-end
-
-"""
-    set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool)
-
-Apply Kawrakow's correction to elastic cross-sections.
-
-# Input Argument(s)
-- `this::Elastic_Leptons`: elastic leptons structure.
-- `is_kawrakow_correction::Bool`: Apply Karakow's correction (true) or not (false).
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> elastic_leptons = Elastic_Leptons()
-julia> elastic_leptons.set_kawrakow_correction(false)
-```
-"""
-function set_kawrakow_correction(this::Elastic_Leptons,is_kawrakow_correction::Bool)
-    this.is_kawrakow_correction = is_kawrakow_correction
-    this.subshell_dependant_inelastic = true
+    this.is_kawrakow_correction = is_KC
+    this.is_seltzer_correction = is_SC
 end
 
 """
@@ -160,14 +135,16 @@ function set_transport_correction(this::Elastic_Leptons,is_ETC::Bool)
 end
 
 """
-    set_angular_fokker_planck(this::Elastic_Leptons,is_AFP::Bool)
+    set_solver(this::Elastic_Leptons,solver::String)
 
-Enable or not the extraction of the angular Fokker-Planck.
+Dictate how the cross-sections is distributed to the Boltzmann and the Fokker-Planck operators.
 
 # Input Argument(s)
 - `this::Elastic_Leptons`: elastic leptons structure.
-- `is_AFP::Bool`: Enable (true) or not (false) t the extraction of the angular Fokker-Planck.
-
+- `solver::String`:  model of elastic scattering:
+    - `B`: the cross-sections are made to be used with the Boltzmann operator.
+    - `FP`: the cross-sections are made to be used with the Fokker-Planck operator.
+    - `BFP`: the cross-sections are distributed to the Boltzmann and Fokker-Planck operator.
 # Output Argument(s)
 N/A
 
@@ -177,8 +154,10 @@ julia> elastic_leptons = Elastic_Leptons()
 julia> elastic_leptons.is_AFP(false)
 ```
 """
-function set_angular_fokker_planck(this::Elastic_Leptons,is_AFP::Bool)
-    this.is_AFP = is_AFP
+function set_solver(this::Elastic_Leptons,solver::String)
+    if uppercase(solver) ∉ ["B","FP","BFP"] error("Unkown elastic model: '$model'.") end
+    if lowercase(solver) ∈ ["FP","BFP"] this.is_AFP = true else this.is_AFP = false end
+    this.solver = lowercase(solver)
 end
 
 function in_distribution(this::Elastic_Leptons)
@@ -210,7 +189,11 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
     α = 1/137
 
     σℓ = zeros(L+1)
-    η = Z^(2/3) * α^2 * (1.13 + 3.76 * (Z*α)^2/β² ) / (4 * (9*π^2/128)^(2/3) * Ei * (Ei+2) )
+    if this.is_seltzer_correction
+        η = Z^(2/3) * α^2 * (1.13 + 3.76 * (Z*α)^2/β² * (Ei/(Ei+1))^(1/2) ) / (4 * (9*π^2/128)^(2/3) * Ei * (Ei+2) )
+    else
+        η = Z^(2/3) * α^2 * (1.13 + 3.76 * (Z*α)^2/β² ) / (4 * (9*π^2/128)^(2/3) * Ei * (Ei+2) )
+    end
     ai = zeros(5)
     if this.model == "mott"
         b = this.bjk_boschini[iz]
@@ -326,7 +309,7 @@ function tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::String,Ecutoff
     return σt
 end
 
-function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::String,interactions::Vector{Interaction})
+function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::String,interactions::Vector{<:Interaction})
 
     # Load Boschini data for Mott cross-sections
     if this.model == "mott"
@@ -342,7 +325,7 @@ function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::
 
     # Precompute angular integration factors
     this.Cℓk = zeros(L+1,div(L,2)+1)
-    this.Cℓki = zeros(L+1,div(L,2)+1,L+1,L+2)
+    this.Cℓki = zeros(L+1,div(L,2)+1,2,L+2)
     for ℓ in range(0,L), k in range(0,div(L,2))
         this.Cℓk[ℓ+1,k+1] = (-1)^k * exp( sum(log.(1:2*ℓ-2*k)) - sum(log.(1:k)) - sum(log.(1:ℓ-k)) - sum(log.(1:ℓ-2*k)) )
         for i in range(0,1), g in range(0,ℓ-2*k+i)
