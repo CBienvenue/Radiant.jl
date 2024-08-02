@@ -196,41 +196,53 @@ function 𝒢₄(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
     else
         error()
     end
+end
 
-    #=
-    if Δ == 0 return (α/a)^n * z^(n-m+0.5)/(b*(n-m+0.5)) end
+"""
+    𝒢₅(n::Int64,a::Real,b::Real,c::Real,x::Real)
 
-    if n ≥ 0
-        if m > 0
-            # Gradshteyn - Sect. 2.249 (1)
-            return 2/((2*m-1)*Δ)*t^(n+1)/z^m*sqrt(z) - (2*n-2*m+3)*β/((2*m-1)*Δ)*𝒢₄(n,m-1,a,b,α,β,x)
+Compute the integral I = ∫(xⁿ/√R)dx, where R = a + bx + cx², evaluated at x.
+
+# Input Argument(s)
+- 'x::Real': evaluation point.
+- 'n::Int64': exponent.
+- 'a::Real': coefficient.
+- 'b::Real': coefficient.
+- 'c::Real': coefficient.
+
+# Output Argument(s)
+- 'v::Vector{Float64}': integral evaluated at x up to order n.
+
+# Author(s)
+Charles Bienvenue
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+
+
+"""
+function 𝒢₅(n::Int64,a::Real,b::Real,c::Real,x::Real)
+    R = a + b*x + c*x^2
+    Δ = 4*a*c-b^2
+    if n == 0 # Gradshteyn - Sect. 2.261
+        if Δ > 0 && c > 0
+            return 1/sqrt(c)*asinh((2*c*x+b)/sqrt(Δ))
+        elseif Δ == 0
+            return 1/sqrt(c)*log(2*c*x+b)
+        elseif Δ < 0 && c < 0
+            return -1/sqrt(-c)*asinh((2*c*x+b)/sqrt(-Δ))
+        elseif Δ < 0 && c > 0 && 2*c*x+b > sqrt(-Δ)
+            return 1/sqrt(c)*log(2*sqrt(c*R)+2*c*x+b)
+        elseif Δ < 0 && c > 0 && 2*c*x+b < -sqrt(-Δ)
+            return -1/sqrt(c)*log(2*sqrt(c*R)-2*c*x-b)
         else
-            if n != 0
-                # Zwillinger - Sect. 5.4.10 (148)
-                return 2/(b*(2*n+1))*(t^n*sqrt(z)-n*Δ*𝒢₄(n-1,m,a,b,α,β,x))
-            else
-                return 2/b*sqrt(z)
-            end
+            error("Unknown case.")
         end
-    elseif n < 0
-        if m > 0
-            # Gradshteyn - Sect. 2.243 (1)
-            return 2/((2*m-1)*Δ)*t^(n+1)/z^m*sqrt(z) - (2*n-2*m+3)*β/((2*m-1)*Δ)*𝒢₄(n,m-1,a,b,α,β,x)
-        else
-            if n < -1
-                # Zwillinger - Sect. 5.4.10 (147)
-                return 1/((n+1)*Δ) * (t^(n+1)*sqrt(z) - (2*n+3)/2*b*𝒢₄(n+1,m,a,b,α,β,x))
-            else
-                # Gradshteyn - Sect. 2.246
-                if Δ*β > 0
-                    return 1/sqrt(β*Δ) * log((β*sqrt(z)-sqrt(β*Δ))/(β*sqrt(z)+sqrt(β*Δ)))
-                elseif Δ*β < 0
-                    return 2/sqrt(-β*Δ) * atan(β*sqrt(z)/sqrt(-β*Δ))
-                else
-                    return -2*sqrt(z)/(b*t)
-                end 
-            end
-        end
+    elseif n == 1 # Gradshteyn - Sect. 2.264 (2)
+        return sqrt(R)/c - b/(2*c)*𝒢₅(0,a,b,c,x)
+    elseif n ≥ 2 # Gradshteyn - Sect. 2.263 (1)
+        return x^(n-1)/(n*c)*sqrt(R) - (2*n-1)*b/(2*n*c)*𝒢₅(n-1,a,b,c,x) - (n-1)*a/(n*c)*𝒢₅(n-2,a,b,c,x)
+    else
+        error("Negative n index")
     end
-    =#
 end

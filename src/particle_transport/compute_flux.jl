@@ -37,10 +37,12 @@ L = discrete_ordinates.get_legendre_order()
 N = discrete_ordinates.get_quadrature_order()
 quadrature_type = discrete_ordinates.get_quadrature_type()
 SN_type = discrete_ordinates.get_angular_boltzmann()
+Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
 
 # Compute quadrature weights and abscissae
-Ω,w = quadrature(N,quadrature_type,Ndims)
-P,Mn,Dn,pℓ,pm = angular_polynomial_basis(Ndims,Ω,w,L,N,SN_type)
+Ω,w = quadrature(N,quadrature_type,Ndims,Qdims)
+if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+P,Mn,Dn,pℓ,pm = angular_polynomial_basis(Ndims,Ω,w,L,N,SN_type,Qdims)
 Nd = length(w)
 
 #----
@@ -53,8 +55,9 @@ Nmat = cross_sections.get_number_of_materials()
 Ng = cross_sections.get_number_of_groups(part)
 ΔE = cross_sections.get_energy_width(part)
 E = cross_sections.get_energies(part)
+Eb = cross_sections.get_energy_boundaries(part)
 
-println(">>>Particle: ",part," <<<")
+println(">>>Particle: $part <<<")
 
 # Total cross sections
 Σtot = zeros(Ng,Nmat)
@@ -84,7 +87,7 @@ if solver ∈ [2,4]
     α = zeros(Ng,Nmat)
     α = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = discrete_ordinates.get_angular_fokker_planck()
-    ℳ,λ₀,Mn_FP,Dn_FP,N_Fp = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,pm,P)
+    ℳ,λ₀,Mn_FP,Dn_FP,N_Fp = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,pm,P,Qdims)
     Σtot .+= α .* λ₀/2
 end
 
@@ -101,7 +104,7 @@ end
 
 is_full_coupling = true
 schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
-ω,𝒞,is_adaptive = scheme_weights(𝒪,schemes)
+ω,𝒞,is_adaptive = scheme_weights(𝒪,schemes,Ndims,isCSD)
 
 #----
 # Acceleration discrete_ordinates
@@ -132,6 +135,7 @@ i_out = 1
 is_outer_convergence = false
 ϵ_out = Inf
 is_outer_iteration = false
+Ntot = 0
 if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 
 @inbounds while ~(is_outer_convergence)
@@ -175,7 +179,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             Dn_FP = Array{Float64}(undef)
             N_Fp = 0
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig] = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,βg⁻,βg⁺,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA)
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,βg⁻,βg⁺,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot)
         
     end
 

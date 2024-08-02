@@ -26,20 +26,50 @@ Ndims = geometry.get_dimension()
 Ns = geometry.get_number_of_voxels()
 mat = geometry.get_material_per_voxel()
 
-# Discrete_Ordinates data
+# Discrete ordinates data
 particle_in = discrete_ordinates_in.get_particle()
 particle_out = discrete_ordinates_out.get_particle()
 L_in = discrete_ordinates_in.get_legendre_order()
 L_out = discrete_ordinates_out.get_legendre_order()
 _,𝒪_in,Nm_in = discrete_ordinates_in.get_schemes(geometry,true)
 _,𝒪_out,Nm_out = discrete_ordinates_out.get_schemes(geometry,true)
-Nm_in = Nm_in[5]
-Nm_out = Nm_out[5]
-Ω_in,w_in = quadrature(discrete_ordinates_in.get_quadrature_order(),discrete_ordinates_in.get_quadrature_type(),Ndims)
-Ω_out,w_out = quadrature(discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_out.get_quadrature_type(),Ndims)
-P_in,Mn_in,Dn_in,pℓ_in,pm_in = angular_polynomial_basis(Ndims,Ω_in,w_in,L_in,discrete_ordinates_in.get_quadrature_order(),discrete_ordinates_in.get_angular_boltzmann())
-P_out,Mn_out,Dn_out,pℓ_out,pm_out = angular_polynomial_basis(Ndims,Ω_out,w_out,L_out,discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_out.get_angular_boltzmann())
-P_tr,Mn_tr,Dn_tr,pℓ_tr,pm_tr = angular_polynomial_basis(Ndims,Ω_out,w_out,L_in,discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_in.get_angular_boltzmann())
+Nm_in = Nm_in[5]; Nm_out = Nm_out[5]
+Qdims_in = discrete_ordinates_in.get_quadrature_dimension(Ndims)
+Qdims_out = discrete_ordinates_out.get_quadrature_dimension(Ndims)
+Ω_in,w_in = quadrature(discrete_ordinates_in.get_quadrature_order(),discrete_ordinates_in.get_quadrature_type(),Ndims,Qdims_in)
+Ω_out,w_out = quadrature(discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_out.get_quadrature_type(),Ndims,Qdims_out)
+if typeof(Ω_in) == Vector{Float64} Ω_in = [Ω_in,0*Ω_in,0*Ω_in] end
+if typeof(Ω_out) == Vector{Float64} Ω_out = [Ω_out,0*Ω_out,0*Ω_out] end
+
+# Compute transfer matrix
+P_in,_,_,pℓ_in,pm_in = angular_polynomial_basis(Ndims,Ω_in,w_in,L_in,discrete_ordinates_in.get_quadrature_order(),discrete_ordinates_in.get_angular_boltzmann(),Qdims_in)
+P_out,_,Dn_out,_,_ = angular_polynomial_basis(Ndims,Ω_out,w_out,L_out,discrete_ordinates_out.get_quadrature_order(),discrete_ordinates_out.get_angular_boltzmann(),Qdims_out)
+if discrete_ordinates_in.get_angular_boltzmann() == discrete_ordinates_out.get_angular_boltzmann() && length(w_out) == length(w_in) && w_out == w_in
+    type_scat = discrete_ordinates_in.get_angular_boltzmann()
+else
+    type_scat = "standard"
+end
+if (Qdims_in == 1 && Qdims_out ∈ [2,3]) || (Qdims_in ∈ [2,3] && Qdims_out == 1)
+    Nd = length(w_out)
+    μ = Ω_out[1]
+    Pℓ = zeros(Nd,maximum(pℓ_in)+1,1)
+    @inbounds for n in range(1,Nd)
+        Pℓ[n,:] = legendre_polynomials(maximum(pℓ_in),μ[n])
+    end
+    P = length(pℓ_in)
+    Mn_tr = zeros(Nd,P)
+    for p in range(1,P)
+        for n in range(1,Nd)
+            if pm_in[p] == 0 || Qdims_in == 1
+                Mn_tr[n,pℓ_in[p]+1] = (2*pℓ_in[p]+1)/2 * Pℓ[n,pℓ_in[p]+1]
+            end
+        end
+    end
+elseif Qdims_in == Qdims_out
+    _,Mn_tr,_,_,_ = angular_polynomial_basis(Ndims,Ω_out,w_out,L_in,discrete_ordinates_out.get_quadrature_order(),type_scat,Qdims_out)
+else
+    error("Unknown particle transfer.")
+end
 
 # Cross-sections data
 Nmat = cross_sections.get_number_of_materials()

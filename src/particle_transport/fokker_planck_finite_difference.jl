@@ -20,14 +20,14 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
   Operator.
 
 """
-function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64})
+function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)
 
 Mn_FP = Mn
 Dn_FP = Dn
 N_FP = Nd
 λ₀ = 0.0
 
-if Ndims == 1 
+if Qdims == 1 
 
     #N = 6
 
@@ -104,7 +104,7 @@ if Ndims == 1
     error(maximum(abs.((ℳ2.-Mn*Dn_FP*ℳ*Mn_FP*Dn)./ℳ2)))
     =#
 
-elseif Ndims == 2
+elseif Qdims == 2
 
     # 3D voronoi data
     Ω_3D,w_3D = quadrature(N,quadrature_type,3)
@@ -402,7 +402,7 @@ elseif Ndims == 2
     error()
     =#
 
-elseif Ndims == 3
+elseif Qdims == 3
 
     Ω,w = quadrature(N,quadrature_type,3)
     voronoi_data = voronoi_sphere(Ω)

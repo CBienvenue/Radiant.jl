@@ -87,9 +87,9 @@ end
 
 # Flux calculation
 if ~isCSD
-    𝚽n,𝚽x12[:,iy],𝚽y12 = flux_2D_BTE(μ,η,Σt[mat[ix,iy]],Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝒪x,𝒪y,C[1],C[2],copy(ω[1][:,:,1,1]),copy(ω[2][:,:,1,1]),isAdapt[1],isAdapt[2])
+    𝚽n,𝚽x12[:,iy],𝚽y12 = flux_2D_BTE(μ,η,Σt[mat[ix,iy]],Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝒪x,𝒪y,C[1],C[2],copy(ω[1]),copy(ω[2]),isAdapt[1],isAdapt[2])
 else
-    𝚽n,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy] = flux_2D_BFP(μ,η,Σt[mat[ix,iy]],β⁻[mat[ix,iy]],β⁺[mat[ix,iy]],ΔE,Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy],𝒪E,𝒪x,𝒪y,C[4],C[1],C[2],copy(ω[4][:,:,:,1]),copy(ω[1][:,:,1,:]),copy(ω[2][:,:,1,:]),isAdapt[4],isAdapt[1],isAdapt[2])
+    𝚽n,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy] = flux_2D_BFP(μ,η,Σt[mat[ix,iy]],β⁻[mat[ix,iy]],β⁺[mat[ix,iy]],ΔE,Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy],𝒪E,𝒪x,𝒪y,C[4],C[1],C[2],copy(ω[4]),copy(ω[1]),copy(ω[2]),isAdapt[4],isAdapt[1],isAdapt[2])
 end
 
 # Calculation of the Legendre components of the flux

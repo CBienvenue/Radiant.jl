@@ -29,7 +29,7 @@ discretization, and produce both discrete-to-moments and moments-to-discrete mat
   transport code.
 
 """
-function angular_polynomial_basis(Ndims::Int64,Ω::Union{Vector{Vector{Float64}},Vector{Float64}},w::Vector{Float64},L::Int64,N::Int64,type::String)
+function angular_polynomial_basis(Ndims::Int64,Ω::Vector{Vector{Float64}},w::Vector{Float64},L::Int64,N::Int64,type::String,Qdims::Int64)
 
 norm(a) = sqrt(sum(a.*a))
 inner_product(a,b) = sum(a.*b)
@@ -37,11 +37,11 @@ inner_product(a,b) = sum(a.*b)
 # Compute Legendre or real spherical harmonics
 #----
 
-if Ndims == 1
-    μ = Ω
+if Qdims == 1
+    μ = Ω[1]
     Pℓ = zeros(N,L+1,1)
     @inbounds for n in range(1,N)
-        Pℓ[n,:,1] = legendre_polynomials(L,μ[n])
+        Pℓ[n,:] = legendre_polynomials(L,μ[n])
     end
 else
     μ = Ω[1]; η = Ω[2]; ξ = Ω[3];
@@ -74,7 +74,7 @@ end
 #----
 
 # 1D case
-if Ndims == 1
+if Qdims == 1
 
     P = L+1
     pℓ = zeros(Int64,P)
@@ -120,7 +120,7 @@ if Ndims == 1
     end
 
 # 2D case
-elseif Ndims == 2
+elseif Qdims == 2
 
     # Standard SN
     if type == "standard"
@@ -245,14 +245,14 @@ elseif Ndims == 2
     end
 
 # 3D case
-elseif Ndims == 3
+elseif Qdims == 3
 
     # Standard SN
     if type == "standard"
 
         P = (L+1)^2
         pℓ = zeros(Int64,P)
-        pm = zeros(Int64,N)
+        pm = zeros(Int64,P)
         Mn = zeros(N,P)
         Dn = zeros(P,N)
         ℓi = 1

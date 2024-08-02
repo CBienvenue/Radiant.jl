@@ -169,7 +169,9 @@ julia> cu.run()
 """
 function run(this::Computation_Unit)
     is_CUDA = false
+    #reset_timer!()
     this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources,is_CUDA)
+    #print_timer()
 end
 
 """

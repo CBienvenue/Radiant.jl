@@ -19,7 +19,7 @@ Compute the weights of the closure relations.
   equation in 1D and 2D Cartesian geometries.
 
 """
-function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String})
+function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
 
     𝒞 = Vector{Vector{Float64}}(undef,4)
     ω = Vector{Array{Float64}}(undef,4)
@@ -74,6 +74,28 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String})
         # Adaptive keyword
         if (schemes[n] == "AWD") is_adaptive[n] = true end
 
+    end
+
+    if isCSD
+        if Ndims == 1
+            ω[1] = ω[1][:,1,1,:]
+            ω[4] = ω[4][:,:,1,1]
+        elseif Ndims == 2
+            ω[1] = ω[1][:,:,1,:]
+            ω[2] = ω[2][:,:,1,:]
+            ω[4] = ω[4][:,:,:,1]
+        end
+    else
+        if Ndims == 1
+            ω[1] = ω[1][:,1,1,1]
+        elseif Ndims == 2
+            ω[1] = ω[1][:,:,1,1]
+            ω[2] = ω[2][:,:,1,1]
+        else
+            ω[1] = ω[1][:,:,:,1]
+            ω[2] = ω[2][:,:,:,1]
+            ω[3] = ω[3][:,:,:,1]
+        end
     end
 
     return ω, 𝒞, is_adaptive

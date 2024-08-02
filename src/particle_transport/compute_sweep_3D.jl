@@ -103,7 +103,7 @@ end
 
 # Flux calculation
 if ~isCSD
-    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝒪x,𝒪y,𝒪z,C[1],C[2],C[3],copy(ω[1][:,:,:,1]),copy(ω[2][:,:,:,1]),copy(ω[3][:,:,:,1]),isAdapt[1],isAdapt[2],isAdapt[3])
+    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝒪x,𝒪y,𝒪z,C[1],C[2],C[3],copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt[1],isAdapt[2],isAdapt[3])
 else
     𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],β⁻[mat[ix,iy,iz]],β⁺[mat[ix,iy,iz]],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C[4],C[1],C[2],C[3],copy(ω[4]),copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt[4],isAdapt[1],isAdapt[2],isAdapt[3])
 end

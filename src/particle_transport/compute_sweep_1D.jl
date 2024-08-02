@@ -47,7 +47,6 @@ function compute_sweep_1D(𝚽ℓ::Array{Float64,3},Qℓ::Array{Float64,3},Σt::
 # Initialization
 𝒪x = 𝒪[1]
 𝒪E = 𝒪[4]
-
 𝚽x12 = zeros(Nm[1])
 
 # Monodirectional boundary sources
@@ -73,9 +72,9 @@ end
 
     # Flux calculation
     if ~isCSD
-        𝚽n,𝚽x12 = flux_1D_BTE(μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12[1],𝒪x,C[1],copy(ω[1][:,1,1,1]),isAdapt[1])
+        𝚽n,𝚽x12 = flux_1D_BTE(μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12[1],𝒪x,C[1],copy(ω[1]),isAdapt[1])
     else
-        𝚽n,𝚽x12,𝚽E12[:,ix] = flux_1D_BFP(isFC,μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12,β⁻[mat[ix]],β⁺[mat[ix]],ΔE,𝚽E12[:,ix],𝒪E,𝒪x,C[4],C[1],copy(ω[4][:,:,1,1]),copy(ω[1][:,1,1,:]),isAdapt[4],isAdapt[1])
+        𝚽n,𝚽x12,𝚽E12[:,ix] = flux_1D_BFP(isFC,μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12,β⁻[mat[ix]],β⁺[mat[ix]],ΔE,𝚽E12[:,ix],𝒪E,𝒪x,C[4],C[1],copy(ω[4]),copy(ω[1]),isAdapt[4],isAdapt[1])
     end
 
     # Calculation of the Legendre components of the flux

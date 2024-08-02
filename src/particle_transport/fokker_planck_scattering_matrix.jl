@@ -25,12 +25,12 @@ Calculate the Fokker-Planck scattering matrix.
   Equation.
 
 """
-function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64)
+function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Qdims::Int64)
 
 if method == "finite-difference"
-    ℳ, λ₀, Mn_FP, Dn_FP, N_FP = fokker_planck_finite_difference(N,quadrature_type,Ndims,pℓ,pm,P,Nd,Mn,Dn)
+    ℳ, λ₀, Mn_FP, Dn_FP, N_FP = fokker_planck_finite_difference(N,quadrature_type,Ndims,pℓ,pm,P,Nd,Mn,Dn,Qdims)
 elseif method == "differential-quadrature"
-    ℳ, λ₀ = fokker_planck_differential_quadrature(N,quadrature_type,Ndims)
+    ℳ, λ₀ = fokker_planck_differential_quadrature(N,quadrature_type,Ndims,Qdims)
     Mn_FP = Mn; Dn_FP = Dn; N_FP = Nd
 elseif method == "galerkin"
     ℳ, λ₀ = fokker_planck_galerkin(Nd,Mn,Dn,pℓ,P)

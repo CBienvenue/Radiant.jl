@@ -37,7 +37,8 @@ function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::String
     if geometry.dimension == 1
 
     # Extract quadrature
-    μ,w = quadrature(N,quadrature_type,1)
+    Ω,w = quadrature(N,quadrature_type,1)
+    if typeof(Ω) != Vector{Float64} μ = Ω[1] else μ = Ω end
     Nd = length(μ)
 
     # Extract source informations

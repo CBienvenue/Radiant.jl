@@ -62,11 +62,13 @@ function initalize_sources!(this::Source,cross_sections::Cross_Sections,geometry
     index = findfirst(x -> x == particle,cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
     Nx = geometry.number_of_voxels["x"]
+    Qdims = discrete_ordinates.get_quadrature_dimension(geometry.dimension)
     if geometry.dimension ≥ 2 Ny = geometry.number_of_voxels["y"] else Ny = 1 end
     if geometry.dimension ≥ 3 Nz = geometry.number_of_voxels["z"] else Nz = 1 end
     Ω,w = quadrature(discrete_ordinates.quadrature_order,discrete_ordinates.quadrature_type,geometry.dimension)
+    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
     number_of_directions = length(w)
-    P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.quadrature_order,discrete_ordinates.get_angular_boltzmann())
+    P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.quadrature_order,discrete_ordinates.get_angular_boltzmann(),Qdims)
     _,_,Nm = discrete_ordinates.get_schemes(geometry,true)
 
     this.volume_sources = zeros(Ng,P,Nm[5],Nx,Ny,Nz)

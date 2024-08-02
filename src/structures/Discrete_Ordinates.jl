@@ -448,3 +448,17 @@ end
 function get_acceleration(this::Discrete_Ordinates)
     return this.acceleration
 end
+
+function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
+    if this.quadrature_type ∈ ["gauss-legendre","gauss-lobatto"]
+        return 1
+    elseif this.quadrature_type ∈ ["gauss-legendre-chebychev","lebedev","carlson"]
+        if Ndims == 1
+            return 3
+        else
+            return Ndims
+        end
+    else
+        error("Unkown quadrature type.")
+    end
+end

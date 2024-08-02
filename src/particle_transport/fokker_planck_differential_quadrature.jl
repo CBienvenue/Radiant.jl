@@ -17,9 +17,9 @@ Calculate the Fokker-Planck scattering matrix using differential quadrature.
   Equation.
 
 """
-function fokker_planck_differential_quadrature(N::Int64,quadrature_type::String,Ndims::Int64)
+function fokker_planck_differential_quadrature(N::Int64,quadrature_type::String,Ndims::Int64,Qdims::Int64)
 
-if Ndims == 1 
+if Qdims == 1 
 
     # Extract quadrature informations
     μ,_ = quadrature(N,quadrature_type,Ndims)

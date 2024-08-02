@@ -57,7 +57,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Union{Vector{Vector{Float64}},Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool)
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64)
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
@@ -94,11 +94,11 @@ isInnerConv=false
     # Loop over all discrete ordinates
     #----
     #println(string(i_in," ",ϵ_in))
-    𝚽ℓ = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
+    𝚽ℓ .= 0
     @inbounds for n in range(1,N)
         if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end
         if ndims == 1
-            𝚽ℓ[:,:,:,1,1],𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,S[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,β⁻,β⁺)
+            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,S[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,β⁻,β⁺)
         elseif ndims == 2
             if is_CUDA
                 error()
@@ -119,14 +119,15 @@ isInnerConv=false
     
     #----
     # Verification of convergence of the one-group flux
-    #----    
+    #----  
     ϵ_in = 0.0
     if (solver ∉ [5,6]) ϵ_in = maximum(vec(abs.((𝚽ℓ[1,1,:,:,:] .- 𝚽ℓ⁻[1,1,1,:,:,:])./max.(abs.(𝚽ℓ[1,1,:,:,:]),1e-16)))) end
-    if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽ℓ[1,1,:,:,:]) .- vec(𝚽ℓ⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽ℓ⁻[1,1,1,:,:,:]) .- vec(𝚽ℓ⁻[2,1,1,:,:,:]) ).^2)) end
     if (ϵ_in < ϵ_max) || i_in >= I_max
 
         # Convergence or maximum iterations reach
         isInnerConv = true
+        Ntot += i_in
+        if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽ℓ[1,1,:,:,:]) .- vec(𝚽ℓ⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽ℓ⁻[1,1,1,:,:,:]) .- vec(𝚽ℓ⁻[2,1,1,:,:,:]) ).^2)) end
         if ~(i_in >= I_max)
             println(">>>Group ",ig," has converge ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
         else
@@ -140,12 +141,12 @@ isInnerConv=false
             𝚽ℓ⁺ = livolant(𝚽ℓ,𝚽ℓ⁻[1,:,:,:,:,:],𝚽ℓ⁻[2,:,:,:,:,:])
             𝚽ℓ⁻[2,:,:,:,:,:] = 𝚽ℓ⁻[1,:,:,:,:,:]
             𝚽ℓ⁻[1,:,:,:,:,:] = 𝚽ℓ
-            𝚽ℓ = 𝚽ℓ⁺
+            𝚽ℓ .= 𝚽ℓ⁺
         else
             𝚽ℓ⁻[2,:,:,:,:,:] = 𝚽ℓ⁻[1,:,:,:,:,:]
             𝚽ℓ⁻[1,:,:,:,:,:] = 𝚽ℓ
         end
-
+        
         # Save flux solution and go to next iteration
         i_in += 1
 
@@ -153,7 +154,7 @@ isInnerConv=false
 
 end
 
-return 𝚽ℓ,𝚽E12_temp,ρ_in
+return 𝚽ℓ,𝚽E12_temp,ρ_in,Ntot
 
 end
 
