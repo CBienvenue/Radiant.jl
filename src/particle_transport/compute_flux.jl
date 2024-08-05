@@ -98,6 +98,16 @@ if solver == 6
     end
 end
 
+# External electro-magnetic fields
+𝓔 = [0.0,0.0,0.0]; 𝓑 = [0.0,0.0,0.0]
+q = particle_charge(part)
+is_EM = false
+if is_EM && q != 0
+    ℳ_EM = electromagnetic_scattering_matrix(𝓔,𝓑,q,Ω,w,Ndims,Mn,Dn,pℓ,pm,P,Ng,Eb,ΔE,Qdims)
+else
+    ℳ_EM = zeros(Ng,P,P);
+end
+
 #----
 # Preparation of spatial and energy closure relations
 #----
@@ -179,7 +189,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             Dn_FP = Array{Float64}(undef)
             N_Fp = 0
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,βg⁻,βg⁺,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot)
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,βg⁻,βg⁺,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot,is_EM,ℳ_EM[ig,:,:])
         
     end
 

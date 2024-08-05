@@ -76,12 +76,11 @@ end
 # 1D case
 if Qdims == 1
 
-    P = L+1
-    pℓ = zeros(Int64,P)
-    pm = zeros(Int64,P)
-
     # Standard SN
     if type == "standard"
+        P = L+1
+        pℓ = zeros(Int64,P)
+        pm = zeros(Int64,P)
         Mn = zeros(N,P)
         Dn = zeros(P,N)
         for ℓ in range(0,L)
@@ -94,9 +93,11 @@ if Qdims == 1
 
     # Galerkin method (inversion of M-matrix)
     elseif type == "galerkin-m"
-        if L + 1 != N error("The Legendre order should be N-1 to use Galerkin quadrature in 1D Cartesian geometries.") end
+        P = N
+        pℓ = zeros(Int64,P)
+        pm = zeros(Int64,P)
         Mn = zeros(N,N)
-        for ℓ in range(0,L)
+        for ℓ in range(0,N-1)
             pℓ[ℓ+1] = ℓ
             for n in range(1,N)
                 Mn[n,ℓ+1] = (2*ℓ+1)/2 * Pℓ[n,ℓ+1]
@@ -106,9 +107,11 @@ if Qdims == 1
 
     # Galerkin method (inversion of D-matrix)
     elseif type == "galerkin-d"
-        if L + 1 != N error("The Legendre order should be N-1 to use Galerkin quadrature in 1D Cartesian geometries.") end
+        P = N
+        pℓ = zeros(Int64,P)
+        pm = zeros(Int64,P)
         Dn = zeros(N,N)
-        for ℓ in range(0,L)
+        for ℓ in range(0,N-1)
             pℓ[ℓ+1] = ℓ
             for n in range(1,N)
                 Dn[ℓ+1,n] = w[n] * Pℓ[n,ℓ+1]

@@ -13,6 +13,7 @@ include("fokker_planck_scattering_matrix.jl")
 include("fokker_planck_finite_difference.jl")
 include("fokker_planck_differential_quadrature.jl")
 include("fokker_planck_galerkin.jl")
+include("electromagnetic_scattering_matrix.jl")
 
 # Transport
 include("transport.jl")

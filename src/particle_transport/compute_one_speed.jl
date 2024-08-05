@@ -57,7 +57,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64)
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM,ℳ_EM)
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
@@ -81,6 +81,15 @@ isInnerConv=false
 
     # Finite element treatment of the angular Fokker-Planck term
     if solver ∈ [2,4] Qℓ = fokker_planck_source(N_FP,P,Nm[5],α,𝚽ℓ,Qℓ,Ns,mat,ℳ,Mn_FP,Dn_FP) end
+
+    # Electromagnetic source
+    if is_EM
+        for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+            for is in range(1,Nm[5]), n in range(1,N), m in range(1,N)
+                Qℓ[n,is,ix,iy,iz] += ℳ_EM[n,m] * 𝚽ℓ[m,is,ix,iy,iz]
+            end
+        end
+    end
 
     # If there is no source
     if ~any(x->x!=0,S) && ~any(x->x!=0,Qℓ) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
