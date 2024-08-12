@@ -4,7 +4,18 @@ function voronoi_sphere(Ω)
     xn = Vector{Vector{Float64}}(undef,Nd); yn = Vector{Vector{Float64}}(undef,Nd); zn = Vector{Vector{Float64}}(undef,Nd)
     index = Vector{Vector{Vector{Int64}}}(undef,Nd)
 
-    @inbounds for n in range(1,Nd)
+    # Function to create a unique key from a float value
+    function create_key(x::Float64; precision::Int)
+        scale = 10^precision
+        return round(Int64, x * scale)
+    end
+
+    # Function to create a unique key tuple for the dictionary
+    function create_tuple_key(x::Float64, y::Float64, z::Float64; precision::Int)
+        return (create_key(x, precision=precision), create_key(y, precision=precision), create_key(z, precision=precision))
+    end
+
+    for n in range(1,Nd)
 
         # Find vertex points
         x_vertex = Vector{Float64}(); y_vertex = Vector{Float64}(); z_vertex = Vector{Float64}()
@@ -51,31 +62,32 @@ function voronoi_sphere(Ω)
         end
 
         # Remove duplicate
-        x_vertex_temp = Vector{Float64}(); y_vertex_temp = Vector{Float64}(); z_vertex_temp = Vector{Float64}()
+        x_vertex_temp = Vector{Float64}()
+        y_vertex_temp = Vector{Float64}()
+        z_vertex_temp = Vector{Float64}()
         pts_index_temp = Vector{Vector{Int64}}()
-        tuple_list = Vector{Tuple{Float64,Float64,Float64}}()
+        tuple_dict = Dict{Tuple{Int64, Int64, Int64}, Int64}()
         Nvertex = length(x_vertex)
-        for i in range(1,Nvertex)
-            t = (x_vertex[i], y_vertex[i], z_vertex[i])
-            is_in_list = false
-            index_in_t = 0
-            for j in range(1,length(tuple_list))
-                if maximum(abs.(t .- tuple_list[j])) < 1e-7
-                    is_in_list = true
-                    index_in_t = j
-                    break
-                end
-            end
-            if is_in_list
-                pts_index_temp[index_in_t] = union(pts_index_temp[index_in_t],pts_index[i])
+        precision = 7  # Number of decimal places
+        @time for i in 1:Nvertex
+            t = create_tuple_key(x_vertex[i], y_vertex[i], z_vertex[i], precision=precision)
+            # Check if the tuple key already exists in the dictionary
+            if haskey(tuple_dict, t)
+                # If exists, update the corresponding pts_index_temp
+                index_in_t = tuple_dict[t]
+                pts_index_temp[index_in_t] = union(pts_index_temp[index_in_t], pts_index[i])
             else
-                push!(x_vertex_temp,x_vertex[i]); push!(y_vertex_temp,y_vertex[i]); push!(z_vertex_temp,z_vertex[i])
-                push!(pts_index_temp,pts_index[i])
-                push!(tuple_list,t)
-                i += 1
+                # If not exists, add the tuple key to the dictionary and update the temp arrays
+                push!(x_vertex_temp, x_vertex[i])
+                push!(y_vertex_temp, y_vertex[i])
+                push!(z_vertex_temp, z_vertex[i])
+                push!(pts_index_temp, pts_index[i])
+                tuple_dict[t] = length(x_vertex_temp)
             end
         end
-        x_vertex = x_vertex_temp; y_vertex = y_vertex_temp; z_vertex = z_vertex_temp
+        x_vertex = x_vertex_temp
+        y_vertex = y_vertex_temp
+        z_vertex = z_vertex_temp
         pts_index = pts_index_temp
 
         # Find the set of vertex forming the polygon around each quadrature point
