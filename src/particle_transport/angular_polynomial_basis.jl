@@ -31,8 +31,6 @@ discretization, and produce both discrete-to-moments and moments-to-discrete mat
 """
 function angular_polynomial_basis(Ndims::Int64,Ω::Vector{Vector{Float64}},w::Vector{Float64},L::Int64,N::Int64,type::String,Qdims::Int64)
 
-norm(a) = sqrt(sum(a.*a))
-inner_product(a,b) = sum(a.*b)
 #----
 # Compute Legendre or real spherical harmonics
 #----
@@ -127,122 +125,26 @@ elseif Qdims == 2
 
     # Standard SN
     if type == "standard"
-
         P = div((L+1)*(L+2),2)
         pℓ = zeros(Int64,P)
         pm = zeros(Int64,P)
         Mn = zeros(N,P)
         Dn = zeros(P,N)
         ℓi = 1
-        for ℓ in range(0,L), m in range(0,ℓ)
+        for ℓ in range(0,L), m in range(-ℓ,ℓ)
+            if mod(ℓ+m,2) == 1 continue end
             pℓ[ℓi] = ℓ
             pm[ℓi] = m
             for n in range(1,N)
-                Mn[n,1+sum(1:ℓ)+m] = (2*ℓ+1)/(4*π) * Rℓm[n,ℓ+1,m+ℓ+1]
-                Dn[1+sum(1:ℓ)+m,n] = w[n] * Rℓm[n,ℓ+1,m+ℓ+1]
+                Mn[n,ℓi] = (2*ℓ+1)/(4*π) * Rℓm[n,ℓ+1,m+ℓ+1]
+                Dn[ℓi,n] = w[n] * Rℓm[n,ℓ+1,m+ℓ+1]
             end
             ℓi += 1
         end
-
-    elseif type == "galerkin-m"
-
-        P = N
-        pℓ = zeros(Int64,N)
-        pm = zeros(Int64,N)
-        Mn = zeros(N,N)
-        Dn = zeros(N,N)
-
-        # Gram-Schmidt procedure to find strongly independant
-        # set of spherical harmonics
-
-        # Initialisation
-        Mn[:,1] = 1/(4*π) * Rℓm[:,1,1]
-        pℓ[1] = 0
-        pm[1] = 0
-
-        u = zeros(N,N)
-        u[:,1] = Rℓm[:,1,1]/norm(Rℓm[:,1,1])
-        i = 1; k = 2;
-        norms = zeros(N)
-        norms[1] = norm(Rℓm[:,1,1])
-        
-        # Iterate over the spherical harmonics
-        for ℓ in range(1,L), m in range(-ℓ,ℓ)
-
-            R = Rℓm[:,ℓ+1,m+ℓ+1]
-            S = zeros(N)
-            for n in range(1,i) S .+= inner_product(u[:,n],R) * u[:,n] end
-            vk = R - S
-
-            # If the set is strongly independant, keep it, otherwise go to next
-            if norm(vk) > 1e-5
-                i += 1 
-                norms[i] = norm(vk)
-                u[:,i] = vk/norm(vk)
-                Mn[:,i] = (2*ℓ+1)/(4*π) * R
-                pℓ[i] = ℓ
-                pm[i] = m
-            end
-
-            # End of execution
-            if N == i break end
-
-            # Errors
-            k += 1
-            if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
-            if k > 5000 error("Too much iterations.") end
-        end
-
-        P = N
-        Dn = inv(Mn)
-
     elseif type == "galerkin-d"
-
-        P = N
-        pℓ = zeros(Int64,N)
-        pm = zeros(Int64,N)
-        Mn = zeros(N,N)
-        Dn = zeros(N,N)
-
-        # Gram-Schmidt procedure to find strongly independant
-        # set of spherical harmonics
-
-        # Initialisation
-        Dn[1,:] = w[:] .* Rℓm[:,1,1]
-        pℓ[1] = 0
-        pm[1] = 0
-        u = zeros(N,N)
-        u[:,1] = Rℓm[:,1,1]/norm(Rℓm[:,1,1])
-        i = 1; k = 2
-        norms = zeros(N)
-        norms[1] = norm(Rℓm[:,1,1])
-
-        # Iterate over the spherical harmonics
-        for ℓ in range(1,L), m in range(0,ℓ)
-
-            S = zeros(N)
-            for n in range(1,i)
-                S .+= inner_product(u[:,n],Rℓm[:,ℓ+1,m+ℓ+1]) * u[:,n]
-            end
-            vk = Rℓm[:,ℓ+1,m+ℓ+1] - S
-
-            # If the set is strongly independant, keep it, otherwise go to next
-            if norm(vk) > 1e-5
-                i += 1 
-                norms[i] = norm(vk)
-                u[:,i] = vk/norm(vk)
-                Dn[i,:] = w[:] .* Rℓm[:,ℓ+1,m+ℓ+1]
-                pℓ[i] = ℓ
-                pm[i] = m
-            end
-            k += 1
-            if (N == i) break end
-            if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
-        end
-
-        P = N
-        Mn = inv(Dn)
-
+        P,Mn,Dn,pℓ,pm = angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims)
+    elseif type == "galerkin-m"
+        P,Mn,Dn,pℓ,pm = angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims,2)
     else
         error("Unknown method.")
     end
@@ -252,7 +154,6 @@ elseif Qdims == 3
 
     # Standard SN
     if type == "standard"
-
         P = (L+1)^2
         pℓ = zeros(Int64,P)
         pm = zeros(Int64,P)
@@ -263,115 +164,89 @@ elseif Qdims == 3
             pℓ[ℓi] = ℓ
             pm[ℓi] = m
             for n in range(1,N)
-                Mn[n,1+2*sum(1:ℓ)+m] = (2*ℓ+1)/(4*π) * Rℓm[n,ℓ+1,m+ℓ+1]
-                Dn[1+2*sum(1:ℓ)+m,n] = w[n] * Rℓm[n,ℓ+1,m+ℓ+1]
+                Mn[n,ℓi] = (2*ℓ+1)/(4*π) * Rℓm[n,ℓ+1,m+ℓ+1]
+                Dn[ℓi,n] = w[n] * Rℓm[n,ℓ+1,m+ℓ+1]
             end
             ℓi += 1
         end
-
-    elseif type == "galerkin-m"
-
-        P = N
-        pℓ = zeros(Int64,N)
-        pm = zeros(Int64,N)
-        Mn = zeros(N,N)
-        Dn = zeros(N,N)
-
-        # Gram-Schmidt procedure to find strongly independant
-        # set of spherical harmonics
-
-        # Initialisation
-        Mn[:,1] = 1/(4*π) * Rℓm[:,1,1]
-        pℓ[1] = 0
-        pm[1] = 0
-
-        u = zeros(N,N)
-        u[:,1] = Rℓm[:,1,1]/norm(Rℓm[:,1,1])
-        i = 1; k = 2;
-        norms = zeros(N)
-        norms[1] = norm(Rℓm[:,1,1])
-        
-        # Iterate over the spherical harmonics
-        for ℓ in range(1,L), m in range(-ℓ,ℓ)
-
-            R = Rℓm[:,ℓ+1,m+ℓ+1]
-            S = zeros(N)
-            for n in range(1,i) S .+= inner_product(u[:,n],R) * u[:,n] end
-            vk = R - S
-
-            # If the set is strongly independant, keep it, otherwise go to next
-            if norm(vk) > 1e-5
-                i += 1 
-                norms[i] = norm(vk)
-                u[:,i] = vk/norm(vk)
-                Mn[:,i] = (2*ℓ+1)/(4*π) * R
-                pℓ[i] = ℓ
-                pm[i] = m
-            end
-
-            # End of execution
-            if N == i break end
-
-            # Errors
-            k += 1
-            if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
-            if k > 5000 error("Too much iterations.") end
-        end
-
-        P = N
-        Dn = inv(Mn)
-
     elseif type == "galerkin-d"
-    
-        P = N
-        pℓ = zeros(Int64,N)
-        pm = zeros(Int64,N)
-        Mn = zeros(N,N)
-        Dn = zeros(N,N)
-
-        # Gram-Schmidt procedure to find strongly independant
-        # set of spherical harmonics
-
-        # Initialisation
-        Dn[1,:] = w[:] .* Rℓm[:,1,1]
-        pℓ[1] = 0
-        pm[1] = 0
-        u = zeros(N,N)
-        u[:,1] = Rℓm[:,1,1]/norm(Rℓm[:,1,1])
-        i = 1; k = 2
-        norms = zeros(N)
-        norms[1] = norm(Rℓm[:,1,1])
-
-        # Iterate over the spherical harmonics
-        for ℓ in range(1,L), m in range(-ℓ,ℓ) 
-
-            S = zeros(N)
-            for n in range(1,i)
-                S .+= inner_product(u[:,n],Rℓm[:,ℓ+1,m+ℓ+1]) * u[:,n]
-            end
-            vk = Rℓm[:,ℓ+1,m+ℓ+1] - S
-
-            # If the set is strongly independant, keep it, otherwise go to next
-            if norm(vk) > 1e-5
-               i += 1 
-               norms[i] = norm(vk)
-               u[:,i] = vk/norm(vk)
-               Dn[i,:] = w[:] .* Rℓm[:,ℓ+1,m+ℓ+1]
-               pℓ[i] = ℓ
-               pm[i] = m
-            end
-            k += 1
-            if (N == i) break end
-            if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
-        end
-
-        P = N
-        Mn = inv(Dn)
-
+        P,Mn,Dn,pℓ,pm = angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims)
+    elseif type == "galerkin-m"
+        P,Mn,Dn,pℓ,pm = angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims,2)
+    else
+        error("Unknown method.")
     end
 else
     error("Dimension should be either 1, 2 or 3.")
 end
 
 return P,Mn,Dn,pℓ,pm
+end
+
+function angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims,g_type=1)
+
+    norm(a) = sqrt(sum(a.*a))
+    inner_product(a,b) = sum(a.*b)
+
+    P = N
+    pℓ = zeros(Int64,N)
+    pm = zeros(Int64,N)
+    Mn = zeros(N,N)
+    Dn = zeros(N,N)
+
+    # Gram-Schmidt procedure to find strongly independant
+    # set of spherical harmonics
+
+    # Initialisation
+    pℓ[1] = 0
+    pm[1] = 0
+    u = zeros(N,N)
+    for n in range(1,N)
+        if g_type == 1
+            Dn[1,n] = w[n] * Rℓm[n,1,1]
+        else
+            Mn[n,1] = 1/(4*π) * Rℓm[n,1,1]
+        end
+        u[n,1] = Rℓm[n,1,1]/norm(Rℓm[:,1,1])
+    end
+    i = 1
+    # Iterate over the spherical harmonics
+    for ℓ in range(1,L)
+        if Qdims == 2 m_min = 0 else m_min = -ℓ end
+        for m in range(m_min,ℓ)
+            S = zeros(N)
+            for n in range(1,i), n2 in range(1,N)
+                S[n2] += inner_product(u[:,n],Rℓm[:,ℓ+1,m+ℓ+1]) * u[n2,n]
+            end
+            vk = zeros(N)
+            for n in range(1,N)
+                vk[n] = Rℓm[n,ℓ+1,m+ℓ+1] - S[n]
+            end
+
+            # If the set is strongly independant, keep it, otherwise go to next
+            if norm(vk) > 1e-5
+                i += 1 
+                for n in range(1,N)
+                    u[n,i] = vk[n]/norm(vk)
+                    if g_type == 1
+                        Dn[i,n] = w[n] * Rℓm[n,ℓ+1,m+ℓ+1]
+                    else
+                        Mn[n,i] = (2*ℓ+1)/(4*π) * Rℓm[n,ℓ+1,m+ℓ+1]
+                    end
+                end
+                pℓ[i] = ℓ
+                pm[i] = m
+            end
+            if (N == i) break end
+            if (ℓ == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
+        end
+    end
+
+    if g_type == 1
+        Mn = inv(Dn)
+    else
+        Dn = inv(Mn)
+    end
+
+    return P,Mn,Dn,pℓ,pm
 end

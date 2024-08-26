@@ -65,7 +65,7 @@ open(fmac_file,"w") do file
     # Record III + 1 : Information text
     #----
     if v2[1] != 0
-        println(file,"Coupled multigroup cross-sections produced with Radiant.jl\n")
+        println(file,"Coupled multigroup cross-sections produced with Radiant.jl")
     end
 
     #----

@@ -79,7 +79,6 @@ for i in range(1,Npart), n in range(1,Nmat)
     multigroup_cross_sections[i,n] = mcs
 end
 
-cross_sections.set_particles(particles)
 cross_sections.set_energy(E₁)
 cross_sections.set_cutoff(Ec)
 cross_sections.set_number_of_groups(Ng)

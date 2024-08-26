@@ -1,7 +1,7 @@
 """
     electron_subshells(Z::Int64)
 
-Extract atomic electron subshells subshells, number and energies for atomic number Z ∈ {1,100}.
+Extract atomic electron subshells, number and energies for atomic number Z ∈ {1,100}.
 
 # Input Argument(s)
 - 'Z::Int64': atomic number of the element.

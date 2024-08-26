@@ -245,7 +245,8 @@ julia> m.set_angular_boltzmann("standard")
 ```
 """
 function set_angular_boltzmann(this::Discrete_Ordinates,angular_boltzmann::String)
-    if angular_boltzmann ∉ ["standard","galerkin-m","galerkin-d"] error("Unkown method to deal with the Boltzmann kernel.") end
+    if angular_boltzmann ∉ ["standard","galerkin-m","galerkin-d","galerkin"] error("Unkown method to deal with the Boltzmann kernel.") end
+    if (angular_boltzmann == "galerkin") angular_boltzmann = "galerkin-d" end
     this.angular_boltzmann = angular_boltzmann
 end
 

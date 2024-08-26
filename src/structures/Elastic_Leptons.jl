@@ -50,7 +50,7 @@ mutable struct Elastic_Leptons <: Interaction
         this.is_subshells_dependant = false
         this.model = "mott"
         this.is_kawrakow_correction = true
-        this.is_seltzer_correction = false
+        this.is_seltzer_correction = true
         this.solver = "BFP"
         this.scattering_model="BFP"
         return this
