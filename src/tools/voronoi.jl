@@ -69,7 +69,7 @@ function voronoi_sphere(Ω)
         tuple_dict = Dict{Tuple{Int64, Int64, Int64}, Int64}()
         Nvertex = length(x_vertex)
         precision = 7  # Number of decimal places
-        @time for i in 1:Nvertex
+        for i in 1:Nvertex
             t = create_tuple_key(x_vertex[i], y_vertex[i], z_vertex[i], precision=precision)
             # Check if the tuple key already exists in the dictionary
             if haskey(tuple_dict, t)
