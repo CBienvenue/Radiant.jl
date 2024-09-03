@@ -179,7 +179,7 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
             # Flux variation in the cell
             u1 = s[i]*sqrt(3)*𝚽[2]
             if 𝚽[1] != 0
-                u1 = u1/abs(𝚽[1])
+                u1 = u1/𝚽[1]
             elseif abs(u1) < 1e-8
                 u1 = 0
             else
@@ -206,6 +206,9 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
             if u1 < -1
                 x_CM[i] = max(-x_CM_max,(1+u1)/4)
             end
+
+            if x_CM[i] < -x_CM_max  x_CM[i] = -x_CM_max end
+            if x_CM[i] > x_CM_max x_CM[i] = x_CM_max end
 
             #=
             u1 += sign(u1_temp)

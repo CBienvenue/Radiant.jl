@@ -75,7 +75,7 @@ elseif 𝒪 == 2
 
         u = s[1]*sqrt(3)*Qn[2]
         if Qn[1] != 0
-            u = u/abs(Qn[1])
+            u = u/Qn[1]
         else
             u = Inf * sign(u)
         end
