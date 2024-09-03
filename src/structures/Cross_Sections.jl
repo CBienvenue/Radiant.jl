@@ -81,20 +81,20 @@ function is_ready_to_build(this::Cross_Sections)
         if ismissing(this.group_structure) error("Cannot build multigroup cross-sections data. The multigroup structure is not specified.") end
         if ismissing(this.interactions) error("Cannot build multigroup cross-sections data. The type of interaction(s) between particle(s) and the material are not specified.") end
         if ismissing(this.legendre_order) error("Cannot build multigroup cross-sections data. The order for the Legendre expansion of differential scattering cross-sections is not specified.") end
+        if length(this.number_of_groups) == 1
+            this.number_of_groups = fill(this.number_of_groups[1],this.number_of_particles)
+        elseif length(this.number_of_groups) != this.number_of_particles
+            error("The number of groups information do not fit the number of particles.")
+        end
+        if length(this.group_structure) == 1
+            this.group_structure = fill(this.group_structure[1],this.number_of_particles)
+        elseif length(this.group_structure) != this.number_of_particles
+            error("The number of groups structure information do not fit the number of particles.")
+        end
     else
         error("Unkown source of cross-sections data.")
     end
-    if length(this.number_of_groups) == 1
-        this.number_of_groups = fill(this.number_of_groups[1],this.number_of_particles)
-    elseif length(this.number_of_groups) != this.number_of_particles
-        error("The number of groups information do not fit the number of particles.")
-    end
     if this.number_of_materials == 0 error("Cannot build multigroup cross-sections data. The material names are not specified.") end
-    if length(this.group_structure) == 1
-        this.group_structure = fill(this.group_structure[1],this.number_of_particles)
-    elseif length(this.group_structure) != this.number_of_particles
-        error("The number of groups structure information do not fit the number of particles.")
-    end
 end
 
 """

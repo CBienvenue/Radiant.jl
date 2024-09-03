@@ -102,7 +102,7 @@ end
 function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,particles::Vector{String},Ein::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,ΔEf::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,subshells::Vector{String},Ec::Float64,gi::Int64,incoming_particle::String)
     itype = typeof(interaction)
     if itype == Annihilation
-        return dcs(interaction,L,Ei,Ef,type,gi,vec_Z,ωz,ρ,iz,Ein)
+        return dcs(interaction,L,Ei,Ef,type,gi,vec_Z,ωz,ρ,iz,Ein,Ec)
     elseif itype == Bremsstrahlung
         return dcs(interaction,L,Ei,Ef,Z,particle,type,iz,Ein,vec_Z,ωz,ρ)
     elseif itype == Compton

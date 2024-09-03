@@ -160,6 +160,9 @@ function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,t
     elseif type == "P" 
         Ef⁻ = min(Ef⁻,Ei)
         if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
+    elseif type == "Pₐ"
+        Ef⁻ = min(Ef⁻,Ei-Ec)
+        if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     else
         error("Unknown type of method for Bremsstrahlung scattering.")
     end
@@ -177,7 +180,7 @@ function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,part
     # Correction for positrons
     Fp = 1
     if particle == "positrons"
-        t = log(1+10^6/Z^2*Ei)
+        t = log(1+1e6/Z^2*Ei)
         Fp = 1 - exp(-1.2359e-1*t + 6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
     end
 
@@ -259,7 +262,7 @@ function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,par
     # Correction for positrons
     Fp = 1
     if particle == "positrons"
-        t = log(1+10^6/Z^2*Ei)
+        t = log(1+1e6/Z^2*Ei)
         Fp = 1 - exp(-1.2359e-1*t + 6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
     end
 
@@ -300,7 +303,7 @@ function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float
     for iz in range(1,Nz)
         Fp = 1
         if particle == "positrons"
-            t = log(1+10^6/Z[iz]^2*Ei)
+            t = log(1+1e6/Z[iz]^2*Ei)
             Fp = 1 - exp(-1.2359e-1*t+6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
         end
         St += ωz[iz] * 𝒩ₙ[iz] * Fp * this.bremsstrahlung_stopping_powers(iz,Z[iz],Ei)
@@ -314,7 +317,7 @@ function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float
     for iz in range(1,Nz)
         Fp = 1
         if particle == "positrons"
-            t = log(1+10^6/Z[iz]^2*Ei)
+            t = log(1+1e6/Z[iz]^2*Ei)
             Fp = 1 - exp(-1.2359e-1*t+6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
         end
         for gf in range(1,Ngf+1)
@@ -514,9 +517,9 @@ function preload_angular_distribution(this::Bremsstrahlung,Z::Vector{Int64})
                 B⁺ = B[iz][i,end]
                 C⁺ = C[iz][i,end]
             end
-            Ai = cubic_hermite_spline(E[iz][i-1:i],[A⁺,A⁻])(Ei)
-            Bi = cubic_hermite_spline(E[iz][i-1:i],[B⁺,B⁻])(Ei)
-            Ci = cubic_hermite_spline(E[iz][i-1:i],[C⁺,C⁻])(Ei)
+            Ai = cubic_hermite_spline(E[iz][i-1:i],[A⁻,A⁺])(Ei)
+            Bi = cubic_hermite_spline(E[iz][i-1:i],[B⁻,B⁺])(Ei)
+            Ci = cubic_hermite_spline(E[iz][i-1:i],[C⁻,C⁺])(Ei)
         end
         return Ai,Bi,Ci
     end

@@ -229,7 +229,7 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
     rs, n∞ = baro_coefficient(Z)
     η = 0
 
-    if Ei > 2
+    if Ei-2 > 0
 
         # High-energy Coulomb correction
         fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
@@ -377,9 +377,9 @@ function preload_angular_distribution(this::Pair_Production,Z::Vector{Int64})
                 B⁺ = B[iz][i,end]
                 C⁺ = C[iz][i,end]
             end
-            Ai = cubic_hermite_spline(E[iz][i-1:i],[A⁺,A⁻])(Ei)
-            Bi = cubic_hermite_spline(E[iz][i-1:i],[B⁺,B⁻])(Ei)
-            Ci = cubic_hermite_spline(E[iz][i-1:i],[C⁺,C⁻])(Ei)
+            Ai = cubic_hermite_spline(E[iz][i-1:i],[A⁻,A⁺])(Ei)
+            Bi = cubic_hermite_spline(E[iz][i-1:i],[B⁻,B⁺])(Ei)
+            Ci = cubic_hermite_spline(E[iz][i-1:i],[C⁻,C⁺])(Ei)
         end
         return Ai,Bi,Ci
     end

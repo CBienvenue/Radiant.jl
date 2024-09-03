@@ -195,7 +195,7 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
                 if this.is_waller_hartree_factor
                     S = this.incoherent_scattering_factor(iz,Ei,μ)
                 else
-                    S = 1
+                    S = Z
                 end
                 Pℓμ = legendre_polynomials(L,μ)
                 for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * S end
@@ -257,7 +257,7 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
                 if this.is_waller_hartree_factor
                     S = this.incoherent_scattering_factor(iz,Ei,μγ)
                 else
-                    S = 1
+                    S = Z
                 end
                 Pℓμ = legendre_polynomials(L,μ)
                 for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * S end
@@ -295,12 +295,13 @@ function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
             Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
 
             # Compute the differential scattering cross section
+            σs = 0.0
             if Ei/(1+2*Ei) ≤ Ef ≤ Ei
                 μ = max(min(1 + 1/Ei - 1/Ef,1),-1)
                 if this.is_waller_hartree_factor
                     S = this.incoherent_scattering_factor(iz,Ei,μ)
                 else
-                    S = 1
+                    S = Z
                 end
                 σs = S * π * rₑ^2 / Ei^2 * (Ei/Ef + Ef/Ei - 2*(1/Ef-1/Ei) + (1/Ef-1/Ei)^2)
             end
