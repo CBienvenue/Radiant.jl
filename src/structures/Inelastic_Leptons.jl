@@ -242,10 +242,10 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
     σℓ = zeros(L+1)
     if type == "S"
         Ep = Ef
-        W = Ei-Ep-Ui
+        W = (Ei-Ui)-Ep
     elseif type == "P"
         W = Ef
-        Ep = Ei-W-Ui
+        Ep = (Ei-Ui)-W
     else
         error("Unknown type")
     end
@@ -253,7 +253,7 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
     # Close collisions
     if W ≥ 0
         if particle == "electrons"
-           F = ( 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui)) )
+           F = 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui))
         elseif particle == "positrons"
             b = ((γ-1)/γ)^2
             b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
@@ -337,7 +337,7 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
 
     # Compute the total stopping power
     if particle == "electrons"
-        f = (1-β²) - (2*γ-1)/γ^2*log(2) +((γ-1)/γ)^2/8
+        f = (1-β²) - (2*γ-1)/γ^2*log(2) + ((γ-1)/γ)^2/8
     elseif particle == "positrons"
         f = 2*log(2) - β²/12 * (23 + 14/(γ+1) + 10/(γ+1)^2 + 4/(γ+1)^3)
     else
@@ -450,7 +450,7 @@ function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz:
         for iz in range(1,Nz)
             if Ei < E[iz,end]
                 Czprime = spline_Cz[iz](Ei)
-            elseif γ < 2
+            elseif Ei+1 < 2
                 Czprime = sum(pn[iz,:] .* Ei.^(1:6))
             else
                 Czprime = sum(pn[iz,:] .* 2 .^(1:6))

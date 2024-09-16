@@ -112,7 +112,7 @@ function bounds(this::Annihilation,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,typ
         Ef⁺ = max(Ef⁺,(γ+1)/2)
         if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     elseif type ∈ ["P_inel","P_brems","P_pp"]
-        if (Ef⁻-Ef⁺ < 0 || ~(Ef⁺ < (Ei+2)/2 < Ef⁻) ) isSkip = true else isSkip = false end
+        if (Ef⁻-Ef⁺ < 0 || ~(Ef⁺ < 1 < Ef⁻) ) isSkip = true else isSkip = false end
     else
         error("Unknown type of method for annihilation.")
     end
@@ -163,69 +163,13 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi
 
     # Annihilation of positrons scattered under the cutoff from inelastic collisionnal interaction
     elseif type == "P_inel"
-        #δE = 0.0001 # Protection against divergence of Bhabha
         σa = tcs(this.prior_interaction,Ei,min(Ein[end],Ec),"positrons",Z[iz])
-        σa_soft = tcs(this.prior_interaction,Ei,Ein[end],"positrons",Z[iz]) - σa
-        S_soft = sp(this.prior_interaction,Z,ωz,ρ,"solid",Ei,Ec,"positrons")
-        S_cs = 0
-        rₑ = 2.81794092e-13 # (in cm)
-        γ = Ei+1
-        β² = Ei*(Ei+2)/(Ei+1)^2
-        Nz = length(Z)
-        for i in range(1,Nz)
-            Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[i])
-            b = ((γ-1)/γ)^2
-            b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
-            b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
-            b3 = b * (2*(γ-1)*γ)/(γ+1)^2
-            b4 = b * (γ-1)^2/(γ+1)^2
-            for δi in range(1,Nshells)
-                Wmax = min(Ei-Ui[δi],Ei-Ec)
-                Wmin = 0
-                if Wmax > Wmin
-                    J₁⁺(x) = log(x+Ui[δi]) - b1*x/Ei + b2*(x^2/2+Ui[δi]*x)/Ei^2 - b3*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^3 + b4*(x^4/4+Ui[δi]*x^3+3*Ui[δi]^2*x^2/2+Ui[δi]^3*x)/Ei^4
-                    S_cs += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * (J₁⁺(Wmax)-J₁⁺(Wmin))
-                end
-            end
-        end
-        A = S_soft/S_cs
-        σℓ[1] += 2 * σa + 2 * A * σa_soft
+        σℓ[1] += 2 * σa
 
     # Annihilation of positrons scattered under the cutoff from Bremsstrahlung interaction
     elseif type == "P_brems"
         σa = tcs(this.prior_interaction,Ei,Z[iz],min(Ein[end],Ec),iz,"positrons","S",[Ein[end]])
-        σa_soft = tcs(this.prior_interaction,Ei,Z[iz],Ein[end],iz,"positrons","S",[Ein[end]]) - σa
-        S_soft = sp(this.prior_interaction,Z,ωz,ρ,"solid",Ei,Ec,[Ein[end]])
-        S_cs = 0
-        rₑ = 2.81794092e-13 # (in cm)
-        γ = Ei+1
-        β² = Ei*(Ei+2)/(Ei+1)^2
-        Eout = [Ein[end]]
-        Ngf = length(Eout)-1
-        Nz = length(Z)
-        𝒩ₙ = nuclei_density.(Z,ρ)
-        is_dirac, Np, q_type = out_distribution(this.prior_interaction)
-        if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
-        for iz in range(1,Nz)
-            t = log(1+1e6/Z[iz]^2*Ei)
-            Fp = 1 - exp(-1.2359e-1*t+6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
-            for gf in range(1,Ngf+1)
-                Ef⁻ = Eout[gf]
-                if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-                Ef⁻,Ef⁺,isSkip = bounds(this.prior_interaction,Ef⁻,Ef⁺,Ei,"Pₐ",Ec)
-                if isSkip continue end
-                ΔEf = Ef⁻ - Ef⁺
-                for n in range(1,Np)
-                    Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
-                    Eγ = Ei-Ef
-                    if Ei ≥ Ef && ΔEf ≥ 0
-                        S_cs += ωz[iz] * ΔEf/2 * w[n] * 𝒩ₙ[iz] * Eγ * Fp * this.prior_interaction.bremsstrahlung_cross_sections(iz,Z[iz],Ei,Eγ)
-                    end
-                end
-            end
-        end
-        A = S_soft/S_cs
-        σℓ[1] += 2 * σa + 2 * A * σa_soft
+        σℓ[1] += 2 * σa
 
     # Annihilation of positrons produced under the cutoff following pair production event
     elseif type == "P_pp"

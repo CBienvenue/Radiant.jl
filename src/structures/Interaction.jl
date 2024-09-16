@@ -79,13 +79,13 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
     elseif itype == Bremsstrahlung
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec)
     elseif itype == Compton
-        return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
+        return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ui)
     elseif itype == Elastic_Leptons
         return bounds(interaction,Ef⁻,Ef⁺,gi,gf)
     elseif itype == Inelastic_Leptons
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec,Ui,particle)
     elseif itype == Pair_Production
-        return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
+        return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Z)
     elseif itype == Photoelectric
         return bounds(interaction,Ef⁻,Ef⁺,gi,type,Ui,Ein)
     elseif itype == Rayleigh
@@ -106,7 +106,7 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
     elseif itype == Bremsstrahlung
         return dcs(interaction,L,Ei,Ef,Z,particle,type,iz,Ein,vec_Z,ωz,ρ)
     elseif itype == Compton
-        return dcs(interaction,L,Ei,Ef,type,Ef⁻,Ef⁺,Z,iz)
+        return dcs(interaction,L,Ei,Ef,type,Ef⁻,Ef⁺,Z,iz,δi)
     elseif itype == Elastic_Leptons
         return dcs(interaction,L,Ei,Z,particle,Ein[end],iz)
     elseif itype == Inelastic_Leptons

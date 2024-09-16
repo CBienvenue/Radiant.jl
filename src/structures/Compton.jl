@@ -19,7 +19,6 @@ mutable struct Compton <: Interaction
     incoming_particle::Vector{String}
     interaction_particles::Vector{String}
     interaction_types::Dict{Tuple{String,String},Vector{String}}
-    energy_integration_method::String
     Cℓk::Array{Float64}
     Cℓki::Array{Float64}
     is_CSD::Bool
@@ -30,11 +29,12 @@ mutable struct Compton <: Interaction
     is_waller_hartree_factor::Bool
     incoherent_scattering_factor::Function
     scattering_model::String
+    model::String
 
     # Constructor(s)
     function Compton(;
         ### Initial values ###
-        is_waller_hartree_factor=true,
+        model="waller-hartree",
         interaction_types = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])
         ######################
         )
@@ -43,13 +43,12 @@ mutable struct Compton <: Interaction
         this.set_interaction_types(interaction_types)
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
-        this.energy_integration_method = "quadrature"
         this.is_CSD = false
         this.is_AFP = false
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.set_is_waller_hartree_factor(is_waller_hartree_factor)
+        this.model = model
         this.scattering_model = "BTE"
         return this
     end
@@ -80,28 +79,6 @@ function set_interaction_types(this::Compton,interaction_types::Dict{Tuple{Strin
     this.interaction_types = interaction_types
 end
 
-"""
-    set_is_waller_hartree_factor(this::Compton,is_waller_hartree_factor::Bool)
-
-To active or desactivate the Waller-Hartree incohent scattering factor.
-
-# Input Argument(s)
-- `this::Compton`: compton structure.
-- `is_waller_hartree_factor::Bool`: enable (true) or disable (false) the Waller-Hartree factor.
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> compton = Compton()
-julia> compton.set_is_waller_hartree_factor(false)
-```
-"""
-function set_is_waller_hartree_factor(this::Compton,is_waller_hartree_factor::Bool)
-    this.is_waller_hartree_factor = is_waller_hartree_factor
-end
-
 function in_distribution(this::Compton)
     is_dirac = false
     N = 8
@@ -110,29 +87,27 @@ function in_distribution(this::Compton)
 end
 
 function out_distribution(this::Compton)
-    if this.energy_integration_method == "analytic"
-        is_dirac = true
-        N = 1
-        quadrature = "dirac"
-    elseif this.energy_integration_method == "quadrature"
-        is_dirac = false
-        N = 8
-        quadrature = "gauss-legendre"
-    else
-        error("Unknown energy integration method.")
-    end
+    is_dirac = false
+    N = 8
+    quadrature = "gauss-legendre"
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
+function bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ui::Float64)
     # Scattered photon
     if type == "S" 
         Ef⁻ = min(Ei,Ef⁻)
-        Ef⁺ = max(Ei/(1+2*Ei),Ef⁺)
+        if this.model != "impulse_approximation"
+            Ef⁺ = max(Ei/(1+2*Ei),Ef⁺)
+        end
         if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     # Produced electron
     elseif type == "P" 
-        Ef⁻ = min(2*Ei^2/(1+2*Ei),Ef⁻)
+        if this.model != "impulse_approximation"
+            Ef⁻ = min(2*Ei^2/(1+2*Ei),Ei,Ef⁻)
+        else
+            Ef⁻ = min(Ei,Ef⁻)
+        end
         if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     else
         error("Unknown type of method for Klein-Nishina scattering.")
@@ -140,51 +115,17 @@ function bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::St
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::Float64,Efmin::Float64,Z::Int64,iz::Int64)
+function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::Float64,Efmin::Float64,Z::Int64,iz::Int64,δi::Int64)
 
-    # Initialization
-    rₑ = 2.81794092e-13 # (in cm)
-    σs = 0
-    σℓ = zeros(L+1)
+    if this.model ∈ ["klein-nishina","waller-hartree"]
 
-    # Scattered photon
-    if type == "S"
+        # Initialization
+        rₑ = 2.81794092e-13 # (in cm)
+        σs = 0
+        σℓ = zeros(L+1)
 
-        # Exact integration
-        if this.energy_integration_method == "analytic"
-            Γ = Z * π*rₑ^2/Ei^2
-            αi = [1,Ei-2-2/Ei,2/Ei+1/Ei^2,1/Ei]
-            𝒢γ = zeros(L+4)
-            @inbounds for i in range(-(L+2),1)
-                if i == -1
-                    𝒢γ[(L+2)+i+1] = log(Efmax) - log(Efmin)
-                else
-                    𝒢γ[(L+2)+i+1] = ((Efmax)^(i+1) - (Efmin)^(i+1))/(i+1)
-                end
-            end
-            @inbounds for ℓ in range(0,L)
-                for k in range(0,div(ℓ,2))
-                    σℓk = 0.0
-                    for i in range(0,ℓ-2k)
-                        σℓki = 0.0
-                        for j in range(0,3)
-                            σℓki += αi[j+1] * 𝒢γ[(L+2)+(j-i-2)+1]
-                        end
-                        σℓk += (1+1/Ei)^(ℓ-2*k-i) * this.Cℓki[ℓ+1,k+1,i+1] * σℓki
-                    end 
-                    σℓ[ℓ+1] += this.Cℓk[ℓ+1,k+1] * σℓk
-                end
-                σℓ[ℓ+1] *= Γ/(2^ℓ)
-            end
-            # Correction to deal with high-order Legendre moments
-            for ℓ in range(1,L)
-                if abs(σℓ[1]) < abs(σℓ[ℓ+1])
-                    σℓ[ℓ+1:end] .= 0.0
-                    break
-                end
-            end
-        # Quadrature-based integration
-        elseif this.energy_integration_method == "quadrature"
+        # Scattered photon
+        if type == "S"
             # Compute the differential scattering cross section
             if Ei/(1+2*Ei) ≤ Ef ≤ Ei
                 σs = π * rₑ^2 / Ei^2 * (Ei/Ef + Ef/Ei - 2*(1/Ef-1/Ei) + (1/Ef-1/Ei)^2)
@@ -192,7 +133,7 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
             # Compute the Legendre moments of the flux
             if σs != 0
                 μ = max(min(1 + 1/Ei - 1/Ef,1),-1)
-                if this.is_waller_hartree_factor
+                if this.model == "waller-hartree"
                     S = this.incoherent_scattering_factor(iz,Ei,μ)
                 else
                     S = Z
@@ -200,49 +141,8 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
                 Pℓμ = legendre_polynomials(L,μ)
                 for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * S end
             end
-        else
-            error("Unknown energy integration method.")
-        end
-
-    # Produced electron
-    elseif type == "P"
-        # Exact integration
-        if this.energy_integration_method == "analytic"
-            Γ = Z*π*rₑ^2/Ei^2
-            αi = [1,Ei^2-2*Ei-2,-1/Ei,1+2/Ei+1/Ei^2,-(Ei-2-2/Ei)]
-            @inbounds for ℓ in range(0,L)
-                for k in range(0,div(ℓ,2))
-                    σℓk = 0.0
-                    if mod(ℓ-2k,2) == 0
-                        m = div(ℓ-2*k,2)
-                        for i in range(0,1)
-                            σℓk += αi[i+1] * (𝒢₃(i-2,-m,1,2,-1,Ei,1/Efmin)-𝒢₃(i-2,-m,1,2,-1,Ei,1/Efmax))
-                        end
-                        for i in range(0,2)
-                            σℓk += αi[i+3] * (𝒢₃(i-3,-m,1,2,0,1,1/Efmin)-𝒢₃(i-3,-m,1,2,0,1,1/Efmax))
-                        end
-                    else
-                        m = div(ℓ-2*k-1,2)
-                        for i in range(0,1)
-                            σℓk += αi[i+1] * (𝒢₄(2-i,m,1,2,-1,Ei,1/Efmin)-𝒢₄(2-i,m,1,2,-1,Ei,1/Efmax))
-                        end
-                        for i in range(0,2)
-                            σℓk += αi[i+3] * (𝒢₄(3-i,m,1,2,0,1,1/Efmin)-𝒢₄(3-i,m,1,2,0,1,1/Efmax))
-                        end
-                    end
-                    σℓ[ℓ+1] += (1+1/Ei)^(ℓ-2*k) * this.Cℓk[ℓ+1,k+1] * σℓk
-                end
-                σℓ[ℓ+1] *= Γ/(2^ℓ)
-            end 
-            # Correction to deal with high-order Legendre moments
-            for ℓ in range(1,L)
-                if abs(σℓ[1]) < abs(σℓ[ℓ+1])
-                    σℓ[ℓ+1:end] .= 0.0
-                    break
-                end
-            end
-        # Quadrature-based integration
-        elseif this.energy_integration_method == "quadrature"
+        # Produced electron
+        elseif type == "P"
             # Change of variable
             Eₑ = copy(Ef)
             Ef = Ei - Eₑ
@@ -254,7 +154,7 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
             if σs != 0
                 μ = max(min((1 + Ei)/Ei * 1/sqrt(2/Eₑ+1),1),-1)
                 μγ = max(min(1 + 1/Ei - 1/Ef,1),-1)
-                if this.is_waller_hartree_factor
+                if this.model == "waller-hartree"
                     S = this.incoherent_scattering_factor(iz,Ei,μγ)
                 else
                     S = Z
@@ -263,74 +163,154 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
                 for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * S end
             end
         else
-            error("Unknown energy integration method.")
+            error("Unknown interaction.")
         end
+        return σℓ
+
+    elseif this.model == "impulse_approximation"
+
+        mₑc² = 0.510999
+        σs = 0
+        σℓ = zeros(L+1)
+        J₀i = orbital_compton_profiles(Z)[δi]
+        _,Zi,Ui,_,_,_ = electron_subshells(Z)
+        mₑ = 1                        # (a₀)
+        c = 137.03599908388762        # (a₀×Eₕ/ħ)
+        rₑ = 5.325135459237564e-5     # (mₑ)
+        a₀ = 5.29177210903e-11        # (a₀)
+
+        # Conversion to atomic units (MeV) -> (Eₕ)
+        Ei = Ei * 1e6 / 27.211386245988 * mₑc²
+        Ef = Ef * 1e6 / 27.211386245988 * mₑc²
+        Ui .= Ui * 1e6 ./ 27.211386245988 * mₑc²
+
+        # Scattered photon
+        if type == "S"
+            Nμ = 80
+            μ,w = quadrature(Nμ,"gauss-lobatto")
+            if Ei - Ef - Ui[δi] ≥ 0
+                for n in range(1,Nμ)
+                    Pℓμ = legendre_polynomials(L,μ[n])
+                    Ec = Ei*mₑ*c^2/(mₑ*c^2+Ei*(1-μ[n]))
+                    pz = (Ei*Ef*(1-μ[n])-mₑ*c^2*(Ei-Ef))/(c*sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n]))
+                    Ji = J₀i*(1+2*J₀i*abs(pz))*exp(1/2-1/2*(1+2*J₀i*abs(pz))^2)
+                    σs = w[n] * π * rₑ^2 * Ef/Ei * (Ec/Ei+Ei/Ec+μ[n]^2-1) * 1/sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n]+Ei^2*(Ef-Ec)^2/Ec^2) * Zi[δi]*Ji *mₑ*c
+                    for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * (a₀ ^ 2) / 27.211386245988 * 100^2 * 1e6 * mₑc² end
+                end
+            end
+        # Produced electron
+        elseif type == "P"
+            Eₑ = copy(Ef)
+            Ef = (Ei - Ui[δi]) - Eₑ
+            Nμ = 80
+            μ,w = quadrature(Nμ,"gauss-lobatto")
+            if Ei - Ef - Ui[δi] ≥ 0
+                for n in range(1,Nμ)
+                    Pℓμ = legendre_polynomials(L,μ[n])
+                    Ec = Ei*mₑ*c^2/(mₑ*c^2+Ei*(1-μ[n]))
+                    pz = (Ei*Ef*(1-μ[n])-mₑ*c^2*(Ei-Ef))/(c*sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n]))
+                    Ji = J₀i*(1+2*J₀i*abs(pz))*exp(1/2-1/2*(1+2*J₀i*abs(pz))^2)
+                    σs = w[n] * π * rₑ^2 * Ef/Ei * (Ec/Ei+Ei/Ec+μ[n]^2-1) * 1/sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n]+Ei^2*(Ef-Ec)^2/Ec^2) * Zi[δi]*Ji *mₑ*c
+                    for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs * (a₀ ^ 2) / 27.211386245988 * 100^2 * 1e6 * mₑc² end
+                end
+            end
+        else
+            error("Unknown interaction.")
+        end
+        return σℓ
+
     else
-        error("Unknown interaction.")
+        error("Unknown Compton model.")
     end
-    return σℓ
 end
 
 function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
 
-    #=
-    rₑ = 2.81794092E-13 # (in cm)
-    f_klein_nishina(x) = (Ei-2-2/Ei)*log(x) + (1/(2*Ei))*x^2 + (2/Ei+1/Ei^2)*x - 1/x
-    σt = Z*π*rₑ^2/Ei^2*( f_klein_nishina(Ei) - f_klein_nishina(Ei/(1+2*Ei)) )
-    return σt
-    =#
+    if this.model ∈ ["klein-nishina","waller-hartree"]
+        σt = 0.0
+        rₑ = 2.81794092E-13 # (in cm)
+        Ngf = length(Eout)-1
+        is_dirac, Np, q_type = out_distribution(this)
+        if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
+        for gf in range(1,Ngf+1)
+            Ef⁻ = Eout[gf]
+            if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
+            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S",0.0)
+            if isSkip continue end
+            ΔEf = Ef⁻ - Ef⁺
+            for n in range(1,Np)
+                Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
 
-    σt = 0.0
-    rₑ = 2.81794092E-13 # (in cm)
-    Ngf = length(Eout)-1
-    is_dirac, Np, q_type = out_distribution(this)
-    if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
-    for gf in range(1,Ngf+1)
-        Ef⁻ = Eout[gf]
-        if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-        Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S")
-        if isSkip continue end
-        ΔEf = Ef⁻ - Ef⁺
-        for n in range(1,Np)
-            Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
-
-            # Compute the differential scattering cross section
-            σs = 0.0
-            if Ei/(1+2*Ei) ≤ Ef ≤ Ei
-                μ = max(min(1 + 1/Ei - 1/Ef,1),-1)
-                if this.is_waller_hartree_factor
-                    S = this.incoherent_scattering_factor(iz,Ei,μ)
-                else
-                    S = Z
+                # Compute the differential scattering cross section
+                σs = 0.0
+                if Ei/(1+2*Ei) ≤ Ef ≤ Ei
+                    μ = max(min(1 + 1/Ei - 1/Ef,1),-1)
+                    if this.model == "waller-hartree"
+                        S = this.incoherent_scattering_factor(iz,Ei,μ)
+                    else
+                        S = Z
+                    end
+                    σs = S * π * rₑ^2 / Ei^2 * (Ei/Ef + Ef/Ei - 2*(1/Ef-1/Ei) + (1/Ef-1/Ei)^2)
                 end
-                σs = S * π * rₑ^2 / Ei^2 * (Ei/Ef + Ef/Ei - 2*(1/Ef-1/Ei) + (1/Ef-1/Ei)^2)
+                
+                # Cross-sections
+                σt += ΔEf/2 * w[n] * σs
             end
-            
-            # Cross-sections
-            σt += ΔEf/2 * w[n] * σs
         end
-    end
+        return σt
 
-    return σt
-    
+    elseif this.model == "impulse_approximation"
+
+        mₑc² = 0.510999
+        mₑ = 1                        # (a₀)
+        c = 137.03599908388762        # (a₀×Eₕ/ħ)
+        rₑ = 5.325135459237564e-5     # (mₑ)
+        a₀ = 5.29177210903e-11        # (a₀)
+        Ei = Ei * 1e6 / 27.211386245988 * mₑc²
+        Eout2 = Eout .* (1e6 / 27.211386245988 * mₑc²)
+        Nμ = 80
+        μ,w2 = quadrature(Nμ,"gauss-lobatto")
+        Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z)
+        Ui .= Ui * 1e6 ./ 27.211386245988 * mₑc²
+        σt = 0.0
+        Ngf = length(Eout2)-1
+        is_dirac, Np, q_type = out_distribution(this)
+        if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
+        for gf in range(1,Ngf+1)
+            Ef⁻ = Eout2[gf]
+            if (gf != Ngf+1) Ef⁺ = Eout2[gf+1] else Ef⁺ = 0.0 end
+            for δi in range(1,Nshells)
+                Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S",Ui[δi])
+                if isSkip continue end
+                ΔEf = Ef⁻ - Ef⁺
+                for n in range(1,Np)
+                    Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
+                    σs = 0.0
+                    J₀i = orbital_compton_profiles(Z)[δi]
+                    if Ei - Ef - Ui[δi] ≥ 0
+                        for n2 in range(1,Nμ)
+                            Ec = Ei*mₑ*c^2/(mₑ*c^2+Ei*(1-μ[n2]))
+                            pz = (Ei*Ef*(1-μ[n2])-mₑ*c^2*(Ei-Ef))/(c*sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n2]))
+                            Ji = J₀i*(1+2*J₀i*abs(pz))*exp(1/2-1/2*(1+2*J₀i*abs(pz))^2)
+                            σs += w2[n2] * π * rₑ^2 * Ef/Ei * (Ec/Ei+Ei/Ec+μ[n2]^2-1) * 1/sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n2]+Ei^2*(Ef-Ec)^2/Ec^2) * Zi[δi]*Ji *mₑ*c
+                        end
+                    end
+                    # Cross-sections
+                    σt += ΔEf/2 * w[n] * σs * (a₀ ^ 2) * 100^2
+                end
+            end
+        end
+        return σt
+
+    else
+        error("Unknown Compton model.")
+    end
 end
 
 function preload_data(this::Compton,L::Int64,Z::Vector{Int64})
-
-    # Precompute angular integration factors
-    if this.energy_integration_method == "analytic"
-        this.Cℓk = zeros(L+1,div(L,2)+1)
-        this.Cℓki = zeros(L+1,div(L,2)+1,L+1)
-        for ℓ in range(0,L), k in range(0,div(L,2))
-            this.Cℓk[ℓ+1,k+1] = (-1)^k * exp( sum(log.(1:2*ℓ-2*k)) - sum(log.(1:k)) - sum(log.(1:ℓ-k)) - sum(log.(1:ℓ-2*k)) )
-            for i in range(0,L)
-                this.Cℓki[ℓ+1,k+1,i+1] = (-1)^i * exp( sum(log.(1:ℓ-2k)) -  sum(log.(1:i)) -  sum(log.(1:ℓ-2k-i)) )
-            end
-        end
-    end
     
     # Incoherent scattering factor
-    if this.is_waller_hartree_factor
+    if this.model == "waller-hartree"
         Nz = length(Z)
         x = Vector{Vector{Float64}}(undef,Nz)
         S = Vector{Vector{Float64}}(undef,Nz)

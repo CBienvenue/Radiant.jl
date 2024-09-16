@@ -44,7 +44,7 @@ for part in particles
     # Extract discrete_ordinates data
     discrete_ordinates = solvers.get_method(part)
     _,isCSD = discrete_ordinates.get_solver_type()
-
+    charge = particle_charge(part)
     norm = sources.get_normalization_factor()
     C = zeros(Ns[1],Ns[2],Ns[3])
 
@@ -82,7 +82,7 @@ for part in particles
 
         # Under-the-cutoff charge deposition
         if isCSD
-            C[ix,iy,iz] += βcutoff[mat[ix,iy,iz]] * 𝚽cutoff[1,1,ix,iy,iz]
+            C[ix,iy,iz] += βcutoff[mat[ix,iy,iz]] * 𝚽cutoff[1,1,ix,iy,iz] * (-charge)
         end
 
         # Normalization

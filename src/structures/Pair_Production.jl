@@ -121,11 +121,31 @@ function out_distribution(this::Pair_Production)
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
+function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Z::Int64)
     # Electron/positron production
     if type == "P" || type == "A"
-        Ef⁻ = min(Ef⁻,Ei-2)
-        if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
+        ϵ0 = 1/Ei
+        mₑc² = 0.510999
+        α = 1/137
+        a = α*Z
+        if Ei ≥ 50/mₑc²
+            fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
+        else
+            fc = 0
+        end
+        F = 8/3*log(Z) + 8*fc
+        δmin = 136/Z^(1/3) * 4 * ϵ0
+        δmax = exp((42.24-F)/8.368)-0.952
+        if δmin > δmax 
+            isSkip = true
+        else
+            ϵ1 = 1/2 * (1-sqrt(1-δmin/δmax))
+            ϵmin = max(ϵ0,ϵ1)
+            ϵmax = 1-ϵ0
+            Ef⁻ = min(Ef⁻,ϵmax*Ei-1)
+            Ef⁺ = max(Ef⁺,ϵmin*Ei-1)
+            if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
+        end
     else
         error("Unknown type of method for pair production.")
     end
@@ -135,36 +155,42 @@ end
 function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,particles::Vector{String},Ecutoff::Float64)
 
     # Initialization
+    mₑc² = 0.510999
+    rₑ = 2.81794092e-13 # (in cm)
     β² = Ei*(Ei+2)/(Ei+1)^2
     α = 1/137
     a = α*Z
     σs = 0.0
     σℓ = zeros(L+1)
-    rs, n∞ = baro_coefficient(Z)
     η = 0
 
     # Electron/Positron production
     if type == "P"
-        if 0 < Ef < Ei-2
+        if true #0 < Ef < Ei-2
 
             # High-energy Coulomb correction
-            fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
+            if Ei ≥ 50/mₑc²
+                fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
+            else
+                fc = 0
+            end
 
             # Normalization factor
             A = this.normalization_factor(iz,Ei)
 
-            # Screening functions
             ϵ = (Ef+1)/Ei
             ϵ₀ = 1/Ei
-            b = rs/2 * ϵ₀/(ϵ*(1-ϵ))
-            g1 = 7/3 - 2*log(1+b^2) - 6*b*atan(1/b) - b^2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
-            g2 = 11/6 - 2*log(1+b^2) - 3*b*atan(1/b) + b^2/2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
-            g0 = 4*log(rs) - 4*fc
-            ϕ₁ = max(g1 + g0,0)
-            ϕ₂ = max(g2 + g0,0)
-
-            # Cross-sections
-            σs = A * Z*(Z+η) * (2*(1/2-ϵ)^2*ϕ₁+ϕ₂)
+            δ = 136/Z^(1/3)*ϵ₀/(ϵ*(1-ϵ))
+            if δ ≤ 0
+                ϕ1 = 20.867 - 3.242*δ + 0.625*δ^2
+                ϕ2 = 20.209 - 1.930*δ - 0.086*δ^2
+            else
+                ϕ1 = 21.12 - 4.184*log(δ+0.952)
+                ϕ2 = ϕ1
+            end
+            F = 8/3*log(Z) + 8*fc
+            η = log(1440/Z^(2/3))/(log(183/Z^1/3)-fc)
+            σs = A * α * rₑ^2 * Z*(Z+η) * 1/Ei * ((ϵ^2+(1-ϵ)^2)*(ϕ1-F/2)+2/3*ϵ*(1-ϵ)*(ϕ2-F/2))
 
             # Sommerfield angular distribution
             β = sqrt(β²)
@@ -222,17 +248,21 @@ end
 function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{Float64},type::String)
 
     # Initialization
-    β² = Ei*(Ei+2)/(Ei+1)^2
+    mₑc² = 0.510999
+    rₑ = 2.81794092e-13 # (in cm)
     α = 1/137
     a = α*Z
     σt = 0.0
-    rs, n∞ = baro_coefficient(Z)
     η = 0
 
     if Ei-2 > 0
 
         # High-energy Coulomb correction
-        fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
+        if Ei ≥ 50/mₑc²
+            fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
+        else
+            fc = 0
+        end
 
         # Normalization factor
         A = this.normalization_factor(iz,Ei)
@@ -244,24 +274,25 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
         for gf in range(1,Ngf+1)
             Ef⁻ = Eout[gf]
             if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,type)
+            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,type,Z)
             if isSkip continue end
             ΔEf = Ef⁻ - Ef⁺
             for n in range(1,Np)
                 Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
 
-                # Screening functions
                 ϵ = (Ef+1)/Ei
                 ϵ₀ = 1/Ei
-                b = rs/2 * ϵ₀/(ϵ*(1-ϵ))
-                g1 = 7/3 - 2*log(1+b^2) - 6*b*atan(1/b) - b^2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
-                g2 = 11/6 - 2*log(1+b^2) - 3*b*atan(1/b) + b^2/2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
-                g0 = 4*log(rs) - 4*fc
-                ϕ₁ = max(g1 + g0,0)
-                ϕ₂ = max(g2 + g0,0)
-                
-                # Cross-sections
-                σt += ΔEf/2 * w[n] * A * Z*(Z+η) * (2*(1/2-ϵ)^2*ϕ₁+ϕ₂)
+                δ = 136/Z^(1/3)*ϵ₀/(ϵ*(1-ϵ))
+                if δ ≤ 0
+                    ϕ1 = 20.867 - 3.242*δ + 0.625*δ^2
+                    ϕ2 = 20.209 - 1.930*δ - 0.086*δ^2
+                else
+                    ϕ1 = 21.12 - 4.184*log(δ+0.952)
+                    ϕ2 = ϕ1
+                end
+                F =  8/3*log(Z) + 8*fc
+                η = log(1440/Z^(2/3))/(log(183/Z^1/3)-fc)
+                σt += ΔEf/2 * w[n] * A * α * rₑ^2 * Z*(Z+η)  * 1/Ei * ((ϵ^2+(1-ϵ)^2)*(ϕ1-F/2)+2/3*ϵ*(1-ϵ)*(ϕ2-F/2))
             end
         end
 

@@ -38,7 +38,8 @@ Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
 Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi); Σc = zeros(Ngi); S = zeros(Ngi+1); Sm = zeros(Ngi); α = zeros(Ngi)
 Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
-charge = particle_charge(incoming_particle)
+charge_in = particle_charge(incoming_particle)
+charge_out = particle_charge(scattered_particle)
 type = string(full_type[1])
 
 
@@ -69,8 +70,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
         Ei = (u[ni]*ΔEi + (Ei⁻+Ei⁺))/2
 
         # Boundary between catastrophic and soft interactions
-        ΔE_soft = (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺) + (Ei⁻-2*Ei⁺+Ei²⁺)/(Ei⁻-Ei⁺) * Ei
-        Ec = Ei-ΔE_soft
+        Ec = Ei * (Ei⁺-Ei²⁺)/ (Ei⁻-Ei⁺) - (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺)
         if (interaction.scattering_model == "FP") Ec = 0.0 end
 
         # Total cross sections
@@ -133,6 +133,22 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
 
 end
 
+if typeof(interaction) == Annihilation
+    if full_type == "P_pp"
+        α_p = 0
+        β_p = 1/2
+    else
+        α_p = 1
+        β_p = 0
+    end
+elseif typeof(interaction) == Pair_Production
+    α_p = 0
+    β_p = 0 # no electron extracted from medium in pair production
+else
+    α_p = -charge_in
+    β_p = -charge_out
+end
+
 @inbounds for gi in range(1,Ngi)
 
     if type == "A"
@@ -147,7 +163,7 @@ end
         # ∅
 
         # Charge deposition cross sections
-        Σc[gi] = Σa[gi] * charge
+        Σc[gi] = Σt[gi] * α_p
 
     elseif type == "S"
 
@@ -161,7 +177,7 @@ end
         # ∅
 
         # Charge deposition cross sections
-        Σc[gi] = Σa[gi] * charge
+        Σc[gi] = Σt[gi] * α_p - sum(Σsℓ[gi,:,1]) * β_p
 
     elseif type == "P"
 
@@ -178,7 +194,7 @@ end
         Σs[gi] = sum(Σsℓ[gi,:,1])
 
         # Charge deposition cross sections
-        Σc[gi] = -Σs[gi] * charge
+        Σc[gi] = -sum(Σsℓ[gi,:,1]) * β_p
 
     end
 
