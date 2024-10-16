@@ -77,7 +77,7 @@ isInnerConv=false
 
     # Calculation of the Legendre components of the source (in-scattering)
     Qℓ = copy(Qℓout)
-    if solver ∉ [4,5,6] Qℓ = scattering_source(Qℓ,𝚽ℓ,ndims,Σs,mat,1,P,pℓ,Nm[5],Ns) end
+    if solver ∉ [4,5,6] Qℓ = scattering_source(Qℓ,𝚽ℓ,Σs,mat,P,pℓ,Nm[5],Ns) end
 
     # Finite element treatment of the angular Fokker-Planck term
     if solver ∈ [2,4] Qℓ = fokker_planck_source(N_FP,P,Nm[5],α,𝚽ℓ,Qℓ,Ns,mat,ℳ,Mn_FP,Dn_FP) end

@@ -169,7 +169,7 @@ function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,t
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,E_in::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64)
+function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64)
 
     # Inititalisation
     β² = Ei*(Ei+2)/(Ei+1)^2
@@ -288,10 +288,9 @@ function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,par
     return σt
 end
 
-function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,Eout::Vector{Float64})
+function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::String)
 
     # Initialization
-    particle = this.incoming_particle
     rₑ = 2.81794092e-13 # (in cm)
     β² = Ei*(Ei+2)/(Ei+1)^2
     α = 1/137

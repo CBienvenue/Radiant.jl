@@ -27,6 +27,7 @@ Ns = geometry.get_number_of_voxels()
 mat = geometry.get_material_per_voxel()
 
 # Discrete ordinates data
+_,isCSD = discrete_ordinates_in.get_solver_type()
 particle_in = discrete_ordinates_in.get_particle()
 particle_out = discrete_ordinates_out.get_particle()
 L_in = discrete_ordinates_in.get_legendre_order()
@@ -75,16 +76,17 @@ end
 Nmat = cross_sections.get_number_of_materials()
 Ng_in = cross_sections.get_number_of_groups(particle_in)
 Ng_out = cross_sections.get_number_of_groups(particle_out)
-Σs = zeros(Nmat,Ng_in,Ng_out,L_in+1)
+Σs = zeros(Nmat,Ng_in+1,Ng_out,L_in+1)
 Σs = cross_sections.get_scattering(particle_in,particle_out,L_in)
 
 # Flux data
 𝚽ℓ = flux.get_flux()
+if isCSD 𝚽cutoff = flux.get_flux_cutoff() else 𝚽cutoff = zeros(P_in,Nm_in,Ns[1],Ns[2],Ns[3]) end
 
 # Compute the scattered particle source
 Qℓ_in = zeros(Ng_in,P_in,Nm_in,Ns[1],Ns[2],Ns[3])
 Qℓ_out = zeros(Ng_out,P_out,Nm_out,Ns[1],Ns[2],Ns[3])
-scattering_source(Qℓ_in,𝚽ℓ,Ndims,Σs,mat,3,P_in,pℓ_in,Nm_in,Ns,range(1,Ng_in),range(1,Ng_out))
+scattering_source(Qℓ_in,𝚽ℓ,Σs,mat,P_in,pℓ_in,Nm_in,Ns,Ng_in,Ng_out,𝚽cutoff)
 
 # Adapt the source to the new particle flux expansions
 map = map_moments(𝒪_in,𝒪_out)

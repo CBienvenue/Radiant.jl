@@ -38,6 +38,6 @@ include("angular_polynomial_basis.jl")
 include("livolant.jl")
 
 # Print
-include("print_dose.jl")
-include("print_charge.jl")
-include("print_flux.jl")
+include("energy_deposition.jl")
+include("charge_deposition.jl")
+include("flux.jl")

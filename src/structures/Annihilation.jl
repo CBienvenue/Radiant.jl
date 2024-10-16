@@ -181,6 +181,65 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi
     return σℓ
 end
 
+function dcs_cutoff(this::Annihilation,L::Int64,Ngf::Int64,E_in::Vector{Float64},E_out::Vector{Float64},incoming_particle::String,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64)
+    
+    # Initialization
+    Σs = zeros(Ngf,L+1)
+    Σsₑ = zeros(Ngf)
+
+    # Annihilation for positrons slowing-down under the cutoff
+    if incoming_particle == "positrons"
+        S_cutoff = sp_dispatch(this.prior_interaction,Z,ωz,ρ,"solid",E_in[end],0.0,incoming_particle,E_in[end],E_out)
+
+        σa = 0.0
+        σa2 = 0.0
+        σa3 = 0.0
+        if typeof(this.prior_interaction) == Inelastic_Leptons
+            for iz in range(1,length(Z))
+                Ei = E_in[end]
+                γ = Ei+1
+                rₑ = 2.81794092E-13       # (in cm)
+                β² = Ei*(Ei+2)/(Ei+1)^2
+                Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[iz])
+                for δi in range(1,Nshells)
+                    if Ei ≥ Ui[δi]
+                        βᵢ² = Ui[δi]*(Ui[δi]+2)/(Ui[δi]+1)^2
+                        fv = βᵢ²/β² * (β²/(β²+βᵢ²-β²*βᵢ²))^(3/2)
+                        σa += π*rₑ^2/Ui[δi]^2 * Zi[δi] * fv * (1 + 2/3*(1-Ui[δi]/(2*Ei))*log(2.7+sqrt(Ei/Ui[δi]-1))) * (1-Ui[δi]/Ei)^(3/2) * ωz[iz] * nuclei_density(Z[iz],ρ)
+
+                        b = ((γ-1)/γ)^2
+                        b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
+                        b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
+                        b3 = b * (2*(γ-1)*γ)/(γ+1)^2
+                        b4 = b * (γ-1)^2/(γ+1)^2
+                        J₀⁺(x) = -1/(x+Ui[δi]) - b1*log(x+Ui[δi])/Ei + b2*x/Ei^2 - b3*(x^2/2+Ui[δi]*x)/Ei^3 + b4*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^4
+                        σa2 += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁺(Ei)-J₀⁺(Ui[δi])) * ωz[iz] * nuclei_density(Z[iz],ρ)
+
+
+                        Eq = Ei - Ti[δi] - Ui[δi]
+                        if Eq > Ti[δi] + Ui[δi]
+                            σa3 += π*rₑ^2/Ui[δi]^2 * Zi[δi] * Ui[δi]/Eq * (1+2/3*Ti[δi]/Ui[δi]-Ui[δi]/(Eq-Ti[δi])) * ωz[iz] * nuclei_density(Z[iz],ρ)
+                        elseif Ui[δi] ≤ Eq ≤ Ti[δi] + Ui[δi]
+                            σa3 += π*rₑ^2/Ui[δi]^2 * Zi[δi] * Ui[δi]/Eq * 2/3*sqrt(Ui[δi]/Ti[δi])*(Eq/Ui[δi]-1)^(3/2) * ωz[iz] * nuclei_density(Z[iz],ρ)
+                        end
+
+                    end
+                end
+            end
+        end
+        println([σa,σa2,σa3,S_cutoff/(E_in[end-1]-E_in[end])])
+
+        for ig in range(1,Ngf)
+            if E_out[ig] ≥ 1 ≥ E_out[ig+1]
+                Σs[ig,1] = 2 * σa3 # (S_cutoff+Sa) / E_in[end] #(E_in[end-1]-E_in[end])
+                Σsₑ[ig] = Σs[ig,1] * ((E_out[ig]+E_out[ig+1])/2-1)
+                break
+            end
+        end
+    end
+    return Σs,Σsₑ
+end
+
 function tcs(this::Annihilation,Ei::Float64,Z::Int64)
     γ = Ei+1
     rₑ = 2.81794092e-13 # (in cm)
@@ -190,7 +249,6 @@ function tcs(this::Annihilation,Ei::Float64,Z::Int64)
 end
 
 function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,type::String,Eout::Vector{Float64},Ein::Vector{Float64},interactions::Vector{Interaction})
-    
 
     # Preload interaction prior to positron scattering under the cutoff
     interaction = missing

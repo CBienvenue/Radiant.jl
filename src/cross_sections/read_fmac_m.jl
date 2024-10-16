@@ -325,8 +325,11 @@ for n in range(1,numberOfParticles)
         mcs.set_absorption(absorptionCrossSections[index+1:index+numberOfGroups[n],imat])
         mcs.set_stopping_powers(stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat])
         mcs.set_momentum_transfer(continuousScatteringCrossSections[index+1:index+numberOfGroups[n],imat])
-        mcs.set_energy_deposition(energyDepositionCrossSections[index+1:index+numberOfGroups[n],imat])
-        mcs.set_charge_deposition(chargeDepositionCrossSections[index+1:index+numberOfGroups[n],imat])
+
+        sp_cutoff = stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat][end]
+        charge = particle_charge(String.(particleNames)[n])
+        mcs.set_energy_deposition(push!(energyDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*energy_boundaries[n][end]/(energy_boundaries[n][end-1]-energy_boundaries[n][end])))
+        mcs.set_charge_deposition(push!(chargeDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*(-charge)))
 
         # Per scattered particle
         for m in range(1,numberOfParticles)
@@ -336,7 +339,7 @@ for n in range(1,numberOfParticles)
                 index2 = index2 + numberOfGroups[i]
             end
             
-            scat = zeros(numberOfGroups[n],numberOfGroups[m],legendreOrder+1)
+            scat = zeros(numberOfGroups[n]+1,numberOfGroups[m],legendreOrder+1)
             for ig_i in range(1,numberOfGroups[n]), ig_f in range(1,numberOfGroups[m])
                 if haskey(scatDict[imat][ig_f+index2],ig_i+index)
                     Ls = length(scatDict[imat][ig_f+index2][ig_i+index])

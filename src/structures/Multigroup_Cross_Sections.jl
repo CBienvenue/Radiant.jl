@@ -68,12 +68,12 @@ function set_momentum_transfer(this::Multigroup_Cross_Sections,momentum_transfer
 end
 
 function set_energy_deposition(this::Multigroup_Cross_Sections,energy_deposition::Vector{Float64})
-    if length(energy_deposition) != this.number_of_groups error("The length of the energy_deposition cross-sections don't fit the number of groups.") end
+    if length(energy_deposition) != this.number_of_groups + 1 error("The length of the energy_deposition cross-sections don't fit the number of groups.") end
     this.energy_deposition = energy_deposition
 end
 
 function set_charge_deposition(this::Multigroup_Cross_Sections,charge_deposition::Vector{Float64})
-    if length(charge_deposition) != this.number_of_groups error("The length of the charge_deposition cross-sections don't fit the number of groups.") end
+    if length(charge_deposition) != this.number_of_groups + 1 error("The length of the charge_deposition cross-sections don't fit the number of groups.") end
     this.charge_deposition = charge_deposition
 end
 

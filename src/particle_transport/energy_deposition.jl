@@ -1,19 +1,19 @@
 """
-    charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,
-    sources::Fixed_Sources,flux::Flux,type::String)
+    energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,
+    solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
 
-Calculate the charge deposition and print it in the output file. 
+Calculate the energy deposition and print it in the output file. 
 
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
 - 'solvers::Solvers': solvers informations.
-- 'sources::Fixed_Sources': sources informations.
+- 'sources::Sources': sources informations.
 - 'flux::Flux': flux informations.
 - 'type::String': type of output.
 
 # Output Argument(s)
-- 'Ctot::Array{Float64}': charge deposition per voxel [MeV/g × cmⁿ per particle], where
+- 'Dtot::Array{Float64}': energy deposition per voxel [MeV/g × cmⁿ per particle], where
    n is the geometry dimension. 
 
 # Reference(s)
@@ -21,7 +21,7 @@ Calculate the charge deposition and print it in the output file.
   Boltzmann-Fokker-Planck Equation
 
 """
-function charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
+function energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
 
 #----
 # Extract geometry data
@@ -33,7 +33,7 @@ mat = geometry.get_material_per_voxel()
 #----
 # Calculate the total energy deposition
 #----
-Ctot = zeros(Ns[1],Ns[2],Ns[3])
+Dtot = zeros(Ns[1],Ns[2],Ns[3])
 particles = flux.get_particles()
 if type != "total"
     if type ∉ particles error("Unknown particle type.") end
@@ -44,9 +44,9 @@ for part in particles
     # Extract discrete_ordinates data
     discrete_ordinates = solvers.get_method(part)
     _,isCSD = discrete_ordinates.get_solver_type()
-    charge = particle_charge(part)
+
     norm = sources.get_normalization_factor()
-    C = zeros(Ns[1],Ns[2],Ns[3])
+    D = zeros(Ns[1],Ns[2],Ns[3])
 
     #----
     # Extract flux data
@@ -61,43 +61,33 @@ for part in particles
     Ng = cross_sections.get_number_of_groups(part)
     ρ = cross_sections.get_densities()
 
-    # Extract charge deposition cross sections
-    Σc = zeros(Ng,Nmat)
-    Σc = cross_sections.get_charge_deposition(part)
-
-    # Extract stopping power at cutoff energy
-    if isCSD
-        βcutoff = cross_sections.get_stopping_powers(part)[end,:]
-    end
+    # Extract energy deposition cross sections
+    Σe = cross_sections.get_energy_deposition(part)
 
     #----
-    # Charge deposition calculations
+    # Energy deposition calculations
     #----
     @inbounds for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
 
-        # In-group charge deposition
+        # In-group energy deposition
         for ig in range(1,Ng)
-            C[ix,iy,iz] += Σc[ig,mat[ix,iy,iz]] * 𝚽l[ig,1,1,ix,iy,iz]
+            D[ix,iy,iz] += Σe[ig,mat[ix,iy,iz]] * 𝚽l[ig,1,1,ix,iy,iz]
         end
-
-        # Under-the-cutoff charge deposition
-        if isCSD
-            C[ix,iy,iz] += βcutoff[mat[ix,iy,iz]] * 𝚽cutoff[1,1,ix,iy,iz] * (-charge)
-        end
+        if isCSD D[ix,iy,iz] += Σe[Ng+1,mat[ix,iy,iz]] * 𝚽cutoff[1,1,ix,iy,iz] end
 
         # Normalization
-        C[ix,iy,iz] /= ρ[mat[ix,iy,iz]] * norm
+        D[ix,iy,iz] /= ρ[mat[ix,iy,iz]] * norm
 
     end
-    Ctot += C
+    Dtot += D
 end
 
 if Ndims == 1
-    return Ctot[:,1,1]
+    return Dtot[:,1,1]
 elseif Ndims == 2
-    return Ctot[:,:,1]
+    return Dtot[:,:,1]
 elseif Ndims == 3
-    return Ctot
+    return Dtot
 end
 
 end

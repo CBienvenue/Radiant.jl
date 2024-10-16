@@ -124,28 +124,8 @@ end
 function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Z::Int64)
     # Electron/positron production
     if type == "P" || type == "A"
-        ϵ0 = 1/Ei
-        mₑc² = 0.510999
-        α = 1/137
-        a = α*Z
-        if Ei ≥ 50/mₑc²
-            fc = a^2*(1/(1+a^2) + 0.202059 - 0.03693*a^2 + 0.00835*a^4 - 0.00201*a^6 + 0.00049*a^8 - 0.00012*a^10 + 0.00003*a^12)
-        else
-            fc = 0
-        end
-        F = 8/3*log(Z) + 8*fc
-        δmin = 136/Z^(1/3) * 4 * ϵ0
-        δmax = exp((42.24-F)/8.368)-0.952
-        if δmin > δmax 
-            isSkip = true
-        else
-            ϵ1 = 1/2 * (1-sqrt(1-δmin/δmax))
-            ϵmin = max(ϵ0,ϵ1)
-            ϵmax = 1-ϵ0
-            Ef⁻ = min(Ef⁻,ϵmax*Ei-1)
-            Ef⁺ = max(Ef⁺,ϵmin*Ei-1)
-            if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
-        end
+        Ef⁻ = min(Ef⁻,Ei-2)
+        if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     else
         error("Unknown type of method for pair production.")
     end
@@ -162,11 +142,11 @@ function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,par
     a = α*Z
     σs = 0.0
     σℓ = zeros(L+1)
-    η = 0
+    rs, n∞ = baro_coefficient(Z)
 
     # Electron/Positron production
     if type == "P"
-        if true #0 < Ef < Ei-2
+        if 0 < Ef < Ei-2
 
             # High-energy Coulomb correction
             if Ei ≥ 50/mₑc²
@@ -180,17 +160,13 @@ function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,par
 
             ϵ = (Ef+1)/Ei
             ϵ₀ = 1/Ei
-            δ = 136/Z^(1/3)*ϵ₀/(ϵ*(1-ϵ))
-            if δ ≤ 0
-                ϕ1 = 20.867 - 3.242*δ + 0.625*δ^2
-                ϕ2 = 20.209 - 1.930*δ - 0.086*δ^2
-            else
-                ϕ1 = 21.12 - 4.184*log(δ+0.952)
-                ϕ2 = ϕ1
-            end
-            F = 8/3*log(Z) + 8*fc
-            η = log(1440/Z^(2/3))/(log(183/Z^1/3)-fc)
-            σs = A * α * rₑ^2 * Z*(Z+η) * 1/Ei * ((ϵ^2+(1-ϵ)^2)*(ϕ1-F/2)+2/3*ϵ*(1-ϵ)*(ϕ2-F/2))
+            b = rs/2 * ϵ₀/(ϵ*(1-ϵ))
+            g1 = 7/3 - 2*log(1+b^2) - 6*b*atan(1/b) - b^2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
+            g2 = 11/6 - 2*log(1+b^2) - 3*b*atan(1/b) + b^2/2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
+            g0 = 4*log(rs) - 4*fc
+            ϕ₁ = g1 + g0
+            ϕ₂ = g2 + g0
+            σs = A * α * rₑ^2 * Z*(Z+0) * 1/Ei * (2*(1/2-ϵ)^2*ϕ₁+ϕ₂)
 
             # Sommerfield angular distribution
             β = sqrt(β²)
@@ -253,7 +229,7 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
     α = 1/137
     a = α*Z
     σt = 0.0
-    η = 0
+    rs, n∞ = baro_coefficient(Z)
 
     if Ei-2 > 0
 
@@ -282,17 +258,13 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
 
                 ϵ = (Ef+1)/Ei
                 ϵ₀ = 1/Ei
-                δ = 136/Z^(1/3)*ϵ₀/(ϵ*(1-ϵ))
-                if δ ≤ 0
-                    ϕ1 = 20.867 - 3.242*δ + 0.625*δ^2
-                    ϕ2 = 20.209 - 1.930*δ - 0.086*δ^2
-                else
-                    ϕ1 = 21.12 - 4.184*log(δ+0.952)
-                    ϕ2 = ϕ1
-                end
-                F =  8/3*log(Z) + 8*fc
-                η = log(1440/Z^(2/3))/(log(183/Z^1/3)-fc)
-                σt += ΔEf/2 * w[n] * A * α * rₑ^2 * Z*(Z+η)  * 1/Ei * ((ϵ^2+(1-ϵ)^2)*(ϕ1-F/2)+2/3*ϵ*(1-ϵ)*(ϕ2-F/2))
+                b = rs/2 * ϵ₀/(ϵ*(1-ϵ))
+                g1 = 7/3 - 2*log(1+b^2) - 6*b*atan(1/b) - b^2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
+                g2 = 11/6 - 2*log(1+b^2) - 3*b*atan(1/b) + b^2/2*(4 - 4*b*atan(1/b) - 3*log(1+1/b^2))
+                g0 = 4*log(rs) - 4*fc
+                ϕ₁ = g1 + g0
+                ϕ₂ = g2 + g0
+                σt += ΔEf/2 * w[n] * A * α * rₑ^2 * Z*(Z+0) * 1/Ei * (2*(1/2-ϵ)^2*ϕ₁+ϕ₂)
             end
         end
 
@@ -324,10 +296,11 @@ function preload_normalization_factor(this::Pair_Production,Z::Vector{Int64},Ema
     A = Vector{Vector{Float64}}(undef,Nz)
     spline_A = Vector{Function}(undef,Nz)
     this.normalization_factor = function normalization_factor_equal_to_one(iz::Int64,Ei::Float64) return 1 end
-    this.is_triplet_contribution = false
     for iz in range(1,Nz)
         E[iz] = data["E"][Z[iz]]
         σt_exp = data["σ"][Z[iz]]
+
+        if ~all(E[iz][i] < E[iz][i+1] for i in 1:length(E[iz])-1) error("Incorrect input data.") end
 
         # Define the interval corresponding to the required interpolation data for calculations
         i⁻ = max(searchsortedfirst(E[iz],Emin) - 1,1)
@@ -344,12 +317,13 @@ function preload_normalization_factor(this::Pair_Production,Z::Vector{Int64},Ema
         for i in range(1,Ng)
             if (σt[i] != 0) A[iz][i] = σt_exp[i]/σt[i] else A[iz][i] = 0.0 end
         end
-        spline_A[iz] = cubic_hermite_spline(E[iz],A[iz])
+        if length(E[iz]) != 1
+            spline_A[iz] = cubic_hermite_spline(E[iz],A[iz])
+        end
     end
     this.normalization_factor = function normalization_factor(iz::Int64,Ei::Float64)
         return spline_A[iz](Ei)
     end
-    this.is_triplet_contribution = true
 end
 
 function preload_angular_distribution(this::Pair_Production,Z::Vector{Int64})

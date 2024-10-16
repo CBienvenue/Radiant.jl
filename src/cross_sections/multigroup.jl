@@ -35,8 +35,8 @@ end
 # Initialization
 mₑc² = 0.510999
 Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
-Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi); Σc = zeros(Ngi); S = zeros(Ngi+1); Sm = zeros(Ngi); α = zeros(Ngi)
-Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
+Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); S = zeros(Ngi+1); Sm = zeros(Ngi); α = zeros(Ngi)
+Σsℓ = zeros(Ngi+1,Ngf,L+1); Σsₑ = zeros(Ngi+1,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
 charge_in = particle_charge(incoming_particle)
 charge_out = particle_charge(scattered_particle)
@@ -133,6 +133,11 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
 
 end
 
+# Particle production under the cutoff
+if full_type ∈ ["P_inel","P_brems"]
+    #Σsℓ[Ngi+1,:,:],Σsₑ[Ngi+1,:] = dcs_cutoff_dispatch(interaction,L,Ngf,E_in,E_out,incoming_particle,Z,ωz,ρ)
+end
+
 if typeof(interaction) == Annihilation
     if full_type == "P_pp"
         α_p = 0
@@ -203,6 +208,12 @@ end
         error("Particle conservation is not satisfied: ",[Σa[gi],Σt[gi],Σs[gi],sum(Σsℓ[gi,:,1])])
     end
 
+end
+
+# Slowing-down under the cutoff contributions
+if type != "P"
+    Σe[Ngi+1] = S[Ngi+1] * E_in[end]/(E_in[end-1]-E_in[end]) - sum(Σsₑ[Ngi+1,:])
+    Σc[Ngi+1] = S[Ngi+1] * (-charge_in)/(E_in[end-1]-E_in[end])
 end
 
 # Change of units (mₑc² → MeV)

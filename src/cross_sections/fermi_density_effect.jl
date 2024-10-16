@@ -46,7 +46,7 @@ if type == "fano"
         # Find the root L
         f(L) = Ωp^2/Zeff * sum(Zi./(Wi.^2 .+ L^2)) - (1-β²)
         dfdL(L) = -2*L*Ωp^2/Zeff * sum(Zi./((Wi.^2 .+ L.^2).^2))
-        L = newton_bissection(f,dfdL,10*Ωp/sqrt(1-β²),0)
+        L = newton_bissection(f,dfdL,10*Ωp/sqrt(1-β²),0,1e-5,500)
 
         # Compute the Fermi density effect
         δF = 1/Zeff * sum(Zi.* log.(1 .+ L^2 ./Wi.^2)) - L^2/Ωp^2 * (1-β²)

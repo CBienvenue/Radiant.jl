@@ -68,7 +68,7 @@ else
 end
 
 # Scattering cross sections
-Σs = zeros(Nmat,Ng,Ng,L+1)
+Σs = zeros(Nmat,Ng+1,Ng,L+1)
 if solver ∉ [4,5]
     Σs = cross_sections.get_scattering(part,part,L)
 end
@@ -158,7 +158,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 
         # Calculation of the Legendre components of the source (out-scattering)
         Qℓout = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
-        if solver ∉ [4,5] Qℓout = scattering_source(Qℓout,𝚽ℓ,Ndims,Σs[:,:,ig,:],mat,2,P,pℓ,Nm[5],Ns,range(1,Ng),range(ig,ig)) end
+        if solver ∉ [4,5] Qℓout = scattering_source(Qℓout,𝚽ℓ,Σs[:,:,ig,:],mat,P,pℓ,Nm[5],Ns,Ng,ig) end
 
         # Fixed volumic sources
         Qℓout .+= volume_sources[ig,:,:,:,:,:]
@@ -203,7 +203,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
         # Calculate the flux at the cutoff energy
         if isCSD
             @inbounds for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,P)
-                𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
+                𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz] * ΔE[end]
             end
         end
     else

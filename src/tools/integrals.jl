@@ -107,6 +107,8 @@ function 𝒢₃(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
 
     if Δ == 0
         return (a/α)^m*𝒢₃(n+m,0,a,b,α,β,x)
+    elseif n == 0 && m == 0 
+        return x
     elseif n == 0
         if m != -1 return z^(m+1)/(b*(m+1)) else return log(abs(z))/b end
     elseif m == 0

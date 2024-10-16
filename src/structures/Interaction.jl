@@ -104,7 +104,7 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
     if itype == Annihilation
         return dcs(interaction,L,Ei,Ef,type,gi,vec_Z,ωz,ρ,iz,Ein,Ec)
     elseif itype == Bremsstrahlung
-        return dcs(interaction,L,Ei,Ef,Z,particle,type,iz,Ein,vec_Z,ωz,ρ)
+        return dcs(interaction,L,Ei,Ef,Z,particle,type,iz)
     elseif itype == Compton
         return dcs(interaction,L,Ei,Ef,type,Ef⁻,Ef⁺,Z,iz,δi)
     elseif itype == Elastic_Leptons
@@ -121,6 +121,15 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
         return dcs(interaction,L,Ei,Z,iz,δi,Ef⁻,Ef⁺,incoming_particle)
     elseif itype == Auger
         return dcs(interaction,L,Ei,Z,iz,δi,Ef⁻,Ef⁺,incoming_particle)
+    else
+        error("Unknown interaction.")
+    end
+end
+
+function dcs_cutoff_dispatch(interaction::Interaction,L::Int64,Ngf::Int64,E_in::Vector{Float64},E_out::Vector{Float64},incoming_particle::String,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64)
+    itype = typeof(interaction)
+    if itype == Annihilation
+        return dcs_cutoff(interaction,L,Ngf,E_in,E_out,incoming_particle,Z,ωz,ρ)
     else
         error("Unknown interaction.")
     end
@@ -152,7 +161,7 @@ end
 function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::String,Ecutoff::Float64,Eout::Vector{Float64})
     itype = typeof(interaction)
     if itype == Bremsstrahlung
-        return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,Eout)
+        return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,Eout,particle)
     elseif itype == Inelastic_Leptons
         return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,particle)
     else

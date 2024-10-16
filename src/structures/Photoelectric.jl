@@ -223,6 +223,17 @@ function preload_photoelectric_cross_sections(this::Photoelectric,Z::Vector{Int6
         for iz in range(1,Nz)
             E[iz] = data["E"][Z[iz]]
             σ[iz] = data["σ"][Z[iz]]
+
+            # Temporary fix - Delete additionnal data in photoelectric_JENDL5...
+            for subshells in keys(E[iz])
+                index = length(E[iz][subshells])
+                for i in range(2,length(E[iz][subshells]))
+                    if E[iz][subshells][i-1] > E[iz][subshells][i] index = i-1; break end
+                end
+                E[iz][subshells] = E[iz][subshells][1:index]
+                σ[iz][subshells] = σ[iz][subshells][1:index] 
+            end
+
             photoelectric_spline[iz] = Dict()
             for subshells in keys(E[iz])
                 photoelectric_spline[iz][subshells] = cubic_hermite_spline(E[iz][subshells],σ[iz][subshells])
