@@ -84,8 +84,8 @@ isInnerConv=false
 
     # Electromagnetic source
     if is_EM
-        for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-            for is in range(1,Nm[5]), n in range(1,N), m in range(1,N)
+        for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[5])
+            for n in range(1,P), m in range(1,P)
                 Qℓ[n,is,ix,iy,iz] += ℳ_EM[n,m] * 𝚽ℓ[m,is,ix,iy,iz]
             end
         end
