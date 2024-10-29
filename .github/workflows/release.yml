@@ -41,6 +41,10 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
-          body: ${{ steps.changelog.outputs.changelog }}
+          body: |
+            ${{ steps.changelog.outputs.changelog }}
+
+            Full Changelog: [${{ steps.get_prev_tag.outputs.prev_tag }}...v${{ steps.get_version.outputs.version }}](
+            https://github.com/${{ github.repository }}/compare/${{ steps.get_prev_tag.outputs.prev_tag }}...v${{ steps.get_version.outputs.version }})
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
