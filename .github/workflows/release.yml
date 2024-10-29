@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch the full history to get all commits
 
       - name: Get Project.toml version
         id: get_version
@@ -21,10 +23,24 @@ jobs:
           version=$(grep -E '^version = ' Project.toml | sed -E 's/version = "(.*)"/\1/')
           echo "::set-output name=version::$version"
 
+      - name: Get Previous Tag
+        id: get_prev_tag
+        run: |
+          prev_tag=$(git describe --tags --abbrev=0 HEAD^)
+          echo "::set-output name=prev_tag::$prev_tag"
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # Collect all commit messages between the previous and current tag
+          changelog=$(git log ${{ steps.get_prev_tag.outputs.prev_tag }}..HEAD --pretty=format:"- %s")
+          echo "::set-output name=changelog::$changelog"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
