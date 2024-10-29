@@ -1,0 +1,30 @@
+name: Release on Version Change
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Project.toml"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get Project.toml version
+        id: get_version
+        run: |
+          version=$(grep -E '^version = ' Project.toml | sed -E 's/version = "(.*)"/\1/')
+          echo "::set-output name=version::$version"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

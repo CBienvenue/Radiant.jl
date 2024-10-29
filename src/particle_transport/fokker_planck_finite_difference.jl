@@ -54,7 +54,7 @@ if Qdims == 1
     end
     
     Cn = Cn⁻ + Cn⁺
-    λ₀ = 0
+    λ₀ = maximum(Cn)
     ℳ_temp = zeros(N,N)
     @inbounds for n in range(1,N), m in range(1,N)
         if n == m
@@ -278,6 +278,13 @@ elseif Qdims == 3
             end
         end
     end
+
+    diag_ℳ = [abs(ℳ[i, i]) for i in range(1,Nd)]
+    λ₀ = maximum(diag_ℳ)
+    for i in range(1,Nd)
+        ℳ[i, i] += λ₀
+    end
+
 end
 
 return ℳ, λ₀, Mn_FP, Dn_FP, N_FP
