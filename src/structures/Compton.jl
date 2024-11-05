@@ -63,8 +63,8 @@ To define the interaction types for Compton processes.
 # Input Argument(s)
 - `this::Compton`: compton structure.
 - `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("photons","photons") => ["S"]`: scattering of incident photon following Compton interaction.
-    - `("photons","electrons") => ["P"]`: produced electron following Compton interaction.
+    - `("photons","photons")   => ["S"]` : scattering of incident photon following Compton interaction.
+    - `("photons","electrons") => ["P"]` : produced electron following Compton interaction.
 
 # Output Argument(s)
 N/A
@@ -77,6 +77,31 @@ julia> compton.set_interaction_types( Dict(("photons","photons") => ["S"]) ) # E
 """
 function set_interaction_types(this::Compton,interaction_types::Dict{Tuple{String,String},Vector{String}})
     this.interaction_types = interaction_types
+end
+
+"""
+    set_model(this::Compton,model::String)
+
+To define the Compton physics model.
+
+# Input Argument(s)
+- `this::Compton`: compton structure.
+- `model::String`: Compton physics interaction model, which can be:
+    - `klein-nishina`  : Klein-Nishina model.
+    - `waller-hartree` : Klein-Nishina model, with Waller-Hartree incoherent scattering function.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> compton = Compton()
+julia> compton.set_model("klein-nishina")
+```
+"""
+function set_model(this::Compton,model::String)
+    if lowercase(model) ∉ ["klein-nishina","waller-hartree"] error("Unknown Compton model.") end
+    this.model = lowercase(model)
 end
 
 function in_distribution(this::Compton)

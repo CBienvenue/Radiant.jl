@@ -212,7 +212,7 @@ function angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims,g_type=1)
     i = 1
     # Iterate over the spherical harmonics
     for ℓ in range(1,L)
-        if Qdims == 2 m_min = 0 else m_min = -ℓ end
+        m_min = -ℓ
         for m in range(m_min,ℓ)
             S = zeros(N)
             for n in range(1,i), n2 in range(1,N)
