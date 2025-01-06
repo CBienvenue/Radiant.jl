@@ -41,6 +41,8 @@ mutable struct Cross_Sections
     energy_boundaries         ::Union{Missing,Vector{Vector{Float64}}}
     multigroup_cross_sections ::Union{Missing,Array{Multigroup_Cross_Sections}}
     is_build                  ::Bool
+    custom_absorption         ::Vector{Real}
+    custom_scattering         ::Vector{Real}
 
     # Constructor(s)
     function Cross_Sections()
@@ -91,6 +93,8 @@ function is_ready_to_build(this::Cross_Sections)
         elseif length(this.group_structure) != this.number_of_particles
             error("The number of groups structure information do not fit the number of particles.")
         end
+    elseif uppercase(this.source) == "CUSTOM"
+        ###
     else
         error("Unkown source of cross-sections data.")
     end
@@ -125,6 +129,8 @@ function build(this::Cross_Sections)
         read_fmac_m(this)
     elseif uppercase(this.source) == "RADIANT"
         generate_cross_sections(this)
+    elseif uppercase(this.source) == "CUSTOM"
+        custom_cross_sections(this)
     else
         error("Unkown source of cross-sections data.")
     end
@@ -177,7 +183,7 @@ julia> cs.set_source("FMAC-M")
 ```
 """
 function set_source(this::Cross_Sections,source::String)
-    if uppercase(source) ∉ ["FMAC-M","RADIANT"] error("Unkown source of cross-sections data.") end
+    if uppercase(source) ∉ ["FMAC-M","RADIANT","CUSTOM"] error("Unkown source of cross-sections data.") end
     this.source = source
 end
 
@@ -411,6 +417,14 @@ end
 
 function set_multigroup_cross_sections(this::Cross_Sections,multigroup_cross_sections::Array{Multigroup_Cross_Sections})
     this.multigroup_cross_sections = multigroup_cross_sections
+end
+
+function set_absorption(this::Cross_Sections,Σa::Vector{Float64})
+    this.custom_absorption = Σa
+end
+
+function set_scattering(this::Cross_Sections,Σs::Vector{Float64})
+    this.custom_scattering = Σs
 end
 
 function get_file(this::Cross_Sections)

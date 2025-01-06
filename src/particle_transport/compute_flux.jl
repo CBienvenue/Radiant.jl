@@ -53,9 +53,11 @@ part = discrete_ordinates.get_particle()
 solver,isCSD = discrete_ordinates.get_solver_type()
 Nmat = cross_sections.get_number_of_materials()
 Ng = cross_sections.get_number_of_groups(part)
-ΔE = cross_sections.get_energy_width(part)
-E = cross_sections.get_energies(part)
-Eb = cross_sections.get_energy_boundaries(part)
+if isCSD
+    ΔE = cross_sections.get_energy_width(part)
+    E = cross_sections.get_energies(part)
+    Eb = cross_sections.get_energy_boundaries(part)
+end
 
 println(">>>Particle: $part <<<")
 

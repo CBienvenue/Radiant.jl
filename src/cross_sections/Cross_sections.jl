@@ -3,6 +3,7 @@
 include("read_fmac_m.jl")
 include("write_fmac_m.jl")
 include("generate_cross_sections.jl")
+include("custom_cross_sections.jl")
 include("energy_group_structure.jl")
 include("atomic_electron_cascades.jl")
 
