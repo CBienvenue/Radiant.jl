@@ -65,7 +65,7 @@ function initalize_sources!(this::Source,cross_sections::Cross_Sections,geometry
     Qdims = discrete_ordinates.get_quadrature_dimension(geometry.dimension)
     if geometry.dimension ≥ 2 Ny = geometry.number_of_voxels["y"] else Ny = 1 end
     if geometry.dimension ≥ 3 Nz = geometry.number_of_voxels["z"] else Nz = 1 end
-    Ω,w = quadrature(discrete_ordinates.quadrature_order,discrete_ordinates.quadrature_type,geometry.dimension)
+    Ω,w = quadrature(discrete_ordinates.quadrature_order,discrete_ordinates.quadrature_type,Qdims)
     if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
     number_of_directions = length(w)
     P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.quadrature_order,discrete_ordinates.get_angular_boltzmann(),Qdims)
@@ -99,7 +99,8 @@ function add_source!(this::Source,surface_sources::Surface_Source)
     if this.geometry.dimension ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
     if this.geometry.dimension ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
     if particle != this.discrete_ordinates.particle error(string("No methods available for ",particle," particle.")) end
-    _,w = quadrature(this.discrete_ordinates.quadrature_order,this.discrete_ordinates.quadrature_type,this.geometry.dimension)
+    Qdims = this.discrete_ordinates.get_quadrature_dimension(this.geometry.dimension)
+    _,w = quadrature(this.discrete_ordinates.quadrature_order,this.discrete_ordinates.quadrature_type,Qdims)
     number_of_directions = length(w)
     Q = Array{Union{Array{Float64},Float64}}(undef,Ng,number_of_directions,2*this.geometry.dimension)
     Q .= 0.0
