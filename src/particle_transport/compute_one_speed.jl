@@ -57,7 +57,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM,ℳ_EM)
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C,ω,I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM,ℳ_EM)
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)

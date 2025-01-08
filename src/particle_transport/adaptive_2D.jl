@@ -29,7 +29,7 @@ Compute the weighting parameters for adaptative calculations over a 2D finite-el
   for Charged Particle Transport.
 
 """
-function adaptive_2D(𝒪::Vector{Int64},ω::Vector{Matrix{Float64}},𝚽n::Vector{Float64},𝚽12::Vector{Vector{Float64}},s::Vector{Float64},Λ::Vector{Float64},Ti::Vector{Float64},Qn,h,QQ)
+function adaptive_2D(𝒪::Vector{Int64},ω,𝚽n::Vector{Float64},𝚽12::Vector{Vector{Float64}},s::Vector{Float64},Λ::Vector{Float64},Ti::Vector{Float64},Qn,h,QQ)
 
 # Initialization
 isFixed = zeros(Bool,2)
@@ -163,8 +163,8 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
     # Loop over all dimension
     for i in range(1,2)
 
-        P = ω[i][1,1] / Λ[i]
-        Q = ω[i][3,1] - P * Λ[i]
+        P = ω[i][1,1,1] / Λ[i]
+        Q = ω[i][3,1,1] - P * Λ[i]
         T = Ti[i]
         if abs(P-0) < ϵ && abs(Q-1) < ϵ && abs(T-0) < ϵ
 
@@ -252,12 +252,12 @@ elseif 𝒪[1] == 2 && 𝒪[2] == 2
                 isFixed[i] = true
             else
                 isFixed[i] = false
-                ω[i][1,1] = P[i] * Λ[i]
-                ω[i][2,1] = 1 - P[i] * Λ[i]
-                ω[i][3,1] = Q[i] + P[i] * Λ[i] * (2-Q[i])
-                ω[i][1,2] = 0
-                ω[i][2,2] = 1
-                ω[i][3,2] = Q[i]
+                ω[i][1,1,1] = P[i] * Λ[i]
+                ω[i][2,1,1] = 1 - P[i] * Λ[i]
+                ω[i][3,1,1] = Q[i] + P[i] * Λ[i] * (2-Q[i])
+                ω[i][1,2,2] = 0
+                ω[i][2,2,2] = 1
+                ω[i][3,2,2] = Q[i]
             end
         end
     end

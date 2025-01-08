@@ -1,8 +1,8 @@
 """
     flux_3D_BTE(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,Δx::Float64,Δy::Float64,
     Δz::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},
-    𝚽z12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,Cx::Vector{Float64},
-    Cy::Vector{Float64},Cz::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},
+    𝚽z12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,C::Vector{Float64},
+    C::Vector{Float64},C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},
     ωz::Array{Float64},isAdaptx::Bool,isAdapty::Bool,isAdaptz::Bool)
 
 Compute flux solution in a cell in 3D Cartesian geometry for the Boltzmann transport
@@ -23,9 +23,9 @@ equation.
 - '𝒪x::Int64': spatial closure relation order.
 - '𝒪y::Int64': spatial closure relation order.
 - '𝒪z::Int64': spatial closure relation order.
-- 'Cx::Vector{Float64}': constants related to normalized Legendre.
-- 'Cy::Vector{Float64}': constants related to normalized Legendre.
-- 'Cz::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
 - 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
 - 'ωy::Array{Float64}': weighting factors of the y-axis scheme.
 - 'ωz::Array{Float64}': weighting factors of the z-axis scheme.
@@ -43,160 +43,71 @@ equation.
 N/A
 
 """
-function flux_3D_BTE(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,Cx::Vector{Float64},Cy::Vector{Float64},Cz::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},isAdaptx::Bool,isAdapty::Bool,isAdaptz::Bool)
+function flux_3D_BTE(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,C,ωx,ωy,ωz,isAdapt)
 
 # Initialization
-μ = μ * Δy * Δz
-η = η * Δx * Δz
-ξ = ξ * Δx * Δy
+sx = sign(μ)
+sy = sign(η)
+sz = sign(ξ)
+hx = abs(μ)/Δx
+hy = abs(η)/Δy
+hz = abs(ξ)/Δz
 Nm = 𝒪x*𝒪y*𝒪z
 S = zeros(Nm,Nm)
 Q = zeros(Nm)
 𝚽n = Q
 
-# Adaptive loop
-isAdapt = isAdaptx && isAdapty && isAdaptz
-isFixed = false
-while ~isFixed
+# Adaptive weight calculations
+if isAdapt ωx,ωy,ωz = adaptive(𝒪x,𝒪y,𝒪z,ωx,ωy,ωz,μ,η,ξ,Δx,Δy,Δz,Qn,𝚽x12,𝚽y12,𝚽z12,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
 @inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y), iz in range(1,𝒪z), jz in range(1,𝒪z)
     i = 𝒪y*𝒪x*(iz-1) + 𝒪x * (iy-1) + ix
     j = 𝒪y*𝒪x*(jz-1) + 𝒪x * (jy-1) + jx
-    # Diagonal terms
-    if i == j
-        S[i,j] = Σt * Δx * Δy * Δz + Cx[ix]^2 * ωx[jx+1,jy,jz] * abs(μ) + Cy[iy]^2 * ωy[jy+1,jx,jz] * abs(η) + Cz[iz]^2 * ωy[jz+1,jx,jy] * abs(ξ)
-    # Upper diagonal terms
-    elseif i < j
-    if iz == jz
-    if iy == jy
-    # Space terms - x
-    if mod(ix+jx,2) == 1
-        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jy,jz] * μ
-    else
-        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jy,jz] * abs(μ)
+    if (i == j) S[i,j] += Σt end
+    if iy == jy && iz == jz
+        if (ix ≥ jx + 1) S[i,j] -= C[ix] * hx * sx * C[jx] * (1-(-1)^(ix-jx)) end
+        S[i,j] += C[ix] * hx * sx^(ix-1) * C[jx] * sx^(jx-1) * ωx[jx+1,jy,jz]
     end
-    elseif ix == jx
-    # Space terms - y
-    if mod(iy+jy,2) == 1
-        S[i,j] = Cy[iy] * Cy[jy] * ωy[jy+1,jx,jz] * η
-    else
-        S[i,j] = Cy[iy] * Cy[jy] * ωy[jy+1,jx,jz] * abs(η)
+    if ix == jx && iz == jz
+        if (iy ≥ jy + 1) S[i,j] -= C[iy] * hy * sy * C[jy] * (1-(-1)^(iy-jy)) end 
+        S[i,j] += C[iy] * hy * sy^(iy-1) * C[jy] * sy^(jy-1) * ωy[jy+1,jx,jz]
     end
-    end
-    elseif iy == jy && ix == jx
-    # Space terms - z
-    if mod(iz+jz,2) == 1
-        S[i,j] = Cz[iz] * Cz[jz] * ωz[jz+1,jx,jy] * ξ
-    else
-        S[i,j] = Cz[iz] * Cz[jz] * ωz[jz+1,jx,jy] * abs(ξ)
-    end
-    end
-# Under diagonal terms
-    else
-    if iz == jz
-    if iy == jy
-    # Space terms - x
-    if mod(ix+jx,2) == 1
-        S[i,j] = Cx[ix] * Cx[jx] * (ωx[jx+1,jy,jz]-2) * μ
-    else
-        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jy,jz] * abs(μ)
-    end
-    elseif ix == jx
-    # Space terms - y
-    if mod(iy+jy,2) == 1
-        S[i,j] = Cy[iy] * Cy[jy] * (ωy[jy+1,jx,jz]-2) * η
-    else
-        S[i,j] = Cy[iy] * Cy[jy] * ωy[jy+1,jx,jz] * abs(η)
-    end
-    end
-    elseif iy == jy && ix == jx
-    # Space terms - z
-    if mod(iz+jz,2) == 1
-        S[i,j] = Cz[iz] * Cz[jz] * (ωz[jz+1,jx,jy]-2) * ξ
-    else
-        S[i,j] = Cz[iz] * Cz[jz] * ωz[jz+1,jx,jy] * abs(ξ)
-    end
-    end
+    if ix == jx && iy == jy
+        if (iz ≥ jz + 1) S[i,j] -= C[iz] * hz * sz * C[jz] * (1-(-1)^(iz-jz)) end 
+        S[i,j] += C[iz] * hz * sz^(iz-1) * C[jz] * sz^(jz-1) * ωz[jz+1,jx,jy]
     end
 end
 
 # Source vector
-@inbounds for ix in range(1,𝒪x), iy in range(1,𝒪y), iz in range(1,𝒪z)
-    i = 𝒪y*𝒪x*(iz-1) + 𝒪x * (iy-1) + ix
-    ixm = 𝒪y*(iz-1) + iy
-    iym = 𝒪x*(iz-1) + ix
-    izm = 𝒪x*(iy-1) + ix
-    Q[i] = Qn[i] * Δx * Δy * Δz
-    # Space terms - x
-    if mod(ix,2) == 1
-        Q[i] += Cx[ix] * (1-ωx[1,iy,iz]) * 𝚽x12[ixm] * abs(μ)
-    else
-        Q[i] += -Cx[ix] * (1+ωx[1,iy,iz]) * 𝚽x12[ixm] * μ
-    end
-    # Space terms - y
-    if mod(iy,2) == 1
-        Q[i] += Cy[iy] * (1-ωy[1,ix,iz]) * 𝚽y12[iym] * abs(η)
-    else
-        Q[i] += -Cy[iy] * (1+ωy[1,ix,iz]) * 𝚽y12[iym] * η
-    end
-    # Space terms - z
-    if mod(iz,2) == 1
-        Q[i] += Cz[iz] * (1-ωz[1,ix,iy]) * 𝚽z12[izm] * abs(ξ)
-    else
-        Q[i] += -Cz[iz] * (1+ωz[1,ix,iy]) * 𝚽z12[izm] * ξ
-    end
+@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
+    j = 𝒪y*𝒪x*(jz-1) + 𝒪x * (jy-1) + jx
+    jxm = 𝒪y*(jz-1) + jy
+    jym = 𝒪x*(jz-1) + jx
+    jzm = 𝒪x*(jy-1) + jx
+    Q[j] = Qn[j]
+    Q[j] -= C[jx] * hx * (sx^(jx-1) * ωx[1,jy,jz] - (-sx)^(jx-1)) * 𝚽x12[jxm] 
+    Q[j] -= C[jy] * hy * (sy^(jy-1) * ωy[1,jx,jz] - (-sy)^(jy-1)) * 𝚽y12[jym] 
+    Q[j] -= C[jz] * hz * (sz^(jz-1) * ωz[1,jx,jy] - (-sz)^(jz-1)) * 𝚽z12[jzm]
 end
 
+# Solve the equation system
 𝚽n = S\Q
 
-# Adaptive correction of weighting parameters
-if isAdapt
-    error("Not implemented yet.")
-    #isFixed, ω = adaptive(2,[𝒪x,𝒪y,𝒪z],[ωx,ωy,ωz],𝚽n,[𝚽x12,𝚽y12,𝚽z12],[sign(μ),sign(η),sign(ξ)],[1.0,1.0,1.0],[0.0,0.0,0.0])
-    #ωx = ω[1]; ωy = ω[2]; ωz = ω[3];
-else
-    isFixed = true
-end
-
-
-end # End of adaptive loop
-
 # Closure relation
-@inbounds for ix in range(1,𝒪x), iy in range(1,𝒪y), iz in range(1,𝒪z)
-    ixm = 𝒪y*(iz-1) + iy
-    iym = 𝒪x*(iz-1) + ix
-    izm = 𝒪x*(iy-1) + ix
-    if (ix == 1) 𝚽x12[ixm] = ωx[1,iy,iz] * 𝚽x12[ixm] end
-    if (iy == 1) 𝚽y12[iym] = ωy[1,ix,iz] * 𝚽y12[iym] end
-    if (iz == 1) 𝚽z12[izm] = ωz[1,ix,iy] * 𝚽z12[izm] end
-end
-@inbounds for ix in range(1,𝒪x), iy in range(1,𝒪y), iz in range(1,𝒪z)
-    i = 𝒪y*𝒪x*(iz-1) + 𝒪x * (iy-1) + ix
-    ixm = 𝒪y*(iz-1) + iy
-    iym = 𝒪x*(iz-1) + ix
-    izm = 𝒪x*(iy-1) + ix
-    # Space terms - x
-    if mod(ix,2) == 1
-        𝚽x12[ixm] += Cx[ix] * ωx[ix+1,iy,iz] * 𝚽n[i]
-    else
-        𝚽x12[ixm] += Cx[ix] * ωx[ix+1,iy,iz] * 𝚽n[i] * sign(μ)
-    end
-    # Space terms - y
-    if mod(iy,2) == 1
-        𝚽y12[iym] += Cy[iy] * ωy[iy+1,ix,iz] * 𝚽n[i]
-    else
-        𝚽y12[iym] += Cy[iy] * ωy[iy+1,ix,iz] * 𝚽n[i] * sign(η)
-    end
-    # Space terms - z
-    if mod(iz,2) == 1
-        𝚽z12[izm] += Cz[iz] * ωy[iz+1,ix,iy] * 𝚽n[i]
-    else
-        𝚽z12[izm] += Cz[iz] * ωy[iz+1,ix,iy] * 𝚽n[i] * sign(ξ)
-    end
+@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
+    j = 𝒪x*(jy-1)+jx
+    jxm = 𝒪y*(jz-1) + jy
+    jym = 𝒪x*(jz-1) + jx
+    jzm = 𝒪x*(jy-1) + jx
+    if (jx == 1) 𝚽x12[jxm] = ωx[1,jy,jz] * 𝚽x12[jxm] end
+    if (jy == 1) 𝚽y12[jym] = ωy[1,jx,jz] * 𝚽y12[jym] end
+    if (jz == 1) 𝚽z12[jzm] = ωz[1,jx,jy] * 𝚽y12[jzm] end
+    𝚽x12[jxm] += C[jx] * sx^(jx-1) * ωx[jx+1,jy,jz] * 𝚽n[j]
+    𝚽y12[jym] += C[jy] * sy^(jy-1) * ωy[jy+1,jx,jz] * 𝚽n[j]
+    𝚽y12[jzm] += C[jz] * sz^(jz-1) * ωz[jz+1,jx,jy] * 𝚽n[j]
 end
 
 # Returning solutions
 return 𝚽n, 𝚽x12, 𝚽y12, 𝚽z12
-
 end

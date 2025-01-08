@@ -28,6 +28,9 @@ include("flux_2D_BTE.jl")
 include("flux_2D_BFP.jl")
 include("flux_3D_BTE.jl")
 include("flux_3D_BFP.jl")
+
+include("adaptive.jl")
+
 include("adaptive_1D.jl")
 include("adaptive_2D.jl")
 include("adaptive_3D.jl")

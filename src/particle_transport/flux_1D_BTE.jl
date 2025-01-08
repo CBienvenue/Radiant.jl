@@ -27,65 +27,35 @@ N/A
 function flux_1D_BTE(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},𝚽x12::Float64,𝒪x::Int64,Cx::Vector{Float64},ωx::Vector{Float64},isAdaptx::Bool)
 
 # Initialization
+sx = sign(μ)
+hx = abs(μ)/Δx
 S = zeros(𝒪x,𝒪x)
 Q = zeros(𝒪x)
 𝚽n = Q
 
-# Adaptive loop
-isFixed = false
-while ~isFixed
+# Adaptive weight calculations
+if isAdaptx ωx = adaptive(𝒪x,ωx,μ,Δx,Qn,𝚽x12,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
 @inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x)
-    # Diagonal terms
-    if ix == jx
-        S[ix,jx] = Σt * Δx + Cx[ix]^2 * ωx[jx+1] * abs(μ)
-    # Upper diagonal terms
-    elseif ix < jx
-    if mod(ix+jx,2) == 1
-        S[ix,jx] = Cx[ix] * Cx[jx] * ωx[jx+1] * μ
-    else
-        S[ix,jx] = Cx[ix] * Cx[jx] * ωx[jx+1] * abs(μ)
-    end
-    # Under diagonal terms
-    else
-    if mod(ix+jx,2) == 1
-        S[ix,jx] = Cx[ix] * Cx[jx] * (ωx[jx+1]-2) * μ
-    else
-        S[ix,jx] = Cx[ix] * Cx[jx] * ωx[jx+1] * abs(μ)
-    end
-    end
+    if (ix == jx) S[ix,jx] += Σt end
+    if (ix ≥ jx + 1) S[ix,jx] -= Cx[ix] * hx * sx * Cx[jx] * (1-(-1)^(ix-jx)) end
+    S[ix,jx] += Cx[ix] * hx * sx^(ix-1) * Cx[jx] * sx^(jx-1) * ωx[jx+1]
 end
 
 # Source vector
-@inbounds for ix in range(1,𝒪x)
-    Q[ix] = Qn[ix] * Δx
-    if mod(ix,2) == 1
-        Q[ix] += Cx[ix] * (1-ωx[1]) * 𝚽x12 * abs(μ)
-    else
-        Q[ix] += -Cx[ix] * (1+ωx[1]) * 𝚽x12 * μ
-    end
+@inbounds for jx in range(1,𝒪x)
+    Q[jx] += Qn[jx]
+    Q[jx] -= Cx[jx] * hx * (sx^(jx-1) * ωx[1] - (-sx)^(jx-1)) * 𝚽x12
 end
 
+# Solve the equation system
 𝚽n = S\Q
-
-# Adaptive correction of weighting parameters
-if isAdaptx
-    isFixed, ωx = adaptive_1D(𝒪x,ωx,𝚽n,𝚽x12,sign(μ),1.0,Q,abs(μ)/(Δx * Σt))
-else
-    isFixed = true
-end
-
-end # End of adaptive loop
 
 # Closure relation
 𝚽x12 = ωx[1] * 𝚽x12
-@inbounds for ix in range(1,𝒪x)
-    if mod(ix,2) == 1
-        𝚽x12 += Cx[ix] * ωx[ix+1] * 𝚽n[ix]
-    else
-        𝚽x12 += Cx[ix] * ωx[ix+1] * 𝚽n[ix] * sign(μ)
-    end
+@inbounds for jx in range(1,𝒪x)
+    𝚽x12 += Cx[jx] * sx^(jx-1) * ωx[jx+1] * 𝚽n[jx]
 end
 
 # Returning solutions
