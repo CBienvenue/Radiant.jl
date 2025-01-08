@@ -1,16 +1,37 @@
-function adaptive(𝒪x::Int64,ωx,μ::Float64,Δx::Float64,Qn::Vector{Float64},𝚽x12::Float64,Σ::Float64)
+"""
+    adaptive(𝒪x::Int64,ωx::Vector{Float64},μ::Float64,Δx::Float64,Qn::Vector{Float64},
+    𝚽x12::Float64,Σ::Float64)
 
-# Initialization    
+Compute the weighting parameters for adaptative calculations over a 1D finite-element. 
+
+# Input Argument(s)
+
+# Output Argument(s)
+- 'ω': corrected weighting factors.
+
+# Reference(s)
+- Alcouffe (1993) : An adaptive weighted diamond differencing method for three-dimensional
+  xyz geometry.
+- Voloschenko (1994) : Numerical solution of the time-dependant transport equation with
+  pulsed sources.
+- Germogenova (1994) : Adaptive positive nodal method for transport equation.
+- Voloschenko (2011) : Some improvements in solving the transport equation by the use of 
+  the family of weighted nodal schemes.
+- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
+  for Charged Particle Transport.
+
+"""
+function adaptive(𝒪x::Int64,ωx::Vector{Float64},hx::Float64,sx::Real,𝚽x12::Float64,Qn::Vector{Float64},Σ::Float64)
+
+# Initialization
 ϵ = 1e-16
-sx = sign(μ)
 
 #----
 # Adaptive AWD₀
 #----
 if 𝒪x == 1
 
-    hx = abs(μ)/(Σ*Δx)
-    𝚽_DD = (Qn[1]/Σ + 2*hx*𝚽x12)/(2*hx+1)
+    𝚽_DD = (Qn[1] + 2*hx*𝚽x12)/(2*hx+Σ)
     ux = (𝚽x12-𝚽_DD)/𝚽_DD
 
     b = 3
@@ -30,7 +51,7 @@ if 𝒪x == 1
 #----
 elseif 𝒪x == 2
 
-    ΔQ = sqrt(3) * sx * (Qn[2]*Δx-sqrt(3)*abs(μ)*sx*𝚽x12)/(Qn[1]*Δx+abs(μ)*𝚽x12)
+    ΔQ = sqrt(3) * sx * (Qn[2]-sqrt(3)*hx*sx*𝚽x12)/(Qn[1]+hx*𝚽x12)
     if ΔQ > 3/2
         Qx = (3+ΔQ)/(3*(3-ΔQ))
     elseif ΔQ < -1
@@ -52,21 +73,17 @@ end
 return ωx
 end
 
-function adaptive(𝒪x,𝒪y,ωx,ωy,μ,η,Δx,Δy,Qn,𝚽x12,𝚽y12,Σ)
+function adaptive(𝒪x::Int64,𝒪y::Int64,ωx::Array{Float64},ωy::Array{Float64},hx::Float64,hy::Float64,sx::Real,sy::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
 
 # Initialization    
 ϵ = 1e-16
-sx = sign(μ)
-sy = sign(η)
 
 #----
 # Adaptive AWD₀
 #----
 if 𝒪x == 1 && 𝒪y == 1
 
-    hx = abs(μ)/(Σ*Δx)
-    hy = abs(η)/(Σ*Δy)
-    𝚽_DD = (Qn[1]/Σ + 2*hx*𝚽x12[1] + 2*hy*𝚽y12[1])/(2*hx+2*hy+1)
+    𝚽_DD = (Qn[1] + 2*hx*𝚽x12[1] + 2*hy*𝚽y12[1])/(2*hx+2*hy+Σ)
     ux = (𝚽x12[1]-𝚽_DD)/𝚽_DD
     uy = (𝚽y12[1]-𝚽_DD)/𝚽_DD
 
@@ -101,10 +118,10 @@ elseif 𝒪x == 2 && 𝒪y == 2
     x_CM = zeros(2)
     for i in range(1,2)
         if i == 1
-            𝚽 = [ Qn[1] + abs(μ)/Δx*𝚽x12[1] + abs(η)/Δy*𝚽y12[1] , Qn[2] - sqrt(3)*abs(μ)/Δx*sx*𝚽x12[1] + abs(η)/Δy*𝚽y12[2] ]
+            𝚽 = [ Qn[1] + hx*𝚽x12[1] + hy*𝚽y12[1] , Qn[2] - sqrt(3)*hx*sx*𝚽x12[1] + hy*𝚽y12[2] ]
             ΔQ = sx*sqrt(3)*𝚽[2]
         else
-            𝚽 = [ Qn[1] + abs(μ)/Δx*𝚽x12[1] + abs(η)/Δy*𝚽y12[1] , Qn[3] + abs(μ)/Δx*𝚽x12[2] - sqrt(3)*abs(η)/Δy*sy*𝚽y12[1] ]
+            𝚽 = [ Qn[1] + hx*𝚽x12[1] + hy*𝚽y12[1] , Qn[3] + hx*𝚽x12[2] - sqrt(3)*hy*sy*𝚽y12[1] ]
             ΔQ = sy*sqrt(3)*𝚽[2]
         end
 
@@ -169,23 +186,17 @@ end
 return ωx,ωy
 end
 
-function adaptive(𝒪x,𝒪y,𝒪z,ωx,ωy,ωz,μ,η,ξ,Δx,Δy,Δz,Qn,𝚽x12,𝚽y12,𝚽z12,Σ)
+function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},hx::Float64,hy::Float64,hz::Float64,sx::Real,sy::Real,sz::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
 
 # Initialization    
 ϵ = 1e-16
-sx = sign(μ)
-sy = sign(η)
-sz = sign(ξ)
 
 #----
 # Adaptive AWD₀
 #----
 if 𝒪x == 1 && 𝒪y == 1 && 𝒪z == 1
 
-    hx = abs(μ)/(Σ*Δx)
-    hy = abs(η)/(Σ*Δy)
-    hz = abs(ξ)/(Σ*Δz)
-    𝚽_DD = (Qn[1]/Σ + 2*hx*𝚽x12[1] + 2*hy*𝚽y12[1] + 2*hz*𝚽z12[1])/(2*hx+2*hy+2*hz+1)
+    𝚽_DD = (Qn[1] + 2*hx*𝚽x12[1] + 2*hy*𝚽y12[1] + 2*hz*𝚽z12[1])/(2*hx+2*hy+2*hz+Σ)
     ux = (𝚽x12[1]-𝚽_DD)/𝚽_DD
     uy = (𝚽y12[1]-𝚽_DD)/𝚽_DD
     uz = (𝚽z12[1]-𝚽_DD)/𝚽_DD
@@ -227,4 +238,69 @@ else
 end
 
 return ωx,ωy,ωz
+end
+
+function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,𝒪w::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},ωw::Array{Float64},hx::Float64,hy::Float64,hz::Float64,hw::Float64,sx::Real,sy::Real,sz::Real,sw::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝚽w12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
+
+    # Initialization    
+    ϵ = 1e-16
+    
+    #----
+    # Adaptive AWD₀
+    #----
+    if 𝒪x == 1 && 𝒪y == 1 && 𝒪z == 1 && 𝒪w == 1
+
+        𝚽_DD = (Qn[1] + 2*hx*𝚽x12[1] + 2*hy*𝚽y12[1] + 2*hz*𝚽z12[1] + 2*hw*𝚽w12[1])/(2*hx+2*hy+2*hz+2*hw+Σ)
+        ux = (𝚽x12[1]-𝚽_DD)/𝚽_DD
+        uy = (𝚽y12[1]-𝚽_DD)/𝚽_DD
+        uz = (𝚽z12[1]-𝚽_DD)/𝚽_DD
+        uw = (𝚽w12[1]-𝚽_DD)/𝚽_DD
+    
+        b = 3
+        if b*abs(ux) <= 1
+            Px = 1
+        else
+            Px = 1/(b*abs(ux))
+        end
+        if b*abs(uy) <= 1
+            Py = 1
+        else
+            Py = 1/(b*abs(uy))
+        end
+        if b*abs(uz) <= 1
+            Pz = 1
+        else
+            Pz = 1/(b*abs(uz))
+        end
+        if b*abs(uw) <= 1
+            Pw = 1
+        else
+            Pw = 1/(b*abs(uw))
+        end
+        if (Px < 0 || isnan(Px)) Px = 0 end
+        if (Py < 0 || isnan(Py)) Py = 0 end
+        if (Pz < 0 || isnan(Pz)) Pz = 0 end
+        if (Pw < 0 || isnan(Pw)) Pw = 0 end
+    
+        # For 𝚽x12 - (0)
+        ωx[1] = -Px      # 𝚽x12 [0]
+        ωx[2] = 1 + Px   # 𝚽    [0]
+    
+        # For 𝚽y12 - (0)
+        ωy[1] = -Py      # 𝚽y12 [0]
+        ωy[2] = 1 + Py   # 𝚽    [0]
+    
+        # For 𝚽z12 - (0)
+        ωz[1] = -Pz      # 𝚽z12 [0]
+        ωz[2] = 1 + Pz   # 𝚽    [0]
+
+        # For 𝚽w12 - (0)
+        ωw[1] = -Pw      # 𝚽w12 [0]
+        ωw[2] = 1 + Pw   # 𝚽    [0]
+    
+    else
+        error("Adaptive scheme is not available for (𝒪x,𝒪y,𝒪z,𝒪w)=($(𝒪x),$(𝒪y),$(𝒪z),$(𝒪w)) order flux expansion over the finite-element.")
+    end
+    
+    return ωx,ωy,ωz,ωw
 end

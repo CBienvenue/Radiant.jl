@@ -4,7 +4,7 @@
     Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},
     C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},
     sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,ΔE::Float64,
-    𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+    𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64})
 
 Compute the flux solution along one direction in 2D geometry.
 
@@ -30,8 +30,8 @@ Compute the flux solution along one direction in 2D geometry.
    calculations.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'β⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
-- 'β⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
+- 'S⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
+- 'S⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
 
 # Output Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
@@ -41,7 +41,7 @@ Compute the flux solution along one direction in 2D geometry.
 N/A
 
 """
-function compute_sweep_2D(𝚽ℓ::Array{Float64,4},Qℓ::Array{Float64,4},Σt::Vector{Float64},mat::Array{Int64,2},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C,ω,sources::Vector{Union{Float64,Array{Float64}}},isAdapt,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+function compute_sweep_2D(𝚽ℓ::Array{Float64,4},Qℓ::Array{Float64,4},Σt::Vector{Float64},mat::Array{Int64,2},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64})
 
 # Initialization
 𝒪x = 𝒪[1]; 𝒪y = 𝒪[2]; 𝒪E = 𝒪[4]
@@ -89,7 +89,7 @@ end
 if ~isCSD
     𝚽n,𝚽x12[:,iy],𝚽y12 = flux_2D_BTE(μ,η,Σt[mat[ix,iy]],Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝒪x,𝒪y,C,copy(ω[1]),copy(ω[2]),isAdapt)
 else
-    𝚽n,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy] = flux_2D_BFP(μ,η,Σt[mat[ix,iy]],β⁻[mat[ix,iy]],β⁺[mat[ix,iy]],ΔE,Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy],𝒪E,𝒪x,𝒪y,C[4],C[1],C[2],copy(ω[4]),copy(ω[1]),copy(ω[2]),isAdapt[4],isAdapt[1],isAdapt[2])
+    𝚽n,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy] = flux_2D_BFP(μ,η,Σt[mat[ix,iy]],S⁻[mat[ix,iy]],S⁺[mat[ix,iy]],S[mat[ix,iy],:],ΔE,Δx[ix],Δy[iy],Qn,𝚽x12[:,iy],𝚽y12,𝚽E12[:,ix,iy],𝒪E,𝒪x,𝒪y,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt,𝒲)
 end
 
 # Calculation of the Legendre components of the flux

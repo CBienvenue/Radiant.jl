@@ -30,10 +30,6 @@ include("flux_3D_BTE.jl")
 include("flux_3D_BFP.jl")
 
 include("adaptive.jl")
-
-include("adaptive_1D.jl")
-include("adaptive_2D.jl")
-include("adaptive_3D.jl")
 include("scheme_weights.jl")
 include("map_moments.jl")
 include("constant_linear.jl")

@@ -1,9 +1,9 @@
 """
-    function flux_3D_BFP(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,β⁻::Float64,
-    β⁺::Float64,ΔE::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Vector{Float64},
+    function flux_3D_BFP(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,S⁻::Float64,
+    S⁺::Float64,ΔE::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Vector{Float64},
     𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},
-    𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,CE::Vector{Float64},
-    Cx::Vector{Float64},Cy::Vector{Float64},Cz::Vector{Float64},ωE::Array{Float64},
+    𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,C::Vector{Float64},
+    C::Vector{Float64},C::Vector{Float64},C::Vector{Float64},ωE::Array{Float64},
     ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},isAdaptE::Bool,
     isAdaptx::Bool,isAdapty::Bool,isAdaptz::Bool)
 
@@ -22,18 +22,18 @@ equation.
 - '𝚽x12::Vector{Float64}': incoming angular flux along x-axis.
 - '𝚽y12::Vector{Float64}': incoming angular flux along y-axis.
 - '𝚽z12::Vector{Float64}': incoming angular flux along z-axis.
-- 'β⁻::Float64': restricted stopping power at upper energy group boundary.
-- 'β⁺::Float64': restricted stopping power at lower energy group boundary.
+- 'S⁻::Float64': restricted stopping power at upper energy group boundary.
+- 'S⁺::Float64': restricted stopping power at lower energy group boundary.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Vector{Float64}': incoming angular flux along E-axis.
 - '𝒪E::Int64': energy closure relation order.
 - '𝒪x::Int64': spatial closure relation order.
 - '𝒪y::Int64': spatial closure relation order.
 - '𝒪z::Int64': spatial closure relation order.
-- 'CE::Vector{Float64}': constants related to normalized Legendre.
-- 'Cx::Vector{Float64}': constants related to normalized Legendre.
-- 'Cy::Vector{Float64}': constants related to normalized Legendre.
-- 'Cz::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
+- 'C::Vector{Float64}': constants related to normalized Legendre.
 - 'ωE::Array{Float64}': weighting factors of the E-axis scheme.
 - 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
 - 'ωy::Array{Float64}': weighting factors of the y-axis scheme.
@@ -54,201 +54,92 @@ equation.
 N/A
 
 """
-function flux_3D_BFP(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,β⁻::Float64,β⁺::Float64,ΔE::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,CE::Vector{Float64},Cx::Vector{Float64},Cy::Vector{Float64},Cz::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},isAdaptE::Bool,isAdaptx::Bool,isAdapty::Bool,isAdaptz::Bool)
+function flux_3D_BFP(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::Vector{Float64},ΔE::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},isAdapt::Bool,𝒲::Array{Float64})
 
 # Initialization
-μ = μ * Δy * Δz
-η = η * Δx * Δz
-ξ = ξ * Δx * Δy
+sx = sign(μ)
+sy = sign(η)
+sz = sign(ξ)
+hx = abs(μ)/Δx
+hy = abs(η)/Δy
+hz = abs(ξ)/Δz
 Nm = 𝒪x*𝒪y*𝒪z*𝒪E
-S = zeros(Nm,Nm)
+𝒮 = zeros(Nm,Nm)
 Q = zeros(Nm)
 𝚽n = Q
 
-# Galerkin energy scheme weights
-Λ = β⁻/β⁺
-if abs(ωE[1,1,1,1]) > 0
-    ωE[1,1,1,1] = ωE[1,1,1,1]*Λ
-    ωE[2:𝒪E+1,1,1,1] = (ωE[2:𝒪E+1,1,1,1].-1).*Λ.+1
-end
-
-# Adaptive loop
-isAdapt = isAdaptE && isAdaptx && isAdapty && isAdaptz
-isFixed = false
-while ~isFixed
+# Adaptive weight calculations
+if isAdapt ωx,ωy,ωz,ωE = adaptive(𝒪x,𝒪y,𝒪z,𝒪E,ωx,ωy,ωz,ωE,hx,hy,hz,1/ΔE,sx,sy,sz,-1,𝚽x12,𝚽y12,𝚽z12,𝚽E12,Qn,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
 @inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y), iz in range(1,𝒪z), jz in range(1,𝒪z), iE in range(1,𝒪E), jE in range(1,𝒪E)
     i = 𝒪y*𝒪x*𝒪E*(iz-1) + 𝒪x*𝒪E * (iy-1) + 𝒪E * (ix-1) + iE
     j = 𝒪y*𝒪x*𝒪E*(jz-1) + 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
-    # Diagonal terms
-    if i == j
-        S[i,j] = (Σt + CE[iE]^2 * β⁺ * ωE[jE+1,jx,jy,jz] + (iE-1) * (β⁻-β⁺) ) * Δx * Δy * Δz + Cx[ix]^2 * ωx[jx+1,jy,jz,jE] * abs(μ) + Cy[iy]^2 * ωy[jy+1,jx,jz,jE] * abs(η) + Cz[iz]^2 * ωy[jz+1,jx,jy,jE] * abs(ξ)
-    # Upper diagonal terms
-    elseif i < j
-    if iz == jz
-    if iy == jy
-    if ix == jx
-    # Energy terms - E
-    if mod(iE+jE,2) == 1
-        S[i,j] = -CE[iE] * CE[jE] * β⁺ * ωE[jE+1,jx,jy,jz] * Δx * Δy * Δz
-    else
-        S[i,j] = CE[iE] * CE[jE] * β⁺ * ωE[jE+1,jx,jy,jz] * Δx * Δy * Δz
+
+    # Collision term
+    if (i == j) 𝒮[i,j] += Σt end
+
+    # Streaming term - x
+    if iy == jy && iz == jz && iE == jE
+        if (ix ≥ jx + 1) 𝒮[i,j] -= C[ix] * hx * sx * C[jx] * (1-(-1)^(ix-jx)) end
+        𝒮[i,j] += C[ix] * hx * sx^(ix-1) * C[jx] * sx^(jx-1) * ωx[jx+1,jy,jz,jE]
     end
-    elseif iE == jE
-    # Space terms - x
-    if mod(ix+jx,2) == 1
-        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jy,jz,jE] * μ
-    else
-        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jy,jz,jE] * abs(μ)
+
+    # Streaming term - y
+    if ix == jx && iz == jz && iE == jE
+        if (iy ≥ jy + 1) 𝒮[i,j] -= C[iy] * hy * sy * C[jy] * (1-(-1)^(iy-jy)) end 
+        𝒮[i,j] += C[iy] * hy * sy^(iy-1) * C[jy] * sy^(jy-1) * ωy[jy+1,jx,jz,jE]
     end
+
+    # Streaming term - z
+    if ix == jx && iy == jy && iE == jE
+        if (iz ≥ jz + 1) 𝒮[i,j] -= C[iz] * hz * sz * C[jz] * (1-(-1)^(iz-jz)) end 
+        𝒮[i,j] += C[iz] * hz * sz^(iz-1) * C[jz] * sz^(jz-1) * ωz[jz+1,jx,jy,jE]
     end
-    elseif ix == jx && iE == jE
-    # Space terms - y
-    if mod(iy+jy,2) == 1
-        S[i,j] = Cy[iy] * Cy[jy] * ωy[jy+1,jx,jz,jE] * η
-    else
-        S[i,j] = Cy[iy] * Cy[jy] * ωy[jy+1,jx,jz,jE] * abs(η)
-    end
-    end
-    elseif ix == jx && iy == jy && iE == jE
-    # Space terms - z
-    if mod(iz+jz,2) == 1
-        S[i,j] = Cz[iz] * Cz[jz] * ωz[jz+1,jx,jy,jE] * ξ
-    else
-        S[i,j] = Cz[iz] * Cz[jz] * ωz[jz+1,jx,jy,jE] * abs(ξ)
-    end
-    end
-    # Under diagonal terms
-    else
-    if iz == jz
-    if iy == jy
-    if ix == jx
-    # Energy terms - E
-    if mod(iE+jE,2) == 1
-        S[i,j] = -CE[iE] * CE[jE] * (β⁺*ωE[jE+1,jx,jy,jz]-β⁻-β⁺) * Δx * Δy * Δz
-    else
-        S[i,j] = CE[iE] * CE[jE] * (β⁺*ωE[jE+1,jx,jy,jz]+β⁻-β⁺) * Δx * Δy * Δz
-    end
-    elseif iE == jE
-    # Space terms - x
-    if mod(ix+jx,2) == 1
-        S[i,j] = Cx[ix] * Cx[jx] * (ωx[jx+1,jy,jz,jE]-2) * μ
-    else
-        S[i,j] = Cx[ix] * Cx[jx] * ωx[jx+1,jy,jz,jE] * abs(μ)
-    end
-    end
-    elseif ix == jx && iE == jE
-    # Space terms - y
-    if mod(iy+jy,2) == 1
-        S[i,j] = Cy[iy] * Cy[jy] * (ωy[jy+1,jx,jz,jE]-2) * η
-    else
-        S[i,j] = Cy[iy] * Cy[jy] * ωy[jy+1,jx,jz,jE] * abs(η)
-    end
-    end
-    elseif ix == jx && iy == jy && iE == jE
-    # Space terms - z
-    if mod(iz+jz,2) == 1
-        S[i,j] = Cz[iz] * Cz[jz] * (ωz[jz+1,jx,jy,jE]-2) * ξ
-    else
-        S[i,j] = Cz[iz] * Cz[jz] * ωz[jz+1,jx,jy,jE] * abs(ξ)
-    end
-    end
+
+    # CSD term
+    if ix == jx && iy == jy
+        for kE in range(1,iE-1), wE in range(1,𝒪E)
+            𝒮[i,j] += C[iE] * C[jE] * C[kE] * C[wE] * (1-(-1)^(iE-kE)) * S[wE] * 𝒲[jE,kE,wE]
+        end
+        𝒮[i,j] += C[iE] * S⁺ * (-1)^(iE-1) * C[jE] * (-1)^(jE-1) * ωE[jE+1,jx,jy,jz]
     end
 end
 
 # Source vector
-@inbounds for ix in range(1,𝒪x), iy in range(1,𝒪y), iz in range(1,𝒪z), iE in range(1,𝒪E)
-    i = 𝒪y*𝒪x*𝒪E*(iz-1) + 𝒪x*𝒪E * (iy-1) + 𝒪E * (ix-1) + iE
-    iEm = 𝒪y*𝒪x*(iz-1)+𝒪x*(iy-1)+ix
-    ixm = 𝒪y*𝒪E*(iz-1)+𝒪E*(iy-1)+iE
-    iym = 𝒪x*𝒪E*(iz-1)+𝒪E*(ix-1)+iE
-    izm = 𝒪x*𝒪E*(iy-1)+𝒪E*(ix-1)+iE
-    Q[i] = Qn[i] * Δx * Δy * Δz
-    # Energy terms - E
-    if mod(iE,2) == 1
-        Q[i] += CE[iE] * (β⁻-β⁺*ωE[1,ix,iy,iz]) * 𝚽E12[iEm] * Δx * Δy * Δz
-    else
-        Q[i] += CE[iE] * (β⁻+β⁺*ωE[1,ix,iy,iz]) * 𝚽E12[iEm] * Δx * Δy * Δz
-    end
-    # Space terms - x
-    if mod(ix,2) == 1
-        Q[i] += Cx[ix] * (1-ωx[1,iy,iz,iE]) * 𝚽x12[ixm] * abs(μ)
-    else
-        Q[i] += -Cx[ix] * (1+ωx[1,iy,iz,iE]) * 𝚽x12[ixm] * μ
-    end
-    # Space terms - y
-    if mod(iy,2) == 1
-        Q[i] += Cy[iy] * (1-ωy[1,ix,iz,iE]) * 𝚽y12[iym] * abs(η)
-    else
-        Q[i] += -Cy[iy] * (1+ωy[1,ix,iz,iE]) * 𝚽y12[iym] * η
-    end
-    # Space terms - z
-    if mod(iz,2) == 1
-        Q[i] += Cz[iz] * (1-ωz[1,ix,iy,iE]) * 𝚽z12[izm] * abs(ξ)
-    else
-        Q[i] += -Cz[iz] * (1+ωz[1,ix,iy,iE]) * 𝚽z12[izm] * ξ
-    end
+@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z), jE in range(1,𝒪E)
+    j = 𝒪y*𝒪x*𝒪E*(jz-1) + 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
+    jEm = 𝒪y*𝒪x*(jz-1)+𝒪x*(jy-1)+jx
+    jxm = 𝒪y*𝒪E*(jz-1)+𝒪E*(jy-1)+jE
+    jym = 𝒪x*𝒪E*(jz-1)+𝒪E*(jx-1)+jE
+    jzm = 𝒪x*𝒪E*(jy-1)+𝒪E*(jx-1)+jE
+    Q[j] += Qn[j]
+    Q[j] -= C[jx] * hx * (sx^(jx-1) * ωx[1,jy,jz,jE] - (-sx)^(jx-1)) * 𝚽x12[jxm] 
+    Q[j] -= C[jy] * hy * (sy^(jy-1) * ωy[1,jx,jz,jE] - (-sy)^(jy-1)) * 𝚽y12[jym]
+    Q[j] -= C[jz] * hz * (sz^(jz-1) * ωy[1,jx,jy,jE] - (-sz)^(jz-1)) * 𝚽z12[jzm]  
+    Q[j] -= C[jE] * ((-1)^(jE-1)*S⁺*ωE[1,jx,jy,jz] - S⁻) * 𝚽E12[jEm]
 end
 
-𝚽n = S\Q
-
-# Adaptive correction of weighting parameters
-if isAdapt
-    error("Not implemented yet.")
-    #isFixed, ω = adaptive(3,[𝒪E,𝒪x,𝒪y,𝒪z],[ωE,ωx,ωy,ωz],𝚽n,[𝚽E12,𝚽x12,𝚽y12,𝚽z12],[-1.0,sign(μ),sign(η),sign(ξ)],[Λ,1.0,1.0,1.0],[0.0,0.0,0.0,0.0])
-    #ωE = ω[1]; ωx = ω[2]; ωy = ω[3]; ωz = ω[4];
-else
-    isFixed = true
-end
-
-end # End of adaptive loop
+# Solve the equation system
+𝚽n = 𝒮\Q
 
 # Closure relation
-@inbounds for ix in range(1,𝒪x), iy in range(1,𝒪y), iz in range(1,𝒪z), iE in range(1,𝒪E)
-    iEm = 𝒪y*𝒪x*(iz-1)+𝒪x*(iy-1)+ix
-    ixm = 𝒪y*𝒪E*(iz-1)+𝒪E*(iy-1)+iE
-    iym = 𝒪x*𝒪E*(iz-1)+𝒪E*(ix-1)+iE
-    izm = 𝒪x*𝒪E*(iy-1)+𝒪E*(ix-1)+iE
-    if (iE == 1) 𝚽E12[iEm] = ωE[1,ix,iy,iz] * 𝚽E12[iEm] end
-    if (ix == 1) 𝚽x12[ixm] = ωx[1,iy,iz,iE] * 𝚽x12[ixm] end
-    if (iy == 1) 𝚽y12[iym] = ωy[1,ix,iz,iE] * 𝚽y12[iym] end
-    if (iz == 1) 𝚽z12[izm] = ωz[1,ix,iy,iE] * 𝚽z12[izm] end
+@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z), jE in range(1,𝒪E)
+    j = 𝒪y*𝒪x*𝒪E*(jz-1) + 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
+    jEm = 𝒪y*𝒪x*(jz-1)+𝒪x*(jy-1)+jx
+    jxm = 𝒪y*𝒪E*(jz-1)+𝒪E*(jy-1)+jE
+    jym = 𝒪x*𝒪E*(jz-1)+𝒪E*(jx-1)+jE
+    jzm = 𝒪x*𝒪E*(jy-1)+𝒪E*(jx-1)+jE
+    if (jE == 1) 𝚽E12[jEm] = ωE[1,jx,jy,jz] * 𝚽E12[jEm] end
+    if (jx == 1) 𝚽x12[jxm] = ωx[1,jy,jz,jE] * 𝚽x12[jxm] end
+    if (jy == 1) 𝚽y12[jym] = ωy[1,jx,jz,jE] * 𝚽y12[jym] end
+    if (jz == 1) 𝚽z12[jzm] = ωz[1,jx,jy,jE] * 𝚽z12[jzm] end
+    𝚽x12[jxm] += C[jx] * sx^(jx-1) * ωx[jx+1,jy,jz,jE] * 𝚽n[j]
+    𝚽y12[jym] += C[jy] * sy^(jy-1) * ωy[jy+1,jx,jz,jE] * 𝚽n[j]
+    𝚽z12[jzm] += C[jz] * sz^(jz-1) * ωz[jz+1,jx,jy,jE] * 𝚽n[j]
+    𝚽E12[jEm] += C[jE] * (-1)^(jE-1) * ωE[jE+1,jx,jy,jz] * 𝚽n[j]
 end
-@inbounds for ix in range(1,𝒪x), iy in range(1,𝒪y), iz in range(1,𝒪z), iE in range(1,𝒪E)
-    i = 𝒪y*𝒪x*𝒪E*(iz-1) + 𝒪x*𝒪E * (iy-1) + 𝒪E * (ix-1) + iE
-    iEm = 𝒪y*𝒪x*(iz-1)+𝒪x*(iy-1)+ix
-    ixm = 𝒪y*𝒪E*(iz-1)+𝒪E*(iy-1)+iE
-    iym = 𝒪x*𝒪E*(iz-1)+𝒪E*(ix-1)+iE
-    izm = 𝒪x*𝒪E*(iy-1)+𝒪E*(ix-1)+iE
-    # Energy terms - E
-    if mod(iE,2) == 1
-        𝚽E12[iEm] += CE[iE] * ωE[iE+1,ix,iy,iz] * 𝚽n[i]
-    else
-        𝚽E12[iEm] += -CE[iE] * ωE[iE+1,ix,iy,iz] * 𝚽n[i]
-    end  
-    # Space terms - x
-    if mod(ix,2) == 1
-        𝚽x12[ixm] += Cx[ix] * ωx[ix+1,iy,iz,iE] * 𝚽n[i]
-    else
-        𝚽x12[ixm] += Cx[ix] * ωx[ix+1,iy,iz,iE] * 𝚽n[i] * sign(μ)
-    end
-    # Space terms - y
-    if mod(iy,2) == 1
-        𝚽y12[iym] += Cy[iy] * ωy[iy+1,ix,iz,iE] * 𝚽n[i]
-    else
-        𝚽y12[iym] += Cy[iy] * ωy[iy+1,ix,iz,iE] * 𝚽n[i] * sign(η)
-    end
-    # Space terms - z
-    if mod(iz,2) == 1
-        𝚽z12[izm] += Cz[iz] * ωy[iz+1,ix,iy,iE] * 𝚽n[i]
-    else
-        𝚽z12[izm] += Cz[iz] * ωy[iz+1,ix,iy,iE] * 𝚽n[i] * sign(ξ)
-    end
-end
-𝚽E12 .= 𝚽E12/ΔE
 
 # Returning solutions
 return 𝚽n, 𝚽x12, 𝚽y12, 𝚽z12, 𝚽E12
-
 end

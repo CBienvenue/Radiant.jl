@@ -61,7 +61,7 @@ end
 
 is_full_coupling = true
 schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
-ω,𝒞,is_adaptive = scheme_weights(𝒪,schemes,Ndims,isCSD)
+ω,𝒞,is_adaptive,𝒲 = scheme_weights(𝒪,schemes,Ndims,isCSD)
 
 println(">>>Particle: $part <<<")
 
@@ -89,7 +89,7 @@ if isCSD
     S = zeros(Ng,Nmat,𝒪[4])
     for n in range(1,Nmat), ig in range(1,Ng)
         S[ig,n,1] = (S⁻[ig,n]+S⁺[ig,n])/2
-        S[ig,n,2] = (S⁻[ig,n]-S⁺[ig,n])/(2*sqrt(3))
+        if (𝒪[4] > 1) S[ig,n,2] = (S⁻[ig,n]-S⁺[ig,n])/(2*sqrt(3)) end
     end
 end
 
@@ -168,6 +168,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 
         # Calculation of the group flux
         if isCSD
+            if (ig != 1) 𝚽E12 = 𝚽E12 .* ΔE[ig]/ΔE[ig-1] end
             Eg = E[ig]
             ΔEg = ΔE[ig]
             Sg⁻ = S⁻[ig,:]/ΔEg
@@ -187,13 +188,14 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             ΔEg = 0.0
             Sg⁻ = Vector{Float64}()
             Sg⁺ = Vector{Float64}()
+            Sg = Vector{Float64}()
             αg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
             Mn_FP = Array{Float64}(undef)
             Dn_FP = Array{Float64}(undef)
             N_Fp = 0
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot,is_EM,ℳ_EM[ig,:,:])
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
         
     end
 
@@ -207,7 +209,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
         # Calculate the flux at the cutoff energy
         if isCSD
             @inbounds for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,P)
-                𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz] * ΔE[end]
+                𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
             end
         end
     else
