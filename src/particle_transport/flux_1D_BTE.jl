@@ -24,7 +24,7 @@ equation.
 N/A
 
 """
-function flux_1D_BTE(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},𝚽x12::Float64,𝒪x::Int64,Cx::Vector{Float64},ωx::Vector{Float64},isAdaptx::Bool)
+function flux_1D_BTE(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},𝚽x12::Float64,𝒪x::Int64,Cx::Vector{Float64},ωx::Vector{Float64},isAdapt::Bool)
 
 # Initialization
 sx = sign(μ)
@@ -34,7 +34,7 @@ Q = zeros(𝒪x)
 𝚽n = Q
 
 # Adaptive weight calculations
-if isAdaptx ωx = adaptive(𝒪x,ωx,μ,Δx,Qn,𝚽x12,Σt) end
+if isAdapt ωx = adaptive(𝒪x,ωx,hx,sx,𝚽x12,Qn,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
 @inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x)

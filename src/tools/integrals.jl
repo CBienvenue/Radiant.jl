@@ -248,3 +248,42 @@ function 𝒢₅(n::Int64,a::Real,b::Real,c::Real,x::Real)
         error("Negative n index")
     end
 end
+
+"""
+    𝒢₆(j₁::Int64,j₂::Int64,j₃::Int64)
+
+Compute the integral I = 0.5 ∫ Pⱼ₁(x)Pⱼ₂(x)Pⱼ₃(x) dx evaluated between -1 and 1.
+
+# Input Argument(s)
+- 'j₁::Int64': first Legendre polynomial index.
+- 'j₂::Int64': second Legendre polynomial index.
+- 'j₃::Int64': third Legendre polynomial index.
+
+# Output Argument(s)
+- '𝒲::Float64': integral evaluated between -1 and 1.
+
+# Author(s)
+Charles Bienvenue
+
+# Reference(s)
+
+"""
+function 𝒢₆(j₁::Int64,j₂::Int64,j₃::Int64)
+
+    Cjk = zeros(3,div(max(j₁,j₂,j₃),2)+1) 
+    for k in range(0,div(j₁,2)) Cjk[1,k+1] = (-1)^k * exp( sum(log.(1:2*j₁-2*k)) - sum(log.(1:k)) - sum(log.(1:j₁-k)) - sum(log.(1:j₁-2*k)) ) end
+    for k in range(0,div(j₂,2)) Cjk[2,k+1] = (-1)^k * exp( sum(log.(1:2*j₂-2*k)) - sum(log.(1:k)) - sum(log.(1:j₂-k)) - sum(log.(1:j₂-2*k)) ) end
+    for k in range(0,div(j₃,2)) Cjk[3,k+1] = (-1)^k * exp( sum(log.(1:2*j₃-2*k)) - sum(log.(1:k)) - sum(log.(1:j₃-k)) - sum(log.(1:j₃-2*k)) ) end
+    
+    𝒲 = 0
+    J = j₁ + j₂ + j₃
+    for k₁ in range(0,div(j₁,2)), k₂ in range(0,div(j₂,2)), k₃ in range(0,div(j₃,2))
+        K = k₁ + k₂ + k₃
+        if mod(J-2*K,2) == 0
+            𝒲 += Cjk[1,k₁+1] * Cjk[2,k₂+1] * Cjk[3,k₃+1] * 1/(J-2*K+1)
+        end
+    end 
+    𝒲 /= 2^J
+    
+    return 𝒲
+end

@@ -57,12 +57,11 @@ Solve the one-speed transport equation for a given particle.
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C,ω,I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S,α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM,ℳ_EM)
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
 if isCSD
-    𝚽E12 = 𝚽E12 .* ΔE
     𝚽E12_temp = zeros(N,Nm[4],Ns[1],Ns[2],Ns[3])
 end
 N⁻ = 2
@@ -107,18 +106,18 @@ isInnerConv=false
     @inbounds for n in range(1,N)
         if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end
         if ndims == 1
-            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S)
+            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
         elseif ndims == 2
             if is_CUDA
                 error()
             else
-                𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺)
+                𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
             end
         elseif ndims == 3
             if is_CUDA
                 error()
             else
-                𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺)
+                𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
             end
         else
             error("Error in computeOneSpeed.jl: Dimension is not 1, 2 or 3.")
