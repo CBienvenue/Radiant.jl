@@ -34,7 +34,7 @@ equation.
 N/A
 
 """
-function flux_2D_BTE(μ::Float64,η::Float64,Σt::Float64,Δx::Float64,Δy::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},isAdapt)
+function flux_2D_BTE(μ::Float64,η::Float64,Σt::Float64,Δx::Float64,Δy::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},isAdapt::Bool)
 
 # Initialization
 sx = sign(μ)
@@ -47,7 +47,7 @@ Q = zeros(Nm)
 𝚽n = Q
 
 # Adaptive weight calculations
-if isAdapt ωx,ωy = adaptive(𝒪x,𝒪y,ωx,ωy,μ,η,Δx,Δy,Qn,𝚽x12,𝚽y12,Σt) end
+if isAdapt ωx,ωy = adaptive(𝒪x,𝒪y,ωx,ωy,hx,hy,sx,sy,𝚽x12,𝚽y12,Qn,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
 for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y)

@@ -4,7 +4,7 @@
     Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},
     C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},
     sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,ΔE::Float64,
-    𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+    𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64})
 
 Compute the flux solution along one direction in 3D geometry.
 
@@ -30,8 +30,8 @@ Compute the flux solution along one direction in 3D geometry.
    calculations.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'β⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
-- 'β⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
+- 'S⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
+- 'S⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
 
 # Output Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
@@ -41,7 +41,7 @@ Compute the flux solution along one direction in 3D geometry.
 N/A
 
 """
-function compute_sweep_3D(𝚽ℓ::Array{Float64,5},Qℓ::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C,ω,sources::Vector{Union{Float64,Array{Float64}}},isAdapt,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+function compute_sweep_3D(𝚽ℓ::Array{Float64,5},Qℓ::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64})
 
 # Initialization
 𝒪x = 𝒪[1]; 𝒪y = 𝒪[2]; 𝒪z = 𝒪[3]; 𝒪E = 𝒪[4]
@@ -105,7 +105,7 @@ end
 if ~isCSD
     𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt)
 else
-    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],β⁻[mat[ix,iy,iz]],β⁺[mat[ix,iy,iz]],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C[4],C[1],C[2],C[3],copy(ω[4]),copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt[4],isAdapt[1],isAdapt[2],isAdapt[3])
+    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],S⁻[mat[ix,iy,iz]],S⁺[mat[ix,iy,iz]],S[mat[ix,iy,iz],:],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),copy(ω[4]),isAdapt,𝒲)
 end
 
 # Calculation of the Legendre components of the flux

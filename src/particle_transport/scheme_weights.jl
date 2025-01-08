@@ -68,7 +68,8 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         else
             error("Closure relation not implemented yet.")
         end
-        ω = ωx
+        ω = Vector{Array{Float64}}(undef,1)
+        ω[1] = ωx
 
     # 2D BTE --------------------------
     elseif (Ndims == 2 && ~isCSD)
@@ -238,11 +239,165 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
     
     # 2D BFP --------------------------
     elseif (Ndims == 2 && isCSD)
-        error()
+        
+        xscheme = schemes[1]
+        yscheme = schemes[2]
+        Escheme = schemes[4]
+        Mx = 𝒪[1]-1
+        My = 𝒪[2]-1
+        ME = 𝒪[4]-1
+        ωx = zeros(Mx+2,My+1,ME+1)
+        ωy = zeros(My+2,Mx+1,ME+1)
+        ωE = zeros(ME+2,Mx+1,My+1)
+
+        if xscheme == "DD" || (xscheme == "AWD" && Mx == 0)
+            for m in range(0,My), t in range(0,ME)
+                ωx[1,m+1,t+1] = (-1)^(Mx+1)
+                for n in range(0,Mx)
+                    ωx[n+2,m+1,t+1] = 1 - (-1)^(Mx+1-n)
+                end
+            end
+        elseif xscheme == "DG"
+            for m in range(0,My), t in range(0,ME)
+                ωx[1,m+1,t+1] = 0
+                for n in range(0,Mx)
+                    ωx[n+2,m+1,t+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+        if yscheme == "DD" || (yscheme == "AWD" && My == 0)
+            for m in range(0,Mx), t in range(0,ME)
+                ωy[1,m+1,t+1] = (-1)^(My+1)
+                for n in range(0,My)
+                    ωy[n+2,m+1,t+1] = 1 - (-1)^(My+1-n)
+                end
+            end
+        elseif yscheme == "DG"
+            for m in range(0,Mx), t in range(0,ME)
+                ωy[1,m+1,t+1] = 0
+                for n in range(0,My)
+                    ωy[n+2,m+1,t+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+        if Escheme == "DD" || (Escheme == "AWD" && ME == 0)
+            for m in range(0,Mx), t in range(0,My)
+                ωE[1,m+1,t+1] = (-1)^(ME+1)
+                for n in range(0,ME)
+                    ωE[n+2,m+1,t+1] = 1 - (-1)^(ME+1-n)
+                end
+            end
+        elseif Escheme == "DG"
+            for m in range(0,Mx), t in range(0,My)
+                ωE[1,m+1,t+1] = 0
+                for n in range(0,ME)
+                    ωE[n+2,m+1,t+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+
+        ω = Vector{Array{Float64}}(undef,3)
+        ω[1] = ωE
+        ω[2] = ωx
+        ω[3] = ωy
 
     # 3D BFP --------------------------
     elseif (Ndims == 3 && isCSD)
-        error()
+    
+        xscheme = schemes[1]
+        yscheme = schemes[2]
+        zscheme = schemes[3]
+        Escheme = schemes[4]
+        Mx = 𝒪[1]-1
+        My = 𝒪[2]-1
+        Mz = 𝒪[3]-1
+        ME = 𝒪[4]-1
+        ωx = zeros(Mx+2,My+1,Mz+1,ME+1)
+        ωy = zeros(My+2,Mx+1,Mz+1,ME+1)
+        ωz = zeros(Mz+2,Mx+1,My+1,ME+1)
+        ωE = zeros(ME+2,Mx+1,My+1,Mz+1)
+
+        if xscheme == "DD" || (xscheme == "AWD" && Mx == 0)
+            for m in range(0,My), t in range(0,Mz), w in range(0,ME)
+                ωx[1,m+1,t+1,w+1] = (-1)^(Mx+1)
+                for n in range(0,Mx)
+                    ωx[n+2,m+1,t+1,w+1] = 1 - (-1)^(Mx+1-n)
+                end
+            end
+        elseif xscheme == "DG"
+            for m in range(0,My), t in range(0,Mz), w in range(0,ME)
+                ωx[1,m+1,t+1,w+1] = 0
+                for n in range(0,Mx)
+                    ωx[n+2,m+1,t+1,w+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+        if yscheme == "DD" || (yscheme == "AWD" && My == 0)
+            for m in range(0,Mx), t in range(0,Mz), w in range(0,ME)
+                ωy[1,m+1,t+1,w+1] = (-1)^(My+1)
+                for n in range(0,My)
+                    ωy[n+2,m+1,t+1,w+1] = 1 - (-1)^(My+1-n)
+                end
+            end
+        elseif yscheme == "DG"
+            for m in range(0,Mx), t in range(0,Mz), w in range(0,ME)
+                ωy[1,m+1,t+1,w+1] = 0
+                for n in range(0,My)
+                    ωy[n+2,m+1,t+1,w+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+        if zscheme == "DD" || (zscheme == "AWD" && Mz == 0)
+            for m in range(0,Mx), t in range(0,My), w in range(0,ME)
+                ωz[1,m+1,t+1,w+1] = (-1)^(Mz+1)
+                for n in range(0,Mz)
+                    ωz[n+2,m+1,t+1,w+1] = 1 - (-1)^(Mz+1-n)
+                end
+            end
+        elseif zscheme == "DG"
+            for m in range(0,Mx), t in range(0,My), w in range(0,ME)
+                ωz[1,m+1,t+1,w+1] = 0
+                for n in range(0,Mz)
+                    ωz[n+2,m+1,t+1,w+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+        if Escheme == "DD" || (Escheme == "AWD" && ME == 0)
+            for m in range(0,Mx), t in range(0,My), w in range(0,Mz)
+                ωE[1,m+1,t+1,w+1] = (-1)^(ME+1)
+                for n in range(0,ME)
+                    ωE[n+2,m+1,t+1,w+1] = 1 - (-1)^(ME+1-n)
+                end
+            end
+        elseif Escheme == "DG"
+            for m in range(0,Mx), t in range(0,My), w in range(0,Mz)
+                ωE[1,m+1,t+1,w+1] = 0
+                for n in range(0,ME)
+                    ωE[n+2,m+1,t+1,w+1] = 1
+                end
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+
+        ω = Vector{Array{Float64}}(undef,4)
+        ω[1] = ωE
+        ω[2] = ωx
+        ω[3] = ωy
+        ω[4] = ωz
+
     else
         error("Wrong number of derivatives.")
     end
@@ -250,6 +405,8 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
     # Constant factors
     𝒞 = zeros(maximum(𝒪))
     for i in range(1,maximum(𝒪)) 𝒞[i] = sqrt(2*i-1) end
+    𝒲 = zeros(𝒪[4],𝒪[4],𝒪[4])
+    for i in range(1,𝒪[4]), j in range(1,𝒪[4]), k in range(1,𝒪[4]) 𝒲[i,j,k] = 𝒢₆(i-1,j-1,k-1) end
 
-    return ω, 𝒞, is_adaptive
+    return ω, 𝒞, is_adaptive, 𝒲
 end
