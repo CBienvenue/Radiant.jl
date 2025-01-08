@@ -3,7 +3,7 @@
     mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},
     Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},
     C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},
-    S::Vector{Union{Float64,Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,ΔE::Float64,
+    sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,ΔE::Float64,
     𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
 
 Compute the flux solution along one direction in 3D geometry.
@@ -24,7 +24,7 @@ Compute the flux solution along one direction in 3D geometry.
 - 'C::Vector{Vector{Float64}}': constants related to the spatial and energy normalized
    Legendre expansion.
 - 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
-- 'S::Vector{Union{Float64, Array{Float64}}}': surface sources intensities.
+- 'sources::Vector{Union{Float64, Array{Float64}}}': surface sources intensities.
 - 'isAdapt::Vector{Bool}': boolean for adaptive calculations.
 - 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in
    calculations.
@@ -41,7 +41,7 @@ Compute the flux solution along one direction in 3D geometry.
 N/A
 
 """
-function compute_sweep_3D(𝚽ℓ::Array{Float64,5},Qℓ::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C,ω,S::Vector{Union{Float64,Array{Float64}}},isAdapt,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+function compute_sweep_3D(𝚽ℓ::Array{Float64,5},Qℓ::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C,ω,sources::Vector{Union{Float64,Array{Float64}}},isAdapt,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
 
 # Initialization
 𝒪x = 𝒪[1]; 𝒪y = 𝒪[2]; 𝒪z = 𝒪[3]; 𝒪E = 𝒪[4]
@@ -61,12 +61,12 @@ if (ξ >= 0) z_sweep = (1:Nz) else z_sweep = (Nz:-1:1) end
 @inbounds for iy in y_sweep
 𝚽12z = zeros(Nm[3])
 if ξ >= 0
-    if S[5] != 0 # Surface Z-
-        𝚽12z[1] += S[5][(iy-1)*Nx+ix]
+    if sources[5] != 0 # Surface Z-
+        𝚽12z[1] += sources[5][(iy-1)*Nx+ix]
     end
 else
-    if S[6] != 0  # Surface Z+
-        𝚽12z[1] += S[6][(iy-1)*Nx+ix]
+    if sources[6] != 0  # Surface Z+
+        𝚽12z[1] += sources[6][(iy-1)*Nx+ix]
     end
 end
 
@@ -74,23 +74,23 @@ end
 @inbounds for iz in z_sweep
 if (iy == 1 &&  η >= 0) || (iy == Ny && η < 0 )
     if η >= 0
-        if S[3] != 0  # Surface Y-
-            𝚽12y[1,iz] += S[3][(iz-1)*Nx+ix]
+        if sources[3] != 0  # Surface Y-
+            𝚽12y[1,iz] += sources[3][(iz-1)*Nx+ix]
         end
     else
-        if S[4] != 0  # Surface Y+
-            𝚽12y[1,iz] += S[4][(iz-1)*Nx+ix]
+        if sources[4] != 0  # Surface Y+
+            𝚽12y[1,iz] += sources[4][(iz-1)*Nx+ix]
         end
     end
 end
 if (ix == 1 && μ >= 0) || (ix == Nx && μ < 0 )
     if μ >= 0
-        if S[1] != 0  # Surface X-
-            𝚽12x[1,iy,iz] += S[1][(iz-1)*Ny+iy]
+        if sources[1] != 0  # Surface X-
+            𝚽12x[1,iy,iz] += sources[1][(iz-1)*Ny+iy]
         end
     else
-        if S[2] != 0  # Surface X+
-            𝚽12x[1,iy,iz] += S[2][(iz-1)*Ny+iy]
+        if sources[2] != 0  # Surface X+
+            𝚽12x[1,iy,iz] += sources[2][(iz-1)*Ny+iy]
         end
     end
 end

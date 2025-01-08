@@ -59,6 +59,10 @@ if isCSD
     Eb = cross_sections.get_energy_boundaries(part)
 end
 
+is_full_coupling = true
+schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
+ω,𝒞,is_adaptive = scheme_weights(𝒪,schemes,Ndims,isCSD)
+
 println(">>>Particle: $part <<<")
 
 # Total cross sections
@@ -77,10 +81,15 @@ end
 
 # Stopping powers
 if isCSD
-    β⁻ = zeros(Ng,Nmat); β⁺ = zeros(Ng,Nmat)
-    β = cross_sections.get_stopping_powers(part)
+    S⁻ = zeros(Ng,Nmat); S⁺ = zeros(Ng,Nmat)
+    Sb = cross_sections.get_stopping_powers(part)
     for n in range(1,Nmat)
-        β⁻[:,n] = β[1:Ng,n] ; β⁺[:,n] = β[2:Ng+1,n]
+        S⁻[:,n] = Sb[1:Ng,n] ; S⁺[:,n] = Sb[2:Ng+1,n]
+    end
+    S = zeros(Ng,Nmat,𝒪[4])
+    for n in range(1,Nmat), ig in range(1,Ng)
+        S[ig,n,1] = (S⁻[ig,n]+S⁺[ig,n])/2
+        S[ig,n,2] = (S⁻[ig,n]-S⁺[ig,n])/(2*sqrt(3))
     end
 end
 
@@ -109,14 +118,6 @@ if is_EM && q != 0
 else
     ℳ_EM = zeros(Ng,P,P);
 end
-
-#----
-# Preparation of spatial and energy closure relations
-#----
-
-is_full_coupling = true
-schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
-ω,𝒞,is_adaptive = scheme_weights(𝒪,schemes,Ndims,isCSD)
 
 #----
 # Acceleration discrete_ordinates
@@ -169,8 +170,9 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
         if isCSD
             Eg = E[ig]
             ΔEg = ΔE[ig]
-            βg⁻ = β⁻[ig,:]/ΔEg
-            βg⁺ = β⁺[ig,:]/ΔEg
+            Sg⁻ = S⁻[ig,:]/ΔEg
+            Sg⁺ = S⁺[ig,:]/ΔEg
+            Sg = S[ig,:,:]/ΔEg
             if solver ∈ [2,4]
                 αg = α[ig,:]
             else
@@ -183,15 +185,15 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
         else
             Eg = 0.0
             ΔEg = 0.0
-            βg⁻ = Vector{Float64}()
-            βg⁺ = Vector{Float64}()
+            Sg⁻ = Vector{Float64}()
+            Sg⁺ = Vector{Float64}()
             αg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
             Mn_FP = Array{Float64}(undef)
             Dn_FP = Array{Float64}(undef)
             N_Fp = 0
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,βg⁻,βg⁺,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot,is_EM,ℳ_EM[ig,:,:])
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot,is_EM,ℳ_EM[ig,:,:])
         
     end
 

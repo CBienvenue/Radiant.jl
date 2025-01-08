@@ -80,7 +80,7 @@ end
     j = 𝒪x*(jy-1)+jx
     if (jx == 1) 𝚽x12[jy] = ωx[1,jy,jy] * 𝚽x12[jy] end
     if (jy == 1) 𝚽y12[jx] = ωy[1,jx,jx] * 𝚽y12[jx] end
-    for iy in range(1,𝒪x)
+    for iy in range(1,𝒪y)
         𝚽x12[jy] += C[jx] * sx^(jx-1) * ωx[jx+1,jy,iy] * 𝚽n[j]
     end
     for ix in range(1,𝒪x)

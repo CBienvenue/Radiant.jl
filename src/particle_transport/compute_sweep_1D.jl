@@ -3,8 +3,8 @@
     mat::Vector{Int64},Nx::Int64,Δx::Vector{Float64},μ::Float64,Mn::Vector{Float64},
     Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool
     C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},
-    S::Vector{Union{Float64, Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,
-    ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+    sources::Vector{Union{Float64, Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,
+    ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64})
 
 Compute the flux solution along one direction in 1D geometry.
 
@@ -25,14 +25,14 @@ Compute the flux solution along one direction in 1D geometry.
 - 'C::Vector{Vector{Float64}}': constants related to the spatial and energy normalized
    Legendre expansion.
 - 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
-- 'S::Vector{Union{Float64, Array{Float64}}}': surface sources intensities.
+- 'sources::Vector{Union{Float64, Array{Float64}}}': surface sources intensities.
 - 'isAdapt::Vector{Bool}': boolean for adaptive calculations.
 - 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in
    calculations.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'β⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
-- 'β⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
+- 'S⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
+- 'S⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
 
 # Output Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
@@ -42,7 +42,7 @@ Compute the flux solution along one direction in 1D geometry.
 N/A
 
 """
-function compute_sweep_1D(𝚽ℓ::Array{Float64,3},Qℓ::Array{Float64,3},Σt::Vector{Float64},mat::Vector{Int64},Nx::Int64,Δx::Vector{Float64},μ::Float64,Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C,ω,S::Vector{Union{Float64, Array{Float64}}},isAdapt,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64})
+function compute_sweep_1D(𝚽ℓ::Array{Float64,3},Qℓ::Array{Float64,3},Σt::Vector{Float64},mat::Vector{Int64},Nx::Int64,Δx::Vector{Float64},μ::Float64,Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C,ω,sources::Vector{Union{Float64, Array{Float64}}},isAdapt,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S)
 
 # Initialization
 𝒪x = 𝒪[1]
@@ -52,13 +52,13 @@ function compute_sweep_1D(𝚽ℓ::Array{Float64,3},Qℓ::Array{Float64,3},Σt::
 # Monodirectional boundary sources
 if μ >= 0
     x_sweep = 1:Nx
-    if S[1] != 0   # Surface X-
-        𝚽x12[1] += S[1]
+    if sources[1] != 0   # Surface X-
+        𝚽x12[1] += sources[1]
     end
 else
     x_sweep = Nx:-1:1
-    if S[2] != 0   # Surface X+
-        𝚽x12[1] += S[2]
+    if sources[2] != 0   # Surface X+
+        𝚽x12[1] += sources[2]
     end
 end
 
@@ -74,7 +74,7 @@ end
     if ~isCSD
         𝚽n,𝚽x12 = flux_1D_BTE(μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12[1],𝒪x,C,copy(ω),isAdapt)
     else
-        𝚽n,𝚽x12,𝚽E12[:,ix] = flux_1D_BFP(isFC,μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12,β⁻[mat[ix]],β⁺[mat[ix]],ΔE,𝚽E12[:,ix],𝒪E,𝒪x,C[4],C[1],copy(ω[4]),copy(ω[1]),isAdapt[4],isAdapt[1])
+        𝚽n,𝚽x12,𝚽E12[:,ix] = flux_1D_BFP(isFC,μ,Σt[mat[ix]],Δx[ix],Qn,𝚽x12,S⁻[mat[ix]],S⁺[mat[ix]],S[mat[ix],:],ΔE,𝚽E12[:,ix],𝒪E,𝒪x,C,copy(ω[1]),copy(ω[2]),isAdapt)
     end
 
     # Calculation of the Legendre components of the flux

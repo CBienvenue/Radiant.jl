@@ -5,9 +5,9 @@
     Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},
     𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},
     ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,
-    S::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,
-    solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},
-    β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64})
+    sources::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,
+    solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},
+    S⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64})
 
 Solve the one-speed transport equation for a given particle.  
 
@@ -35,7 +35,7 @@ Solve the one-speed transport equation for a given particle.
 - 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
 - 'I_max::Int64': maximum number of iterations of inner iterations.
 - 'ϵ_max::Float64': convergence criterion on the flux solution.
-- 'S::Array{Union{Array{Float64},Float64}}': surface sources intensities.
+- 'sources::Array{Union{Array{Float64},Float64}}': surface sources intensities.
 - 'isAdapt::Vector{Bool}': boolean for adaptive calculations.
 - 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in 
    calculations.
@@ -43,8 +43,8 @@ Solve the one-speed transport equation for a given particle.
 - 'E::Float64': group midpoint energy.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'β⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
-- 'β⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
+- 'S⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
+- 'S⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
 - 'α::Vector{Float64}': restricted momentum transfer.
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
 
@@ -57,7 +57,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C,ω,I_max::Int64,ϵ_max::Float64,S::Array{Union{Array{Float64},Float64}},isAdapt,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},β⁻::Vector{Float64},β⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM,ℳ_EM)
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C,ω,I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S,α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM,ℳ_EM)
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
@@ -92,7 +92,7 @@ isInnerConv=false
     end
 
     # If there is no source
-    if ~any(x->x!=0,S) && ~any(x->x!=0,Qℓ) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
+    if ~any(x->x!=0,sources) && ~any(x->x!=0,Qℓ) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
         𝚽ℓ = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
         ϵ_in = 0.0; i_in = 1
         println(">>>Group ",ig," has converge ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
@@ -107,18 +107,18 @@ isInnerConv=false
     @inbounds for n in range(1,N)
         if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end
         if ndims == 1
-            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,S[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,β⁻,β⁺)
+            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S)
         elseif ndims == 2
             if is_CUDA
                 error()
             else
-                𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,S[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,β⁻,β⁺)
+                𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺)
             end
         elseif ndims == 3
             if is_CUDA
                 error()
             else
-                𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,S[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,β⁻,β⁺)
+                𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺)
             end
         else
             error("Error in computeOneSpeed.jl: Dimension is not 1, 2 or 3.")
