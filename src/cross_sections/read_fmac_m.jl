@@ -160,7 +160,7 @@ elseif record_III[index_III] == 5
     if index_III_line == 1
     for n in range(1,numberOfParticles), ig in range(1,numberOfGroups[n]+1)
         if ig == numberOfGroups[n] + 1
-        energyBoundaries[(n-1)*(numberOfGroups[n]+1)+ig] = energyBoundaries_temp[end-n+1]    
+        energyBoundaries[sum(numberOfGroups[1:n].+1)] = energyBoundaries_temp[end-n+1]    
         elseif n != 1
         energyBoundaries[sum(numberOfGroups[1:n-1].+1)+ig] = energyBoundaries_temp[sum(numberOfGroups[1:n-1])+ig]
         else
@@ -211,11 +211,11 @@ elseif record_III[index_III] == 35
     for imat in range(1,numberOfMaterials)
     for n in range(1,numberOfParticles), ig in range(1,numberOfGroups[n]+1)
         if ig == numberOfGroups[n] + 1
-        stoppingPowers[(n-1)*(numberOfGroups[n]+1)+ig,imat] = stoppingPowers_temp[end-n*numberOfMaterials+imat]    
+        stoppingPowers[sum(numberOfGroups[1:n].+1),imat] = stoppingPowers_temp[end-n*numberOfMaterials+imat]    
         elseif n != 1
-        stoppingPowers[(n-1)*(numberOfGroups[n]+1)+ig,imat] = stoppingPowers_temp[((ig-1)*numberOfMaterials+imat)+sum(numberOfGroups[1:n-1])*numberOfMaterials]
+        stoppingPowers[sum(numberOfGroups[1:n-1].+1)+ig,imat] = stoppingPowers_temp[((ig-1)*numberOfMaterials+imat)+sum(numberOfGroups[1:n-1])*numberOfMaterials]
         else
-        stoppingPowers[(n-1)*(numberOfGroups[n]+1)+ig,imat] = stoppingPowers_temp[((ig-1)*numberOfMaterials+imat)]
+        stoppingPowers[ig,imat] = stoppingPowers_temp[((ig-1)*numberOfMaterials+imat)]
         end
     end
     end
