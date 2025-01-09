@@ -181,7 +181,7 @@ open(fmac_file,"w") do file
         for i in range(1,Npart)
             ed = cross_sections.get_energy_deposition(particle_names[i])
             for n in range(1,Nmat)
-                append!(energy_deposition,ed[:,n])
+                append!(energy_deposition,ed[1:end-1,n])
             end
         end
         print_float(file,energy_deposition)
@@ -198,7 +198,7 @@ open(fmac_file,"w") do file
         for i in range(1,Npart)
             cd = cross_sections.get_charge_deposition(particle_names[i])
             for n in range(1,Nmat)
-                append!(charge_deposition,cd[:,n])
+                append!(charge_deposition,cd[1:end-1,n])
             end
         end
         print_float(file,charge_deposition)

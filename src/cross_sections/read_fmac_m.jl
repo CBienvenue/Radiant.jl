@@ -339,7 +339,7 @@ for n in range(1,numberOfParticles)
                 index2 = index2 + numberOfGroups[i]
             end
             
-            scat = zeros(numberOfGroups[n]+1,numberOfGroups[m],legendreOrder+1)
+            scat = zeros(numberOfGroups[n],numberOfGroups[m],legendreOrder+1)
             for ig_i in range(1,numberOfGroups[n]), ig_f in range(1,numberOfGroups[m])
                 if haskey(scatDict[imat][ig_f+index2],ig_i+index)
                     Ls = length(scatDict[imat][ig_f+index2][ig_i+index])
