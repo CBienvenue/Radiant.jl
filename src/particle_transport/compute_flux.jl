@@ -74,7 +74,7 @@ else
 end
 
 # Scattering cross sections
-Σs = zeros(Nmat,Ng+1,Ng,L+1)
+Σs = zeros(Nmat,Ng,Ng,L+1)
 if solver ∉ [4,5]
     Σs = cross_sections.get_scattering(part,part,L)
 end

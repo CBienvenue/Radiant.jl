@@ -54,7 +54,6 @@ function scattering_source(Qℓ::Array{Float64},𝚽ℓ::Array{Float64},Σs::Arr
         for gi in range(1,Ngi), is in range(1,Nm), p in range(1,P)
             Qℓ[gf,p,is,ix,iy,iz] += Σs[mat[ix,iy,iz],gi,gf,pℓ[p]+1] * 𝚽ℓ[gi,p,is,ix,iy,iz]
         end
-        Qℓ[gf,1,1,ix,iy,iz] += Σs[mat[ix,iy,iz],Ngi+1,gf,1] * 𝚽cutoff[1,1,ix,iy,iz]
     end
     return Qℓ 
 end

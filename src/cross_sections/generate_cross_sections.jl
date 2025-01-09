@@ -57,7 +57,7 @@ for i in range(1,Npart), n in range(1,Nmat)
     mcs = Multigroup_Cross_Sections(Ng[i])
     Σt = zeros(Ng[i]); Σa = zeros(Ng[i]); Σs = zeros(Ng[i]); Σe = zeros(Ng[i]+1); Σc = zeros(Ng[i]+1); S = zeros(Ng[i]+1); α = zeros(Ng[i]);
     for j in range(1,Npart)
-        Σsℓ = zeros(Ng[i]+1,Ng[j],L+1)
+        Σsℓ = zeros(Ng[i],Ng[j],L+1)
         for interaction in interactions
             for pin in interaction.get_in_particles(), pout in interaction.get_out_particles()
                 if pin != particles[i] || pout != particles[j] continue end

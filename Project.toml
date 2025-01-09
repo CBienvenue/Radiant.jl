@@ -1,7 +1,7 @@
 name = "Radiant"
 uuid = "b26cd056-4456-4d61-8550-65e4ff5b9100"
 authors = ["Charles Bienvenue"]
-version = "1.0.8"
+version = "1.0.9"
 
 [deps]
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"

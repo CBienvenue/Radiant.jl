@@ -501,10 +501,9 @@ function get_scattering(this::Cross_Sections,particle_in::String,particle_out::S
     index_particle_out = findfirst(x -> x == particle_out,this.get_particles())
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle_in)
-    Σs = zeros(Nmat,Ng+1,Ng,legendre_order+1)
+    Σs = zeros(Nmat,Ng,Ng,legendre_order+1)
     for n in range(1,Nmat)
         Σs_i = this.multigroup_cross_sections[index_particle_in,n].get_scattering(index_particle_out)
-        #if length(Σs_i[1,1,:]) < legendre_order error("Scattering cross-sections is not expanded up to ",legendre_order,"th-order Legendre moment.") end
         Σs[n,:,:,1:min(legendre_order+1,length(Σs_i[1,1,:]))] = Σs_i[:,:,1:min(legendre_order+1,length(Σs_i[1,1,:]))]
     end
     return Σs
