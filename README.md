@@ -12,8 +12,8 @@ For [Installation Instructions](https://cbienvenue.github.io/Radiant.jl/stable/q
 
 For a detailed account of the theory and the features of the Radiant package, please refer to the [Documentation](https://cbienvenue.github.io/Radiant.jl/stable/).
 
-[!NOTE]
-Work in progress
+> [!WARNING]
+> Incomplete - Work in progress
 
 ## Overview of Features 
 
@@ -44,8 +44,8 @@ Work in progress
 
 ## Examples
 
-[!NOTE]
-Work in progress
+> [!WARNING]
+> Missing - Work in progress
 
 ## Questions and Contributions
 
