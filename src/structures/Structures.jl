@@ -65,20 +65,26 @@ RadiantObject = Union{
     Interaction
 }
 
-function Base.getproperty(object::RadiantObject,s::Symbol)
-    if hasfield(typeof(object),s)
-        return getfield(object,s)
+function Base.getproperty(object::RadiantObject, s::Symbol)
+    if hasfield(typeof(object), s)
+        return getfield(object, s)
     else
-        if isdefined(Radiant,:($s)) && getproperty(Radiant,:($s)) isa Function
+        # Check if the function is defined in the Radiant module
+        if isdefined(Radiant, s) && getproperty(Radiant, s) isa Function
             try
-                return function (x...) @eval $s($object,$x...) end
-            catch
+                return function(x...)
+                    func = getproperty(Radiant, s)
+                    return func(object, x...)
+                end
+            catch e
+                # Log the original error and rethrow it
                 type = typeof(object)
-                error("The object of type '$type' has no function '$s'.")
+                @error "Failed to invoke function '$s' on object of type '$type'. Error: $e"
+                rethrow()
             end
         else
             type = typeof(object)
-            error("The object of type '$type' has no function '$s'.")
+            throw(error("The object of type '$type' has no function '$s'."))
         end
     end
 end
