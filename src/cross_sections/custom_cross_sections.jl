@@ -6,7 +6,7 @@ function custom_cross_sections(cross_sections::Cross_Sections)
     for i in range(1,1), n in range(1,Nmat)
         mcs = Multigroup_Cross_Sections(1)
         Σt = zeros(1); Σa = zeros(1); Σs = zeros(1); Σe = zeros(1+1); Σc = zeros(1+1); S = zeros(1+1); α = zeros(1);
-        Σsℓ = zeros(1+1,1,0+1)
+        Σsℓ = zeros(1,1,0+1)
 
         Σt[1] = cross_sections.custom_absorption[n] + cross_sections.custom_scattering[n]
         Σsℓ[1,1,1] = cross_sections.custom_scattering[n]
