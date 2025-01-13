@@ -16,7 +16,7 @@ Structure used to define a material and its properties.
 mutable struct Material
 
     # Variable(s)
-    name                ::Union{Missing,String}
+    id                  ::Int64
     density             ::Union{Missing,Float64}
     state_of_matter     ::String
     number_of_elements  ::Int64
@@ -27,13 +27,13 @@ mutable struct Material
     # Constructor(s)
     function Material()
         this = new()
-        this.name = missing
-        this.density = missing
-        this.state_of_matter = "solid"
+        this.id                 = generate_unique_id()
+        this.density            = missing
+        this.state_of_matter    = "solid"
         this.number_of_elements = 0
-        this.elements = Vector{String}()
-        this.atomic_numbers = Vector{Int64}()
-        this.weight_fractions = Vector{Float64}()
+        this.elements           = Vector{String}()
+        this.atomic_numbers     = Vector{Int64}()
+        this.weight_fractions   = Vector{Float64}()
         return this
     end
 end
@@ -41,34 +41,11 @@ end
 # Method(s)
 function println(this::Material)
     println("Material:")
-    println("   Name:                         $(this.name)")
+    println("   ID:                           $(this.id)")
     println("   Density (g/cm³):              $(this.density)")
-    println("   State of matter:              $(this.state_of_matter)")
     println("   Elements in the compound:     $(this.elements)")
     println("   Weight fractions:             $(this.weight_fractions)")
-end
-
-
-"""
-    set_name(this::Material,name::String)
-
-To set the identifier (name) of the Material structure.
-
-# Input Argument(s)
-- `this::Material`: material.
-- `name::String`: identifier (name).
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> mat = Material()
-julia> mat.set_name("water")
-```
-"""
-function set_name(this::Material,name::String)
-    this.name = name
+    println("   State of matter:              $(this.state_of_matter)")
 end
 
 """
@@ -85,7 +62,6 @@ N/A
 
 # Examples
 ```jldoctest
-julia> mat = Material()
 julia> mat.set_density(19.3)
 ```
 """
@@ -108,7 +84,6 @@ N/A
 
 # Examples
 ```jldoctest
-julia> mat = Material()
 julia> mat.set_state_of_matter("liquid")
 ```
 """
@@ -118,7 +93,7 @@ function set_state_of_matter(this::Material,state_of_matter::String)
 end
 
 """
-    add_element(this::Material,symbol::String,weight_fraction::Real)
+    add_element(this::Material,symbol::String,weight_fraction::Real=1)
 
 To add an element which is part of the composition of the material.
 
@@ -132,40 +107,137 @@ N/A
 
 # Examples
 ```jldoctest
-julia> water = Material()
 julia> water.add_element("H",0.1111)
 julia> water.add_element("O",0.8889)
 ```
 """
-function add_element(this::Material,symbol::String,weight_fraction::Real)
+function add_element(this::Material,symbol::String,weight_fraction::Real=1)
     if ~(0 ≤ weight_fraction ≤ 1) error("Weight fraction should have values between 0 and 1.") end
-    push!(this.elements,symbol)
+    push!(this.elements,lowercase(symbol))
     push!(this.atomic_numbers,atomic_number(lowercase(symbol)))
     push!(this.weight_fractions,weight_fraction)
     this.number_of_elements += 1
+    if sum(this.weight_fractions) > 1 error("Weight fraction exceed 1.") end
+    if (weight_fraction == 1) this.set_density(density(atomic_number(lowercase(symbol)))) end
 end
 
+"""
+    get_density(this::Material)
+
+To get the density of the material.
+
+# Input Argument(s)
+- `this::Material`: material.
+
+# Output Argument(s)
+- `density::Real`: density [in g/cm³].
+
+# Examples
+```jldoctest
+julia> density = mat.get_density()
+```
+"""
 function get_density(this::Material)
-    if ismissing(density) error("Unknown density.") end
+    if ismissing(density) error("Density is missing.") end
     return this.density
 end
 
+"""
+    get_number_of_elements(this::Material)
+
+To get the number of elements in the material composition.
+
+# Input Argument(s)
+- `this::Material`: material.
+
+# Output Argument(s)
+- `number_of_elements::Int64`: number of elements.
+
+# Examples
+```jldoctest
+julia> N = mat.get_number_of_elements()
+```
+"""
 function get_number_of_elements(this::Material)
     return this.number_of_elements
 end
 
+"""
+    get_atomic_numbers(this::Material)
+
+To get the atomic numbers of the elements in the material composition.
+
+# Input Argument(s)
+- `this::Material`: material.
+
+# Output Argument(s)
+- `atomic_numbers::Vector{Int64}`: atomic numbers.
+
+# Examples
+```jldoctest
+julia> atomic_number = mat.get_atomic_numbers()
+```
+"""
 function get_atomic_numbers(this::Material)
     return this.atomic_numbers
 end
 
+"""
+    get_weight_fractions(this::Material)
+
+To get the weight fractions associated with the elements in the material composition.
+
+# Input Argument(s)
+- `this::Material`: material.
+
+# Output Argument(s)
+- `weight_fractions::Vector{Float64}`: weight fractions.
+
+# Examples
+```jldoctest
+julia> weight_fractions = mat.weight_fractions()
+```
+"""
 function get_weight_fractions(this::Material)
     return this.weight_fractions
 end
 
-function get_name(this::Material)
-    return this.name
+"""
+    get_id(this::Material)
+
+To get the unique ID of the material.
+
+# Input Argument(s)
+- `this::Material`: material.
+
+# Output Argument(s)
+- `ID::Int64`: ID of the material.
+
+# Examples
+```jldoctest
+julia> id = mat.get_id()
+```
+"""
+function get_id(this::Material)
+    return this.id
 end
 
+"""
+    get_state_of_matter(this::Material)
+
+To get the state of matter of the material.
+
+# Input Argument(s)
+- `this::Material`: material.
+
+# Output Argument(s)
+- `state_of_matter::String`: state of matter.
+
+# Examples
+```jldoctest
+julia> state_of_matter = mat.get_state_of_matter()
+```
+"""
 function get_state_of_matter(this::Material)
     return this.state_of_matter
 end

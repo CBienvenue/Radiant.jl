@@ -30,9 +30,9 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     idMat         = geo.material_per_region
 
     Nmat = length(cs.materials)
-    materialNames = Vector{String}()
+    IDS = Vector{Int64}()
     for n in range(1,Nmat)
-        push!(materialNames,cs.materials[n].name)
+        push!(IDS,cs.materials[n].get_id())
     end
 
     # Calculations of the volume and material array
@@ -50,8 +50,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
         end
         for ix in rx
             vol[ix] = (xB[i+1]-xB[i])/xVoxels[i]
-            index = findfirst(x->x==idMat[i].name,materialNames)
-            if isnothing(index) error("No cross section information for material ",idMat[i].name,".") end
+            index = findfirst(x->x==idMat[i].get_id(),IDS)
+            if isnothing(index) error("No cross section information for material ",idMat[i].get_id(),".") end
             mat[ix] = index
         end
         i += 1
@@ -103,9 +103,9 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     idMat         = geo.material_per_region
 
     Nmat = length(cs.materials)
-    materialNames = Vector{String}()
+    IDS = Vector{Int64}()
     for n in range(1,Nmat)
-        push!(materialNames,cs.materials[n].name)
+        push!(IDS,cs.materials[n].get_id())
     end
 
     # Calculations of the volume and material array
@@ -168,8 +168,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
             end
             for ix in rx
                 for iy in ry
-                    index = findfirst(x->x==idMat[i,j].name,materialNames)
-                    if isnothing(index) error("No cross section information for material ",idMat[i,j].name,".") end
+                    index = findfirst(x->x==idMat[i,j].get_id(),IDS)
+                    if isnothing(index) error("No cross section information for material ",idMat[i,j].get_id(),".") end
                     mat[ix,iy] = index
                 end
             end
@@ -252,9 +252,9 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     idMat         = geo.material_per_region
 
     Nmat = length(cs.materials)
-    materialNames = Vector{String}()
+    IDS = Vector{Int64}()
     for n in range(1,Nmat)
-        push!(materialNames,cs.materials[n].name)
+        push!(IDS,cs.materials[n].get_id())
     end
 
     # Calculations of the volume and material array
@@ -342,8 +342,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
                 for ix in rx
                     for iy in ry
                         for iz in rz
-                            index = findfirst(x->x==idMat[i,j,k].name,materialNames)
-                            if isnothing(index) error("No cross section information for material ",idMat[i,j,k].name,".") end
+                            index = findfirst(x->x==idMat[i,j,k].get_id(),IDS)
+                            if isnothing(index) error("No cross section information for material ",idMat[i,j,k].get_id(),".") end
                             mat[ix,iy,iz] = index
                         end
                     end

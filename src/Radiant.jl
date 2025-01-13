@@ -18,6 +18,13 @@ module Radiant
         error("Package root not found.")
     end
 
+    # Global unique ID generator
+    const unique_id_counter = Ref(0)
+    function generate_unique_id()
+        unique_id_counter[] += 1
+        return unique_id_counter[]
+    end
+
     # Function and structures
     include("./structures/Structures.jl")
     include("./tools/Tools.jl")
