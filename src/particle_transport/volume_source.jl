@@ -1,11 +1,11 @@
 """
-    volume_source(particle::String,source::Volume_Source,cross_sections::Cross_Sections,
+    volume_source(particle::Particle,source::Volume_Source,cross_sections::Cross_Sections,
     geometry::Geometry)
 
 Prepare the volume source produced by fixed sources for transport calculations.
 
 # Input Argument(s)
-- 'particle::String': particule type.
+- 'particle::Particle': particule type.
 - 'source::Volume_Source': volume source information.
 - 'cross_sections::Cross_Sections': cross-sections information.
 - 'geometry::Geometry': geometry information.
@@ -18,10 +18,10 @@ Prepare the volume source produced by fixed sources for transport calculations.
 N/A
 
 """
-function volume_source(particle::String,source::Volume_Source,cross_sections::Cross_Sections,geometry::Geometry)
+function volume_source(particle::Particle,source::Volume_Source,cross_sections::Cross_Sections,geometry::Geometry)
 
-    if particle ∉ cross_sections.particles error(string("No cross sections available for ",particle," particle.")) end
-    index = findfirst(x -> x == particle,cross_sections.particles)
+    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
 
     # Extract source informations

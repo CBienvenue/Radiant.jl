@@ -15,7 +15,7 @@ mutable struct Solvers
 
     # Variable(s)
     number_of_particles        ::Int64
-    particles                  ::Vector{String}
+    particles                  ::Vector{Particle}
     methods_names              ::Vector{String}
     methods_list               ::Vector{Discrete_Ordinates}
     number_of_generations      ::Int64
@@ -26,7 +26,7 @@ mutable struct Solvers
         this = new()
 
         this.number_of_particles = 0
-        this.particles = Vector{String}()
+        this.particles = Vector{Particle}()
         this.methods_names = Vector{String}()
         this.methods_list = Vector{Discrete_Ordinates}()
         this.number_of_generations = 1
@@ -35,18 +35,7 @@ mutable struct Solvers
     end
 end
 
-# Discrete_Ordinates(s)
-Base.propertynames(::Solvers) = 
-(
-    fieldnames(Solvers)...,
-    :add_method,
-    :set_number_of_generations,
-    :get_method,
-    :get_number_of_generations,
-    :get_particles,
-    :get_number_of_particles
-)
-
+# Method(s)
 """
     add_solver(this::Solvers,method::Discrete_Ordinates)
 
@@ -96,8 +85,9 @@ function set_number_of_generations(this::Solvers,number_of_generations::Int64)
     this.number_of_generations = number_of_generations
 end
 
-function get_method(this::Solvers,particle::String)
-    index = findfirst(x -> x == particle,this.particles)
+function get_method(this::Solvers,particle::Particle)
+    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    if isnothing(index) error("Solvers don't contain data for the given particle.") end
     return this.methods_list[index]
 end
 

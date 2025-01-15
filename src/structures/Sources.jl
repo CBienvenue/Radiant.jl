@@ -4,7 +4,7 @@ mutable struct Sources
     # Variable(s)
     name                       ::Union{Missing,String}
     number_of_particles        ::Int64
-    particles                  ::Vector{String}
+    particles                  ::Vector{Particle}
     sources_names              ::Vector{String}
     sources_list               ::Vector{Source}
 
@@ -20,7 +20,7 @@ mutable struct Sources
 
         this.name = missing
         this.number_of_particles = 0
-        this.particles = Vector{String}()
+        this.particles = Vector{Particle}()
         this.sources_names = Vector{String}()
         this.sources_list = Vector{Source}()
 
@@ -33,25 +33,14 @@ mutable struct Sources
 end
 
 # Method(s)
-function println(this::Sources)
-    entries = ["Name","Number of particles","Particles","Sources"]
-    values = [this.name,this.number_of_particles,this.particles,this.sources_names]
-    N = length(entries); L = length.(entries); Lmax = maximum(L)
-    println("Sources")
-    for n in range(1,N)
-        println(string("   ",entries[n]," "^(Lmax-L[n])),"  :  ",values[n])
-    end
-end
-
 function add_source!(this::Sources,source::Source)
     this.number_of_particles += 1
     push!(this.particles,source.particle)
-    #push!(this.sources_names,source.name)
     push!(this.sources_list,source)
 end
 
 function get_source!(this::Sources,particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
-    index = findfirst(x -> x == particle,this.particles)
+    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
     if isnothing(index)
         source = Source(particle,cross_sections,geometry,discrete_ordinates)
         return source

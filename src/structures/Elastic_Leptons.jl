@@ -16,9 +16,9 @@ mutable struct Elastic_Leptons <: Interaction
 
     # Variable(s)
     name::String
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
     is_CSD::Bool
     is_elastic::Bool
     is_ETC::Bool
@@ -39,7 +39,7 @@ mutable struct Elastic_Leptons <: Interaction
     function Elastic_Leptons()
         this = new()
         this.name = "elastic_leptons"
-        this.interaction_types = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])
+        this.interaction_types = Dict((Electron,Electron) => ["S"],(Positron,Positron) => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -79,7 +79,7 @@ julia> elastic_leptons = Elastic_Leptons()
 julia> elastic_leptons.set_interaction_types( Dict(("positrons","positrons") => ["S"]) ) # Elastic only for positrons
 ```
 """
-function set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Elastic_Leptons,interaction_types)
     this.interaction_types = interaction_types
 end
 
@@ -179,7 +179,7 @@ function bounds(this::Elastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::String,Ecutoff::Float64,iz::Int64)
+function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
 
     # Initialization
     rₑ = 2.81794092E-13 # (in cm)
@@ -243,12 +243,12 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
         if this.subshell_dependant_inelastic
             Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z)
         else
-            Ui = [0.0]; Nshells = 1; Zi = Z[i]; Ti = [0.0]; # Free atomic electron
+            Ui = [0.0]; Nshells = 1; Zi = Z[1]; Ti = [0.0]; # Free atomic electron
         end
         gM = 0
         for δi in range(1,Nshells)
             Wc = Ecutoff # Knock-on production cutoff with Møller or Bhabha
-            if particle == "electrons"
+            if is_electron(particle)
                 Wmax = (Ei-Ui[δi])/2
                 if Wc < Wmax
                     Jm₁(x) = ((Ei+2)*((Ei+2)*(x+Ui[δi])*log(x+Ui[δi])-(Ei+2)*(x+Ui[δi])*log(Ei-x+2)+Ui[δi]^2+(Ei+2)*Ui[δi]))/((Ui[δi]+Ei+2)^2*(x+Ui[δi]))
@@ -258,7 +258,7 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
                     Jm(x) = Jm₁(x) + Jm₂(x) + Jm₃(x) + Jm₄(x)
                     gM += Zi[δi]/Z * (Jm(Wmax) - Jm(Wc))
                 end
-            elseif particle == "positrons"
+            elseif is_positron(particle)
                 γ = Ei+1
                 b = ((γ-1)/γ)^2
                 b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
@@ -304,22 +304,29 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Strin
     return σℓ
 end
 
-function tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::String,Ecutoff::Float64,iz::Int64)
+function tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
     σt = dcs(this,0,Ei,Z,particle,Ecutoff,iz)[1]
     return σt
 end
 
-function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::String,interactions::Vector{<:Interaction})
+function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::Particle,interactions::Vector{<:Interaction})
 
     # Load Boschini data for Mott cross-sections
     if this.model == "mott"
         path = joinpath(find_package_root(), "data", "mott_data_boschini_2013.jld2")
         data = load(path)
-        if ~haskey(data,particle) error("Mott cross-sections are only available for electrons and positrons.") end
+        if is_electron(particle)
+            particle_name = "electrons"
+        elseif is_positron(particle)
+            particle_name = "positrons"
+        else
+            error("Unknown particle")
+        end
+        if ~haskey(data,particle_name) error("Mott cross-sections are only available for electrons and positrons.") end
         Nz = length(Z)
         this.bjk_boschini = Vector{Array{Float64}}(undef,Nz)
         for iz in range(1,Nz)
-            this.bjk_boschini[iz] = data[particle][Z[iz]]
+            this.bjk_boschini[iz] = data[particle_name][Z[iz]]
         end
     end
 

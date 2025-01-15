@@ -21,7 +21,7 @@ Calculate the charge deposition and print it in the output file.
   Boltzmann-Fokker-Planck Equation
 
 """
-function charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
+function charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,particles::Vector{Particle})
 
 #----
 # Extract geometry data
@@ -34,11 +34,6 @@ mat = geometry.get_material_per_voxel()
 # Calculate the total energy deposition
 #----
 Ctot = zeros(Ns[1],Ns[2],Ns[3])
-particles = flux.get_particles()
-if type != "total"
-    if type ∉ particles error("Unknown particle type.") end
-    particles = [type]
-end
 for part in particles
 
     # Extract discrete_ordinates data

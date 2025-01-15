@@ -63,7 +63,7 @@ is_full_coupling = true
 schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
 ω,𝒞,is_adaptive,𝒲 = scheme_weights(𝒪,schemes,Ndims,isCSD)
 
-println(">>>Particle: $part <<<")
+println(">>>Particle: $(get_type(part)) <<<")
 
 # Total cross sections
 Σtot = zeros(Ng,Nmat)
@@ -111,9 +111,9 @@ end
 
 # External electro-magnetic fields
 𝓔 = [0.0,0.0,0.0]; 𝓑 = [0.0,0.0,0.0]
-q = particle_charge(part)
 is_EM = false
-if is_EM && q != 0
+if is_EM
+    q = part.get_charge()
     ℳ_EM = electromagnetic_scattering_matrix(𝓔,𝓑,q,Ω,w,Ndims,Mn,Dn,pℓ,pm,P,Ng,Eb,ΔE,Qdims)
 else
     ℳ_EM = zeros(Ng,P,P);

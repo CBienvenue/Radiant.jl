@@ -3,7 +3,7 @@ mutable struct Source
 
     # Variable(s)
     name                       ::Union{Missing,String}
-    particle                   ::Union{Missing,String}
+    particle                   ::Union{Missing,Particle}
     volume_sources             ::Array{Float64}
     surface_sources            ::Array{Union{Array{Float64},Float64}}
     normalization_factor       ::Float64
@@ -21,7 +21,7 @@ mutable struct Source
     get_particle               ::Function
 
     # Constructor(s)
-    function Source(particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    function Source(particle::Particle,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
         this = new()
 
@@ -58,8 +58,8 @@ end
 
 function initalize_sources!(this::Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
     particle = this.particle
-    if particle ∉ cross_sections.particles error(string("No cross sections available for ",particle," particle.")) end
-    index = findfirst(x -> x == particle,cross_sections.particles)
+    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",particle," particle.")) end
+    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
     Nx = geometry.number_of_voxels["x"]
     Qdims = discrete_ordinates.get_quadrature_dimension(geometry.dimension)
@@ -93,12 +93,12 @@ end
 function add_source!(this::Source,surface_sources::Surface_Source)
 
     particle = surface_sources.particle
-    if particle ∉ this.cross_sections.particles error(string("No cross sections available for ",particle," particle.")) end
-    index = findfirst(x -> x == particle,this.cross_sections.particles)
+    if get_id(particle) ∉ get_id.(this.cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    index = findfirst(x -> get_id(x) == get_id(particle),this.cross_sections.particles)
     Ng = this.cross_sections.number_of_groups[index]
     if this.geometry.dimension ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
     if this.geometry.dimension ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
-    if particle != this.discrete_ordinates.particle error(string("No methods available for ",particle," particle.")) end
+    if get_id(particle) != get_id(this.discrete_ordinates.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
     Qdims = this.discrete_ordinates.get_quadrature_dimension(this.geometry.dimension)
     _,w = quadrature(this.discrete_ordinates.quadrature_order,this.discrete_ordinates.quadrature_type,Qdims)
     number_of_directions = length(w)
@@ -140,7 +140,7 @@ function get_particle(this::Source)
 end 
 
 function Base.:+(source1::Source,source2::Source)
-    if source1.get_particle() != source2.get_particle() error("Forbitten addition of different particle sources.") end
+    if get_id(source1.get_particle()) != get_id(source2.get_particle()) error("Forbitten addition of different particle sources.") end
     source1.volume_sources += source2.volume_sources
     d = size(source1.surface_sources)
     for i in range(1,d[1]), j in range(1,d[2]), k in range(1,d[3])

@@ -31,7 +31,7 @@ mutable struct Cross_Sections
     number_of_materials       ::Int64
     materials                 ::Vector{Material}
     number_of_particles       ::Int64
-    particles                 ::Vector{String}
+    particles                 ::Vector{Particle}
     energy                    ::Union{Missing,Float64}
     cutoff                    ::Union{Missing,Float64}
     number_of_groups          ::Union{Missing,Vector{Int64}}
@@ -257,10 +257,9 @@ julia> cs = Cross_Sections()
 julia> cs.set_particles(["electrons","photons","positrons"])
 ```
 """
-function set_particles(this::Cross_Sections,particles::Union{Vector{String},String})
-    if typeof(particles) == String particles = [particles] end 
+function set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Particle})
+    if typeof(particles) == Particle particles = [particles] end 
     if length(particles) == 0 error("At least one particle should be provided.") end
-    for p in particles if lowercase(p) ∉ ["photons","electrons","positrons"] error("Unknown particle type") end end
     this.particles = particles
     this.number_of_particles += length(particles)
 end
@@ -451,29 +450,32 @@ function get_number_of_groups(this::Cross_Sections)
     return this.number_of_groups
 end
 
-function get_number_of_groups(this::Cross_Sections,particle::String)
+function get_number_of_groups(this::Cross_Sections,particle::Particle)
     index = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index) error("Cross-sections don't contain data for the given particle.") end
     return this.number_of_groups[index]
 end
 
-function get_energy_boundaries(this::Cross_Sections,particle::String)
+function get_energy_boundaries(this::Cross_Sections,particle::Particle)
     index = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index) error("Cross-sections don't contain data for the given particle.") end
     return this.energy_boundaries[index]
 end
 
-function get_energies(this::Cross_Sections,particle::String)
+function get_energies(this::Cross_Sections,particle::Particle)
     Eb = this.get_energy_boundaries(particle)
     return (Eb[1:end-1] + Eb[2:end])/2
 end
 
-function get_energy_width(this::Cross_Sections,particle::String)
+function get_energy_width(this::Cross_Sections,particle::Particle)
     Eb = this.get_energy_boundaries(particle)
     return (Eb[1:end-1] - Eb[2:end])
 end
 
-function get_absorption(this::Cross_Sections,particle::String)
+function get_absorption(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup cross-sections. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
     Σa = zeros(Ng,Nmat)
@@ -483,9 +485,10 @@ function get_absorption(this::Cross_Sections,particle::String)
     return Σa
 end
 
-function get_total(this::Cross_Sections,particle::String)
+function get_total(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup cross-sections. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
     Σt = zeros(Ng,Nmat)
@@ -495,10 +498,11 @@ function get_total(this::Cross_Sections,particle::String)
     return Σt
 end
 
-function get_scattering(this::Cross_Sections,particle_in::String,particle_out::String,legendre_order::Int64)
+function get_scattering(this::Cross_Sections,particle_in::Particle,particle_out::Particle,legendre_order::Int64)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup scattering cross-sections. Missing data.") end
     index_particle_in = findfirst(x -> x == particle_in,this.get_particles())
     index_particle_out = findfirst(x -> x == particle_out,this.get_particles())
+    if isnothing(index_particle_in) || isnothing(index_particle_out) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ngi = this.get_number_of_groups(particle_in)
     Ngf = this.get_number_of_groups(particle_out)
@@ -510,9 +514,10 @@ function get_scattering(this::Cross_Sections,particle_in::String,particle_out::S
     return Σs
 end
 
-function get_stopping_powers(this::Cross_Sections,particle::String)
+function get_stopping_powers(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup stopping powers. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
     β = zeros(Ng+1,Nmat)
@@ -522,9 +527,10 @@ function get_stopping_powers(this::Cross_Sections,particle::String)
     return β
 end
 
-function get_momentum_transfer(this::Cross_Sections,particle::String)
+function get_momentum_transfer(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup momentum transfer. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
     α = zeros(Ng,Nmat)
@@ -534,9 +540,10 @@ function get_momentum_transfer(this::Cross_Sections,particle::String)
     return α
 end
 
-function get_energy_deposition(this::Cross_Sections,particle::String)
+function get_energy_deposition(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup momentum transfer. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
     Σe = zeros(Ng+1,Nmat)
@@ -546,9 +553,10 @@ function get_energy_deposition(this::Cross_Sections,particle::String)
     return Σe
 end
 
-function get_charge_deposition(this::Cross_Sections,particle::String)
+function get_charge_deposition(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup momentum transfer. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
     Σc = zeros(Ng+1,Nmat)

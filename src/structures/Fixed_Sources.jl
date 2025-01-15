@@ -17,7 +17,7 @@ mutable struct Fixed_Sources
 
     # Variable(s)
     number_of_particles        ::Int64
-    particles                  ::Vector{String}
+    particles                  ::Vector{Particle}
     normalization_factor       ::Float64
     sources_names              ::Vector{String}
     sources_list               ::Vector{Source}
@@ -32,7 +32,7 @@ mutable struct Fixed_Sources
 
         this.number_of_particles = 0
         this.normalization_factor = 0
-        this.particles = Vector{String}()
+        this.particles = Vector{Particle}()
         this.sources_names = Vector{String}()
         this.sources_list = Vector{Source}()
         this.cross_sections = cross_sections
@@ -44,15 +44,6 @@ mutable struct Fixed_Sources
 end
 
 # Method(s)
-Base.propertynames(::Fixed_Sources) = 
-(
-    fieldnames(Fixed_Sources)...,
-    :add_source,
-    :get_source,
-    :get_particles,
-    :get_normalization_factor
-)
-
 """
     add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
 
@@ -76,10 +67,10 @@ julia> fs.add_source(vs)
 function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
     particle = fixed_source.get_particle()
     method = this.solvers.get_method(particle)
-    if particle ∈ this.particles
+    if get_id(particle) ∈ get_id.(this.particles)
         source = Source(particle,this.cross_sections,this.geometry,method)
         source.add_source(fixed_source)
-        index = findfirst(x -> x == particle,this.particles)
+        index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
         this.sources_list[index] += source
     else
         this.number_of_particles += 1
@@ -91,8 +82,8 @@ function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volum
     this.normalization_factor += fixed_source.get_normalization_factor()
 end
 
-function get_source(this::Fixed_Sources,particle::String)
-    index = findfirst(x -> x == particle,this.particles)
+function get_source(this::Fixed_Sources,particle::Particle)
+    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
     method = this.solvers.get_method(particle)
     if isnothing(index)
         source = Source(particle,this.cross_sections,this.geometry,method)

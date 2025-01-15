@@ -16,9 +16,9 @@ mutable struct Compton <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     Cℓk::Array{Float64}
     Cℓki::Array{Float64}
     is_CSD::Bool
@@ -35,7 +35,7 @@ mutable struct Compton <: Interaction
     function Compton(;
         ### Initial values ###
         model="waller-hartree",
-        interaction_types = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])
+        interaction_types = Dict((Photon,Photon) => ["S"],(Photon,Electron) => ["P"])
         ######################
         )
         this = new()
@@ -75,7 +75,7 @@ julia> compton = Compton()
 julia> compton.set_interaction_types( Dict(("photons","photons") => ["S"]) ) # Electron are absorbed following Compton interaction.
 ```
 """
-function set_interaction_types(this::Compton,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Compton,interaction_types)
     this.interaction_types = interaction_types
 end
 

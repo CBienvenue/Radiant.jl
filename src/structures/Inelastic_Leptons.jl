@@ -18,9 +18,9 @@ mutable struct Inelastic_Leptons <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -40,7 +40,7 @@ mutable struct Inelastic_Leptons <: Interaction
         is_subshells_dependant = true,
         is_shell_correction = true,
         density_correction = "fano",
-        interaction_types = Dict(("positrons","positrons") => ["S"],("positrons","electrons") => ["P"],("electrons","electrons") => ["S","P"])
+        interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"])
         ######################
         )
         this = new()
@@ -83,7 +83,7 @@ julia> elastic_leptons = Inelastic_Leptons()
 julia> elastic_leptons.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # No knock-on electrons.
 ```
 """
-function set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Inelastic_Leptons,interaction_types)
     this.interaction_types = interaction_types
 end
 
@@ -197,8 +197,8 @@ function out_distribution(this::Inelastic_Leptons)
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64,Ui::Float64,particle::String)
-    if particle == "electrons"
+function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64,Ui::Float64,particle::Particle)
+    if is_electron(particle)
         # Scattered electron
         if type == "S"
             Ef⁻ = min(Ef⁻,Ec,Ei-Ui)
@@ -212,7 +212,7 @@ function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float6
         else
             error("Unknown type of method for Møller scattering.")
         end
-    elseif particle == "positrons"
+    elseif is_positron(particle)
         # Scattered positron
         if type == "S"
             Ef⁻ = min(Ef⁻,Ec,Ei-Ui)
@@ -232,7 +232,7 @@ function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float6
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::String,Ui::Float64,Zi::Real,Ti::Float64)
+function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
 
     # Initialization
     rₑ = 2.81794092e-13 # (in cm)
@@ -252,9 +252,9 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
 
     # Close collisions
     if W ≥ 0
-        if particle == "electrons"
+        if is_electron(particle)
            F = 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui))
-        elseif particle == "positrons"
+        elseif is_positron(particle)
             b = ((γ-1)/γ)^2
             b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
             b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
@@ -284,7 +284,7 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
 end
 
 
-function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::String,Z::Int64)
+function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
     # Inititalisation
     rₑ = 2.81794092E-13       # (in cm)
@@ -294,7 +294,7 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::String,Z:
     σt = 0.0
 
     # Close collisions
-    if particle == "electrons"
+    if is_electron(particle)
         for δi in range(1,Nshells)
             Wmax = (Ei-Ui[δi])/2
             Wmin = Ei-Ec
@@ -303,7 +303,7 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::String,Z:
                 σt += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁻(Wmax)-J₀⁻(Wmin))
             end
         end
-    elseif particle == "positrons"
+    elseif is_positron(particle)
         b = ((γ-1)/γ)^2
         b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
         b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
@@ -323,7 +323,7 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::String,Z:
     return σt
 end
 
-function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::String)
+function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
 
     # Initialization
     rₑ = 2.81794092e-13 # (in cm)
@@ -336,9 +336,9 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
     if (this.is_shell_correction) Cz = this.shell_correction(Z,ωz,Ei) else Cz = 0 end
 
     # Compute the total stopping power
-    if particle == "electrons"
+    if is_electron(particle)
         f = (1-β²) - (2*γ-1)/γ^2*log(2) + ((γ-1)/γ)^2/8
-    elseif particle == "positrons"
+    elseif is_positron(particle)
         f = 2*log(2) - β²/12 * (23 + 14/(γ+1) + 10/(γ+1)^2 + 4/(γ+1)^3)
     else
         error("Unknown particle")
@@ -350,7 +350,7 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
     Nz = length(Z)
     for i in range(1,Nz)
         Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[i])
-        if particle == "electrons"
+        if is_electron(particle)
             for δi in range(1,Nshells)
                 Wmax = (Ei-Ui[δi])/2
                 Wmin = Ei-Ec
@@ -359,7 +359,7 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
                     Sc += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * (J₁⁻(Wmax)-J₁⁻(Wmin))
                 end
             end
-        elseif particle == "positrons"
+        elseif is_positron(particle)
             b = ((γ-1)/γ)^2
             b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
             b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
@@ -386,7 +386,7 @@ function mt(this::Inelastic_Leptons)
     return 0
 end
 
-function preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::String)
+function preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::Particle)
     this.plasma_energy = plasma_energy(Z,ωz,ρ)
     this.effective_mean_excitation_energy = effective_mean_excitation_energy(Z,ωz)
     if (this.is_shell_correction) this.preload_shell_corrections(Z,ωz,particle) end
@@ -413,7 +413,7 @@ Charles Bienvenue
   the corrected Bethe formula.
 
 """
-function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},particle::String)
+function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},particle::Particle)
     
     # Initialization
     Nz = length(Z)
@@ -423,12 +423,19 @@ function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz:
     E = zeros(Nz,153)
     Cz_prime = zeros(Nz,153)
     spline_Cz = Vector{Function}(undef,Nz)
+    if is_electron(particle)
+        particle_name = "electrons"
+    elseif is_positron(particle)
+        particle_name = "positrons"
+    else
+        error("Unknown particle.")
+    end
 
     # Read shell correction data
     path = joinpath(find_package_root(), "data", "shell_corrections_salvat_2023.jld2")
     data = load(path)
     for iz in range(1,Nz)
-        datai = data[particle][Z[iz]]
+        datai = data[particle_name][Z[iz]]
         for n in range(1,153)
             Cz_prime[iz,n] = datai["modified_shell_corrections"][n]
             E[iz,n] = datai["energies"][n]

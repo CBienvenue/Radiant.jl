@@ -1,5 +1,8 @@
 # Data structures
 
+include("Particle.jl")
+export Particle, Photon, Electron, Positron
+
 # To stock information about cross section generation
 include("Interaction.jl")
 include("Elastic_Leptons.jl")
@@ -62,7 +65,8 @@ RadiantObject = Union{
     Computation_Unit,
     Flux_Per_Particle,
     Flux,
-    Interaction
+    Interaction,
+    Particle
 }
 
 function Base.getproperty(object::RadiantObject, s::Symbol)

@@ -25,7 +25,7 @@ feed function 𝓕ₑ for energy-deposition cross section.
 - MacFarlane (2021) : The NJOY Nuclear Data Processing System, Version 2012.
 
 """
-function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{String},Npts::Int64,type::String,incoming_particle::String,scattered_particle::String,Ein::Vector{Float64},Ec::Float64)
+function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},Npts::Int64,type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64)
 
 #----
 # Initialization

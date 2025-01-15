@@ -15,9 +15,9 @@ mutable struct Rayleigh <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -31,7 +31,7 @@ mutable struct Rayleigh <: Interaction
     function Rayleigh()
         this = new()
         this.name = "rayleigh"
-        this.interaction_types = Dict(("photons","photons") => ["S"])
+        this.interaction_types = Dict((Photon,Photon) => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false

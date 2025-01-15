@@ -21,9 +21,9 @@ mutable struct Bremsstrahlung <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -41,7 +41,7 @@ mutable struct Bremsstrahlung <: Interaction
         ### Initial values ###
         scattering_model="BFP",
         angular_scattering_type="modified_dipole",
-        interaction_types = Dict(("electrons","electrons") => ["S"],("electrons","photons") => ["P"],("positrons","positrons") => ["S"],("positrons","photons") => ["P"])
+        interaction_types = Dict((Electron,Electron) => ["S"],(Electron,Photon) => ["P"],(Positron,Positron) => ["S"],(Positron,Photon) => ["P"])
         ######################
         )
         this = new()
@@ -84,7 +84,7 @@ julia> bremsstrahlung = Bremsstrahlung()
 julia> bremsstrahlung.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # Only electron scattering, with photon absorption.
 ```
 """
-function set_interaction_types(this::Bremsstrahlung,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Bremsstrahlung,interaction_types)
     this.interaction_types = interaction_types
 end
 
@@ -152,7 +152,7 @@ function out_distribution(this::Bremsstrahlung)
 end
 
 function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64)
-    # Scattered electron
+    # Scattered electron or positron
     if type == "S" 
         Ef⁻ = min(Ef⁻,Ec)
         if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
@@ -169,7 +169,7 @@ function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,t
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64)
+function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64)
 
     # Inititalisation
     β² = Ei*(Ei+2)/(Ei+1)^2
@@ -179,7 +179,7 @@ function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,part
 
     # Correction for positrons
     Fp = 1
-    if particle == "positrons"
+    if is_positron(particle)
         t = log(1+1e6/Z^2*Ei)
         Fp = 1 - exp(-1.2359e-1*t + 6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
     end
@@ -254,14 +254,14 @@ function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,part
     return σℓ
 end
 
-function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::String,type::String,Eout::Vector{Float64})
+function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,type::String,Eout::Vector{Float64})
 
     # Inititalization
     β² = 1-1/(Ei+1)^2
 
     # Correction for positrons
     Fp = 1
-    if particle == "positrons"
+    if is_positron(particle)
         t = log(1+1e6/Z^2*Ei)
         Fp = 1 - exp(-1.2359e-1*t + 6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
     end
@@ -288,7 +288,7 @@ function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,par
     return σt
 end
 
-function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::String)
+function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::Particle)
 
     # Initialization
     rₑ = 2.81794092e-13 # (in cm)
@@ -301,7 +301,7 @@ function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float
     St = 0.0
     for iz in range(1,Nz)
         Fp = 1
-        if particle == "positrons"
+        if is_positron(particle)
             t = log(1+1e6/Z[iz]^2*Ei)
             Fp = 1 - exp(-1.2359e-1*t+6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
         end
@@ -315,7 +315,7 @@ function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float
     if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
     for iz in range(1,Nz)
         Fp = 1
-        if particle == "positrons"
+        if is_positron(particle)
             t = log(1+1e6/Z[iz]^2*Ei)
             Fp = 1 - exp(-1.2359e-1*t+6.1274e-2*t^2-3.1516e-2*t^3+7.7446e-3*t^4-1.0595e-3*t^5+7.0568e-5*t^6-1.8080e-6*t^7)
         end

@@ -18,9 +18,9 @@ mutable struct Fluorescence <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -37,7 +37,7 @@ mutable struct Fluorescence <: Interaction
     function Fluorescence(;
         ### Initial values ###
         ηmin = 0.001,
-        interaction_types = Dict(("photons","photons") => ["P"],("electrons","photons") => ["P"],("positrons","photons") => ["P"])
+        interaction_types = Dict((Photon,Photon) => ["P"],(Electron,Photon) => ["P"],(Positron,Photon) => ["P"])
         ######################
         )
         this = new()
@@ -79,7 +79,7 @@ julia> fluorescence = Fluorescence()
 julia> fluorescence.set_interaction_types( Dict(("electrons","photons") => ["P"]) ) # Only cascades following Møller interactions.
 ```
 """
-function set_interaction_types(this::Fluorescence,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Fluorescence,interaction_types)
     this.interaction_types = interaction_types
 end
 
@@ -125,14 +125,14 @@ function bounds(this::Fluorescence,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,type:
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Fluorescence,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64,particle::String)
+function dcs(this::Fluorescence,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64,particle::Particle)
 
     # Photoelectric cross section
-    if particle == "photons"
+    if is_photon(particle)
         Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z)
         σa = this.photoelectric_cross_sections(iz,Ei,subshells[δi])
     # Load election impact ionization
-    elseif particle ∈ ["electrons","positrons"]
+    elseif get_type(particle) ∈ [Electron,Positron]
         σa = this.inelastic[iz][δi](Ei)
     end
 
@@ -152,16 +152,16 @@ function dcs(this::Fluorescence,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int
     return σℓ
 end
 
-function preload_data(this::Fluorescence,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,particle::String,Ecutoff::Float64)
+function preload_data(this::Fluorescence,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,particle::Particle,Ecutoff::Float64)
     
-    if particle == "photons"
+    if is_photon(particle)
         # Load photoelectric cross-sections
         photoelectric = Photoelectric()
         photoelectric.model = "jendl5"
         photoelectric.is_subshells_dependant = true
         photoelectric.preload_photoelectric_cross_sections(Z,ρ)
         this.photoelectric_cross_sections = photoelectric.photoelectric_cross_sections
-    elseif particle == "electrons"
+    elseif is_electron(particle)
         # Load election impact ionization
         rₑ = 2.81794092E-13       # (in cm)
         Nz = length(Z)
@@ -182,7 +182,7 @@ function preload_data(this::Fluorescence,Z::Vector{Int64},ωz::Vector{Float64},�
                 end
             end
         end
-    elseif particle == "positrons"
+    elseif is_positron(particle)
         # Load positron impact ionization
         rₑ = 2.81794092E-13       # (in cm)
         Nz = length(Z)

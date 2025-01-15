@@ -26,7 +26,7 @@ Produce the multigroup macroscopic cross sections.
   Cross-Section Generating Code.
 
 """
-function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::String,scattered_particle::String,particles::Vector{String},Npts::Int64,isStandard,interactions::Vector{Interaction})
+function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},Npts::Int64,isStandard,interactions::Vector{Interaction})
 
 if isStandard
     println("Start of ",interaction.name," calculations.") 
@@ -38,8 +38,8 @@ Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
 Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); S = zeros(Ngi+1); Sm = zeros(Ngi); α = zeros(Ngi)
 Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
-charge_in = particle_charge(incoming_particle)
-charge_out = particle_charge(scattered_particle)
+charge_in = incoming_particle.get_charge()
+charge_out = scattered_particle.get_charge()
 type = string(full_type[1])
 
 

@@ -38,21 +38,6 @@ mutable struct Computation_Unit
 end
 
 # Method(s)
-Base.propertynames(::Computation_Unit) = 
-(
-    fieldnames(Computation_Unit)...,
-    :set_cross_sections,
-    :set_geometry,
-    :set_methods,
-    :set_sources,
-    :run,
-    :get_flux,
-    :get_energy_deposition,
-    :get_charge_deposition,
-    :get_voxels_position,
-    :get_energies
-)
-
 """
     set_cross_sections(this::Computation_Unit,cross_sections::Cross_Sections)
 
@@ -169,9 +154,7 @@ julia> cu.run()
 """
 function run(this::Computation_Unit)
     is_CUDA = false
-    #reset_timer!()
     this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources,is_CUDA)
-    #print_timer()
 end
 
 """
@@ -197,11 +180,15 @@ julia> ... # Define computation unit and run it.
 julia> energy_deposition = cu.get_energy_deposition("total")
 ```
 """
-function get_energy_deposition(this::Computation_Unit,type::String)
+function get_energy_deposition(this::Computation_Unit,particle::Particle)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract energy deposition, please use .run() method before.") end
-    if type ∉ ["total","electrons","photons","positrons"] error("Unknown type of energy deposition.") end
-    if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Energy deposition for the specified particle is not available.") end
-    return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,type)
+    if typeof(particle) ∉ [Photon,Electron,Positron] error("Unknown particle.") end
+    if typeof(particle) ∉ typeof.(this.flux.get_particles()) error("Energy deposition for the specified particle is not available.") end
+    return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,[particle])
+end
+function get_energy_deposition(this::Computation_Unit)
+    if ismissing(this.flux) error("No computed flux in this computation unit. To extract energy deposition, please use .run() method before.") end
+    return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,this.flux.get_particles())
 end
 
 """
@@ -227,11 +214,15 @@ julia> ... # Define computation unit and run it.
 julia> charge_deposition = cu.get_charge_deposition("total")
 ```
 """
-function get_charge_deposition(this::Computation_Unit,type::String)
+function get_charge_deposition(this::Computation_Unit,particle::Particle)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract charge deposition, please use .run() method before.") end
-    if type ∉ ["total","electrons","photons","positrons"] error("Unknown type of charge deposition.") end
-    if type ∈ ["electrons","photons","positrons"] && type ∉ this.flux.get_particles() error("Charge deposition for the specified particle is not available.") end
-    return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,type)
+    if typeof(particle) ∉ [Photon,Electron,Positron] error("Unknown type of charge deposition.") end
+    if typeof(particle) ∉ typeof.(this.flux.get_particles()) error("Charge deposition for the specified particle is not available.") end
+    return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,[particle])
+end
+function get_charge_deposition(this::Computation_Unit)
+    if ismissing(this.flux) error("No computed flux in this computation unit. To extract charge deposition, please use .run() method before.") end
+    return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,this.flux.get_particles())
 end
 
 """
@@ -256,10 +247,9 @@ julia> ... # Define computation unit and run it.
 julia> flux = cu.get_flux("electrons")
 ```
 """
-function get_flux(this::Computation_Unit,particle::String)
+function get_flux(this::Computation_Unit,particle::Particle)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract flux, please use .run() method before.") end
-    if particle ∉ ["electrons","photons","positrons"] error("Unknown particle for flux.") end
-    if particle ∈ ["electrons","photons","positrons"] && particle ∉ this.flux.get_particles() error("Flux for the specified particle is not available.") end
+    if get_id(particle) ∉ get_id.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
     return flux(this.cross_sections,this.geometry,this.flux,particle)
 end
 
@@ -311,6 +301,6 @@ julia> ... # Define computation unit and run it.
 julia> E = cu.get_voxels_position("electrons")
 ```
 """
-function get_energies(this::Computation_Unit,particle::String)
+function get_energies(this::Computation_Unit,particle::Particle)
     return this.cross_sections.get_energies(particle)
 end

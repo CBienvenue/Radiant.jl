@@ -16,9 +16,9 @@ mutable struct Photoelectric <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -33,7 +33,7 @@ mutable struct Photoelectric <: Interaction
     function Photoelectric(;
         ### Initial values ###
         model="jendl5",
-        interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"])
+        interaction_types = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"])
         ######################
         )
         this = new()
@@ -80,7 +80,7 @@ julia> photoelectric = Photoelectric()
 julia> photoelectric.set_interaction_types( Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"]) ) # Full photoelectric phenomenon (default case).
 ```
 """
-function set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Photoelectric,interaction_types)
     this.interaction_types = interaction_types
 end
 

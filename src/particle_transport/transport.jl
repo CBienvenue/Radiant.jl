@@ -59,7 +59,7 @@ else
     # Ordering the particles
     particle_index = zero(Npart)
     for i in range(1,Npart)
-        if particles[i] ∈ sources.get_particles()
+        if get_id(particles[i]) ∈ get_id.(sources.get_particles())
             i0 = i
             if i0 == 1
                 particle_index = collect(1:Npart)

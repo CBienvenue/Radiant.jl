@@ -20,9 +20,9 @@ mutable struct Annihilation <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -34,7 +34,7 @@ mutable struct Annihilation <: Interaction
     # Constructor(s)
     function Annihilation(;
         ### Initial values ###
-        interaction_types = Dict(("positrons","positrons") => ["A"],("positrons","photons") => ["P₋","P₊","P_inel","P_brems"],("photons","photons") => ["P_pp"])
+        interaction_types = Dict((Positron,Positron) => ["A"],(Positron,Photon) => ["P₋","P₊","P_inel","P_brems"],(Photon,Photon) => ["P_pp"])
         ######################
         )
         this = new()
@@ -77,7 +77,7 @@ julia> annihilation = Annihilation()
 julia> annihilation.set_interaction_types( Dict(("positrons","positrons") => ["A"]) ) # Annihilation is set to be only absorption of positrons without any production of photons
 ```
 """
-function set_interaction_types(this::Annihilation,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Annihilation,interaction_types)
     this.interaction_types = interaction_types
 end
 
@@ -163,12 +163,12 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi
 
     # Annihilation of positrons scattered under the cutoff from inelastic collisionnal interaction
     elseif type == "P_inel"
-        σa = tcs(this.prior_interaction,Ei,min(Ein[end],Ec),"positrons",Z[iz])
+        σa = tcs(this.prior_interaction,Ei,min(Ein[end],Ec),Positron(),Z[iz])
         σℓ[1] += 2 * σa
 
     # Annihilation of positrons scattered under the cutoff from Bremsstrahlung interaction
     elseif type == "P_brems"
-        σa = tcs(this.prior_interaction,Ei,Z[iz],min(Ein[end],Ec),iz,"positrons","S",[Ein[end]])
+        σa = tcs(this.prior_interaction,Ei,Z[iz],min(Ein[end],Ec),iz,Positron(),"S",[Ein[end]])
         σℓ[1] += 2 * σa
 
     # Annihilation of positrons produced under the cutoff following pair production event
@@ -179,65 +179,6 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi
         error("Unknown interaction.")
     end
     return σℓ
-end
-
-function dcs_cutoff(this::Annihilation,L::Int64,Ngf::Int64,E_in::Vector{Float64},E_out::Vector{Float64},incoming_particle::String,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64)
-    
-    # Initialization
-    Σs = zeros(Ngf,L+1)
-    Σsₑ = zeros(Ngf)
-
-    # Annihilation for positrons slowing-down under the cutoff
-    if incoming_particle == "positrons"
-        S_cutoff = sp_dispatch(this.prior_interaction,Z,ωz,ρ,"solid",E_in[end],0.0,incoming_particle,E_in[end],E_out)
-
-        σa = 0.0
-        σa2 = 0.0
-        σa3 = 0.0
-        if typeof(this.prior_interaction) == Inelastic_Leptons
-            for iz in range(1,length(Z))
-                Ei = E_in[end]
-                γ = Ei+1
-                rₑ = 2.81794092E-13       # (in cm)
-                β² = Ei*(Ei+2)/(Ei+1)^2
-                Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[iz])
-                for δi in range(1,Nshells)
-                    if Ei ≥ Ui[δi]
-                        βᵢ² = Ui[δi]*(Ui[δi]+2)/(Ui[δi]+1)^2
-                        fv = βᵢ²/β² * (β²/(β²+βᵢ²-β²*βᵢ²))^(3/2)
-                        σa += π*rₑ^2/Ui[δi]^2 * Zi[δi] * fv * (1 + 2/3*(1-Ui[δi]/(2*Ei))*log(2.7+sqrt(Ei/Ui[δi]-1))) * (1-Ui[δi]/Ei)^(3/2) * ωz[iz] * nuclei_density(Z[iz],ρ)
-
-                        b = ((γ-1)/γ)^2
-                        b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
-                        b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
-                        b3 = b * (2*(γ-1)*γ)/(γ+1)^2
-                        b4 = b * (γ-1)^2/(γ+1)^2
-                        J₀⁺(x) = -1/(x+Ui[δi]) - b1*log(x+Ui[δi])/Ei + b2*x/Ei^2 - b3*(x^2/2+Ui[δi]*x)/Ei^3 + b4*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^4
-                        σa2 += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁺(Ei)-J₀⁺(Ui[δi])) * ωz[iz] * nuclei_density(Z[iz],ρ)
-
-
-                        Eq = Ei - Ti[δi] - Ui[δi]
-                        if Eq > Ti[δi] + Ui[δi]
-                            σa3 += π*rₑ^2/Ui[δi]^2 * Zi[δi] * Ui[δi]/Eq * (1+2/3*Ti[δi]/Ui[δi]-Ui[δi]/(Eq-Ti[δi])) * ωz[iz] * nuclei_density(Z[iz],ρ)
-                        elseif Ui[δi] ≤ Eq ≤ Ti[δi] + Ui[δi]
-                            σa3 += π*rₑ^2/Ui[δi]^2 * Zi[δi] * Ui[δi]/Eq * 2/3*sqrt(Ui[δi]/Ti[δi])*(Eq/Ui[δi]-1)^(3/2) * ωz[iz] * nuclei_density(Z[iz],ρ)
-                        end
-
-                    end
-                end
-            end
-        end
-        println([σa,σa2,σa3,S_cutoff/(E_in[end-1]-E_in[end])])
-
-        for ig in range(1,Ngf)
-            if E_out[ig] ≥ 1 ≥ E_out[ig+1]
-                Σs[ig,1] = 2 * σa3 # (S_cutoff+Sa) / E_in[end] #(E_in[end-1]-E_in[end])
-                Σsₑ[ig] = Σs[ig,1] * ((E_out[ig]+E_out[ig+1])/2-1)
-                break
-            end
-        end
-    end
-    return Σs,Σsₑ
 end
 
 function tcs(this::Annihilation,Ei::Float64,Z::Int64)

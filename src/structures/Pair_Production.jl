@@ -20,9 +20,9 @@ mutable struct Pair_Production <: Interaction
 
     # Variable(s)
     name::String
-    incoming_particle::Vector{String}
-    interaction_particles::Vector{String}
-    interaction_types::Dict{Tuple{String,String},Vector{String}}
+    incoming_particle::Vector{Type}
+    interaction_particles::Vector{Type}
+    interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
     is_elastic::Bool
@@ -39,7 +39,7 @@ mutable struct Pair_Production <: Interaction
     function Pair_Production(;
         ### Initial values ###
         angular_scattering_type="modified_dipole",
-        interaction_types = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"],("photons","positrons") => ["P"])
+        interaction_types = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"],(Photon,Positron) => ["P"])
         ######################
         )
         this = new()
@@ -80,7 +80,7 @@ julia> pair_production = Pair_Production()
 julia> pair_production.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # Only electron scattering, with photon absorption.
 ```
 """
-function set_interaction_types(this::Pair_Production,interaction_types::Dict{Tuple{String,String},Vector{String}})
+function set_interaction_types(this::Pair_Production,interaction_types)
     this.interaction_types = interaction_types
 end
 
@@ -132,7 +132,7 @@ function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,particles::Vector{String},Ecutoff::Float64)
+function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ecutoff::Float64)
 
     # Initialization
     mₑc² = 0.510999

@@ -25,7 +25,7 @@ mutable struct Discrete_Ordinates
 
     # Variable(s)
     name                       ::Union{Missing,String}
-    particle                   ::Union{Missing,String}
+    particle                   ::Union{Missing,Particle}
     solver_type                ::Union{Missing,String}
     quadrature_type            ::Union{Missing,String}
     quadrature_order           ::Union{Missing,Int64}
@@ -62,32 +62,6 @@ mutable struct Discrete_Ordinates
 end
 
 # Method(s)
-Base.propertynames(::Discrete_Ordinates) = 
-(
-    fieldnames(Discrete_Ordinates)...,
-    :set_particle,
-    :set_solver_type,
-    :set_quadrature,
-    :set_legendre_order,
-    :set_angular_fokker_planck,
-    :set_angular_boltzmann,
-    :set_convergence_criterion,
-    :set_maximum_iteration,
-    :set_scheme,
-    :set_acceleration,
-    :get_legendre_order,
-    :get_quadrature_order,
-    :get_quadrature_type,
-    :get_angular_boltzmann,
-    :get_angular_fokker_planck,
-    :get_particle,
-    :get_solver_type,
-    :get_schemes,
-    :get_convergence_criterion,
-    :get_maximum_iteration
-    :get_acceleration
-)
-
 """
     set_particle(this::Discrete_Ordinates,particle::String)
 
@@ -109,8 +83,7 @@ julia> m = Discrete_Ordinates()
 julia> m.set_particle("electrons") 
 ```
 """
-function set_particle(this::Discrete_Ordinates,particle::String)
-    if lowercase(particle) ∉ ["photons","electrons","positrons"] error("Unknown particle type") end
+function set_particle(this::Discrete_Ordinates,particle::Particle)
     this.particle = particle
 end
 

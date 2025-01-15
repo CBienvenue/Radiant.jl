@@ -17,7 +17,7 @@ mutable struct Volume_Source
 
     # Variable(s)
     name                       ::Union{Missing,String}
-    particle                   ::Union{Missing,String}
+    particle                   ::Union{Missing,Particle}
     intensity                  ::Union{Missing,Float64}
     energy_group               ::Union{Missing,Int64}
     boundaries                 ::Dict{String,Vector{Float64}}
@@ -76,8 +76,7 @@ julia> vs = Volume_Source()
 julia> vs.set_particle("electrons")
 ```
 """
-function set_particle(this::Volume_Source,particle::String)
-    if particle ∉ ["electrons","positrons","photons"] end
+function set_particle(this::Volume_Source,particle::Particle)
     this.particle = particle
 end
 

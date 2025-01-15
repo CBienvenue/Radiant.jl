@@ -19,7 +19,7 @@ mutable struct Surface_Source
 
     # Variable(s)
     name                       ::Union{Missing,String}
-    particle                   ::Union{Missing,String}
+    particle                   ::Union{Missing,Particle}
     intensity                  ::Union{Missing,Float64}
     energy_group               ::Union{Missing,Int64}
     direction                  ::Union{Missing,Vector{Float64}}
@@ -85,8 +85,7 @@ julia> ss = Surface_Source()
 julia> ss.set_particle("electrons")
 ```
 """
-function set_particle(this::Surface_Source,particle::String)
-    if particle ∉ ["electrons","positrons","photons"] end
+function set_particle(this::Surface_Source,particle::Particle)
     this.particle = particle
 end
 

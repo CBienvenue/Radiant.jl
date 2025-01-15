@@ -10,11 +10,11 @@ function get_out_particles(interaction::Interaction)
     return interaction.interaction_particles
 end
 
-function get_types(interaction::Interaction,particle_in::String,particle_out::String)
+function get_types(interaction::Interaction,particle_in::Type,particle_out::Type)
     if haskey(interaction.interaction_types,(particle_in,particle_out))
         return interaction.interaction_types[(particle_in,particle_out)]
     else
-        return Vector{String}()
+        return Vector{Type}()
     end
 end
 
@@ -72,7 +72,7 @@ function out_distribution_dispatch(interaction::Interaction,type::String)
     end
 end
 
-function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Z::Int64,Ein::Vector{Float64},Ngi::Int64,Ec::Float64,particle::String)
+function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Z::Int64,Ein::Vector{Float64},Ngi::Int64,Ec::Float64,particle::Particle)
     itype = typeof(interaction)
     if itype == Annihilation
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
@@ -99,7 +99,7 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
     end
 end
 
-function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::String,type::String,iz::Int64,particles::Vector{String},Ein::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,ΔEf::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,subshells::Vector{String},Ec::Float64,gi::Int64,incoming_particle::String)
+function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,ΔEf::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,subshells::Vector{String},Ec::Float64,gi::Int64,incoming_particle::Particle)
     itype = typeof(interaction)
     if itype == Annihilation
         return dcs(interaction,L,Ei,Ef,type,gi,vec_Z,ωz,ρ,iz,Ein,Ec)
@@ -135,7 +135,7 @@ function dcs_cutoff_dispatch(interaction::Interaction,L::Int64,Ngf::Int64,E_in::
     end
 end
 
-function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::String,Ecutoff::Float64,Eout::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,type::String)
+function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},vec_Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,type::String)
     itype = typeof(interaction)
     if itype == Annihilation
         return tcs(interaction,Ei,Z)
@@ -158,7 +158,7 @@ function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,
     end
 end
 
-function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::String,Ecutoff::Float64,Eout::Vector{Float64})
+function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64})
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,Eout,particle)
@@ -180,7 +180,7 @@ function mt_dispatch(interaction::Interaction,Ei::Float64,Ec::Float64)
     end
 end
 
-function preload_data_dispatch(interaction::Interaction,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,ωz::Vector{Float64},ρ::Float64,Eout::Vector{Float64},particle::String,type::String,Ein::Vector{Float64},interactions::Vector{Interaction})
+function preload_data_dispatch(interaction::Interaction,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,ωz::Vector{Float64},ρ::Float64,Eout::Vector{Float64},particle::Particle,type::String,Ein::Vector{Float64},interactions::Vector{Interaction})
     itype = typeof(interaction)
     if itype == Annihilation
         return  preload_data(interaction,Z,Emax,Emin,L,type,Eout,Ein,interactions)
