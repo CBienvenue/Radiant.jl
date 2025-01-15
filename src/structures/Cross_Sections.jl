@@ -6,10 +6,10 @@ Structure used to define the parameters to extract or build a multigroup cross-s
 # Mandatory field(s)
 - `name::String`: name (or identifier) of the Cross_Sections structure.
 - `source::String`: source of the cross-sections.
-- **if `source = "FMAC-M"`**
+- **if `source = "fmac-m"`**
     - `file::String`: file containing cross-sections data.
     - `materials::Vector{Material}`: material list.
-- **if `source = "RADIANT"`**
+- **if `source = "physics-models"`**
     - `materials::Vector{Material}`: material list.
     - `particles::Vector{String}`: particle list.
     - `energy::Float64`: midpoint energy of the highest energy group [in MeV].
@@ -73,9 +73,9 @@ end
 # Method(s)
 function is_ready_to_build(this::Cross_Sections)
     if ismissing(this.source) error("Cannot build multigroup cross-sections data. The source of cross-sections data is not specified.") end
-    if uppercase(this.source) == "FMAC-M"
+    if lowercase(this.source) == "fmac-m"
         if ismissing(this.file) error("Cannot build multigroup cross-sections data. The FMAC-M file name and its directory are not specified.") end
-    elseif uppercase(this.source) == "RADIANT"
+    elseif lowercase(this.source) == "physics-models"
         if ismissing(this.energy) error("Cannot build multigroup cross-sections data. The midpoint energy of the highest energy group is not specified.") end
         if ismissing(this.cutoff) error("Cannot build multigroup cross-sections data. The cutoff energy (lower bound of the lowest energy group) is not specified.") end
         if this.number_of_particles == 0 error("Cannot build multigroup cross-sections data. The particle names are not specified.") end
@@ -93,7 +93,7 @@ function is_ready_to_build(this::Cross_Sections)
         elseif length(this.group_structure) != this.number_of_particles
             error("The number of groups structure information do not fit the number of particles.")
         end
-    elseif uppercase(this.source) == "CUSTOM"
+    elseif lowercase(this.source) == "custom"
         ###
     else
         error("Unkown source of cross-sections data.")
@@ -125,11 +125,11 @@ function build(this::Cross_Sections)
     is_ready_to_build(this)
 
     # Extract or produce formatted cross-sections data for transport calculations
-    if uppercase(this.source) == "FMAC-M"
+    if lowercase(this.source) == "fmac-m"
         read_fmac_m(this)
-    elseif uppercase(this.source) == "RADIANT"
+    elseif lowercase(this.source) == "physics-models"
         generate_cross_sections(this)
-    elseif uppercase(this.source) == "CUSTOM"
+    elseif lowercase(this.source) == "custom"
         custom_cross_sections(this)
     else
         error("Unkown source of cross-sections data.")
@@ -170,7 +170,7 @@ To define the source of the cross-sections library.
 # Input Argument(s)
 - `this::Cross_Sections`: cross-sections library.
 - `source::String`: source of the cross-sections library which is either:
-    - `source = "RADIANT"`: multigroup cross-sections are produced by Radiant
+    - `source = "physics-models"`: multigroup cross-sections are produced by Radiant
     - `source = "FMAC-M"`: multigroup cross-sections are extracted from FMAC-M file.
 
 # Output Argument(s)
@@ -183,7 +183,7 @@ julia> cs.set_source("FMAC-M")
 ```
 """
 function set_source(this::Cross_Sections,source::String)
-    if uppercase(source) ∉ ["FMAC-M","RADIANT","CUSTOM"] error("Unkown source of cross-sections data.") end
+    if lowercase(source) ∉ ["fmac-m","physics-models","custom"] error("Unkown source of cross-sections data.") end
     this.source = source
 end
 
