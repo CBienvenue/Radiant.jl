@@ -21,8 +21,8 @@ N/A
 """
 function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
-    if particle ∉ cross_sections.particles error(string("No cross sections available for ",get_type(particle)," particle.")) end
-    index = findfirst(x -> x == particle,cross_sections.particles)
+    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
     if particle != discrete_ordinates.particle error(string("No methods available for ",get_type(particle)," particle.")) end
     quadrature_type = discrete_ordinates.quadrature_type

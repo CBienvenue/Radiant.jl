@@ -39,7 +39,7 @@ for part in particles
     # Extract discrete_ordinates data
     discrete_ordinates = solvers.get_method(part)
     _,isCSD = discrete_ordinates.get_solver_type()
-    charge = particle_charge(part)
+    charge = get_charge(part)
     norm = sources.get_normalization_factor()
     C = zeros(Ns[1],Ns[2],Ns[3])
 
