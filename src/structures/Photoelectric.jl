@@ -7,9 +7,9 @@ Structure used to define parameters for production of multigroup photoelectric c
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("photons","photons") => ["A"]`: absorption of incoming photon.
-    - `("photons","electrons") => ["P"]`: produced photo-electron.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Photon,Photon) => ["A"]` : absorption of incoming photon.
+    - `(Photon,Electron) => ["P"]` : produced photo-electron.
 
 """
 mutable struct Photoelectric <: Interaction
@@ -30,29 +30,17 @@ mutable struct Photoelectric <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Photoelectric(;
-        ### Initial values ###
-        model="jendl5",
-        interaction_types = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"])
-        ######################
-        )
+    function Photoelectric()
         this = new()
         this.name = "photoelectric"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_AFP = false
         this.is_elastic = false
         this.is_preload_data = true
-        this.model =set_model(this,model)
-        if this.model == "jendl5"
-            this.is_subshells_dependant = true
-        elseif this.model == "biggs_lighthill"
-            this.is_subshells_dependant = false
-        else    
-            error("Unknown photoelectric model.")
-        end
+        this.model = this.set_model("jendl5")
         this.scattering_model = "BTE"
         return this
     end
@@ -61,15 +49,15 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Photoelectric,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for photoelectric processes.
 
 # Input Argument(s)
-- `this::Photoelectric`: photoelectric structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("photons","photons") => ["A"]`: absorption of incoming photon.
-    - `("photons","electrons") => ["P"]`: produced photo-electron.
+- `this::Photoelectric` : photoelectric structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Photon,Photon) => ["A"]` : absorption of incoming photon.
+    - `(Photon,Electron) => ["P"]` : produced photo-electron.
 
 # Output Argument(s)
 N/A
@@ -77,7 +65,7 @@ N/A
 # Examples
 ```jldoctest
 julia> photoelectric = Photoelectric()
-julia> photoelectric.set_interaction_types( Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"]) ) # Full photoelectric phenomenon (default case).
+julia> photoelectric.set_interaction_types( Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"]) ) # Full photoelectric phenomenon (default case).
 ```
 """
 function set_interaction_types(this::Photoelectric,interaction_types)
@@ -90,10 +78,10 @@ end
 To define the photoelectric model.
 
 # Input Argument(s)
-- `this::Photoelectric`: photoelectric structure.
-- `model::String`: cross-section model:
-    - `jendl5`: evaluated subshell-dependent cross-sections.
-    - `biggs_lighthill`: Biggs and Lighthill cross-sections.
+- `this::Photoelectric` : photoelectric structure.
+- `model::String` : cross-section model:
+    - `jendl5` : evaluated subshell-dependent cross-sections.
+    - `biggs_lighthill` : Biggs and Lighthill cross-sections.
 
 # Output Argument(s)
 N/A
@@ -107,6 +95,13 @@ julia> photoelectric.set_model("biggs_lighthill")
 function set_model(this::Photoelectric,model::String)
     if lowercase(model) ∉ ["jendl5","biggs_lighthill"] error("Unkown elastic model: '$model'.") end
     this.model = lowercase(model)
+    if this.model == "jendl5"
+        this.is_subshells_dependant = true
+    elseif this.model == "biggs_lighthill"
+        this.is_subshells_dependant = false
+    else    
+        error("Unknown photoelectric model.")
+    end
 end
 
 function in_distribution(this::Photoelectric)

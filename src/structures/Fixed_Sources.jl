@@ -4,10 +4,10 @@
 Structure used to define a collection of fixed sources and their properties.
 
 # Mandatory field(s)
-- `sources_list::Vector{Source}`: list of Volume_Source or Surface_Source sources.
-- `cross_sections`: Cross_Sections structure.
-- `geometry`: Geometry structure.
-- `solvers`: Solvers structure.
+- `sources_list::Vector{Source}` : list of Volume_Source or Surface_Source sources.
+- `cross_sections` : Cross_Sections structure.
+- `geometry` : Geometry structure.
+- `solvers` : Solvers structure.
 
 # Optional field(s) - with default values
 - N/A
@@ -50,8 +50,8 @@ end
 To add a surface or volume source to the Fixed_Sources structure.
 
 # Input Argument(s)
-- `this::Fixed_Sources`: collection of fixed sources.
-- `fixed_source::Union{Surface_Source,Volume_Source}`: volume or surface source.
+- `this::Fixed_Sources` : collection of fixed sources.
+- `fixed_source::Union{Surface_Source,Volume_Source}` : volume or surface source.
 
 # Output Argument(s)
 N/A

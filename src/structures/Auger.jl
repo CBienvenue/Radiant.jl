@@ -7,11 +7,11 @@ Structure used to define parameters for production of multigroup annihilation cr
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","electrons") => ["P"],("electrons","electrons") => ["P"],("positrons","electrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("photons","electrons") => ["P"]`: production of Auger electron following incident photon ionization of subshells (by photoelectric effect).
-    - `("electrons","electrons") => ["P"]`: production of Auger electron following incident electrons ionization of subshells (by Møller interaction).
-    - `("positrons","electrons") => ["P"]`: production of Auger electron following incident positrons ionization of subshells (by Bhabha interaction).
-- `ηmin::Float64=0.001`: minimum probability of the production of specific Auger electrons following electron cascades.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Photon,Electron) => ["P"],(Electron,Electron) => ["P"],(Positron,Electron) => ["P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Photon,Electron) => ["P"]` : production of Auger electron following incident photon ionization of subshells (by photoelectric effect).
+    - `(Electron,Electron) => ["P"]` : production of Auger electron following incident electrons ionization of subshells (by Møller interaction).
+    - `(Positron,Electron) => ["P"]` : production of Auger electron following incident positrons ionization of subshells (by Bhabha interaction).
+- `ηmin::Float64 = 0.001` : minimum probability of the production of specific Auger electrons following electron cascades.
 
 """
 mutable struct Auger <: Interaction
@@ -34,15 +34,10 @@ mutable struct Auger <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Auger(;
-        ### Initial values ###
-        ηmin = 0.001,
-        interaction_types = Dict((Photon,Electron) => ["P"],(Electron,Electron) => ["P"],(Positron,Electron) => ["P"])
-        ######################
-        )
+    function Auger()
         this = new()
         this.name = "auger"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Photon,Electron) => ["P"],(Electron,Electron) => ["P"],(Positron,Electron) => ["P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -50,7 +45,7 @@ mutable struct Auger <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = true
-        this.set_minimum_probability(ηmin)
+        this.set_minimum_probability(0.001)
         this.scattering_model = "BTE"
         return this
     end
@@ -59,16 +54,16 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Auger,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Auger,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for Auger processes.
 
 # Input Argument(s)
-- `this::Auger`: auger structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("photons","electrons") => ["P"]`: production of Auger electron following incident photon ionization of subshells (by photoelectric effect).
-    - `("electrons","electrons") => ["P"]`: production of Auger electron following incident electrons ionization of subshells (by Møller interaction).
-    - `("positrons","electrons") => ["P"]`: production of Auger electron following incident positrons ionization of subshells (by Bhabha interaction).
+- `this::Auger` : auger structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Photon,Electron) => ["P"]` : production of Auger electron following incident photon ionization of subshells (by photoelectric effect).
+    - `(Electron,Electron) => ["P"]` : production of Auger electron following incident electrons ionization of subshells (by Møller interaction).
+    - `(Positron,Electron) => ["P"]` : production of Auger electron following incident positrons ionization of subshells (by Bhabha interaction).
 
 # Output Argument(s)
 N/A
@@ -76,7 +71,7 @@ N/A
 # Examples
 ```jldoctest
 julia> auger = Auger()
-julia> auger.set_interaction_types( Dict(("electrons","electrons") => ["P"]) ) # Only cascades following Møller interactions.
+julia> auger.set_interaction_types( Dict((Electron,Electron) => ["P"]) ) # Only cascades following Møller interactions.
 ```
 """
 function set_interaction_types(this::Auger,interaction_types)
@@ -89,8 +84,8 @@ end
 To define the minimum probability of a specific Auger electron production.
 
 # Input Argument(s)
-- `this::Auger`: auger structure.
-- `ηmin::Real`: minimum probability of a specific Auger electron production.
+- `this::Auger` : auger structure.
+- `ηmin::Real` : minimum probability of a specific Auger electron production.
 
 # Output Argument(s)
 N/A

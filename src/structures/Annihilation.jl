@@ -7,13 +7,13 @@ Structure used to define parameters for production of multigroup annihilation cr
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("positrons","positrons") => ["A"],("positrons","photons") => ["P₋","P₊","P_inel","P_brems"],("photons","photons") => ["P_pp"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("positrons","positrons") => ["A"]`: absorption of the incoming positron.
-    - `("positrons","photons") => ["P₋"]`: production of the lowest energy photon following annihilation.
-    - `("positrons","photons") => ["P₊"]`: production of the highest energy photon following annihilation.
-    - `("positrons","photons") => ["P_inel"]`: production of annihilation photons from inelastic collisional positrons absorption following scattering under the cutoff energy.
-    - `("positrons","photons") => ["P_brems"]`: production of annihilation photons from Bremsstrahlung positrons absorption following scattering under the cutoff energy.
-    - `("photons","photons") => ["P_pp"]`: production of annihilation photons from absorption of positrons following their production under the cutoff energy.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Positron,Positron) => ["A"],(Positron,Photon) => ["P₋","P₊","P_inel","P_brems"],(Photon,Photon) => ["P_pp"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Positron,Positron) => ["A"]` : absorption of the incoming positron.
+    - `(Positron,Photon) => ["P₋"]` : production of the lowest energy photon following annihilation.
+    - `(Positron,Photon) => ["P₊"]` : production of the highest energy photon following annihilation.
+    - `(Positron,Photon) => ["P_inel"]` : production of annihilation photons from inelastic collisional positrons absorption following scattering under the cutoff energy.
+    - `(Positron,Photon) => ["P_brems"]` : production of annihilation photons from Bremsstrahlung positrons absorption following scattering under the cutoff energy.
+    - `(Photon,Photon) => ["P_pp"]` : production of annihilation photons from absorption of positrons following their production under the cutoff energy.
 
 """
 mutable struct Annihilation <: Interaction
@@ -32,14 +32,10 @@ mutable struct Annihilation <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Annihilation(;
-        ### Initial values ###
-        interaction_types = Dict((Positron,Positron) => ["A"],(Positron,Photon) => ["P₋","P₊","P_inel","P_brems"],(Photon,Photon) => ["P_pp"])
-        ######################
-        )
+    function Annihilation()
         this = new()
         this.name = "annihilation"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Positron,Positron) => ["A"],(Positron,Photon) => ["P₋","P₊","P_inel","P_brems"],(Photon,Photon) => ["P_pp"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -54,19 +50,19 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Annihilation,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Annihilation,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for annihilation processes.
 
 # Input Argument(s)
-- `this::Annihilation`: annihilation structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("positrons","positrons") => ["A"]`: absorption of the incoming positron.
-    - `("positrons","photons") => ["P₋"]`: production of the lowest energy photon following annihilation.
-    - `("positrons","photons") => ["P₊"]`: production of the highest energy photon following annihilation.
-    - `("positrons","photons") => ["P_inel"]`: production of annihilation photons from inelastic collisional positrons absorption following scattering under the cutoff energy.
-    - `("positrons","photons") => ["P_brems"]`: production of annihilation photons from Bremsstrahlung positrons absorption following scattering under the cutoff energy.
-    - `("photons","photons") => ["P_pp"]`: production of annihilation photons from absorption of positrons following their production under the cutoff energy.
+- `this::Annihilation` : annihilation structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Positron,Positron) => ["A"]` : absorption of the incoming positron.
+    - `(Positron,Photon) => ["P₋"]` : production of the lowest energy photon following annihilation.
+    - `(Positron,Photon) => ["P₊"]` : production of the highest energy photon following annihilation.
+    - `(Positron,Photon) => ["P_inel"]` : production of annihilation photons from inelastic collisional positrons absorption following scattering under the cutoff energy.
+    - `(Positron,Photon) => ["P_brems"]` : production of annihilation photons from Bremsstrahlung positrons absorption following scattering under the cutoff energy.
+    - `(Photon,Photon) => ["P_pp"]` : production of annihilation photons from absorption of positrons following their production under the cutoff energy.
 
 # Output Argument(s)
 N/A
@@ -74,7 +70,7 @@ N/A
 # Examples
 ```jldoctest
 julia> annihilation = Annihilation()
-julia> annihilation.set_interaction_types( Dict(("positrons","positrons") => ["A"]) ) # Annihilation is set to be only absorption of positrons without any production of photons
+julia> annihilation.set_interaction_types( Dict((Positron,Positron) => ["A"]) ) # Annihilation is set to be only absorption of positrons without any production of photons
 ```
 """
 function set_interaction_types(this::Annihilation,interaction_types)

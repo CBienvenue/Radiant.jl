@@ -7,13 +7,13 @@ Structure used to define parameters for production of multigroup pair production
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["A"],("photons","electrons") => ["P"],("photons","positrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("photons","photons") => ["A"]`: absorption of incoming photon.
-    - `("photons","electrons") => ["P"]`: produced electron.
-    - `("photons","positrons") => ["P"]`: produced positron.
-- `angular_scattering_type::String=modified_dipole`: type of angular scattering, which can takes the following values:
-    - `angular_scattering_type = modified_dipole`: modified dipôle distribution, based on Poskus (2019) shape functions.
-    - `angular_scattering_type = sommerfield`: Sommerfield distribution.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"],(Photon,Positron) => ["P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Photon,Photon) => ["A"]` : absorption of incoming photon.
+    - `(Photon,Electron) => ["P"]` : produced electron.
+    - `(Photon,Positron) => ["P"]` : produced positron.
+- `angular_scattering_type::String=modified_dipole` : type of angular scattering, which can takes the following values:
+    - `angular_scattering_type = modified_dipole` : modified dipôle distribution, based on Poskus (2019) shape functions.
+    - `angular_scattering_type = sommerfield` : Sommerfield distribution.
 
 """
 mutable struct Pair_Production <: Interaction
@@ -36,15 +36,10 @@ mutable struct Pair_Production <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Pair_Production(;
-        ### Initial values ###
-        angular_scattering_type="modified_dipole",
-        interaction_types = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"],(Photon,Positron) => ["P"])
-        ######################
-        )
+    function Pair_Production()
         this = new()
         this.name = "pair_production"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Photon,Photon) => ["A"],(Photon,Electron) => ["P"],(Photon,Positron) => ["P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -52,7 +47,7 @@ mutable struct Pair_Production <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.set_angular_scattering_type(angular_scattering_type)
+        this.set_angular_scattering_type("modified_dipole")
         this.scattering_model = "BTE"
         return this
     end
@@ -60,16 +55,16 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Pair_Production,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Pair_Production,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for pair production processes.
 
 # Input Argument(s)
-- `this::Pair_Production`: pair production structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("photons","photons") => ["A"]`: absorption of incoming photon.
-    - `("photons","electrons") => ["P"]`: produced electron.
-    - `("photons","positrons") => ["P"]`: produced positron.
+- `this::Pair_Production` : pair production structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Photon,Photon) => ["A"]` : absorption of incoming photon.
+    - `(Photon,Electron) => ["P"]` : produced electron.
+    - `(Photon,Positron) => ["P"]` : produced positron.
 
 # Output Argument(s)
 N/A
@@ -77,7 +72,7 @@ N/A
 # Examples
 ```jldoctest
 julia> pair_production = Pair_Production()
-julia> pair_production.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # Only electron scattering, with photon absorption.
+julia> pair_production.set_interaction_types( Dict((Electron,Electron) => ["S"]) ) # Only electron scattering, with photon absorption.
 ```
 """
 function set_interaction_types(this::Pair_Production,interaction_types)
@@ -90,8 +85,8 @@ end
 To define the pair_production photons angular distribution.
 
 # Input Argument(s)
-- `this::Pair_Production`: pair_production structure.
-- `angular_scattering_type::String`: angular scattering type.
+- `this::Pair_Production` : pair_production structure.
+- `angular_scattering_type::String` : angular scattering type.
 
 # Output Argument(s)
 N/A

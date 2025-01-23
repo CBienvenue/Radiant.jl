@@ -7,11 +7,11 @@ Structure used to define parameters for production of multigroup inelastic colli
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("positrons","positrons") => ["S"],("positrons","electrons") => ["P"],("electrons","electrons") => ["S","P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("positrons","positrons") => ["S"]`: scattering of incident positrons
-    - `("electrons","electrons") => ["S"]`: scattering of incident electrons
-    - `("positrons","electrons") => ["P"]`: production of electrons by incident positrons
-    - `("electrons","electrons") => ["P"]`: production of electrons by incident electrons
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Positron,Positron) => ["S"]` : scattering of incident positrons
+    - `(Electron,Electron) => ["S"]` : scattering of incident electrons
+    - `(Positron,Electron) => ["P"]` : production of electrons by incident positrons
+    - `(Electron,Electron) => ["P"]` : production of electrons by incident electrons
 
 """
 mutable struct Inelastic_Leptons <: Interaction
@@ -34,45 +34,37 @@ mutable struct Inelastic_Leptons <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Inelastic_Leptons(;
-        ### Initial values ###
-        scattering_model="BFP",
-        is_subshells_dependant = true,
-        is_shell_correction = true,
-        density_correction = "fano",
-        interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"])
-        ######################
-        )
+    function Inelastic_Leptons()
         this = new()
         this.name = "inelastic_leptons"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
-        this.set_density_correction(density_correction)
+        this.set_density_correction("fano")
         this.is_CSD = true
         this.is_AFP = true
         this.is_elastic = false
         this.is_preload_data = true
-        this.set_is_subshells_dependant(is_subshells_dependant)
-        this.set_is_shell_correction(is_shell_correction)
-        this.set_scattering_model(scattering_model)
+        this.set_is_subshells_dependant(true)
+        this.set_is_shell_correction(true)
+        this.set_scattering_model("BFP")
         return this
     end
 end
 
 # Method(s)
 """
-    set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for inelastic leptons processes.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons`: inelastic leptons structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("positrons","positrons") => ["S"]`: scattering of incident positrons
-    - `("electrons","electrons") => ["S"]`: scattering of incident electrons
-    - `("positrons","electrons") => ["P"]`: production of electrons by incident positrons
-    - `("electrons","electrons") => ["P"]`: production of electrons by incident electrons
+- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Positron,Positron) => ["S"]` : scattering of incident positrons
+    - `(Electron,Electron) => ["S"]` : scattering of incident electrons
+    - `(Positron,Electron) => ["P"]` : production of electrons by incident positrons
+    - `(Electron,Electron) => ["P"]` : production of electrons by incident electrons
 
 # Output Argument(s)
 N/A
@@ -80,7 +72,7 @@ N/A
 # Examples
 ```jldoctest
 julia> elastic_leptons = Inelastic_Leptons()
-julia> elastic_leptons.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # No knock-on electrons.
+julia> elastic_leptons.set_interaction_types( Dict((Electron,Electron) => ["S"]) ) # No knock-on electrons.
 ```
 """
 function set_interaction_types(this::Inelastic_Leptons,interaction_types)
@@ -93,11 +85,11 @@ end
 Set the Fermi density correction.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons`: inelastic leptons structure.
-- `density_correction::String`: type of density effect:
-    - `fano`: Fano density effect.
-    - `sternheimer`: Sternheimer semi-empirical density effect.
-    - `none`: no density effect.
+- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `density_correction::String` : type of density effect:
+    - `fano` : Fano density effect.
+    - `sternheimer` : Sternheimer semi-empirical density effect.
+    - `none` : no density effect.
 
 # Output Argument(s)
 N/A
@@ -119,8 +111,8 @@ end
 Activate or desactivate shell correction for stopping powers.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons`: inelastic leptons structure.
-- `is_shell_correction::Bool`: activate (true) or desactivate (false) the shell correction.
+- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `is_shell_correction::Bool` : activate (true) or desactivate (false) the shell correction.
 
 # Output Argument(s)
 N/A
@@ -141,8 +133,8 @@ end
 Compute the inelastic cross-sections assuming bounded or unbounded electrons.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons`: inelastic leptons structure.
-- `is_subshells_dependant::Bool`: bounded (true) or unbounded (false) electrons.
+- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `is_subshells_dependant::Bool` : bounded (true) or unbounded (false) electrons.
 
 # Output Argument(s)
 N/A
@@ -163,11 +155,11 @@ end
 To define the solver for inelastic scattering.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons`: inelastic structure.
-- `solver::String`: solver for inelastic scattering, which can be:
-    - `BFP`: Boltzmann Fokker-Planck solver.
-    - `FP`: Fokker-Planck solver.
-    - `BTE`: Boltzmann solver.
+- `this::Inelastic_Leptons` : inelastic structure.
+- `solver::String` : solver for inelastic scattering, which can be:
+    - `BFP` : Boltzmann Fokker-Planck solver.
+    - `FP` : Fokker-Planck solver.
+    - `BTE` : Boltzmann solver.
 
 # Output Argument(s)
 N/A
@@ -424,9 +416,9 @@ function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz:
     Cz_prime = zeros(Nz,153)
     spline_Cz = Vector{Function}(undef,Nz)
     if is_electron(particle)
-        particle_name = "electrons"
+        particle_name = Electron
     elseif is_positron(particle)
-        particle_name = "positrons"
+        particle_name = Positron
     else
         error("Unknown particle.")
     end

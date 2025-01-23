@@ -4,8 +4,8 @@
 Structure used to define the collection of discretization methods for transport calculations associated with each of the particle and additionnal coupled transport informations.
 
 # Mandatory field(s)
-- `methods_list::Vector{Discrete_Ordinates}`: list of the particle methods
-- `number_of_generations::Int64`: number of particle generations to transport.
+- `methods_list::Vector{Discrete_Ordinates}` : list of the particle methods
+- `number_of_generations::Int64` : number of particle generations to transport.
 
 # Optional field(s) - with default values
 - N/A
@@ -42,8 +42,8 @@ end
 To add a particle and is associated methods to the Solvers structure.
 
 # Input Argument(s)
-- `this::Solvers`: collection of discretization method.
-- `method::Discrete_Ordinates`: discretization method.
+- `this::Solvers` : collection of discretization method.
+- `method::Discrete_Ordinates` : discretization method.
 
 # Output Argument(s)
 N/A
@@ -68,8 +68,8 @@ end
 To set the number of particle generation to transport during calculations
 
 # Input Argument(s)
-- `this::Solvers`: collection of discretization method.
-- `number_of_generations::Int64`: number of particle generation to transport during calculations.
+- `this::Solvers` : collection of discretization method.
+- `number_of_generations::Int64` : number of particle generation to transport during calculations.
 
 # Output Argument(s)
 N/A

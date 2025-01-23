@@ -7,9 +7,9 @@ Structure used to define parameters for production of multigroup Compton cross-s
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("photons","photons") => ["S"],("photons","electrons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("photons","photons") => ["S"]`: scattering of incident photon following Compton interaction.
-    - `("photons","electrons") => ["P"]`: produced electron following Compton interaction.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Photon,Photon) => ["S"],(Photon,Electron) => ["P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Photon,Photon) => ["S"]` : scattering of incident photon following Compton interaction.
+    - `(Photon,Electron) => ["P"]` : produced electron following Compton interaction.
 
 """
 mutable struct Compton <: Interaction
@@ -32,15 +32,10 @@ mutable struct Compton <: Interaction
     model::String
 
     # Constructor(s)
-    function Compton(;
-        ### Initial values ###
-        model="waller-hartree",
-        interaction_types = Dict((Photon,Photon) => ["S"],(Photon,Electron) => ["P"])
-        ######################
-        )
+    function Compton()
         this = new()
         this.name = "compton"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Photon,Photon) => ["S"],(Photon,Electron) => ["P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -48,7 +43,7 @@ mutable struct Compton <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.model = model
+        this.model = "waller-hartree"
         this.scattering_model = "BTE"
         return this
     end
@@ -56,15 +51,15 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Compton,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Compton,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for Compton processes.
 
 # Input Argument(s)
-- `this::Compton`: compton structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("photons","photons")   => ["S"]` : scattering of incident photon following Compton interaction.
-    - `("photons","electrons") => ["P"]` : produced electron following Compton interaction.
+- `this::Compton` : compton structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Photon,Photon)   => ["S"]` : scattering of incident photon following Compton interaction.
+    - `(Photon,Electron) => ["P"]` : produced electron following Compton interaction.
 
 # Output Argument(s)
 N/A
@@ -72,7 +67,7 @@ N/A
 # Examples
 ```jldoctest
 julia> compton = Compton()
-julia> compton.set_interaction_types( Dict(("photons","photons") => ["S"]) ) # Electron are absorbed following Compton interaction.
+julia> compton.set_interaction_types( Dict((Photon,Photon) => ["S"]) ) # Electron are absorbed following Compton interaction.
 ```
 """
 function set_interaction_types(this::Compton,interaction_types)
@@ -85,8 +80,8 @@ end
 To define the Compton physics model.
 
 # Input Argument(s)
-- `this::Compton`: compton structure.
-- `model::String`: Compton physics interaction model, which can be:
+- `this::Compton` : compton structure.
+- `model::String` : Compton physics interaction model, which can be:
     - `klein-nishina`  : Klein-Nishina model.
     - `waller-hartree` : Klein-Nishina model, with Waller-Hartree incoherent scattering function.
 

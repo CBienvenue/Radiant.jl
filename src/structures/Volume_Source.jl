@@ -4,13 +4,13 @@
 Structure used to define an isotropic volume source and its properties.
 
 # Mandatory field(s)
-- `name::String`: name (or identifier) of the Volume_Source structure.
-- `particle::String`: type of particle emitted.
-- `energy_group::Int64`: energy group index in which the particle are emitted.
-- `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
+- `name::String` : name (or identifier) of the Volume_Source structure.
+- `particle::Particle` : type of particle emitted.
+- `energy_group::Int64` : energy group index in which the particle are emitted.
+- `boundaries::Vector{Float64}` : boundaries of the source along each axis [in cm].
 
 # Optional field(s) - with default values
-- `intensity::Float64=1.0`: intensity [# particles/cmᴺ, where N is the geometry dimension].
+- `intensity::Float64=1.0` : intensity [# particles/cmᴺ, where N is the geometry dimension].
 
 """
 mutable struct Volume_Source
@@ -43,29 +43,14 @@ mutable struct Volume_Source
 end
 
 # Method(s)
-Base.propertynames(::Volume_Source) = 
-(
-    fieldnames(Volume_Source)...,
-    :set_particle,
-    :set_intensity,
-    :set_energy_group,
-    :set_boundaries,
-    :get_particle,
-    :get_normalization_factor,
-    :build
-)
-
 """
     set_particle(this::Volume_Source,particle::String)
 
 To define the source particle.
 
 # Input Argument(s)
-- `this::Volume_Source`: volume source.
-- `particle::String`: type of particle, which can takes the following values:
-    - `particle = "photons"`: photons.
-    - `particle = "electrons"`: electrons.
-    - `particle = "positrons"`: positrons.
+- `this::Volume_Source` : volume source.
+- `particle::Particle` : particle.
 
 # Output Argument(s)
 N/A
@@ -73,7 +58,7 @@ N/A
 # Examples
 ```jldoctest
 julia> vs = Volume_Source()
-julia> vs.set_particle("electrons")
+julia> vs.set_particle(electron)
 ```
 """
 function set_particle(this::Volume_Source,particle::Particle)
@@ -86,8 +71,8 @@ end
 To define the intensity of the source.
 
 # Input Argument(s)
-- `this::Volume_Source`: volume source.
-- `intensity::Float64`: intensity [# particles/cmᴺ, where N is the geometry dimension]
+- `this::Volume_Source` : volume source.
+- `intensity::Float64` : intensity [# particles/cmᴺ, where N is the geometry dimension]
 
 # Output Argument(s)
 N/A
@@ -109,8 +94,8 @@ end
 To define the energy of the source by setting the energy group in which they are produced.
 
 # Input Argument(s)
-- `this::Volume_Source`: volume source.
-- `energy_group::Int64`: energy group index.
+- `this::Volume_Source` : volume source.
+- `energy_group::Int64` : energy group index.
 
 # Output Argument(s)
 N/A
@@ -132,9 +117,9 @@ end
 To define the boundaries of the source along the specified axis.
 
 # Input Argument(s)
-- `this::Volume_Source`: volume source.
-- `axis::String`: axis along which the boundaries are defined.
-- `boundaries::Vector{Float64}`: boundaries of the source in accending order [in cm]
+- `this::Volume_Source` : volume source.
+- `axis::String` : axis along which the boundaries are defined.
+- `boundaries::Vector{Float64}` : boundaries of the source in accending order [in cm]
 
 # Output Argument(s)
 N/A

@@ -4,13 +4,13 @@
 Structure used to define a material and its properties.
 
 # Mandatory field(s)
-- `name::String`: name (or identifier) of the Material structure.
-- `density::Float64`: density [in g/cm³].
-- `elements::Vector{String}`: vector of the element in the composition of the material.
-- `weight_fractions::Vector{Float64}`: vector of the weight fraction for each element in the composition of the material.
+- `name::String` : name (or identifier) of the Material structure.
+- `density::Float64` : density [in g/cm³].
+- `elements::Vector{String}` : vector of the element in the composition of the material.
+- `weight_fractions::Vector{Float64}` : vector of the weight fraction for each element in the composition of the material.
 
 # Optional field(s) - with default values
-- `state_of_matter::String = "solid"`: state of the matter.
+- `state_of_matter::String = "solid"` : state of the matter.
 
 """
 mutable struct Material
@@ -54,8 +54,8 @@ end
 To set the density of the material.
 
 # Input Argument(s)
-- `this::Material`: material.
-- `density::Real`: density [in g/cm³].
+- `this::Material` : material.
+- `density::Real` : density [in g/cm³].
 
 # Output Argument(s)
 N/A
@@ -76,8 +76,8 @@ end
 To set the state of the matter (solid or liquid or gaz).
 
 # Input Argument(s)
-- `this::Material`: material.
-- `state_of_matter::String`: state of matter, which value is given by "solid", "liquid" or "gaz".
+- `this::Material` : material.
+- `state_of_matter::String` : state of matter, which value is given by "solid", "liquid" or "gaz".
 
 # Output Argument(s)
 N/A
@@ -98,9 +98,9 @@ end
 To add an element which is part of the composition of the material.
 
 # Input Argument(s)
-- `this::Material`: material.
-- `symbol::String`: element symbol, with value such as "H", "He", etc.
-- `weight_fraction::Real`: weight fraction of the element in the material (between 0 and 1).
+- `this::Material` : material.
+- `symbol::String` : element symbol, with value such as "H", "He", etc.
+- `weight_fraction::Real` : weight fraction of the element in the material (between 0 and 1).
 
 # Output Argument(s)
 N/A
@@ -127,10 +127,10 @@ end
 To get the density of the material.
 
 # Input Argument(s)
-- `this::Material`: material.
+- `this::Material` : material.
 
 # Output Argument(s)
-- `density::Real`: density [in g/cm³].
+- `density::Real` : density [in g/cm³].
 
 # Examples
 ```jldoctest
@@ -148,10 +148,10 @@ end
 To get the number of elements in the material composition.
 
 # Input Argument(s)
-- `this::Material`: material.
+- `this::Material` : material.
 
 # Output Argument(s)
-- `number_of_elements::Int64`: number of elements.
+- `number_of_elements::Int64` : number of elements.
 
 # Examples
 ```jldoctest
@@ -168,10 +168,10 @@ end
 To get the atomic numbers of the elements in the material composition.
 
 # Input Argument(s)
-- `this::Material`: material.
+- `this::Material` : material.
 
 # Output Argument(s)
-- `atomic_numbers::Vector{Int64}`: atomic numbers.
+- `atomic_numbers::Vector{Int64}` : atomic numbers.
 
 # Examples
 ```jldoctest
@@ -188,10 +188,10 @@ end
 To get the weight fractions associated with the elements in the material composition.
 
 # Input Argument(s)
-- `this::Material`: material.
+- `this::Material` : material.
 
 # Output Argument(s)
-- `weight_fractions::Vector{Float64}`: weight fractions.
+- `weight_fractions::Vector{Float64}` : weight fractions.
 
 # Examples
 ```jldoctest
@@ -208,10 +208,10 @@ end
 To get the unique ID of the material.
 
 # Input Argument(s)
-- `this::Material`: material.
+- `this::Material` : material.
 
 # Output Argument(s)
-- `ID::Int64`: ID of the material.
+- `ID::Int64` : ID of the material.
 
 # Examples
 ```jldoctest
@@ -228,10 +228,10 @@ end
 To get the state of matter of the material.
 
 # Input Argument(s)
-- `this::Material`: material.
+- `this::Material` : material.
 
 # Output Argument(s)
-- `state_of_matter::String`: state of matter.
+- `state_of_matter::String` : state of matter.
 
 # Examples
 ```jldoctest

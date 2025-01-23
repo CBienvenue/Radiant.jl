@@ -7,14 +7,14 @@ Structure used to define parameters for production of multigroup bremsstrahlung 
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("electrons","electrons") => ["S"],("electrons","photons") => ["P"],("positrons","positrons") => ["S"],("positrons","photons") => ["P"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("electrons","electrons") => ["S"]`: scattering of incident electron following Bremsstrahlung interaction.
-    - `("electrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident electron.
-    - `("positrons","positrons") => ["S"]`: scattering of incident positron following Bremsstrahlung interaction.
-    - `("positrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident positron.
-- `angular_scattering_type::String=modified_dipole`: type of angular scattering, which can takes the following values:
-    - `angular_scattering_type = modified_dipole`: modified dipôle distribution, based on Poskus (2019) shape functions.
-    - `angular_scattering_type = sommerfield`: Sommerfield distribution.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Electron,Electron) => ["S"],(Electron,Photon) => ["P"],(Positron,Positron) => ["S"],(Positron,Photon) => ["P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Electron,Electron) => ["S"]` : scattering of incident electron following Bremsstrahlung interaction.
+    - `(Electron,Photon) => ["P"]` : produced photon following Bremsstrahlung interaction by incident electron.
+    - `(Positron,Positron) => ["S"]` : scattering of incident positron following Bremsstrahlung interaction.
+    - `(Positron,Photon) => ["P"]` : produced photon following Bremsstrahlung interaction by incident positron.
+- `angular_scattering_type::String=modified_dipole` : type of angular scattering, which can takes the following values:
+    - `angular_scattering_type = modified_dipole` : modified dipôle distribution, based on Poskus (2019) shape functions.
+    - `angular_scattering_type = sommerfield` : Sommerfield distribution.
 
 """
 mutable struct Bremsstrahlung <: Interaction
@@ -37,16 +37,10 @@ mutable struct Bremsstrahlung <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Bremsstrahlung(;
-        ### Initial values ###
-        scattering_model="BFP",
-        angular_scattering_type="modified_dipole",
-        interaction_types = Dict((Electron,Electron) => ["S"],(Electron,Photon) => ["P"],(Positron,Positron) => ["S"],(Positron,Photon) => ["P"])
-        ######################
-        )
+    function Bremsstrahlung()
         this = new()
         this.name = "bremsstrahlung"
-        this.set_interaction_types(interaction_types)
+        this.interaction_types = Dict((Electron,Electron) => ["S"],(Electron,Photon) => ["P"],(Positron,Positron) => ["S"],(Positron,Photon) => ["P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = true
@@ -54,8 +48,8 @@ mutable struct Bremsstrahlung <: Interaction
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
-        this.set_angular_scattering_type(angular_scattering_type)
-        this.set_scattering_model(scattering_model)
+        this.set_angular_scattering_type("modified_dipole")
+        this.set_scattering_model("BFP")
         return this
     end
 
@@ -63,17 +57,17 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Bremsstrahlung,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Bremsstrahlung,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for bremsstrahlung processes.
 
 # Input Argument(s)
-- `this::Bremsstrahlung`: bremsstrahlung structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("electrons","electrons") => ["S"]`: scattering of incident electron following Bremsstrahlung interaction.
-    - `("electrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident electron.
-    - `("positrons","positrons") => ["S"]`: scattering of incident positron following Bremsstrahlung interaction.
-    - `("positrons","photons") => ["P"]`: produced photon following Bremsstrahlung interaction by incident positron.
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Electron,Electron) => ["S"]` : scattering of incident electron following Bremsstrahlung interaction.
+    - `(Electron,Photon) => ["P"]` : produced photon following Bremsstrahlung interaction by incident electron.
+    - `(Positron,Positron) => ["S"]` : scattering of incident positron following Bremsstrahlung interaction.
+    - `(Positron,Photon) => ["P"]` : produced photon following Bremsstrahlung interaction by incident positron.
 
 # Output Argument(s)
 N/A
@@ -81,7 +75,7 @@ N/A
 # Examples
 ```jldoctest
 julia> bremsstrahlung = Bremsstrahlung()
-julia> bremsstrahlung.set_interaction_types( Dict(("electrons","electrons") => ["S"]) ) # Only electron scattering, with photon absorption.
+julia> bremsstrahlung.set_interaction_types( Dict((Electron,Electron) => ["S"]) ) # Only electron scattering, with photon absorption.
 ```
 """
 function set_interaction_types(this::Bremsstrahlung,interaction_types)
@@ -94,8 +88,8 @@ end
 To define the bremsstrahlung photons angular distribution.
 
 # Input Argument(s)
-- `this::Bremsstrahlung`: bremsstrahlung structure.
-- `angular_scattering_type::String`: angular scattering type.
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+- `angular_scattering_type::String` : angular scattering type.
 
 # Output Argument(s)
 N/A
@@ -117,11 +111,11 @@ end
 To define the solver for bremsstrahlung scattering.
 
 # Input Argument(s)
-- `this::Bremsstrahlung`: bremsstrahlung structure.
-- `solver::String`: solver for bremsstrahlung scattering, which can be:
-    - `BFP`: Boltzmann Fokker-Planck solver.
-    - `FP`: Fokker-Planck solver.
-    - `BTE`: Boltzmann solver.
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+- `solver::String` : solver for bremsstrahlung scattering, which can be:
+    - `BFP` : Boltzmann Fokker-Planck solver.
+    - `FP` : Fokker-Planck solver.
+    - `BTE` : Boltzmann solver.
 
 # Output Argument(s)
 N/A

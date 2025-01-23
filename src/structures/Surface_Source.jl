@@ -4,15 +4,15 @@
 Structure used to define a directionnal boundary source and its properties.
 
 # Mandatory field(s)
-- `name::String`: name (or identifier) of the Surface_Source structure.
-- `particle::String`: type of particle emitted.
-- `energy_group::Int64`: energy group index in which the particle are emitted.
-- `direction::Vector{Float64}`: direction cosine.
-- `location::String`: boundary at which the source is located.
-- `boundaries::Vector{Float64}`: boundaries of the source along each axis [in cm].
+- `name::String` : name (or identifier) of the Surface_Source structure.
+- `particle::Particle` : type of particle emitted.
+- `energy_group::Int64` : energy group index in which the particle are emitted.
+- `direction::Vector{Float64}` : direction cosine.
+- `location::String` : boundary at which the source is located.
+- `boundaries::Vector{Float64}` : boundaries of the source along each axis [in cm].
 
 # Optional field(s) - with default values
-- `intensity::Float64=1.0`: intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
+- `intensity::Float64=1.0` : intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
 
 """
 mutable struct Surface_Source
@@ -50,31 +50,14 @@ mutable struct Surface_Source
 end
 
 # Method(s)
-Base.propertynames(::Surface_Source) = 
-(
-    fieldnames(Surface_Source)...,
-    :set_particle,
-    :set_intensity,
-    :set_energy_group,
-    :set_direction,
-    :set_location,
-    :set_boundaries,
-    :get_particle,
-    :get_normalization_factor,
-    :build
-)
-
 """
-    set_particle(this::Surface_Source,particle::String)
+    set_particle(this::Surface_Source,particle::Particle)
 
 To define the source particle.
 
 # Input Argument(s)
-- `this::Surface_Source`: surface source.
-- `particle::String`: type of particle, which can takes the following values:
-    - `particle = "photons"`: photons.
-    - `particle = "electrons"`: electrons.
-    - `particle = "positrons"`: positrons.
+- `this::Surface_Source` : surface source.
+- `particle::String` : particle.
 
 # Output Argument(s)
 N/A
@@ -82,7 +65,7 @@ N/A
 # Examples
 ```jldoctest
 julia> ss = Surface_Source()
-julia> ss.set_particle("electrons")
+julia> ss.set_particle(electron)
 ```
 """
 function set_particle(this::Surface_Source,particle::Particle)
@@ -95,8 +78,8 @@ end
 To define the intensity of the source.
 
 # Input Argument(s)
-- `this::Surface_Source`: surface source.
-- `intensity::Float64`: intensity [# particles/cmᴺ, where N is the geometry dimension]
+- `this::Surface_Source` : surface source.
+- `intensity::Float64` : intensity [# particles/cmᴺ, where N is the geometry dimension]
 
 # Output Argument(s)
 N/A
@@ -118,8 +101,8 @@ end
 To define the energy of the source by setting the energy group in which they are produced.
 
 # Input Argument(s)
-- `this::Surface_Source`: surface source.
-- `energy_group::Int64`: energy group index.
+- `this::Surface_Source` : surface source.
+- `energy_group::Int64` : energy group index.
 
 # Output Argument(s)
 N/A
@@ -141,8 +124,8 @@ end
 To set a direction of the source.
 
 # Input Argument(s)
-- `this::Surface_Source`: surface source.
-- `direction::Vector{Float64}`: director cosines [μ,η,ξ]
+- `this::Surface_Source` : surface source.
+- `direction::Vector{Float64}` : director cosines [μ,η,ξ]
 
 # Output Argument(s)
 N/A
@@ -165,14 +148,14 @@ end
 To set the location of the surface source.
 
 # Input Argument(s)
-- `this::Surface_Source`: surface source.
-- `location::String`: boundary on which the surface source is, which can takes the following value:
-    - `boundary = "x-"`: the lower bound along x-axis
-    - `boundary = "x+"`: the upper bound along x-axis
-    - `boundary = "y-"`: the lower bound along y-axis
-    - `boundary = "y+"`: the upper bound along y-axis
-    - `boundary = "z-"`: the lower bound along z-axis
-    - `boundary = "z+"`: the upper bound along z-axis
+- `this::Surface_Source` : surface source.
+- `location::String` : boundary on which the surface source is, which can takes the following value:
+    - `boundary = "x-"` : the lower bound along x-axis
+    - `boundary = "x+"` : the upper bound along x-axis
+    - `boundary = "y-"` : the lower bound along y-axis
+    - `boundary = "y+"` : the upper bound along y-axis
+    - `boundary = "z-"` : the lower bound along z-axis
+    - `boundary = "z+"` : the upper bound along z-axis
 
 # Output Argument(s)
 N/A
@@ -194,9 +177,9 @@ end
 To define the boundaries of the source along the specified axis.
 
 # Input Argument(s)
-- `this::Surface_Source`: surface source.
-- `axis::String`: axis along which the boundaries are defined.
-- `boundaries::Vector{Float64}`: boundaries of the source in accending order [in cm]
+- `this::Surface_Source` : surface source.
+- `axis::String` : axis along which the boundaries are defined.
+- `boundaries::Vector{Float64}` : boundaries of the source in accending order [in cm]
 
 # Output Argument(s)
 N/A

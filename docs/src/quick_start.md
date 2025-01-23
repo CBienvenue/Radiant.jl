@@ -1,6 +1,6 @@
 # Quick Start
 
-There are many ways to install RADIANT on your computer.
+There are many ways to install Radiant on your computer.
 
 ## Prerequisites
 

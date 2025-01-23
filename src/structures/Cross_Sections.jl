@@ -4,28 +4,32 @@ Cross_Sections
 Structure used to define the parameters to extract or build a multigroup cross-sections library.
 
 # Mandatory field(s)
-- `name::String`: name (or identifier) of the Cross_Sections structure.
-- `source::String`: source of the cross-sections.
+- `source::String` : source of the cross-sections.
+- `materials::Vector{Material}` : material list.
 - **if `source = "fmac-m"`**
-    - `file::String`: file containing cross-sections data.
-    - `materials::Vector{Material}`: material list.
+    - `file::String` : file containing cross-sections data.
 - **if `source = "physics-models"`**
-    - `materials::Vector{Material}`: material list.
-    - `particles::Vector{String}`: particle list.
-    - `energy::Float64`: midpoint energy of the highest energy group [in MeV].
-    - `number_of_groups::Int64`: number of energy groups.
-    - `group_structure::String="log"`: type of group discretization.
-    - `legendre_order::Int64`: maximum order of the angular Legendre moments of the differential cross-sections.
-    - `interactions::Vector{Interaction}`: list of interaction.
+    - `particles::Vector{String}` : particle list.
+    - `energy::Float64` : midpoint energy of the highest energy group [in MeV].
+    - `number_of_groups::Int64` : number of energy groups.
+    - `group_structure::String="log"` : type of group discretization.
+    - `legendre_order::Int64` : maximum order of the angular Legendre moments of the differential cross-sections.
+    - `interactions::Vector{Interaction}` : list of interaction.
+- ** if `source = "custom"`**
+    - `particles::Vector{String}` : particle list.
+
 
 # Optional field(s) - with default values
-- `cutoff::Float64=0.001`: lower energy bound of the lowest energy group (cutoff energy) [in MeV].
+- **if `source = "physics-models"`**
+    - `cutoff::Float64 = 0.001` : lower energy bound of the lowest energy group (cutoff energy) [in MeV].
+- ** if `source = "custom"`**
+    - `custom_absorption::Vector{Real}` : absorption cross-sections per material.
+    - `custom_scattering::Vector{Real}` : scattering (isotropic) cross-sections per material.
 
 """
 mutable struct Cross_Sections
 
     # Variable(s)
-    name                      ::Union{Missing,String}
     source                    ::Union{Missing,String}
     file                      ::Union{Nothing,String}
     number_of_materials       ::Int64
@@ -49,7 +53,6 @@ mutable struct Cross_Sections
 
         this = new()
 
-        this.name = missing
         this.source = missing
         this.file = nothing
         this.number_of_materials = 0
@@ -107,7 +110,7 @@ end
 To build the cross-section library.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
+- `this::Cross_Sections` : cross-sections library.
 
 # Output Argument(s)
 N/A
@@ -144,8 +147,8 @@ end
 To write a FMAC-M formatted file containing the cross-sections library.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `file::String`: file name and directory.
+- `this::Cross_Sections` : cross-sections library.
+- `file::String` : file name and directory.
 
 # Output Argument(s)
 N/A
@@ -168,10 +171,10 @@ end
 To define the source of the cross-sections library.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `source::String`: source of the cross-sections library which is either:
-    - `source = "physics-models"`: multigroup cross-sections are produced by Radiant
-    - `source = "FMAC-M"`: multigroup cross-sections are extracted from FMAC-M file.
+- `this::Cross_Sections` : cross-sections library.
+- `source::String` : source of the cross-sections library which is either:
+    - `source = "physics-models"` : multigroup cross-sections are produced by Radiant
+    - `source = "FMAC-M"` : multigroup cross-sections are extracted from FMAC-M file.
 
 # Output Argument(s)
 N/A
@@ -193,8 +196,8 @@ end
 To read a FMAC-M formatted file containing the cross-sections library.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `file::String`: file name and directory.
+- `this::Cross_Sections` : cross-sections library.
+- `file::String` : file name and directory.
 
 # Output Argument(s)
 N/A
@@ -215,8 +218,8 @@ end
 To set the list of material, either contained in FMAC-M file in order, or to produce in Radiant.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `materials::Vector{Material}`: material list.
+- `this::Cross_Sections` : cross-sections library.
+- `materials::Vector{Material}` : material list.
 
 # Output Argument(s)
 N/A
@@ -237,16 +240,13 @@ function set_materials(this::Cross_Sections,materials::Union{Vector{Material},Ma
 end
 
 """
-    set_particles(this::Cross_Sections,particles::Union{Vector{String},String})
+    set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Particle})
 
 To set the list of particles for which to produce coupled library of cross-sections.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `particles::Vector{String}`: particles list, where each particle is either:
-    - `particles[i] = "photons"`: photons production and interaction are taken into account.
-    - `particles[i] = "electrons"`: electrons production and interaction are taken into account.
-    - `particles[i] = "positrons"`: positrons production and interaction are taken into account.
+- `this::Cross_Sections` : cross-sections library.
+- `particles::Vector{Particle}` : particles list.
 
 # Output Argument(s)
 N/A
@@ -254,7 +254,7 @@ N/A
 # Examples
 ```jldoctest
 julia> cs = Cross_Sections()
-julia> cs.set_particles(["electrons","photons","positrons"])
+julia> cs.set_particles([electron,photon,positron])
 ```
 """
 function set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Particle})
@@ -270,8 +270,8 @@ end
 To set the midpoint energy of the highest energy group.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `energy::Real`: midpoint energy of the highest energy group.
+- `this::Cross_Sections` : cross-sections library.
+- `energy::Real` : midpoint energy of the highest energy group.
 
 # Output Argument(s)
 N/A
@@ -293,8 +293,8 @@ end
 To set the cutoff energy (lower bound of the lowest energy group).
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `cutoff::Real`: cutoff energy (lower bound of the lowest energy group)
+- `this::Cross_Sections` : cross-sections library.
+- `cutoff::Real` : cutoff energy (lower bound of the lowest energy group)
 
 # Output Argument(s)
 N/A
@@ -316,8 +316,8 @@ end
 To set the number of energy groups per particle.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `number_of_groups::Vector{Int64}`: number of energy groups per particle in order with the particle list.
+- `this::Cross_Sections` : cross-sections library.
+- `number_of_groups::Vector{Int64}` : number of energy groups per particle in order with the particle list.
 
 # Output Argument(s)
 N/A
@@ -325,7 +325,7 @@ N/A
 # Examples
 ```jldoctest
 julia> cs = Cross_Sections()
-julia> cs.set_particles(["electrons","photons","positrons"])
+julia> cs.set_particles([electron,photon,positron])
 julia> cs.set_number_of_groups([80,20,80]) # 80 groups with leptons, 20 with photons
 ```
 """
@@ -341,10 +341,10 @@ end
 To set the type of energy discretization structure per particle.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `group_structure::Vector{String}`: type of energy discretization structure per particle, where value per particle can take the following value:
-    - `group_structure[i] = "linear"`: linearly spaced discretization.
-    - `group_structure[i] = "log"`: logarithmically spaced discretization.
+- `this::Cross_Sections` : cross-sections library.
+- `group_structure::Vector{String}` : type of energy discretization structure per particle, where value per particle can take the following value:
+    - `group_structure[i] = "linear"` : linearly spaced discretization.
+    - `group_structure[i] = "log"` : logarithmically spaced discretization.
 
 # Output Argument(s)
 N/A
@@ -352,7 +352,7 @@ N/A
 # Examples
 ```jldoctest
 julia> cs = Cross_Sections()
-julia> cs.set_particles(["electrons","photons","positrons"])
+julia> cs.set_particles([electron,photon,positron])
 julia> cs.set_group_structure(["log","linear","log"]) # 80 groups with leptons, 20 with photons
 ```
 """
@@ -372,8 +372,8 @@ end
 To set the interaction to take into account in the library of cross-sections.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `interactions::Vector{Interaction}`: list of interactions to use in the production of the cross-sections library.
+- `this::Cross_Sections` : cross-sections library.
+- `interactions::Vector{Interaction}` : list of interactions to use in the production of the cross-sections library.
 
 # Output Argument(s)
 N/A
@@ -381,7 +381,7 @@ N/A
 # Examples
 ```jldoctest
 julia> cs = Cross_Sections()
-julia> cs.set_particles(["electrons"])
+julia> cs.set_particles([electron])
 julia> cs.set_interactions([Elastic_Leptons(),Inelastic_Leptons(),Bremsstrahlung(), Auger()])
 ```
 """
@@ -397,8 +397,8 @@ end
 To set the maximum order of the Legendre expansion of the differential cross-sections.
 
 # Input Argument(s)
-- `this::Cross_Sections`: cross-sections library.
-- `legendre_order::Int64`: maximum order of the Legendre expansion of the differential cross-sections.
+- `this::Cross_Sections` : cross-sections library.
+- `legendre_order::Int64` : maximum order of the Legendre expansion of the differential cross-sections.
 
 # Output Argument(s)
 N/A

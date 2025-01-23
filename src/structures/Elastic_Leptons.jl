@@ -7,9 +7,9 @@ Structure used to define parameters for production of multigroup elastic cross-s
 - N/A
 
 # Optional field(s) - with default values
-- `interaction_types::Dict{Tuple{String,String},Vector{String}} = Dict(("electrons","electrons") => ["S"],("positrons","positrons") => ["S"])`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
-    - `("electrons","electrons") => ["S"]`: elastic interaction of electrons.
-    - `("positrons","positrons") => ["S"]`: elastic interaction of positrons.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Electron,Electron) => ["S"],(Positron,Positron) => ["S"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
+    - `(Electron,Electron) => ["S"]` : elastic interaction of electrons.
+    - `(Positron,Positron) => ["S"]` : elastic interaction of positrons.
 
 """
 mutable struct Elastic_Leptons <: Interaction
@@ -60,15 +60,15 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{String,String},Vector{String}})
+    set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
 To define the interaction types for Elastic_Leptons processes.
 
 # Input Argument(s)
-- `this::Elastic_Leptons`: elastic leptons structure.
-- `interaction_types::Dict{Tuple{String,String},Vector{String}}`: Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
-    - `("electrons","electrons") => ["S"]`: elastic interaction of electrons.
-    - `("positrons","positrons") => ["S"]`: elastic interaction of positrons.
+- `this::Elastic_Leptons` : elastic leptons structure.
+- `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
+    - `(Electron,Electron) => ["S"]` : elastic interaction of electrons.
+    - `(Positron,Positron) => ["S"]` : elastic interaction of positrons.
 
 # Output Argument(s)
 N/A
@@ -76,7 +76,7 @@ N/A
 # Examples
 ```jldoctest
 julia> elastic_leptons = Elastic_Leptons()
-julia> elastic_leptons.set_interaction_types( Dict(("positrons","positrons") => ["S"]) ) # Elastic only for positrons
+julia> elastic_leptons.set_interaction_types( Dict((Positron,Positron) => ["S"]) ) # Elastic only for positrons
 ```
 """
 function set_interaction_types(this::Elastic_Leptons,interaction_types)
@@ -89,12 +89,12 @@ end
 To define the elastic scattering model.
 
 # Input Argument(s)
-- `this::Elastic_Leptons`: elastic leptons structure.
-- `model::String`: model of elastic scattering:
-    - `rutherford`: screened Rutherford cross-sections.
-    - `mott`: screened Mott cross-sections.
-- `is_KC::Bool`: Apply Karakow's Correction (true) or not (false).
-- `is_SC::Bool`: Apply Seltzer's Correction (true) or not (false).
+- `this::Elastic_Leptons` : elastic leptons structure.
+- `model::String` : model of elastic scattering:
+    - `rutherford` : screened Rutherford cross-sections.
+    - `mott` : screened Mott cross-sections.
+- `is_KC::Bool` : Apply Karakow's Correction (true) or not (false).
+- `is_SC::Bool` : Apply Seltzer's Correction (true) or not (false).
 
 # Output Argument(s)
 N/A
@@ -118,8 +118,8 @@ end
 Enable or not extended transport correcton.
 
 # Input Argument(s)
-- `this::Elastic_Leptons`: elastic leptons structure.
-- `is_ETC::Bool`: Enable (true) or not (false) extended transport correcton.
+- `this::Elastic_Leptons` : elastic leptons structure.
+- `is_ETC::Bool` : Enable (true) or not (false) extended transport correcton.
 
 # Output Argument(s)
 N/A
@@ -140,11 +140,11 @@ end
 Dictate how the cross-sections is distributed to the Boltzmann and the Fokker-Planck operators.
 
 # Input Argument(s)
-- `this::Elastic_Leptons`: elastic leptons structure.
-- `solver::String`:  model of elastic scattering:
-    - `B`: the cross-sections are made to be used with the Boltzmann operator.
-    - `FP`: the cross-sections are made to be used with the Fokker-Planck operator.
-    - `BFP`: the cross-sections are distributed to the Boltzmann and Fokker-Planck operator.
+- `this::Elastic_Leptons` : elastic leptons structure.
+- `solver::String` :  model of elastic scattering:
+    - `B` : the cross-sections are made to be used with the Boltzmann operator.
+    - `FP` : the cross-sections are made to be used with the Fokker-Planck operator.
+    - `BFP` : the cross-sections are distributed to the Boltzmann and Fokker-Planck operator.
 # Output Argument(s)
 N/A
 
@@ -316,9 +316,9 @@ function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::
         path = joinpath(find_package_root(), "data", "mott_data_boschini_2013.jld2")
         data = load(path)
         if is_electron(particle)
-            particle_name = "electrons"
+            particle_name = Electron
         elseif is_positron(particle)
-            particle_name = "positrons"
+            particle_name = Positron
         else
             error("Unknown particle")
         end

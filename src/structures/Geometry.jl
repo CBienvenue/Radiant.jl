@@ -4,16 +4,16 @@
 Structure used to define the geometry properties of the medium for transport calculations.
 
 # Mandatory field(s)
-- `name::String`: name (or identifier) of the Geometry structure.
-- `dimension::Int64`: dimension of the geometry.
-- `material_per_region::Array{Material}`: multidimensional array of the material per regions.
-- `boundary_conditions::Dict{String,Int64}`: boundary conditions along each axis.
-- `number_of_regions::Dict{String,Int64}`: number of regions along each axis.
-- `voxels_per_region::Dict{String,Vector{Int64}}`: number of voxels inside each regions along each axis.
-- `region_boundaries::Dict{String,Vector{Float64}}`: boundaries of each regions along each axis.
+- `name::String` : name (or identifier) of the Geometry structure.
+- `dimension::Int64` : dimension of the geometry.
+- `material_per_region::Array{Material}` : multidimensional array of the material per regions.
+- `boundary_conditions::Dict{String,Int64}` : boundary conditions along each axis.
+- `number_of_regions::Dict{String,Int64}` : number of regions along each axis.
+- `voxels_per_region::Dict{String,Vector{Int64}}` : number of voxels inside each regions along each axis.
+- `region_boundaries::Dict{String,Vector{Float64}}` : boundaries of each regions along each axis.
 
 # Optional field(s) - with default values
-- `type::String="cartesian"`: type of geometry.
+- `type::String="cartesian"` : type of geometry.
 
 """
 mutable struct Geometry
@@ -61,26 +61,6 @@ mutable struct Geometry
 end
 
 # Method(s)
-Base.propertynames(::Geometry) = 
-(
-    fieldnames(Geometry)...,
-    :set_type,
-    :set_dimension,
-    :set_material_per_region,
-    :set_boundary_conditions,
-    :set_number_of_regions,
-    :set_voxels_per_region,
-    :set_region_boundaries,
-    :get_type,
-    :get_dimension,
-    :get_axis,
-    :get_number_of_voxels,
-    :get_voxels_width,
-    :get_material_per_voxel,
-    :get_voxels_position,
-    :build
-)
-
 function is_ready_to_build(this::Geometry)
     if ismissing(this.type) error("The type of geometry has to be specified.") end
     if ismissing(this.dimension) error("The geometry dimension has to be specified.") end
@@ -119,8 +99,8 @@ end
 To build the geometry structure.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `cs::Cross_Sections`: cross-sections library.
+- `this::Geometry` : geometry.
+- `cs::Cross_Sections` : cross-sections library.
 
 # Output Argument(s)
 N/A
@@ -151,9 +131,9 @@ end
 To set the type of geometry.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `type::String`: type of geometry, which can takes the following value:
-    -`type = "cartesian"`: Cartesian geometry.
+- `this::Geometry` : geometry.
+- `type::String` : type of geometry, which can takes the following value:
+    -`type = "cartesian"` : Cartesian geometry.
 
 # Output Argument(s)
 N/A
@@ -175,8 +155,8 @@ end
 To set the dimension of geometry.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `dimension::Int64`: dimension of the geometry, which can be either 1, 2 or 3.
+- `this::Geometry` : geometry.
+- `dimension::Int64` : dimension of the geometry, which can be either 1, 2 or 3.
 
 # Output Argument(s)
 N/A
@@ -206,8 +186,8 @@ end
 To set the material in each regions of the geometry.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `material_per_region::Array{Material}`: array containing the material for each regions. Its size should fit the number of regions per axis.
+- `this::Geometry` : geometry.
+- `material_per_region::Array{Material}` : array containing the material for each regions. Its size should fit the number of regions per axis.
 
 # Output Argument(s)
 N/A
@@ -245,16 +225,16 @@ end
 To set the boundary conditions at the specified boundary.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `boundary::String`: boundary for which the boundary condition is applied, which can takes the following value:
-    - `boundary = "x-"`: the lower bound along x-axis
-    - `boundary = "x+"`: the upper bound along x-axis
-    - `boundary = "y-"`: the lower bound along y-axis
-    - `boundary = "y+"`: the upper bound along y-axis
-    - `boundary = "z-"`: the lower bound along z-axis
-    - `boundary = "z+"`: the upper bound along z-axis
-- `boundary_condition::String`: boundary conditions, which can takes the following value:
-    -`boundary = "void"`: void boundary conditions.
+- `this::Geometry` : geometry.
+- `boundary::String` : boundary for which the boundary condition is applied, which can takes the following value:
+    - `boundary = "x-"` : the lower bound along x-axis
+    - `boundary = "x+"` : the upper bound along x-axis
+    - `boundary = "y-"` : the lower bound along y-axis
+    - `boundary = "y+"` : the upper bound along y-axis
+    - `boundary = "z-"` : the lower bound along z-axis
+    - `boundary = "z+"` : the upper bound along z-axis
+- `boundary_condition::String` : boundary conditions, which can takes the following value:
+    -`boundary = "void"` : void boundary conditions.
 
 # Output Argument(s)
 N/A
@@ -277,12 +257,12 @@ end
 To set the number of regions along a specified axis.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `axis::String`: axis along which the number of regions is specified, which can takes the following values:
-    - `boundary = "x"`: along x-axis
-    - `boundary = "y"`: along y-axis
-    - `boundary = "z"`: along z-axis
-- `number_of_regions::Int64`: number of regions.
+- `this::Geometry` : geometry.
+- `axis::String` : axis along which the number of regions is specified, which can takes the following values:
+    - `boundary = "x"` : along x-axis
+    - `boundary = "y"` : along y-axis
+    - `boundary = "z"` : along z-axis
+- `number_of_regions::Int64` : number of regions.
 
 # Output Argument(s)
 N/A
@@ -305,12 +285,12 @@ end
 To set the number of voxels for each regions along a specified axis.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `axis::String`: axis along which the number of regions is specified, which can takes the following values:
-    - `boundary = "x"`: along x-axis
-    - `boundary = "y"`: along y-axis
-    - `boundary = "z"`: along z-axis
-- `voxels_per_region::Vector{Int64}`: vector with the number of voxels for each regions along the specified axis.
+- `this::Geometry` : geometry.
+- `axis::String` : axis along which the number of regions is specified, which can takes the following values:
+    - `boundary = "x"` : along x-axis
+    - `boundary = "y"` : along y-axis
+    - `boundary = "z"` : along z-axis
+- `voxels_per_region::Vector{Int64}` : vector with the number of voxels for each regions along the specified axis.
 
 # Output Argument(s)
 N/A
@@ -335,12 +315,12 @@ end
 To set the boundaries of each regions along a specified axis.
 
 # Input Argument(s)
-- `this::Geometry`: geometry.
-- `axis::String`: axis along which the number of regions is specified, which can takes the following values:
-    - `boundary = "x"`: along x-axis
-    - `boundary = "y"`: along y-axis
-    - `boundary = "z"`: along z-axis
-- `region_boundaries::Vector{Float64}`: vector with the regions boundaries along the specified axis in ascending order.
+- `this::Geometry` : geometry.
+- `axis::String` : axis along which the number of regions is specified, which can takes the following values:
+    - `boundary = "x"` : along x-axis
+    - `boundary = "y"` : along y-axis
+    - `boundary = "z"` : along z-axis
+- `region_boundaries::Vector{Float64}` : vector with the regions boundaries along the specified axis in ascending order.
 
 # Output Argument(s)
 N/A

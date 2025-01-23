@@ -4,10 +4,10 @@
 Structure used to consolidate the cross-sections, geometry, solvers and sources, execute transport calculations and extract its results.
 
 # Mandatory field(s)
-- `cross_sections::Cross_Sections`: cross-section library.
-- `geometry::Geometry`: geometry.
-- `solvers::Solvers`: solvers.
-- `sources::Sources`: fixed sources.
+- `cross_sections::Cross_Sections` : cross-section library.
+- `geometry::Geometry` : geometry.
+- `solvers::Solvers` : solvers.
+- `sources::Sources` : fixed sources.
 
 # Optional field(s) - with default values
 - N/A
@@ -41,11 +41,11 @@ end
 """
     set_cross_sections(this::Computation_Unit,cross_sections::Cross_Sections)
 
-To set the cross-sections library for transport calculations.
+Assigns the cross-sections library to the computation unit.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `cross_sections::Cross_Sections`: cross-sections library.
+- `this::Computation_Unit` : computation unit.
+- `cross_sections::Cross_Sections` : cross-sections library.
 
 # Output Argument(s)
 N/A
@@ -65,11 +65,11 @@ end
 """
     set_geometry(this::Computation_Unit,geometry::Geometry)
 
-To set the geometry for transport calculations.
+Assigns the geometry to the computation unit.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `geometry::Geometry`: geometry.
+- `this::Computation_Unit` : computation unit.
+- `geometry::Geometry` : geometry.
 
 # Output Argument(s)
 N/A
@@ -89,11 +89,11 @@ end
 """
 set_solvers(this::Computation_Unit,solvers::Solvers)
 
-To set the solvers for transport calculations.
+Assigns the solvers to the computation unit.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `solvers::Solvers`: collection of solvers per particle.
+- `this::Computation_Unit` : computation unit.
+- `solvers::Solvers` : collection of solvers per particle.
 
 # Output Argument(s)
 N/A
@@ -113,11 +113,11 @@ end
 """
     set_sources(this::Computation_Unit,sources::Fixed_Sources)
 
-To set the fixed sources for transport calculations.
+Assigns the fixed sources to the computation unit.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `sources::Fixed_Sources`: collection of fixed sources.
+- `this::Computation_Unit` : computation unit.
+- `sources::Fixed_Sources` : collection of fixed sources.
 
 # Output Argument(s)
 N/A
@@ -137,10 +137,10 @@ end
 """
     run(this::Computation_Unit)
 
-To lauch the transport calculations to solve the transport equation and obtain the flux solution.
+Execute transport calculations and obtain the flux solution.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
+- `this::Computation_Unit` : computation unit.
 
 # Output Argument(s)
 N/A
@@ -158,26 +158,23 @@ function run(this::Computation_Unit)
 end
 
 """
-    get_energy_deposition(this::Computation_Unit,type::String)
+    get_energy_deposition(this::Computation_Unit,particle::Particle)
 
-To get the array containing the energy deposition in each voxels.
+Get the array containing the energy deposition in each voxels by a given particle.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `type::String`: type of energy deposition, which can takes the following values:
-    - `type = "total"`: total energy deposition.
-    - `type = "photons"`: photons energy deposition.
-    - `type = "electrons"`: electrons energy deposition.
-    - `type = "positrons"`: positrons energy deposition.
+- `this::Computation_Unit` : computation unit.
+- `particle::Particle` : particle.
 
 # Output Argument(s)
-- `energy_deposition::Array{Float64}`: energy deposition array.
+- `energy_deposition::Array{Float64}` : energy deposition array.
 
 # Examples
 ```jldoctest
+julia> electron = Electron() # Particle to be transported
 julia> cu = Computation_Unit()
 julia> ... # Define computation unit and run it.
-julia> energy_deposition = cu.get_energy_deposition("total")
+julia> electron_energy_deposition = cu.get_energy_deposition(electron)
 ```
 """
 function get_energy_deposition(this::Computation_Unit,particle::Particle)
@@ -186,32 +183,48 @@ function get_energy_deposition(this::Computation_Unit,particle::Particle)
     if typeof(particle) ∉ typeof.(this.flux.get_particles()) error("Energy deposition for the specified particle is not available.") end
     return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,[particle])
 end
+
+"""
+    get_energy_deposition(this::Computation_Unit)
+
+Get the array containing the total energy deposition in each voxels.
+
+# Input Argument(s)
+- `this::Computation_Unit` : computation unit.
+
+# Output Argument(s)
+- `energy_deposition::Array{Float64}` : energy deposition array.
+
+# Examples
+```jldoctest
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> energy_deposition = cu.get_energy_deposition()
+```
+"""
 function get_energy_deposition(this::Computation_Unit)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract energy deposition, please use .run() method before.") end
     return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,this.flux.get_particles())
 end
 
 """
-    get_charge_deposition(this::Computation_Unit,type::String)
+    get_charge_deposition(this::Computation_Unit,particle::Particle)
 
-To get the array containing the charge deposition in each voxels.
+Get the array containing the charge deposition in each voxels by a given particle.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `type::String`: type of charge deposition, which can takes the following values:
-    - `type = "total"`: total charge deposition.
-    - `type = "photons"`: photons charge deposition.
-    - `type = "electrons"`: electrons charge deposition.
-    - `type = "positrons"`: positrons charge deposition.
+- `this::Computation_Unit` : computation unit.
+- `particle::Particle` : particle.
 
 # Output Argument(s)
-- `charge_deposition::Array{Float64}`: charge deposition array.
+- `charge_deposition::Array{Float64}` : charge deposition array.
 
 # Examples
 ```jldoctest
+julia> electron = Electron() # Particle to be transported
 julia> cu = Computation_Unit()
 julia> ... # Define computation unit and run it.
-julia> charge_deposition = cu.get_charge_deposition("total")
+julia> electron_charge_deposition = cu.get_charge_deposition(electron)
 ```
 """
 function get_charge_deposition(this::Computation_Unit,particle::Particle)
@@ -220,31 +233,49 @@ function get_charge_deposition(this::Computation_Unit,particle::Particle)
     if typeof(particle) ∉ typeof.(this.flux.get_particles()) error("Charge deposition for the specified particle is not available.") end
     return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,[particle])
 end
+
+"""
+    get_charge_deposition(this::Computation_Unit)
+
+Get the array containing the total charge deposition in each voxels.
+
+# Input Argument(s)
+- `this::Computation_Unit` : computation unit.
+
+# Output Argument(s)
+- `charge_deposition::Array{Float64}` : charge deposition array.
+
+# Examples
+```jldoctest
+julia> electron = Electron() # Particle to be transported
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> charge_deposition = cu.get_charge_deposition()
+```
+"""
 function get_charge_deposition(this::Computation_Unit)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract charge deposition, please use .run() method before.") end
     return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,this.flux.get_particles())
 end
 
 """
-    get_flux(this::Computation_Unit,particle::String)
+    get_flux(this::Computation_Unit,particle::Particle)
 
-To get the array containing the flux in each voxels and in each energy group for the specified particle.
+Get the array containing the flux in each voxels and in each energy group for the specified particle.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `particle::String`: flux particle, which can takes the following values:
-    - `particle = "photons"`: photons charge deposition.
-    - `particle = "electrons"`: electrons charge deposition.
-    - `particle = "positrons"`: positrons charge deposition.
+- `this::Computation_Unit` : computation unit.
+- `particle::Particle` : particle.
 
 # Output Argument(s)
-- `flux::Array{Float64}`: flux array.
+- `flux::Array{Float64}` : flux array.
 
 # Examples
 ```jldoctest
+julia> electron = Electron() # Particle to be transported
 julia> cu = Computation_Unit()
 julia> ... # Define computation unit and run it.
-julia> flux = cu.get_flux("electrons")
+julia> flux = cu.get_flux(electron)
 ```
 """
 function get_flux(this::Computation_Unit,particle::Particle)
@@ -256,17 +287,17 @@ end
 """
     get_voxels_position(this::Computation_Unit,axis::String)
 
-To set the mid-point voxels position along the specified axis.
+Get the mid-point voxels position along the specified axis.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `axis::String`: axis, which can takes the following values:
-    - `boundary = "x"`: along x-axis
-    - `boundary = "y"`: along y-axis
-    - `boundary = "z"`: along z-axis
+- `this::Computation_Unit` : computation unit.
+- `axis::String` : axis, which can takes the following values:
+    - `boundary = "x"` : along x-axis
+    - `boundary = "y"` : along y-axis
+    - `boundary = "z"` : along z-axis
 
 # Output Argument(s)
-- `x::Vector{Float64}`: mid-point voxels position along the specified axis.
+- `x::Vector{Float64}` : mid-point voxels position along the specified axis.
 
 # Examples
 ```jldoctest
@@ -280,25 +311,23 @@ function get_voxels_position(this::Computation_Unit,axis::String)
 end
 
 """
-    get_energies(this::Computation_Unit,particle::String)
+    get_energies(this::Computation_Unit,particle::Particle)
 
-To set the mid-point energy in each group for the specified particle.
+Get the mid-point energy in each group for the specified particle.
 
 # Input Argument(s)
-- `this::Computation_Unit`: computation unit.
-- `particle::String`: particle identifier, where each particle is either:
-    - `particle = "photons"`: photons.
-    - `particle = "electrons"`: electrons.
-    - `particle = "positrons"`: positrons.
+- `this::Computation_Unit` : computation unit.
+- `particle::Particle` : particle.
 
 # Output Argument(s)
-- `E::Vector{Float64}`: mid-point energy in each group for the specified particle.
+- `E::Vector{Float64}` : mid-point energy in each group for the specified particle.
 
 # Examples
 ```jldoctest
+julia> electron = Electron() # Particle to be transported
 julia> cu = Computation_Unit()
 julia> ... # Define computation unit and run it.
-julia> E = cu.get_voxels_position("electrons")
+julia> E = cu.get_voxels_position(electron)
 ```
 """
 function get_energies(this::Computation_Unit,particle::Particle)

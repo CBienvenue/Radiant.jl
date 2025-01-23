@@ -4,27 +4,25 @@
 Structure used to define the discretization method associated with the transport of a particle.
 
 # Mandatory field(s)
-- `name::String`: name (or identifier) of the Discrete_Ordinates structure.
-- `particle::String`: particle for which the discretization methods is defined
-- `solver_type::String`: type of solver for the transport calculations.
-- `quadrature_type::String`: type of quadrature for the angular domain.
-- `quadrature_order::Int64`: order of the quadrature for the angular domain.
-- `legendre_order::Int64`: maximum order of the Legendre expansion for the differential cross-sections.
-- `scheme_type::Dict{String,String}`: type of schemes for the spatial or energy discretization.
-- `scheme_order::Dict{String,Int64}`: order of the expansion for the discretization schemes.
+- `particle::Particle` : particle for which the discretization methods is defined
+- `solver_type::String` : type of solver for the transport calculations.
+- `quadrature_type::String` : type of quadrature for the angular domain.
+- `quadrature_order::Int64` : order of the quadrature for the angular domain.
+- `legendre_order::Int64` : maximum order of the Legendre expansion for the differential cross-sections.
+- `scheme_type::Dict{String,String}` : type of schemes for the spatial or energy discretization.
+- `scheme_order::Dict{String,Int64}` : order of the expansion for the discretization schemes.
 
 # Optional field(s) - with default values
-- `angular_fokker_planck::String="finite-difference"`: type of discretization for the angular Fokker-Planck operation.
-- `angular_boltzmann::String="galerkin-d"`: type of discretization for the Boltzmann operation.
-- `convergence_criterion::Float64 = 1e-7`: convergence criterion of in-group iterations.
-- `maximum_iteration::Int64 = 300`: maximum number of in-group iterations.
-- `acceleration::Int64 = "none"`: acceleration method for the in-group iterations.
+- `angular_fokker_planck::String = "finite-difference"` : type of discretization for the angular Fokker-Planck operation.
+- `angular_boltzmann::String = "galerkin-d"` : type of discretization for the Boltzmann operation.
+- `convergence_criterion::Float64 = 1e-7` : convergence criterion of in-group iterations.
+- `maximum_iteration::Int64 = 300` : maximum number of in-group iterations.
+- `acceleration::Int64 = "none"` : acceleration method for the in-group iterations.
 
 """
 mutable struct Discrete_Ordinates
 
     # Variable(s)
-    name                       ::Union{Missing,String}
     particle                   ::Union{Missing,Particle}
     solver_type                ::Union{Missing,String}
     quadrature_type            ::Union{Missing,String}
@@ -43,7 +41,6 @@ mutable struct Discrete_Ordinates
 
         this = new()
 
-        this.name = missing
         this.particle = missing
         this.solver_type = missing
         this.quadrature_type = missing
@@ -63,16 +60,13 @@ end
 
 # Method(s)
 """
-    set_particle(this::Discrete_Ordinates,particle::String)
+    set_particle(this::Discrete_Ordinates,particle::Particle)
 
 To set the particle for which the transport discretization method is for. 
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `particle::String`: particle identifier, which is either:
-    - `particle = "photons"`: photons.
-    - `particle = "electrons"`: electrons.
-    - `particle = "positrons"`: positrons.
+- `this::Discrete_Ordinates` : discretization method.
+- `particle::Particle` : particle.
 
 # Output Argument(s)
 N/A
@@ -80,7 +74,7 @@ N/A
 # Examples
 ```jldoctest
 julia> m = Discrete_Ordinates()
-julia> m.set_particle("electrons") 
+julia> m.set_particle(electron) 
 ```
 """
 function set_particle(this::Discrete_Ordinates,particle::Particle)
@@ -93,14 +87,14 @@ end
 To set the solver for the particle transport.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `solver_type::String`: solver type, which can takes the following values:
-    - `solver_type = "BTE"`: Boltzmann transport equation
-    - `solver_type = "BFP"`: Boltzmann Fokker-Planck equation
-    - `solver_type = "BCSD"`: Boltzmann-CSD equation
-    - `solver_type = "FP"`: Fokker-Planck equation
-    - `solver_type = "CSD"`: Continuous slowing-down only equation
-    - `solver_type = "BFP-EF"`: Boltzmann Fokker-Planck without elastic
+- `this::Discrete_Ordinates` : discretization method.
+- `solver_type::String` : solver type, which can takes the following values:
+    - `solver_type = "BTE"` : Boltzmann transport equation
+    - `solver_type = "BFP"` : Boltzmann Fokker-Planck equation
+    - `solver_type = "BCSD"` : Boltzmann-CSD equation
+    - `solver_type = "FP"` : Fokker-Planck equation
+    - `solver_type = "CSD"` : Continuous slowing-down only equation
+    - `solver_type = "BFP-EF"` : Boltzmann Fokker-Planck without elastic
 
 # Output Argument(s)
 N/A
@@ -122,14 +116,14 @@ end
 To set the quadrature properties for the discretization of the angular domain.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `type::String`: type of quadrature, which can takes the following values:
-    - `type = "gauss-legendre"`: Gauss-Legendre quadrature (1D Cartesian geometry only)
-    - `type = "gauss-lobatto"`: Gauss-Lobatto quadrature (1D Cartesian geometry only)
-    - `type = "carlson"`: Carlson quadrature (2D or 3D Cartesian geometry only)
-    - `type = "gauss-legendre-chebychev"`: product quadrature between Gauss-Legendre and Chebychev quadratures (2D or 3D Cartesian geometry only)
-    - `type = "lebedev"`: Lebedev quadrature (2D or 3D Cartesian geometry only)
-- `order::Int64`: order of the quadrature, which is any integer greater than 2.
+- `this::Discrete_Ordinates` : discretization method.
+- `type::String` : type of quadrature, which can takes the following values:
+    - `type = "gauss-legendre"` : Gauss-Legendre quadrature (1D Cartesian geometry only)
+    - `type = "gauss-lobatto"` : Gauss-Lobatto quadrature (1D Cartesian geometry only)
+    - `type = "carlson"` : Carlson quadrature (2D or 3D Cartesian geometry only)
+    - `type = "gauss-legendre-chebychev"` : product quadrature between Gauss-Legendre and Chebychev quadratures (2D or 3D Cartesian geometry only)
+    - `type = "lebedev"` : Lebedev quadrature (2D or 3D Cartesian geometry only)
+- `order::Int64` : order of the quadrature, which is any integer greater than 2.
 
 # Output Argument(s)
 N/A
@@ -153,8 +147,8 @@ end
 To set the maximum order of the Legendre expansion of the differential cross-sections.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `legendre_order::Int64`: maximum order of the Legendre expansion of the differential cross-sections.
+- `this::Discrete_Ordinates` : discretization method.
+- `legendre_order::Int64` : maximum order of the Legendre expansion of the differential cross-sections.
 
 # Output Argument(s)
 N/A
@@ -176,11 +170,11 @@ end
 To set the discretization method for the angular Fokker-Planck term.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `angular_fokker_planck::String`: discretization method for the angular Fokker-Planck term, which can takes the following values:
-    - `angular_fokker_planck = "finite-difference"`: finite difference discretization.
-    - `angular_fokker_planck = "galerkin"`: galerkin moment-based discretization.
-    - `angular_fokker_planck = "differential-quadrature"`: finite difference discretization (1D Cartesian geometry only).
+- `this::Discrete_Ordinates` : discretization method.
+- `angular_fokker_planck::String` : discretization method for the angular Fokker-Planck term, which can takes the following values:
+    - `angular_fokker_planck = "finite-difference"` : finite difference discretization.
+    - `angular_fokker_planck = "galerkin"` : galerkin moment-based discretization.
+    - `angular_fokker_planck = "differential-quadrature"` : finite difference discretization (1D Cartesian geometry only).
     
 # Output Argument(s)
 N/A
@@ -202,11 +196,11 @@ end
 To set the angular discretization method for the Boltzmann operator.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `angular_boltzmann::String`: angular discretization method for the Boltzmann operator, which can takes the following values:
-    - `angular_boltzmann = "standard"`: standard discrete ordinates (SN) method.
-    - `angular_boltzmann = "galerkin-m"`: Galerkin method by inversion of the discrete-to-moment M matrix.
-    - `angular_boltzmann = "galerkin-d"`: Galerkin method by inversion of the moment-to-discrete D matrix.
+- `this::Discrete_Ordinates` : discretization method.
+- `angular_boltzmann::String` : angular discretization method for the Boltzmann operator, which can takes the following values:
+    - `angular_boltzmann = "standard"` : standard discrete ordinates (SN) method.
+    - `angular_boltzmann = "galerkin-m"` : Galerkin method by inversion of the discrete-to-moment M matrix.
+    - `angular_boltzmann = "galerkin-d"` : Galerkin method by inversion of the moment-to-discrete D matrix.
 
 # Output Argument(s)
 N/A
@@ -229,8 +223,8 @@ end
 To set the convergence criterion for the in-group iterations.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `convergence_criterion::Float64`: convergence criterion.
+- `this::Discrete_Ordinates` : discretization method.
+- `convergence_criterion::Float64` : convergence criterion.
 
 # Output Argument(s)
 N/A
@@ -252,8 +246,8 @@ end
 To set the maximum number of in-group iterations.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `maximum_iteration::Int64`: maximum number of in-group iterations.
+- `this::Discrete_Ordinates` : discretization method.
+- `maximum_iteration::Int64` : maximum number of in-group iterations.
 
 # Output Argument(s)
 N/A
@@ -275,17 +269,17 @@ end
 To set the type of discretization scheme for derivative along the specified spatial or energy axis.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `axis::String`: variable of the derivative for which the scheme is applied, which can takes the following values:
-    - `axis = "x"`: spatial x axis (discretization of the streaming term)
-    - `axis = "y"`: spatial y axis (discretization of the streaming term)
-    - `axis = "z"`: spatial z axis (discretization of the streaming term)
-    - `axis = "E"`: spatial E axis (discretization of the continuous slowing-down term)
-- `scheme_type::String`: type of scheme to be applied, which can takes the following values:
-    - `scheme_type = "DD"`: diamond difference scheme (any order)
-    - `scheme_type = "DG"`: discontinuous Galerkin scheme (any order)
-    - `scheme_type = "AWD"`: adaptive weighted scheme (1st and 2nd order only)
-- `scheme_order::Int64`: scheme order, which takes values greater than 1.
+- `this::Discrete_Ordinates` : discretization method.
+- `axis::String` : variable of the derivative for which the scheme is applied, which can takes the following values:
+    - `axis = "x"` : spatial x axis (discretization of the streaming term)
+    - `axis = "y"` : spatial y axis (discretization of the streaming term)
+    - `axis = "z"` : spatial z axis (discretization of the streaming term)
+    - `axis = "E"` : spatial E axis (discretization of the continuous slowing-down term)
+- `scheme_type::String` : type of scheme to be applied, which can takes the following values:
+    - `scheme_type = "DD"` : diamond difference scheme (any order)
+    - `scheme_type = "DG"` : discontinuous Galerkin scheme (any order)
+    - `scheme_type = "AWD"` : adaptive weighted scheme (1st and 2nd order only)
+- `scheme_order::Int64` : scheme order, which takes values greater than 1.
 
 # Output Argument(s)
 N/A
@@ -311,10 +305,10 @@ end
 To set the acceleration method for the in-group iteration process.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates`: discretization method.
-- `acceleration::String`: acceleration method, which takes the following values
-    - `acceleration = "none"`: none
-    - `acceleration = "livolant"`: livolant acceleration method
+- `this::Discrete_Ordinates` : discretization method.
+- `acceleration::String` : acceleration method, which takes the following values
+    - `acceleration = "none"` : none
+    - `acceleration = "livolant"` : livolant acceleration method
 # Output Argument(s)
 N/A
 
