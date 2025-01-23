@@ -6,7 +6,7 @@ There are many ways to install Radiant on your computer.
 
 Before installing the Radiant package, ensure you have the following prerequisites:
 
-1. **Julia**: Make sure Julia is installed on your system. You can download it from the [official Julia website](https://julialang.org/downloads/).
+1. **Julia**: Make sure Julia (> 1.6.7) is installed on your system. You can download it from the [official Julia website](https://julialang.org/downloads/).
 
 ## Installation from Julia's Package Manager
 
