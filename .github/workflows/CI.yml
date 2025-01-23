@@ -43,11 +43,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@latest
         with:
-          version: 1.5
+          version: 1.8  # Updated version
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); using Documenter, DocumenterCitations'
+      - name: Check CitationBibliography Path
+        run: julia --project=docs/ -e 'println(CitationBibliography); isfile(CitationBibliography) && println("File exists")'
+      - name: Set CitationBibliography (if necessary)
+        run: echo "CitationBibliography = \"/path/to/your/bibliography.bib\"" >> docs/Project.toml
       - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
         run: julia --project=docs/ docs/make.jl
