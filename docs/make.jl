@@ -3,10 +3,7 @@ using Documenter
 using Radiant
 using DocumenterCitations
 
-bib = DocumenterCitations.CitationBibliography(
-    joinpath(@__DIR__, "src", "refs.bib");
-    style=:numeric
-)
+bib = DocumenterCitations.CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"))
 
 makedocs(
     format = Documenter.HTML(assets=String["assets/citations.css"],),
