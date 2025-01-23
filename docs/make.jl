@@ -3,7 +3,7 @@ using Documenter
 using Radiant
 using DocumenterCitations
 
-bib = CitationBibliography(
+bib = DocumenterCitations.CitationBibliography(
     joinpath(@__DIR__, "src", "refs.bib");
     style=:numeric
 )
