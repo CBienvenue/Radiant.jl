@@ -88,10 +88,5 @@ makedocs(
     )
 
 deploydocs(
-    repo = "github.com/CBienvenue/Radiant.jl",
-    versions = [
-        "stable" => "v1.0.22",  # Ensure this matches the tag for version 1.0.22
-        "v1.0.22" => "v1.0.22",  # Explicitly specify the v1.0.22 version
-        "dev" => "main"  # Ensure the dev version points to the main branch
-        ]
+    repo = "github.com/CBienvenue/Radiant.jl"
 )
