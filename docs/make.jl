@@ -88,5 +88,5 @@ makedocs(
     )
 
 deploydocs(
-    repo = "github.com/CBienvenue/Radiant.jl"
+    repo = "github.com/CBienvenue/Radiant.jl.git"
 )
