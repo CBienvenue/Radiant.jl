@@ -89,6 +89,5 @@ makedocs(
 
 deploydocs(
     repo = "github.com/CBienvenue/Radiant.jl",
-    devurl = "dev",
-    versions = ["stable" => devurl, devurl, devurl => devurl]
+    versions = ["stable" => "v#.#.#", "v#.#.#", "dev" => "main"]
 )
