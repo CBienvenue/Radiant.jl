@@ -6,11 +6,11 @@ Radiant is a package that performs deterministic transport of ionizing radiation
 
 ## Installation
 
-For [Installation Instructions](https://cbienvenue.github.io/Radiant.jl/stable/quick_start/), please refer to the User's Guide.
+For [Installation Instructions](https://cbienvenue.github.io/Radiant.jl/quick_start/), please refer to the User's Guide.
 
 ## Documentation
 
-For a detailed account of the theory and the features of the Radiant package, please refer to the [Documentation](https://cbienvenue.github.io/Radiant.jl/stable/).
+For a detailed account of the theory and the features of the Radiant package, please refer to the [Documentation](https://cbienvenue.github.io/Radiant.jl/).
 
 > [!WARNING]
 > Incomplete - Work in progress
