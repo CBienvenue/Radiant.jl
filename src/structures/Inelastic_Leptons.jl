@@ -416,9 +416,9 @@ function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz:
     Cz_prime = zeros(Nz,153)
     spline_Cz = Vector{Function}(undef,Nz)
     if is_electron(particle)
-        particle_name = Electron
+        particle_name = "electrons"
     elseif is_positron(particle)
-        particle_name = Positron
+        particle_name = "positrons"
     else
         error("Unknown particle.")
     end

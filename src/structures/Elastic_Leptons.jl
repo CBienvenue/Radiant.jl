@@ -316,9 +316,9 @@ function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::
         path = joinpath(find_package_root(), "data", "mott_data_boschini_2013.jld2")
         data = load(path)
         if is_electron(particle)
-            particle_name = Electron
+            particle_name = "electrons"
         elseif is_positron(particle)
-            particle_name = Positron
+            particle_name = "positrons"
         else
             error("Unknown particle")
         end

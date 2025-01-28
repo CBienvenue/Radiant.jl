@@ -40,7 +40,7 @@ mutable struct Photoelectric <: Interaction
         this.is_AFP = false
         this.is_elastic = false
         this.is_preload_data = true
-        this.model = this.set_model("jendl5")
+        this.set_model("jendl5")
         this.scattering_model = "BTE"
         return this
     end
