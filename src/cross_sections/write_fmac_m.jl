@@ -83,11 +83,11 @@ open(fmac_file,"w") do file
         Npart = v1[2]
         particle_names = cross_sections.get_particles()
         for i in range(1,Npart)
-            if particle_names[i] == "electrons"
+            if is_electron(particle_names[i])
                 fmac_particles_names = "BETA"
-            elseif particle_names[i] == "photons"
+            elseif is_photon(particle_names[i])
                 fmac_particles_names = "GAMA"
-            elseif particle_names[i] == "positrons"
+            elseif is_positron(particle_names[i])
                 fmac_particles_names = "POSITR"
             else
                 error("Unkown particle.")

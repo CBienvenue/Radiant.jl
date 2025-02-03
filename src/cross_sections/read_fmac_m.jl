@@ -20,6 +20,7 @@ function read_fmac_m(cross_sections::Cross_Sections)
 #----
 file = cross_sections.get_file()
 materials = cross_sections.get_materials()
+particles = cross_sections.get_particles()
 Nmat = cross_sections.get_number_of_materials()
 densities = zeros(Nmat)
 for n in range(1,Nmat)
@@ -142,11 +143,13 @@ elseif record_III[index_III] == 2
 # Record III + 3 : Particle names
 elseif record_III[index_III] == 3
     particleNames = split(line," ")
+    particles_temp = particles
     for i in range(1,numberOfParticles)
-        if particleNames[i] == "GAMA" particleNames[i] = "photons" end
-        if particleNames[i] == "BETA" particleNames[i] = "electrons" end
-        if particleNames[i] == "POSITR" particleNames[i] = "positrons" end
+        if particleNames[i] == "GAMA" && any(is_photon.(particles)) push!(particles_temp,particles[findfirst(is_photon.(particles))]) end
+        if particleNames[i] == "BETA" && any(is_electron.(particles)) push!(particles_temp,particles[findfirst(is_electron.(particles))]) end
+        if particleNames[i] == "POSITR" && any(is_positron.(particles)) push!(particles_temp,particles[findfirst(is_positron.(particles))]) end
     end
+    particles = particles_temp
     index_III += 1
 
 # Record III + 4 : Particle rest energies by particle types
@@ -327,7 +330,7 @@ for n in range(1,numberOfParticles)
         mcs.set_momentum_transfer(continuousScatteringCrossSections[index+1:index+numberOfGroups[n],imat])
 
         sp_cutoff = stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat][end]
-        charge = particle_charge(String.(particleNames)[n])
+        charge = get_charge(particles[n])
         mcs.set_energy_deposition(push!(energyDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*energy_boundaries[n][end]/(energy_boundaries[n][end-1]-energy_boundaries[n][end])))
         mcs.set_charge_deposition(push!(chargeDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*(-charge)))
 
@@ -359,7 +362,7 @@ for n in range(1,numberOfParticles)
 
 end
 
-cross_sections.set_particles(String.(particleNames)[1:numberOfParticles])
+cross_sections.set_particles(particles)
 cross_sections.set_energy((energyBoundaries[1] + energyBoundaries[2])/2)
 cross_sections.set_cutoff(energyBoundaries[end])
 cross_sections.set_number_of_groups(numberOfGroups)

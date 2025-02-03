@@ -81,7 +81,6 @@ function is_ready_to_build(this::Cross_Sections)
     elseif lowercase(this.source) == "physics-models"
         if ismissing(this.energy) error("Cannot build multigroup cross-sections data. The midpoint energy of the highest energy group is not specified.") end
         if ismissing(this.cutoff) error("Cannot build multigroup cross-sections data. The cutoff energy (lower bound of the lowest energy group) is not specified.") end
-        if this.number_of_particles == 0 error("Cannot build multigroup cross-sections data. The particle names are not specified.") end
         if ismissing(this.number_of_groups) error("Cannot build multigroup cross-sections data. The number of energy group is not specified.") end
         if ismissing(this.group_structure) error("Cannot build multigroup cross-sections data. The multigroup structure is not specified.") end
         if ismissing(this.interactions) error("Cannot build multigroup cross-sections data. The type of interaction(s) between particle(s) and the material are not specified.") end
@@ -102,6 +101,7 @@ function is_ready_to_build(this::Cross_Sections)
         error("Unkown source of cross-sections data.")
     end
     if this.number_of_materials == 0 error("Cannot build multigroup cross-sections data. The material names are not specified.") end
+    if this.number_of_particles == 0 error("Cannot build multigroup cross-sections data. The particle names are not specified.") end
 end
 
 """
