@@ -163,6 +163,9 @@ function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,par
             ϕ₂ = g2 + g0
             σs = A * α * rₑ^2 * Z*(Z+0) * 1/Ei * (2*(1/2-ϵ)^2*ϕ₁+ϕ₂)
 
+            # If no explicit positron transport, generate two electrons
+            if ~any(is_positron.(particles)) σs *= 2 end
+ 
             # Sommerfield angular distribution
             β = sqrt(β²)
             if this.angular_scattering_type == "sommerfield"
