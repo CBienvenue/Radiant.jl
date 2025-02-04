@@ -143,7 +143,7 @@ elseif record_III[index_III] == 2
 # Record III + 3 : Particle names
 elseif record_III[index_III] == 3
     particleNames = split(line," ")
-    particles_temp = particles
+    particles_temp = Vector{Particle}()
     for i in range(1,numberOfParticles)
         if particleNames[i] == "GAMA" && any(is_photon.(particles)) push!(particles_temp,particles[findfirst(is_photon.(particles))]) end
         if particleNames[i] == "BETA" && any(is_electron.(particles)) push!(particles_temp,particles[findfirst(is_electron.(particles))]) end
@@ -362,7 +362,6 @@ for n in range(1,numberOfParticles)
 
 end
 
-cross_sections.set_particles(particles)
 cross_sections.set_energy((energyBoundaries[1] + energyBoundaries[2])/2)
 cross_sections.set_cutoff(energyBoundaries[end])
 cross_sections.set_number_of_groups(numberOfGroups)
