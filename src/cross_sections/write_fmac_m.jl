@@ -212,46 +212,42 @@ open(fmac_file,"w") do file
     particle_names = cross_sections.get_particles()
     Ng = cross_sections.get_number_of_groups()
     L = cross_sections.get_legendre_order()
-    for i in range(1,Npart), j in range(1,Npart)
+    for j in range(1,Npart), gf in range(1,Ng[j]), i in range(1,Npart), gi in range(1,Ng[i])
 
         dcs = cross_sections.get_scattering(particle_names[i],particle_names[j],L)
-
-        for gi in range(1,Ng[i]), gf in range(1,Ng[j]) 
-
-            dcs_ij = dcs[:,gi,gf,:]
-            
-            # Integer parameters
-            p = zeros(Int64,3+Nmat)
-            p[1] = sum(Ng[1:i-1]) + gi
-            p[2] = sum(Ng[1:j-1]) + gf
-            for n in range(1,Nmat)
-                if all(x -> x == 0.0,dcs_ij[n,:])
-                    p[2+n] = 0
-                    p[end] += 1
-                else
-                    L_eff = L+1
-                    for i in range(0,L)
-                        if (dcs_ij[n,L+1-i] != 0.0) L_eff = L-i; break; end
-                    end
-                    p[2+n] = -(L_eff+1)
-                    p[end] += L_eff+1
+        dcs_ij = dcs[:,gi,gf,:]
+        
+        # Integer parameters
+        p = zeros(Int64,3+Nmat)
+        p[1] = sum(Ng[1:i-1]) + gi
+        p[2] = sum(Ng[1:j-1]) + gf
+        for n in range(1,Nmat)
+            if all(x -> x == 0.0,dcs_ij[n,:])
+                p[2+n] = 0
+                p[end] += 1
+            else
+                L_eff = L+1
+                for i in range(0,L)
+                    if (dcs_ij[n,L+1-i] != 0.0) L_eff = L-i; break; end
                 end
+                p[2+n] = -(L_eff+1)
+                p[end] += L_eff+1
             end
-            print_int(file,p)
-
-            # Legendre moments of the differential cross sections
-            scat = Vector{Float64}()
-            for n in range(1,Nmat)
-                if p[2+n] == 0
-                    append!(scat,0.0)
-                else
-                    L_eff = -p[2+n]-1
-                    append!(scat,dcs_ij[n,1:L_eff+1])
-                end
-            end
-            print_float(file,scat)
-
         end
+        print_int(file,p)
+
+        # Legendre moments of the differential cross sections
+        scat = Vector{Float64}()
+        for n in range(1,Nmat)
+            if p[2+n] == 0
+                append!(scat,0.0)
+            else
+                L_eff = -p[2+n]-1
+                append!(scat,dcs_ij[n,1:L_eff+1])
+            end
+        end
+        print_float(file,scat)
+
     end
 
 end 
