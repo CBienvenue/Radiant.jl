@@ -94,7 +94,7 @@ isInnerConv=false
     if ~any(x->x!=0,sources) && ~any(x->x!=0,Qℓ) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
         𝚽ℓ = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
         ϵ_in = 0.0; i_in = 1
-        println(">>>Group ",ig," has converge ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+        println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
         break
     end
 
@@ -137,9 +137,9 @@ isInnerConv=false
         Ntot += i_in
         if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽ℓ[1,1,:,:,:]) .- vec(𝚽ℓ⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽ℓ⁻[1,1,1,:,:,:]) .- vec(𝚽ℓ⁻[2,1,1,:,:,:]) ).^2)) end
         if ~(i_in >= I_max)
-            println(">>>Group ",ig," has converge ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+            println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
         else
-            println(">>>Group ",ig," has not converge ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+            println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
         end
 
     else

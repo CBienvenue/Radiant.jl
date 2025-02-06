@@ -72,30 +72,71 @@ else
     end
 
     # Coupled transport
-    Ngen = solvers.get_number_of_generations()
-    for n in range(1,Ngen), p in range(1,Npart)
+    Ngen_max = solvers.get_maximum_number_of_generations()
+    ϵ_gen = solvers.get_convergence_criterion()
+    conv_type = solvers.get_convergence_type()
+    for n in range(1,Ngen_max)
 
-        i = particle_index[p]
+        flux⁻ = deepcopy(flux)
 
-        # Combinaison of fixed external and scattered particles sources 
-        source = particle_sources[i]
-        if n == 1 source += fixed_source[i] end
+        # Loop over particles
+        for p in range(1,Npart)
 
-        # Transport
-        particle_flux = compute_flux(cross_sections,geometry,method[i],source,is_CUDA)
-        flux.add_flux(particle_flux)
+            i = particle_index[p]
 
-        # Compute scattered particles sources
-        for q in range(1,Npart)
-            
-            j = particle_index[q]
-            if (n == Ngen) && (q ≤ p) continue end
+            # Combinaison of fixed external and scattered particles sources 
+            source = particle_sources[i]
+            if n == 1 source += fixed_source[i] end
 
-            if i != j
-                particle_sources[j] += particle_source(particle_flux,cross_sections,geometry,method[i],method[j])
-            else
-                particle_sources[i] = Source(particles[i],cross_sections,geometry,method[i])
+            # Transport
+            particle_flux = compute_flux(cross_sections,geometry,method[i],source,is_CUDA)
+            flux.add_flux(particle_flux)
+
+            # Compute scattered particles sources
+            for q in range(1,Npart)
+                
+                j = particle_index[q]
+                if (n == Ngen_max) && (q ≤ p) continue end
+
+                if i != j
+                    particle_sources[j] += particle_source(particle_flux,cross_sections,geometry,method[i],method[j])
+                else
+                    particle_sources[i] = Source(particles[i],cross_sections,geometry,method[i])
+                end
             end
+        end
+
+        # Verify convergence of the fluxes
+        px = 0
+        ϵmax = 0
+        if n != 1
+            if conv_type == "flux"
+                for p in range(1,Npart)
+                    ϵ = maximum(abs.(flux.get_flux(particles[p])[:,1,1,:,:,:] .- flux⁻.get_flux(particles[p])[:,1,1,:,:,:]) ./ max.(abs.(flux.get_flux(particles[p])[:,1,1,:,:,:]),eps()))
+                    ϵmax = max(ϵmax,ϵ)
+                    if (ϵ < ϵ_gen) px += 1 end
+                end
+            elseif conv_type == "energy-deposition"
+                Edep = energy_deposition(cross_sections,geometry,solvers,sources,flux,flux.get_particles())
+                Edep⁻ = energy_deposition(cross_sections,geometry,solvers,sources,flux⁻,flux.get_particles())
+                ϵ = maximum(abs.(Edep .- Edep⁻) ./ max.(abs.(Edep),eps()))
+                ϵmax = ϵ
+                if (ϵ < ϵ_gen) px = Npart end
+            elseif conv_type == "charge-deposition"
+                Cdep = charge_deposition(cross_sections,geometry,solvers,sources,flux,flux.get_particles())
+                Cdep⁻ = charge_deposition(cross_sections,geometry,solvers,sources,flux⁻,flux.get_particles())
+                ϵ = maximum(abs.(Cdep .- Cdep⁻) ./ max.(abs.(Cdep),eps()))
+                ϵmax = ϵ
+                if (ϵ < ϵ_gen) px = Npart end
+            else
+                error("Unknown convergence type.")
+            end
+        end
+        if px == Npart
+            println(">>>Particle fluxes have converged after $n particle generations ( ϵ = ",@sprintf("%.4E",ϵmax)," )")
+            break
+        elseif n == Ngen_max
+            println(">>>Particle fluxes have not converged after $n particle generations ( ϵ = ",@sprintf("%.4E",ϵmax)," )")
         end
     end
 end

@@ -5,7 +5,7 @@ Structure used to define the collection of discretization methods for transport 
 
 # Mandatory field(s)
 - `methods_list::Vector{Discrete_Ordinates}` : list of the particle methods
-- `number_of_generations::Int64` : number of particle generations to transport.
+- `maximum_number_of_generations::Int64` : number of particle generations to transport.
 
 # Optional field(s) - with default values
 - N/A
@@ -14,11 +14,13 @@ Structure used to define the collection of discretization methods for transport 
 mutable struct Solvers
 
     # Variable(s)
-    number_of_particles        ::Int64
-    particles                  ::Vector{Particle}
-    methods_names              ::Vector{String}
-    methods_list               ::Vector{Discrete_Ordinates}
-    number_of_generations      ::Int64
+    number_of_particles                ::Int64
+    particles                          ::Vector{Particle}
+    methods_names                      ::Vector{String}
+    methods_list                       ::Vector{Discrete_Ordinates}
+    maximum_number_of_generations      ::Int64
+    convergence_criterion              ::Real
+    convergence_type                   ::String
     
     # Constructor(s)
     function Solvers()
@@ -29,7 +31,9 @@ mutable struct Solvers
         this.particles = Vector{Particle}()
         this.methods_names = Vector{String}()
         this.methods_list = Vector{Discrete_Ordinates}()
-        this.number_of_generations = 1
+        this.maximum_number_of_generations = 10
+        this.convergence_criterion = 1e-7
+        this.convergence_type = "flux"
 
         return this
     end
@@ -63,13 +67,13 @@ function add_solver(this::Solvers,method::Discrete_Ordinates)
 end
 
 """
-    set_number_of_generations(this::Solvers,number_of_generations::Int64)
+    set_maximum_number_of_generations(this::Solvers,maximum_number_of_generations::Int64)
 
 To set the number of particle generation to transport during calculations
 
 # Input Argument(s)
 - `this::Solvers` : collection of discretization method.
-- `number_of_generations::Int64` : number of particle generation to transport during calculations.
+- `maximum_number_of_generations::Int64` : number of particle generation to transport during calculations.
 
 # Output Argument(s)
 N/A
@@ -77,12 +81,22 @@ N/A
 # Examples
 ```jldoctest
 julia> ms = Solvers()
-julia> ms.set_number_of_generations(2)
+julia> ms.set_maximum_number_of_generations(2)
 ```
 """
-function set_number_of_generations(this::Solvers,number_of_generations::Int64)
-    if number_of_generations < 1 error("Number of particle generations should be at least 1.") end
-    this.number_of_generations = number_of_generations
+function set_maximum_number_of_generations(this::Solvers,maximum_number_of_generations::Int64)
+    if maximum_number_of_generations < 1 error("Number of particle generations should be at least 1.") end
+    this.maximum_number_of_generations = maximum_number_of_generations
+end
+
+function set_convergence_criterion(this::Solvers,convergence_criterion::Real)
+    if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
+    this.convergence_criterion = convergence_criterion
+end
+
+function set_convergence_type(this::Solvers,convergence_type::String)
+    if convergence_type ∉ ["flux","energy-deposition","charge-deposition"] error("Unknown convergence type.") end
+    this.convergence_type = convergence_type
 end
 
 function get_method(this::Solvers,particle::Particle)
@@ -91,8 +105,16 @@ function get_method(this::Solvers,particle::Particle)
     return this.methods_list[index]
 end
 
-function get_number_of_generations(this::Solvers)
-    return this.number_of_generations
+function get_maximum_number_of_generations(this::Solvers)
+    return this.maximum_number_of_generations
+end
+
+function get_convergence_criterion(this::Solvers)
+    return this.convergence_criterion
+end
+
+function get_convergence_type(this::Solvers)
+    return this.convergence_type
 end
 
 function get_particles(this::Solvers)
