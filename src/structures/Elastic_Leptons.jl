@@ -142,7 +142,7 @@ Dictate how the cross-sections is distributed to the Boltzmann and the Fokker-Pl
 # Input Argument(s)
 - `this::Elastic_Leptons` : elastic leptons structure.
 - `solver::String` :  model of elastic scattering:
-    - `B` : the cross-sections are made to be used with the Boltzmann operator.
+    - `BTE` : the cross-sections are made to be used with the Boltzmann operator.
     - `FP` : the cross-sections are made to be used with the Fokker-Planck operator.
     - `BFP` : the cross-sections are distributed to the Boltzmann and Fokker-Planck operator.
 # Output Argument(s)
@@ -155,9 +155,10 @@ julia> elastic_leptons.is_AFP(false)
 ```
 """
 function set_solver(this::Elastic_Leptons,solver::String)
-    if uppercase(solver) ∉ ["B","FP","BFP"] error("Unkown elastic model: '$model'.") end
-    if lowercase(solver) ∈ ["FP","BFP"] this.is_AFP = true else this.is_AFP = false end
-    this.solver = lowercase(solver)
+    if uppercase(solver) ∉ ["BTE","FP","BFP"] error("Unkown elastic model: '$model'.") end
+    if uppercase(solver) ∈ ["FP","BFP"] this.is_AFP = true else this.is_AFP = false end
+    this.solver = uppercase(solver)
+    this.scattering_model = uppercase(solver)
 end
 
 function in_distribution(this::Elastic_Leptons)
