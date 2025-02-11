@@ -69,11 +69,12 @@ end
 """
     set_maximum_number_of_generations(this::Solvers,maximum_number_of_generations::Int64)
 
-To set the number of particle generation to transport during calculations
+To set the maximum number of particle generation to transport during calculations.
 
 # Input Argument(s)
 - `this::Solvers` : collection of discretization method.
-- `maximum_number_of_generations::Int64` : number of particle generation to transport during calculations.
+- `maximum_number_of_generations::Int64` : maximum number of particle generation to
+   transport during calculations.
 
 # Output Argument(s)
 N/A
@@ -89,11 +90,50 @@ function set_maximum_number_of_generations(this::Solvers,maximum_number_of_gener
     this.maximum_number_of_generations = maximum_number_of_generations
 end
 
+"""
+    set_convergence_criterion(this::Solvers,convergence_criterion::Real)
+
+To set the convergence criterion for coupled particle transport.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+- `convergence_criterion::Real` : convergence criterion.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ms = Solvers()
+julia> ms.set_convergence_criterion(1e-7)
+```
+"""
 function set_convergence_criterion(this::Solvers,convergence_criterion::Real)
     if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
     this.convergence_criterion = convergence_criterion
 end
 
+"""
+    set_convergence_type(this::Solvers,convergence_type::String)
+
+To set the convergence type.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+- `convergence_type::String` : convergence type, which can be:
+    - `convergence_type = "flux"` : convergence of the fluxes per particle.
+    - `convergence_type = "energy-deposition"` : convergence of the total energy deposition.
+    - `convergence_type = "charge-deposition"` : convergence of the total charge deposition.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ms = Solvers()
+julia> ms.set_convergence_type("energy-deposition")
+```
+"""
 function set_convergence_type(this::Solvers,convergence_type::String)
     if convergence_type ∉ ["flux","energy-deposition","charge-deposition"] error("Unknown convergence type.") end
     this.convergence_type = convergence_type
