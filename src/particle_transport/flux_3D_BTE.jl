@@ -2,8 +2,7 @@
     flux_3D_BTE(μ::Float64,η::Float64,ξ::Float64,Σt::Float64,Δx::Float64,Δy::Float64,
     Δz::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},
     𝚽z12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,C::Vector{Float64},
-    C::Vector{Float64},C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},
-    ωz::Array{Float64},isAdaptx::Bool,isAdapty::Bool,isAdaptz::Bool)
+    ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},isAdapt::Bool)
 
 Compute flux solution in a cell in 3D Cartesian geometry for the Boltzmann transport
 equation.
@@ -24,14 +23,10 @@ equation.
 - '𝒪y::Int64': spatial closure relation order.
 - '𝒪z::Int64': spatial closure relation order.
 - 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
 - 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
 - 'ωy::Array{Float64}': weighting factors of the y-axis scheme.
 - 'ωz::Array{Float64}': weighting factors of the z-axis scheme.
-- 'isAdaptx::Bool': boolean for adaptive calculations.
-- 'isAdapty::Bool': boolean for adaptive calculations.
-- 'isAdaptz::Bool': boolean for adaptive calculations.
+- 'isAdapt::Bool': boolean for adaptive calculations.
 
 # Output Argument(s)
 - '𝚽n::Vector{Float64}': angular in-cell flux.

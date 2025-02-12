@@ -27,18 +27,14 @@ index = sortperm(μn)
 i = 1
 for n in range(1,N)
     for m in range(1,2*N) 
-
         ϕ = π/N * (m-0.5)
         μ[i] = μn[n]
         η[i] = sqrt(1-μn[n]^2) * cos(ϕ)
         ξ[i] = sqrt(1-μn[n]^2) * sin(ϕ)
         w[i] = wn[n] * π/N
-
         i += 1
-
     end
 end
 
 return [μ,η,ξ],w
-
 end

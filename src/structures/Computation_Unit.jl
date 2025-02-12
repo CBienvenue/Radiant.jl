@@ -153,8 +153,7 @@ julia> cu.run()
 ```
 """
 function run(this::Computation_Unit)
-    is_CUDA = false
-    this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources,is_CUDA)
+    this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources)
 end
 
 """

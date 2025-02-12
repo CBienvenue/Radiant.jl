@@ -1,6 +1,7 @@
 """
     particle_source(flux::Flux_Per_Particle,cross_sections::Cross_Sections,
-    geometry::Geometry,discrete_ordinates_in::Discrete_Ordinates,discrete_ordinates_out::Discrete_Ordinates)
+    geometry::Geometry,discrete_ordinates_in::Discrete_Ordinates,
+    discrete_ordinates_out::Discrete_Ordinates)
 
 Compute the source of particle produced by interaction of another type of particle with
 matter.
@@ -86,7 +87,7 @@ if isCSD 𝚽cutoff = flux.get_flux_cutoff() else 𝚽cutoff = zeros(P_in,Nm_in,
 # Compute the scattered particle source
 Qℓ_in = zeros(Ng_in,P_in,Nm_in,Ns[1],Ns[2],Ns[3])
 Qℓ_out = zeros(Ng_out,P_out,Nm_out,Ns[1],Ns[2],Ns[3])
-scattering_source(Qℓ_in,𝚽ℓ,Σs,mat,P_in,pℓ_in,Nm_in,Ns,Ng_in,Ng_out,𝚽cutoff)
+particle_source(Qℓ_in,𝚽ℓ,Σs,mat,P_in,pℓ_in,Nm_in,Ns,Ng_in,Ng_out)
 
 # Adapt the source to the new particle flux expansions
 map = map_moments(𝒪_in,𝒪_out)

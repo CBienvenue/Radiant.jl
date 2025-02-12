@@ -1,8 +1,8 @@
 """
     flux_1D_BFP(isFC::Bool,μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},
-    𝚽x12::Vector{Float64},S⁻::Float64,S⁺::Float64,ΔE::Float64,𝚽E12::Vector{Float64},
-    𝒪E::Int64,𝒪x::Int64,C::Vector{Float64},C::Vector{Float64},ωE::Array{Float64},
-    ωx::Array{Float64},isAdaptE::Bool,isAdaptx::Bool)
+    𝚽x12::Vector{Float64},S⁻::Float64,S⁺::Float64,S::Vector{Float64},ΔE::Float64,
+    𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,C::Vector{Float64},ωE::Array{Float64},
+    ωx::Array{Float64},isAdapt::Bool,𝒲::Array{Float64})
 
 Compute flux solution in a cell in 1D Cartesian geometry for the Boltzmann Fokker-Planck
 equation.
@@ -14,18 +14,18 @@ equation.
 - 'Δx::Float64': size of voxels along x-axis.
 - 'Qn::Vector{Float64}': angular in-cell source.
 - '𝚽x12::Vector{Float64}': incoming angular flux along x-axis.
-- 'S⁻::Float64': restricted stopping power at upper energy group boundary.
-- 'S⁺::Float64': restricted stopping power at lower energy group boundary.
+- 'S⁻::Float64': stopping powers at upper energy group boundary.
+- 'S⁺::Float64': stopping powers at lower energy group boundary.
+- 'S::Vector{Float64}': stopping powers.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Vector{Float64}': incoming angular flux along E-axis.
 - '𝒪E::Int64': energy closure relation order.
 - '𝒪x::Int64': spatial closure relation order.
 - 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
 - 'ωE::Array{Float64}': weighting factors of the E-axis scheme.
 - 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
-- 'isAdaptE::Bool': boolean for adaptive calculations.
-- 'isAdaptx::Bool': boolean for adaptive calculations.
+- 'isAdapt::Bool': boolean for adaptive calculations.
+- '𝒲::Array{Float64}' : weighting constants.
 
 # Output Argument(s)
 - '𝚽n::Vector{Float64}': angular in-cell flux.

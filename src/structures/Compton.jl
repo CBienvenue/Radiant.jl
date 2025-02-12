@@ -99,6 +99,21 @@ function set_model(this::Compton,model::String)
     this.model = lowercase(model)
 end
 
+"""
+    in_distribution(this::Compton)
+
+Describe the energy discretization method for the incoming particle in the Compton
+interaction.
+
+# Input Argument(s)
+- `this::Compton` : Compton structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Compton)
     is_dirac = false
     N = 8
@@ -106,6 +121,21 @@ function in_distribution(this::Compton)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Compton)
+
+Describe the energy discretization method for the outgoing particle in the Compton
+interaction.
+
+# Input Argument(s)
+- `this::Compton` : Compton structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Compton)
     is_dirac = false
     N = 8
@@ -113,7 +143,25 @@ function out_distribution(this::Compton)
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ui::Float64)
+"""
+    bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
+
+Gives the integration energy bounds for the outgoing particle for Compton interaction. 
+
+# Input Argument(s)
+- `this::Compton` : Compton structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `Ei::Float64` : energy of the incoming particle.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
+function bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
     # Scattered photon
     if type == "S" 
         Ef⁻ = min(Ei,Ef⁻)
@@ -135,7 +183,27 @@ function bounds(this::Compton,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::St
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::Float64,Efmin::Float64,Z::Int64,iz::Int64,δi::Int64)
+"""
+    dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int64,iz::Int64,
+    δi::Int64)
+
+Gives the Legendre moments of the scattering cross-sections for Compton interaction. 
+
+# Input Argument(s)
+- `this::Compton` : Compton structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Ef::Float64` : outgoing particle energy.
+- `type::String` : type of interaction.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element.
+- `δi::Int64` : subshell index.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
+function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int64,iz::Int64,δi::Int64)
 
     if this.model ∈ ["klein-nishina","waller-hartree"]
 
@@ -244,6 +312,22 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Efmax::
     end
 end
 
+"""
+    tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
+
+Gives the total cross-section for Compton. 
+
+# Input Argument(s)
+- `this::Compton` : Compton structure.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `Eout::Vector{Float64}` : energy boundaries associated with the outgoing particle.
+- `iz::Int64` : element index.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
 
     if this.model ∈ ["klein-nishina","waller-hartree"]
@@ -255,7 +339,7 @@ function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
         for gf in range(1,Ngf+1)
             Ef⁻ = Eout[gf]
             if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S",0.0)
+            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S")
             if isSkip continue end
             ΔEf = Ef⁻ - Ef⁺
             for n in range(1,Np)
@@ -300,7 +384,7 @@ function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
             Ef⁻ = Eout2[gf]
             if (gf != Ngf+1) Ef⁺ = Eout2[gf+1] else Ef⁺ = 0.0 end
             for δi in range(1,Nshells)
-                Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S",Ui[δi])
+                Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S")
                 if isSkip continue end
                 ΔEf = Ef⁻ - Ef⁺
                 for n in range(1,Np)
@@ -327,7 +411,21 @@ function tcs(this::Compton,Ei::Float64,Z::Int64,Eout::Vector{Float64},iz::Int64)
     end
 end
 
-function preload_data(this::Compton,L::Int64,Z::Vector{Int64})
+"""
+    preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,
+    type::String,Eout::Vector{Float64},interactions::Vector{Interaction})
+
+Preload data for multigroup annihilation calculations. 
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.  
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+
+# Output Argument(s)
+N/A
+
+"""
+function preload_data(this::Compton,Z::Vector{Int64})
     
     # Incoherent scattering factor
     if this.model == "waller-hartree"

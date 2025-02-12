@@ -1,3 +1,18 @@
+"""
+    custom_cross_sections(cross_sections::Cross_Sections)
+
+Generate custom cross-sections.
+
+# Input Argument(s)
+- 'cross_sections::Cross_Sections': cross sections informations.
+
+# Output Argument(s)
+N/A
+
+# Reference(s)
+N/A
+
+"""
 function custom_cross_sections(cross_sections::Cross_Sections)
 
     Nmat = cross_sections.get_number_of_materials()

@@ -104,6 +104,21 @@ function set_model(this::Photoelectric,model::String)
     end
 end
 
+"""
+    in_distribution(this::Photoelectric)
+
+Describe the energy discretization method for the incoming particle in the photoelectric
+interaction.
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Photoelectric)
     is_dirac = false
     N = 8
@@ -111,6 +126,22 @@ function in_distribution(this::Photoelectric)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Photoelectric,type::String)
+
+Describe the energy discretization method for the outgoing particle in the photoelectric
+interaction.
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Photoelectric,type::String)
     if type == "A"
         is_dirac = false
@@ -126,11 +157,48 @@ function out_distribution(this::Photoelectric,type::String)
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Photoelectric,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,type::String,Ui::Float64,E_in::Vector{Float64})
+"""
+    bounds(this::Photoelectric,Ef⁻::Float64,Ef⁺::Float64)
+
+Gives the integration energy bounds for the outgoing particle for photoelectric
+interaction. 
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
+function bounds(this::Photoelectric,Ef⁻::Float64,Ef⁺::Float64)
     if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     return Ef⁻,Ef⁺,isSkip
 end
 
+"""
+    dcs(this::Photoelectric,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef⁻::Float64,
+    Ef⁺::Float64)
+
+Gives the Legendre moments of the scattering cross-sections for photoelectric interaction. 
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element in the material.
+- `δi::Int64` : subshell index.
+- `Ef⁻::Float64` : upper bounds associated with the outgoing particle.
+- `Ef⁺::Float64` : lower bounds associated with the outgoing particle.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function dcs(this::Photoelectric,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64)
 
     # Absorption cross section
@@ -179,6 +247,21 @@ function dcs(this::Photoelectric,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::In
     return σℓ
 end
 
+"""
+    tcs(this::Photoelectric,Ei::Float64,Z::Int64,iz::Int64)
+
+Gives the total cross-section for photoelectric interaction. 
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element in the material.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Photoelectric,Ei::Float64,Z::Int64,iz::Int64)
 
     if this.model == "jendl5"
@@ -196,7 +279,22 @@ function tcs(this::Photoelectric,Ei::Float64,Z::Int64,iz::Int64)
     return σt
 end
 
-function preload_data(this::Photoelectric,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64)
+"""
+   preload_data(this::Photoelectric,Z::Vector{Int64},ρ::Float64,L::Int64)
+
+Preload data for multigroup photoelectric calculations.
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `ρ::Float64` : material density.
+- `L::Int64` : Legendre truncation order.
+
+# Output Argument(s)
+N/A
+
+"""
+function preload_data(this::Photoelectric,Z::Vector{Int64},ρ::Float64,L::Int64)
     this.preload_photoelectric_cross_sections(Z,ρ)
     # Precompute angular integration factors
     this.Cℓk = zeros(L+1,div(L,2)+1)
@@ -205,6 +303,20 @@ function preload_data(this::Photoelectric,Z::Vector{Int64},ωz::Vector{Float64},
     end
 end
 
+"""
+    preload_photoelectric_cross_sections(this::Photoelectric,Z::Vector{Int64},ρ::Float64)
+
+Preload data for photoelectric cross-sections per subshells.
+
+# Input Argument(s)
+- `this::Photoelectric` : photoelectric structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `ρ::Float64` : material density.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_photoelectric_cross_sections(this::Photoelectric,Z::Vector{Int64},ρ::Float64)
 
     if this.model == "jendl5"

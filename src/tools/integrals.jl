@@ -265,8 +265,6 @@ Compute the integral I = 0.5 ∫ Pⱼ₁(x)Pⱼ₂(x)Pⱼ₃(x) dx evaluated bet
 # Author(s)
 Charles Bienvenue
 
-# Reference(s)
-
 """
 function 𝒢₆(j₁::Int64,j₂::Int64,j₃::Int64)
 

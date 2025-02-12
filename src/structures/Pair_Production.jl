@@ -102,6 +102,21 @@ function set_angular_scattering_type(this::Pair_Production,angular_scattering_ty
     this.angular_scattering_type = lowercase(angular_scattering_type)
 end
 
+"""
+    in_distribution(this::Pair_Production)
+
+Describe the energy discretization method for the incoming particle in the pair production
+interaction.
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Pair_Production)
     is_dirac = false
     N = 8
@@ -109,6 +124,21 @@ function in_distribution(this::Pair_Production)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Pair_Production)
+
+Describe the energy discretization method for the outgoing particle in the pair production
+interaction.
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Pair_Production)
     is_dirac = false
     N = 8
@@ -116,7 +146,25 @@ function out_distribution(this::Pair_Production)
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Z::Int64)
+"""
+    bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
+
+Gives the integration energy bounds for the outgoing particle for pair production. 
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `Ei::Float64` : energy of the incoming particle.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
+function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
     # Electron/positron production
     if type == "P" || type == "A"
         Ef⁻ = min(Ef⁻,Ei-2)
@@ -127,7 +175,27 @@ function bounds(this::Pair_Production,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ecutoff::Float64)
+"""
+    dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,
+    type::String,iz::Int64)
+
+Gives the Legendre moments of the scattering cross-sections for pair production. 
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Ef::Float64` : outgoing particle energy.
+- `Z::Int64` : atomic number.
+- `type::String` : type of interaction.
+- `iz::Int64` : index of the element in the material.
+- `particles::Vector{Particle}` : list of particles.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
+function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,type::String,iz::Int64,particles::Vector{Particle})
 
     # Initialization
     mₑc² = 0.510999
@@ -219,6 +287,24 @@ function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,par
     return σℓ
 end
 
+"""
+    tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{Float64},
+    type::String)
+
+Gives the total cross-section for pair production. 
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element in the material.
+- `Eout::Vector{Float64}` : outgoing energy boundaries.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{Float64},type::String)
 
     # Initialization
@@ -248,7 +334,7 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
         for gf in range(1,Ngf+1)
             Ef⁻ = Eout[gf]
             if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,type,Z)
+            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,type)
             if isSkip continue end
             ΔEf = Ef⁻ - Ef⁺
             for n in range(1,Np)
@@ -270,6 +356,23 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
     return σt
 end
 
+"""
+    preload_data(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin::Float64,E_out::Vector{Float64},L::Int64)
+
+Preload data for multigroup pair production calculations.
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `Emax::Float64` : maximum energy of the incoming particle.
+- `Emin::Float64` : minimum energy of the incoming particle.
+- `Eout::Vector{Float64}` : outgoing energy boundaries.
+- `L::Int64` : Legendre truncation order.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_data(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin::Float64,E_out::Vector{Float64},L::Int64)
     this.preload_normalization_factor(Z,Emax,Emin,E_out)
     if this.angular_scattering_type == "modified_dipole"
@@ -286,6 +389,23 @@ function preload_data(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin:
     end
 end
 
+"""
+    preload_data(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin::Float64,E_out::Vector{Float64})
+
+Preload renormalization factor for pair production cross-sections
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `Emax::Float64` : maximum energy of the incoming particle.
+- `Emin::Float64` : minimum energy of the incoming particle.
+- `Eout::Vector{Float64}` : outgoing energy boundaries.
+- `L::Int64` : Legendre truncation order.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_normalization_factor(this::Pair_Production,Z::Vector{Int64},Emax::Float64,Emin::Float64,E_out::Vector{Float64})
     path = joinpath(find_package_root(), "data", "pair_production_JENDL5.jld2")
     data = load(path)
@@ -324,6 +444,19 @@ function preload_normalization_factor(this::Pair_Production,Z::Vector{Int64},Ema
     end
 end
 
+"""
+    preload_angular_distribution(this::Pair_Production,Z::Vector{Int64})
+
+Preload angular distribution of produced leptons.
+
+# Input Argument(s)
+- `this::Pair_Production` : pair production structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_angular_distribution(this::Pair_Production,Z::Vector{Int64})
 
     # Extract vectors

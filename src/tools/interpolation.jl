@@ -1,4 +1,17 @@
+"""
+    linear_interpolation(xi::Float64,x::Vector{Float64},f::Vector{Float64})
 
+Linear interpolation.
+
+# Input Argument(s)
+- 'xi::Float64': x-value at which to estimate fi.
+- 'x::Vector{Float64}': vector of x-values.
+- 'f::Vector{Float64}': vector of f-values.
+
+# Output Argument(s)
+- 'fi::Float64': interpolated f-value.
+
+"""
 function linear_interpolation(xi::Float64,x::Vector{Float64},f::Vector{Float64})
     
     # Find the index
@@ -14,6 +27,22 @@ function linear_interpolation(xi::Float64,x::Vector{Float64},f::Vector{Float64})
 
 end
 
+"""
+    linear_interpolation(xi::Float64,x::Vector{Float64},f::Vector{Float64})
+
+Bilinear interpolation.
+
+# Input Argument(s)
+- 'xi::Float64': x-value at which to estimate fi.
+- 'xi::Float64': y-value at which to estimate fi.
+- 'x::Vector{Float64}': vector of x-values.
+- 'y::Vector{Float64}': vector of y-values.
+- 'f::Array{Float64}': array of f-values.
+
+# Output Argument(s)
+- 'fi::Float64': interpolated f-value.
+
+"""
 function linear_interpolation(xi::Float64,yi::Float64,x::Vector{Float64},y::Vector{Float64},f::Array{Float64})
     
     # Find the index

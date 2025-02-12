@@ -161,6 +161,21 @@ function set_solver(this::Elastic_Leptons,solver::String)
     this.scattering_model = uppercase(solver)
 end
 
+"""
+    in_distribution(this::Elastic_Leptons)
+
+Describe the energy discretization method for the incoming particle in the elastic lepton
+interaction.
+
+# Input Argument(s)
+- `this::Elastic_Leptons` : elastic lepton structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Elastic_Leptons)
     is_dirac = false
     N = 8
@@ -168,6 +183,21 @@ function in_distribution(this::Elastic_Leptons)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Elastic_Leptons)
+
+Describe the energy discretization method for the outgoing particle in the elastic lepton
+interaction.
+
+# Input Argument(s)
+- `this::Elastic_Leptons` : elastic lepton structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Elastic_Leptons)
     is_dirac = true
     N = 1
@@ -175,11 +205,50 @@ function out_distribution(this::Elastic_Leptons)
     return is_dirac, N, quadrature
 end
 
+"""
+    bounds(this::Elastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
+
+Gives the integration energy bounds for the outgoing particle for elastic lepton
+interaction. 
+
+# Input Argument(s)
+- `this::Elastic_Leptons` : elastic lepton structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `gi::Int64` : group of the incoming particle.
+- `gf::Int64` : group of the outgoing particle.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
 function bounds(this::Elastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
     if (gf != gi) isSkip = true else isSkip = false end # Elastic scattering only
     return Ef⁻,Ef⁺,isSkip
 end
 
+"""
+    dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Particle,
+    Ecutoff::Float64,iz::Int64)
+
+Gives the Legendre moments of the scattering cross-sections for elastic lepton
+interaction. 
+
+# Input Argument(s)
+- `this::Annihilation` : elastic lepton structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `particle::Particle` : incoming particle.
+- `Ecutoff::Float64` : cutoff energy.
+- `iz::Int64` : index of the element in the material.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
 
     # Initialization
@@ -305,11 +374,44 @@ function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Parti
     return σℓ
 end
 
+"""
+    tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
+
+Gives the total cross-section for elastic lepton interaction. 
+
+# Input Argument(s)
+- `this::Elastic_Leptons` : elastic lepton structure.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `particle::Particle` : incoming particle.
+- `Ecutoff::Float64` : cutoff energy.
+- `iz::Int64` : element index in the material.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
     σt = dcs(this,0,Ei,Z,particle,Ecutoff,iz)[1]
     return σt
 end
 
+"""
+    preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::Particle,interactions::Vector{<:Interaction})
+
+Preload data for multigroup elastic lepton interaction calculations. 
+
+# Input Argument(s)
+- `this::Elastic_Leptons` : annihilation structure.  
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material. 
+- `L::Int64` : Legendre truncation order.
+- `particle::Particle` : incoming particle.
+- `interactions::Vector{Interaction}` : list of all interactions in the multigroup library.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_data(this::Elastic_Leptons,Z::Vector{Int64},L::Int64,particle::Particle,interactions::Vector{<:Interaction})
 
     # Load Boschini data for Mott cross-sections

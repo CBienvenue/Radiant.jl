@@ -62,6 +62,8 @@ RadiantObject = Union{
     Surface_Source,
     Volume_Source,
     Fixed_Sources,
+    Source,
+    Sources,
     Computation_Unit,
     Flux_Per_Particle,
     Flux,
@@ -69,6 +71,13 @@ RadiantObject = Union{
     Particle
 }
 
+"""
+    Base.getproperty(object::RadiantObject, s::Symbol)
+
+Special function to enable calling a method "m(this::T,...)" on a struct "S" of type "T"
+using the notation "S.m(...)" for a subset of struct.
+
+"""
 function Base.getproperty(object::RadiantObject, s::Symbol)
     if hasfield(typeof(object), s)
         return getfield(object, s)

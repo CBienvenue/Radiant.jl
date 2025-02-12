@@ -131,6 +131,21 @@ function set_scattering_model(this::Bremsstrahlung,scattering_model::String)
     this.scattering_model = uppercase(scattering_model)
 end
 
+"""
+    in_distribution(this::Bremsstrahlung)
+
+Describe the energy discretization method for the incoming particle in the bremsstrahlung
+interaction.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Bremsstrahlung)
     is_dirac = false
     N = 8
@@ -138,6 +153,21 @@ function in_distribution(this::Bremsstrahlung)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Bremsstrahlung)
+
+Describe the energy discretization method for the outgoing particle in the bremsstrahlung
+interaction.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Bremsstrahlung)
     is_dirac = false
     N = 8
@@ -145,6 +175,26 @@ function out_distribution(this::Bremsstrahlung)
     return is_dirac, N, quadrature
 end
 
+"""
+    bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,
+    Ec::Float64)
+
+Gives the integration energy bounds for the outgoing particle for bremsstrahlung. 
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `Ei::Float64` : energy of the incoming particle.
+- `type::String` : type of interaction.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
 function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64)
     # Scattered electron or positron
     if type == "S" 
@@ -163,6 +213,26 @@ function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,t
     return Ef⁻,Ef⁺,isSkip
 end
 
+"""
+    dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,
+    type::String,iz::Int64)
+
+Gives the Legendre moments of the scattering cross-sections for bremsstrahlung. 
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Ef::Float64` : outgoing particle energy.
+- `Z::Int64` : atomic number.
+- `particle::Particle` : incoming particle.
+- `type::String` : type of interaction.
+- `iz::Int64` : index of the element in the material.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64)
 
     # Inititalisation
@@ -248,6 +318,26 @@ function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,part
     return σℓ
 end
 
+"""
+    tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,
+    type::String,Eout::Vector{Float64})
+
+Gives the total cross-section for bremsstrahlung. 
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+- `iz::Int64` : index of the element in the material.
+- `particle::Particle` : incoming particle.
+- `type::String` : type of interaction.
+- `Eout::Vector{Float64}` : outgoing energy boundaries.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,type::String,Eout::Vector{Float64})
 
     # Inititalization
@@ -282,7 +372,27 @@ function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,par
     return σt
 end
 
-function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::Particle)
+"""
+    sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,
+    Ec::Float64,Eout::Vector{Float64},particle::Particle)
+
+Gives the stopping power for bremsstrahlung.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
+- `ρ::Float64` : material density.
+- `Ei::Float64` : incoming particle energy.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+- `Eout::Vector{Float64}` : energy boundaries associated with outgoing particles.
+- `particle::Particle` : incoming particle.
+
+# Output Argument(s)
+- `S::Float64` : stopping power.
+
+"""
+function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::Particle)
 
     # Initialization
     rₑ = 2.81794092e-13 # (in cm)
@@ -334,10 +444,39 @@ function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float
     return S
 end
 
+"""
+    mt(this::Bremsstrahlung)
+
+Gives the momentum transfer for bremsstrahlung.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+
+# Output Argument(s)
+- `α::Float64` : momentum transfer.
+
+"""
 function mt(this::Bremsstrahlung)
-    return 0.0 # Because μ = 1.0
+    α = 0.0 # Because μ = 1.0
+    return α
 end
 
+"""
+    preload_data(this::Bremsstrahlung,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64)
+
+Preload data for multigroup bremsstrahlung calculations.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `Emax::Float64` : maximum energy of the incoming particle.
+- `Emin::Float64` : minimum energy of the incoming particle.
+- `L::Int64` : Legendre truncation order.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_data(this::Bremsstrahlung,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64)
 
     # Preload cross-sections and stopping powers functions
@@ -358,6 +497,22 @@ function preload_data(this::Bremsstrahlung,Z::Vector{Int64},Emax::Float64,Emin::
     end
 end
 
+"""
+    preload_bremsstrahlung_cross_sections(this::Bremsstrahlung,Z::Vector{Int64},
+    Emax::Float64,Emin::Float64)
+
+Preload data for multigroup bremsstrahlung cross-sections.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `Emax::Float64` : maximum energy of the incoming particle.
+- `Emin::Float64` : minimum energy of the incoming particle.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_bremsstrahlung_cross_sections(this::Bremsstrahlung,Z::Vector{Int64},Emax::Float64,Emin::Float64)
 
     # Initialize
@@ -410,6 +565,22 @@ function preload_bremsstrahlung_cross_sections(this::Bremsstrahlung,Z::Vector{In
     end
 end
 
+"""
+    preload_bremsstrahlung_stopping_powers(this::Bremsstrahlung,Z::Vector{Int64},
+    Emax::Float64,Emin::Float64)
+
+Preload data for multigroup bremsstrahlung stopping powers.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `Emax::Float64` : maximum energy of the incoming particle.
+- `Emin::Float64` : minimum energy of the incoming particle.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_bremsstrahlung_stopping_powers(this::Bremsstrahlung,Z::Vector{Int64},Emax::Float64,Emin::Float64)
 
     # Initialize
@@ -454,6 +625,19 @@ function preload_bremsstrahlung_stopping_powers(this::Bremsstrahlung,Z::Vector{I
 
 end
 
+"""
+    preload_angular_distribution(this::Bremsstrahlung,Z::Vector{Int64})
+
+Preload data for bremsstrahlung photon angular distribution.
+
+# Input Argument(s)
+- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_angular_distribution(this::Bremsstrahlung,Z::Vector{Int64})
 
     # Extract vectors

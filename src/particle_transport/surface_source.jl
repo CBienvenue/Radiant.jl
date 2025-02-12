@@ -1,5 +1,7 @@
 """
-    surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Particle,
+    source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,
+    discrete_ordinates::Discrete_Ordinates)
 
 Prepare the volume source produced by fixed sources for transport calculations.
 

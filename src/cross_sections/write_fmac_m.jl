@@ -1,15 +1,13 @@
 """
     write_fmac_m(cross_sections::Cross_Sections)
 
-Write FMAC-M cross sections file from Cross_Sections structure.
-
-See also [`generate_cross_sections`](@ref).
+Write FMAC-M cross sections file.
 
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross sections informations.
 
 # Output Argument(s)
-- 'cross_sections::Cross_Sections': cross sections with actualized informations.
+N/A
 
 # Reference(s)
 N/A
@@ -253,11 +251,43 @@ open(fmac_file,"w") do file
 end 
 end
 
+"""
+    print_int(file::IOStream,i::Int64)
+
+Write a single integer to the FMAC-M file.
+
+# Input Argument(s)
+- 'file::IOStream' : file.
+- 'i::Int64' : integer to write in the file.
+
+# Output Argument(s)
+N/A
+
+# Reference(s)
+N/A
+
+"""
 function print_int(file::IOStream,i::Int64)
     space_length = 12 - length(string(i))
     print(file,string(join(fill(" ",space_length)),string(i)))
 end
 
+"""
+    print_float(file::IOStream,i::Float64)
+
+Write a single real to the FMAC-M file.
+
+# Input Argument(s)
+- 'file::IOStream' : file.
+- 'i::Float64' : real to write in the file.
+
+# Output Argument(s)
+N/A
+
+# Reference(s)
+N/A
+
+"""
 function print_float(file::IOStream,i::Float64)
 
     if (sign(i) == -1) sng = "-" else sng = " " end
@@ -289,6 +319,22 @@ function print_float(file::IOStream,i::Float64)
 
 end
 
+"""
+    print_int(file::IOStream,v::Vector{Int64})
+
+Write a vector of integer to the FMAC-M file.
+
+# Input Argument(s)
+- 'file::IOStream' : file.
+- 'v::Vector{Int64}' : integer vector to write in the file.
+
+# Output Argument(s)
+N/A
+
+# Reference(s)
+N/A
+
+"""
 function print_int(file::IOStream,v::Vector{Int64})
     Nint = 0
     for i in range(1,length(v))
@@ -299,6 +345,22 @@ function print_int(file::IOStream,v::Vector{Int64})
     if mod(Nint,6) != 0 println(file) end
 end
 
+"""
+    print_float(file::IOStream,v::Vector{Float64})
+
+Write a vector of real to the FMAC-M file.
+
+# Input Argument(s)
+- 'file::IOStream' : file.
+- 'v::Vector{Float64}' : real vector to write in the file.
+
+# Output Argument(s)
+N/A
+
+# Reference(s)
+N/A
+
+"""
 function print_float(file::IOStream,v::Vector{Float64})
     Nint = 0
     for i in range(1,length(v))

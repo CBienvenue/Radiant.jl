@@ -7,7 +7,7 @@ Generate cross sections and save their content in a Cross_Sections structure.
 - 'cross_sections::Cross_Sections': cross sections informations.
 
 # Output Argument(s)
-- 'cross_sections::Cross_Sections': cross sections with actualized informations.
+N/A
 
 # Reference(s)
 N/A

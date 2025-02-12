@@ -1,16 +1,19 @@
 """
-    scheme_weights(𝒪::Vector{Int64},schemes::Vector{String})
+    scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
 
 Compute the weights of the closure relations. 
 
 # Input Argument(s)
 - '𝒪::Vector{Int64}': vector of orders of the flux polynomial expansion.
 - 'schemes::Vector{String}': vector of types of the closure relation.
+- 'Ndims::Int64': geometry dimension.
+- 'isCSD::Bool': boolean indicating if the continuous slowing-down term is used or not.
 
 # Output Argument(s)
 - 'ω::Vector{Array{Float64}}': weighting factors of the scheme.
 - '𝒞::Vector{Float64}': constants related to normalized Legendre expansion.
-- 'is_adaptive::Vector{Bool}': booleans for adaptive calculations.
+- 'is_adaptive::Bool': booleans for adaptive calculations.
+- '𝒲::Array{Float64}' : weighting constants.
 
 # Reference(s)
 - Voloschenko (2011) : Some improvements in solving the transport equation by the use of

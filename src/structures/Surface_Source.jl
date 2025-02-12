@@ -196,10 +196,34 @@ function set_boundaries(this::Surface_Source,axis::String,boundaries::Vector{Flo
     this.boundaries[axis] = boundaries
 end
 
+"""
+    get_particle(this::Surface_Source)
+
+Get the source particle.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+
+# Output Argument(s)
+- `particle::Particle` : particle.
+
+"""
 function get_particle(this::Surface_Source)
     return this.particle
 end
 
+"""
+    get_normalization_factor(this::Surface_Source)
+
+Get the source normalization factor.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+
+# Output Argument(s)
+- `normalization_factor::Float64` : source normalization factor.
+
+"""
 function get_normalization_factor(this::Surface_Source)
     return this.normalization_factor
 end

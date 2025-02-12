@@ -12,7 +12,7 @@ Estimate the solution using estimate from Livolant acceleration method.
 - '𝚽::Array{Float64}': flux estimated by Livolant acceleration method for iteration (i+1).
 
 # Reference(s)
-- Hébert (2016) : Applied Reactor Physics (Sect. C.1.3 - Iterative approach).
+- Hébert (2016),  Applied Reactor Physics (Sect. C.1.3 - Iterative approach).
 
 """
 function livolant(𝚽₂::Array{Float64},𝚽₁::Array{Float64},𝚽₀::Array{Float64})

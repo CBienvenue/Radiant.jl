@@ -7,11 +7,11 @@ Structure used to define parameters for production of multigroup annihilation cr
 - N/A
 
 # Optional field(s) - with default values
+- `ηmin::Float64 = 0.001` : minimum probability of the production of specific Auger electrons following electron cascades.
 - `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}} = Dict((Photon,Electron) => ["P"],(Electron,Electron) => ["P"],(Positron,Electron) => ["P"])` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which values correspond:
     - `(Photon,Electron) => ["P"]` : production of Auger electron following incident photon ionization of subshells (by photoelectric effect).
     - `(Electron,Electron) => ["P"]` : production of Auger electron following incident electrons ionization of subshells (by Møller interaction).
     - `(Positron,Electron) => ["P"]` : production of Auger electron following incident positrons ionization of subshells (by Bhabha interaction).
-- `ηmin::Float64 = 0.001` : minimum probability of the production of specific Auger electrons following electron cascades.
 
 """
 mutable struct Auger <: Interaction
@@ -59,7 +59,7 @@ end
 To define the interaction types for Auger processes.
 
 # Input Argument(s)
-- `this::Auger` : auger structure.
+- `this::Auger` : Auger structure.
 - `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
     - `(Photon,Electron) => ["P"]` : production of Auger electron following incident photon ionization of subshells (by photoelectric effect).
     - `(Electron,Electron) => ["P"]` : production of Auger electron following incident electrons ionization of subshells (by Møller interaction).
@@ -84,7 +84,7 @@ end
 To define the minimum probability of a specific Auger electron production.
 
 # Input Argument(s)
-- `this::Auger` : auger structure.
+- `this::Auger` : Auger structure.
 - `ηmin::Real` : minimum probability of a specific Auger electron production.
 
 # Output Argument(s)
@@ -101,6 +101,21 @@ function set_minimum_probability(this::Auger,ηmin::Real)
     this.ηmin = ηmin
 end
 
+"""
+    in_distribution(this::Auger)
+
+Describe the energy discretization method for the incoming particle in the Auger
+electron production interaction.
+
+# Input Argument(s)
+- `this::Auger` : Auger structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Auger)
     is_dirac = false
     N = 8
@@ -108,6 +123,21 @@ function in_distribution(this::Auger)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Auger)
+
+Describe the energy discretization method for the outgoing particle in the Auger
+electron production interaction.
+
+# Input Argument(s)
+- `this::Auger` : Auger structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Auger)
     is_dirac = true
     N = 1
@@ -115,16 +145,54 @@ function out_distribution(this::Auger)
     return is_dirac, N, quadrature
 end
 
-function bounds(this::Auger,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,type::String,Ui::Float64,E_in::Vector{Float64})
+"""
+    bounds(this::Auger,Ef⁻::Float64,Ef⁺::Float64)
+
+Gives the integration energy bounds for the outgoing particle for Auger electron
+production. 
+
+# Input Argument(s)
+- `this::Auger` : Auger structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
+function bounds(this::Auger,Ef⁻::Float64,Ef⁺::Float64)
     if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     return Ef⁻,Ef⁺,isSkip
 end
 
+"""
+    dcs(this::Auger,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef⁻::Float64,
+    Ef⁺::Float64,particle::Particle)
+
+Gives the Legendre moments of the scattering cross-sections for Auger electron production. 
+
+# Input Argument(s)
+- `this::Auger` : Auger structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element in the material.
+- `δi::Int64` : index of the subshell.
+- `Ef⁻::Float64` : upper bound of the outgoing energy group.
+- `Ef⁺::Float64` : lower bound of the outgoing energy group.
+- `particle::Particle` : incoming particle.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function dcs(this::Auger,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64,particle::Particle)
 
     # Photoelectric cross section
     if is_photon(particle)
-        Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z)
+        _,_,_,_,_,subshells = electron_subshells(Z)
         σa = this.photoelectric_cross_sections(iz,Ei,subshells[δi])
     # Load election impact ionization
     elseif get_type(particle) ∈ [Electron,Positron]
@@ -147,7 +215,24 @@ function dcs(this::Auger,L::Int64,Ei::Float64,Z::Int64,iz::Int64,δi::Int64,Ef�
     return σℓ
 end
 
-function preload_data(this::Auger,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,particle::Particle,Ecutoff::Float64)
+"""
+    preload_data(this::Auger,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,
+    type::String,Eout::Vector{Float64},interactions::Vector{Interaction})
+
+Preload data for multigroup Auger electron production calculations. 
+
+# Input Argument(s)
+- `this::Auger` : Auger structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material. 
+- `ρ::Float64` : material density.
+- `particle::Particle` : incoming particle.
+- `Ecutoff::Float64` : cutoff energy.
+
+# Output Argument(s)
+N/A
+
+"""
+function preload_data(this::Auger,Z::Vector{Int64},ρ::Float64,particle::Particle,Ecutoff::Float64)
     
     if is_photon(particle)
         # Load photoelectric cross-sections

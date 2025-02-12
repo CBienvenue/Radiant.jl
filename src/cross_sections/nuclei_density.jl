@@ -11,7 +11,7 @@ Compute the nuclei density for atomic number Z ∈ {1,100} in a material of dens
 - '𝒩::Float64': nuclei density [in cm⁻³].
 
 # Reference(s)
-- Hébert (2016) : Applied Reactor Physics.
+- Hébert (2016), Applied Reactor Physics.
 
 """
 function nuclei_density(Z::Int64,ρ::Float64)

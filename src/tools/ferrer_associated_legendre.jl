@@ -14,7 +14,7 @@ Calculate the associated Legendre polynomial Pℓm(x), using Ferrer definition
    point x.
 
 # Reference(s)
-- Hébert (2016): Applied Reactor Physics
+- Hébert (2016), Applied Reactor Physics
 
 """
 function ferrer_associated_legendre(ℓ::Int64,m::Int64,x::Real)

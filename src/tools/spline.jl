@@ -10,8 +10,6 @@ Produce the natural cubic spline function for (x,y) dataset.
 # Output Argument(s)
 - 'f::function': monotone cubic hermite spline function
 
-# Reference(s)
-
 """
 function natural_cubic_spline(x,y)
     
@@ -80,11 +78,8 @@ Produce the monotone cubic hermite spline function for (x,y) dataset.
 # Output Argument(s)
 - 'f::function': monotone cubic hermite spline function
 
-# Author(s)
-Charles Bienvenue
-
 # Reference(s)
-- Fritsch (1980) : Monotone piecewise cubic interpolation.
+- Fritsch and Carlson (1980), Monotone piecewise cubic interpolation.
 
 """
 function cubic_hermite_spline(x,y) 

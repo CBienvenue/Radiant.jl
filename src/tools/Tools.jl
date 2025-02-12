@@ -15,7 +15,6 @@ include("real_spherical_harmonics.jl")
 
 # Math functions
 include("heaviside.jl")
-include("gamma.jl")
 include("interpolation.jl")
 include("integrals.jl")
 include("spline.jl")

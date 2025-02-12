@@ -1,13 +1,21 @@
 """
-    adaptive(𝒪x::Int64,ωx::Vector{Float64},μ::Float64,Δx::Float64,Qn::Vector{Float64},
-    𝚽x12::Float64,Σ::Float64)
+    adaptive(𝒪x::Int64,ωx::Vector{Float64},hx::Float64,sx::Real,𝚽x12::Float64,
+    Qn::Vector{Float64},Σ::Float64)
 
-Compute the weighting parameters for adaptative calculations over a 1D finite-element. 
+Compute the weighting parameters for adaptative calculations over a 1D Cartesian
+finite-element. 
 
 # Input Argument(s)
+- '𝒪x::Int64' : order of the adaptive scheme.
+- 'ωx::Vector{Float64}' : weighting factors.
+- 'hx::Float64' : inverse of the optical length.
+- 'sx::Real' : sign associated with the sweep direction.
+- '𝚽x12::Float64' : incoming flux at the edge of the finite-element.
+- 'Qn::Vector{Float64}' : source moments.
+- 'Σ::Float64' : total cross-section.
 
 # Output Argument(s)
-- 'ω': corrected weighting factors.
+- 'ωx::Vector{Float64}': updated weighting factors.
 
 # Reference(s)
 - Alcouffe (1993) : An adaptive weighted diamond differencing method for three-dimensional
@@ -17,8 +25,6 @@ Compute the weighting parameters for adaptative calculations over a 1D finite-el
 - Germogenova (1994) : Adaptive positive nodal method for transport equation.
 - Voloschenko (2011) : Some improvements in solving the transport equation by the use of 
   the family of weighted nodal schemes.
-- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
-  for Charged Particle Transport.
 
 """
 function adaptive(𝒪x::Int64,ωx::Vector{Float64},hx::Float64,sx::Real,𝚽x12::Float64,Qn::Vector{Float64},Σ::Float64)
@@ -73,6 +79,44 @@ end
 return ωx
 end
 
+"""
+    adaptive(𝒪x::Int64,𝒪y::Int64,ωx::Array{Float64},ωy::Array{Float64},hx::Float64,
+    hy::Float64,sx::Real,sy::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},
+    Qn::Vector{Float64},Σ::Float64)
+
+Compute the weighting parameters for adaptative calculations over a 2D Cartesian
+finite-element. 
+
+# Input Argument(s)
+- '𝒪x::Int64' : order of the adaptive scheme along x-axis.
+- '𝒪y::Int64' : order of the adaptive scheme along y-axis.
+- 'ωx::Array{Float64}' : weighting factors along x-axis.
+- 'ωy::Array{Float64}' : weighting factors along y-axis.
+- 'hx::Float64' : inverse of the optical length along x-axis.
+- 'hy::Float64' : inverse of the optical length along y-axis.
+- 'sx::Real' : sign associated with the sweep direction along x-axis.
+- 'sy::Real' : sign associated with the sweep direction along y-axis.
+- '𝚽x12::Float64' : incoming flux at the edge of the finite-element along x-axis.
+- '𝚽y12::Float64' : incoming flux at the edge of the finite-element along y-axis.
+- 'Qn::Vector{Float64}' : source moments.
+- 'Σ::Float64' : total cross-section.
+
+# Output Argument(s)
+- 'ωx::Array{Float64}': updated weighting factors along x-axis.
+- 'ωy::Array{Float64}': updated weighting factors along y-axis.
+
+# Reference(s)
+- Alcouffe (1993) : An adaptive weighted diamond differencing method for three-dimensional
+  xyz geometry.
+- Voloschenko (1994) : Numerical solution of the time-dependant transport equation with
+  pulsed sources.
+- Germogenova (1994) : Adaptive positive nodal method for transport equation.
+- Voloschenko (2011) : Some improvements in solving the transport equation by the use of 
+  the family of weighted nodal schemes.
+- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
+  for Charged Particle Transport.
+
+"""
 function adaptive(𝒪x::Int64,𝒪y::Int64,ωx::Array{Float64},ωy::Array{Float64},hx::Float64,hy::Float64,sx::Real,sy::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
 
 # Initialization    
@@ -186,6 +230,46 @@ end
 return ωx,ωy
 end
 
+"""
+    adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,ωx::Array{Float64},ωy::Array{Float64},
+    ωz::Array{Float64},hx::Float64,hy::Float64,hz::Float64,sx::Real,sy::Real,sz::Real,
+    𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},Qn::Vector{Float64},
+    Σ::Float64)
+
+Compute the weighting parameters for adaptative calculations over a 3D Cartesian
+finite-element. 
+
+# Input Argument(s)
+- '𝒪x::Int64' : order of the adaptive scheme along x-axis.
+- '𝒪y::Int64' : order of the adaptive scheme along y-axis.
+- '𝒪z::Int64' : order of the adaptive scheme along z-axis.
+- 'ωx::Vector{Float64}' : weighting factors along x-axis.
+- 'ωy::Vector{Float64}' : weighting factors along y-axis.
+- 'ωz::Vector{Float64}' : weighting factors along z-axis.
+- 'hx::Float64' : inverse of the optical length along x-axis.
+- 'hy::Float64' : inverse of the optical length along y-axis.
+- 'hz::Float64' : inverse of the optical length along z-axis.
+- 'sx::Real' : sign associated with the sweep direction along x-axis.
+- 'sy::Real' : sign associated with the sweep direction along y-axis.
+- 'sz::Real' : sign associated with the sweep direction along z-axis.
+- '𝚽x12::Float64' : incoming flux at the edge of the finite-element along x-axis.
+- '𝚽y12::Float64' : incoming flux at the edge of the finite-element along y-axis.
+- '𝚽z12::Float64' : incoming flux at the edge of the finite-element along z-axis.
+- 'Qn::Vector{Float64}' : source moments.
+- 'Σ::Float64' : total cross-section.
+
+# Output Argument(s)
+- 'ωx::Vector{Float64}': updated weighting factors along x-axis.
+- 'ωy::Vector{Float64}': updated weighting factors along y-axis.
+- 'ωz::Vector{Float64}': updated weighting factors along z-axis.
+
+# Reference(s)
+- Alcouffe (1993) : An adaptive weighted diamond differencing method for three-dimensional
+  xyz geometry.
+- Voloschenko (1994) : Numerical solution of the time-dependant transport equation with
+  pulsed sources.
+
+"""
 function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},hx::Float64,hy::Float64,hz::Float64,sx::Real,sy::Real,sz::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
 
 # Initialization    
@@ -240,6 +324,52 @@ end
 return ωx,ωy,ωz
 end
 
+"""
+    adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,𝒪w::Int64,ωx::Array{Float64},ωy::Array{Float64},
+    ωz::Array{Float64},ωw::Array{Float64},hx::Float64,hy::Float64,hz::Float64,hw::Float64,
+    sx::Real,sy::Real,sz::Real,sw::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},
+    𝚽z12::Vector{Float64},𝚽w12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
+
+Compute the weighting parameters for adaptative calculations over a 4D Cartesian
+finite-element. 
+
+# Input Argument(s)
+- '𝒪x::Int64' : order of the adaptive scheme along x-axis.
+- '𝒪y::Int64' : order of the adaptive scheme along y-axis.
+- '𝒪z::Int64' : order of the adaptive scheme along z-axis.
+- '𝒪w::Int64' : order of the adaptive scheme along w-axis.
+- 'ωx::Vector{Float64}' : weighting factors along x-axis.
+- 'ωy::Vector{Float64}' : weighting factors along y-axis.
+- 'ωz::Vector{Float64}' : weighting factors along z-axis.
+- 'ωw::Vector{Float64}' : weighting factors along w-axis.
+- 'hx::Float64' : inverse of the optical length along x-axis.
+- 'hy::Float64' : inverse of the optical length along y-axis.
+- 'hz::Float64' : inverse of the optical length along z-axis.
+- 'hw::Float64' : inverse of the optical length along w-axis.
+- 'sx::Real' : sign associated with the sweep direction along x-axis.
+- 'sy::Real' : sign associated with the sweep direction along y-axis.
+- 'sz::Real' : sign associated with the sweep direction along z-axis.
+- 'sw::Real' : sign associated with the sweep direction along w-axis.
+- '𝚽x12::Float64' : incoming flux at the edge of the finite-element along x-axis.
+- '𝚽y12::Float64' : incoming flux at the edge of the finite-element along y-axis.
+- '𝚽z12::Float64' : incoming flux at the edge of the finite-element along z-axis.
+- '𝚽w12::Float64' : incoming flux at the edge of the finite-element along w-axis.
+- 'Qn::Vector{Float64}' : source moments.
+- 'Σ::Float64' : total cross-section.
+
+# Output Argument(s)
+- 'ωx::Vector{Float64}': updated weighting factors along x-axis.
+- 'ωy::Vector{Float64}': updated weighting factors along y-axis.
+- 'ωz::Vector{Float64}': updated weighting factors along z-axis.
+- 'ωw::Vector{Float64}': updated weighting factors along w-axis.
+
+# Reference(s)
+- Alcouffe (1993) : An adaptive weighted diamond differencing method for three-dimensional
+  xyz geometry.
+- Voloschenko (1994) : Numerical solution of the time-dependant transport equation with
+  pulsed sources.
+
+"""
 function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,𝒪w::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},ωw::Array{Float64},hx::Float64,hy::Float64,hz::Float64,hw::Float64,sx::Real,sy::Real,sz::Real,sw::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝚽w12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
 
     # Initialization    

@@ -5,10 +5,10 @@
 Solve the transport equation for a given particle.  
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross section informations.
-- 'geometry::Geometry': geometry informations.
-- 'discrete_ordinates::Discrete_Ordinates': discrete_ordinates informations.
-- 'source::Source': source informations.
+- 'cross_sections::Cross_Sections' : cross section informations.
+- 'geometry::Geometry' : geometry informations.
+- 'discrete_ordinates::Discrete_Ordinates' : discrete_ordinates informations.
+- 'source::Source' : source informations.
 
 # Output Argument(s)
 - 'flux::Flux_Per_Particle': flux informations.
@@ -17,7 +17,7 @@ Solve the transport equation for a given particle.
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates,source::Source,is_CUDA::Bool)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates,source::Source)
 
 #----
 # Geometry data
@@ -98,7 +98,7 @@ if solver ∈ [2,4]
     α = zeros(Ng,Nmat)
     α = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = discrete_ordinates.get_angular_fokker_planck()
-    ℳ,λ₀,Mn_FP,Dn_FP,N_Fp = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,pm,P,Qdims)
+    ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,P,Qdims)
     Σtot .+= α .* λ₀/2
 end
 
@@ -179,9 +179,6 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             else
                 αg = Vector{Float64}()
                 ℳ = Array{Float64}(undef)
-                Mn_FP = Array{Float64}(undef)
-                Dn_FP = Array{Float64}(undef)
-                N_Fp = 0
             end
         else
             Eg = 0.0
@@ -191,11 +188,8 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             Sg = Vector{Float64}()
             αg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
-            Mn_FP = Array{Float64}(undef)
-            Dn_FP = Array{Float64}(undef)
-            N_Fp = 0
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,αg,ℳ,Mn_FP,Dn_FP,N_Fp,𝒜,is_CUDA,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,αg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
         
     end
 

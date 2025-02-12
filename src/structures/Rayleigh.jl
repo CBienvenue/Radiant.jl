@@ -47,6 +47,21 @@ mutable struct Rayleigh <: Interaction
 end
 
 # Method(s)
+"""
+    in_distribution(this::Rayleigh)
+
+Describe the energy discretization method for the incoming particle in the Rayleigh
+interaction.
+
+# Input Argument(s)
+- `this::Rayleigh` : Rayleigh structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Rayleigh)
     is_dirac = false
     N = 8
@@ -54,6 +69,21 @@ function in_distribution(this::Rayleigh)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Rayleigh)
+
+Describe the energy discretization method for the outgoing particle in the Rayleigh
+interaction.
+
+# Input Argument(s)
+- `this::Rayleigh` : Rayleigh structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Rayleigh)
     is_dirac = true
     N = 1
@@ -61,11 +91,46 @@ function out_distribution(this::Rayleigh)
     return is_dirac, N, quadrature
 end
 
+"""
+    bounds(this::Rayleigh,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
+
+Gives the integration energy bounds for the outgoing particle for Rayleigh. 
+
+# Input Argument(s)
+- `this::Rayleigh` : Rayleigh structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `gi::Int64` : group of the incoming particle.
+- `gf::Int64` : group of the outgoing particle.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
 function bounds(this::Rayleigh,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
     if (gf != gi) isSkip = true else isSkip = false end
     return Ef⁻,Ef⁺,isSkip
 end
 
+"""
+    dcs(this::Rayleigh,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,
+    type::String,iz::Int64)
+
+Gives the Legendre moments of the scattering cross-sections for Rayleigh. 
+
+# Input Argument(s)
+- `this::Rayleigh` : Rayleigh structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element in the material.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function dcs(this::Rayleigh,L::Int64,Ei::Float64,Z::Int64,iz::Int64)
 
     # Initialization
@@ -82,21 +147,41 @@ function dcs(this::Rayleigh,L::Int64,Ei::Float64,Z::Int64,iz::Int64)
     return σℓ
 end
 
+"""
+    tcs(this::Rayleigh,Ei::Float64,Z::Int64,iz::Int64)
+
+Gives the total cross-section for Rayleigh. 
+
+# Input Argument(s)
+- `this::Rayleigh` : Rayleigh structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `iz::Int64` : index of the element in the material.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Rayleigh,Ei::Float64,Z::Int64,iz::Int64)
     σt = dcs(this,0,Ei,Z,iz)[1]
     return σt
 end
 
-function scattering_centers(this::Rayleigh,Z::Union{Int64,Vector{Int64}},ρ::Float64)
-    return nuclei_density.(Z,ρ)
-end
+"""
+    preload_data(this::Rayleigh,Z::Vector{Int64})
 
+Preload data for multigroup Rayleigh calculations.
+
+# Input Argument(s)
+- `this::Rayleigh` : Rayleigh structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_data(this::Rayleigh,Z::Vector{Int64})
-    this.preload_rayleigh_cross_sections(Z)
-end
-
-function preload_rayleigh_cross_sections(this::Rayleigh,Z::Vector{Int64})
-
+    
     path = joinpath(find_package_root(), "data", "rayleigh_factors_JENDL5.jld2")
     data = load(path)
     Nz = length(Z)
@@ -125,4 +210,5 @@ function preload_rayleigh_cross_sections(this::Rayleigh,Z::Vector{Int64})
         if Ei < E_imag[iz][end] fi_imag = linear_interpolation(Ei,E_imag[iz],f_imag[iz]) else fi_imag = 0 end
         return π*rₑ^2 * (1+μ^2) * ((Fi + fi_real)^2 + fi_imag^2)
     end
+
 end

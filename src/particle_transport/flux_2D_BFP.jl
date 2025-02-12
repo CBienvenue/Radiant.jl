@@ -1,9 +1,9 @@
 """
-    flux_2D_BFP(μ::Float64,η::Float64,Σt::Float64,S⁻::Float64,S⁺::Float64,ΔE::Float64,
-    Δx::Float64,Δy::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},
-    𝚽y12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,
-    C::Vector{Float64},C::Vector{Float64},C::Vector{Float64},ωE::Array{Float64},
-    ωx::Array{Float64},ωy::Array{Float64},isAdaptE::Bool,isAdaptx::Bool,isAdapty::Bool)
+    flux_2D_BFP(μ::Float64,η::Float64,Σt::Float64,S⁻::Float64,S⁺::Float64,
+    S::Vector{Float64},ΔE::Float64,Δx::Float64,Δy::Float64,Qn::Vector{Float64},
+    𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,
+    𝒪y::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},ωy::Array{Float64},
+    isAdapt::Bool,𝒲::Array{Float64})
 
 Compute flux solution in a cell in 2D Cartesian geometry for the Boltzmann Fokker-Planck
 equation.
@@ -25,14 +25,11 @@ equation.
 - '𝒪x::Int64': spatial closure relation order.
 - '𝒪y::Int64': spatial closure relation order.
 - 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
 - 'ωE::Array{Float64}': weighting factors of the E-axis scheme.
 - 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
 - 'ωy::Array{Float64}': weighting factors of the y-axis scheme.
-- 'isAdaptE::Bool': boolean for adaptive calculations.
-- 'isAdaptx::Bool': boolean for adaptive calculations.
-- 'isAdapty::Bool': boolean for adaptive calculations.
+- 'isAdapt::Bool': boolean for adaptive calculations.
+- '𝒲::Array{Float64}' : weighting constants.
 
 # Output Argument(s)
 - '𝚽n::Vector{Float64}': angular in-cell flux.

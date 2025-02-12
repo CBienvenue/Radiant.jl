@@ -139,28 +139,101 @@ function set_convergence_type(this::Solvers,convergence_type::String)
     this.convergence_type = convergence_type
 end
 
+"""
+    get_method(this::Solvers,particle::Particle)
+
+Get the method associated with a particle.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `method::Discrete_Ordinates` : method associated with the particle.
+
+"""
 function get_method(this::Solvers,particle::Particle)
     index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
     if isnothing(index) error("Solvers don't contain data for the given particle.") end
     return this.methods_list[index]
 end
 
+"""
+    get_maximum_number_of_generations(this::Solvers)
+
+Get the maximum number of generations.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+
+# Output Argument(s)
+- `maximum_number_of_generations::Int64` :  maximum number of generations.
+
+"""
 function get_maximum_number_of_generations(this::Solvers)
     return this.maximum_number_of_generations
 end
 
+"""
+    get_convergence_criterion(this::Solvers)
+
+Get the convergence criterion.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+
+# Output Argument(s)
+- `convergence_criterion::Float64` : convergence criterion.
+
+"""
 function get_convergence_criterion(this::Solvers)
     return this.convergence_criterion
 end
 
+"""
+    get_convergence_type(this::Solvers)
+
+Get the convergence type.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+
+# Output Argument(s)
+- `convergence_type::String` : convergence type.
+
+"""
 function get_convergence_type(this::Solvers)
     return this.convergence_type
 end
 
+"""
+    get_particles(this::Solvers)
+
+Get the particle list.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+
+# Output Argument(s)
+- `particle::Vector{Particle}` : particle list.
+
+"""
 function get_particles(this::Solvers)
     return this.particles
 end
 
+"""
+    get_number_of_particles(this::Solvers)
+
+Get the number of particles.
+
+# Input Argument(s)
+- `this::Solvers` : collection of discretization method.
+
+# Output Argument(s)
+- `number_of_particles::Int64` : number of particles.
+
+"""
 function get_number_of_particles(this::Solvers)
     return this.number_of_particles
 end

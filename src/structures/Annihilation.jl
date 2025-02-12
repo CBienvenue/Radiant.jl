@@ -77,6 +77,21 @@ function set_interaction_types(this::Annihilation,interaction_types)
     this.interaction_types = interaction_types
 end
 
+"""
+    in_distribution(this::Annihilation)
+
+Describe the energy discretization method for the incoming particle in the annihilation
+interaction.
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Annihilation)
     is_dirac = false
     N = 8
@@ -84,6 +99,22 @@ function in_distribution(this::Annihilation)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Annihilation,type::String)
+
+Describe the energy discretization method for the outgoing particle in the annihilation
+interaction.
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Annihilation,type::String)
     if type ∈ ["A","P₋","P₊"]
         is_dirac = false
@@ -97,6 +128,24 @@ function out_distribution(this::Annihilation,type::String)
     return is_dirac, N, quadrature
 end
 
+"""
+    bounds(this::Annihilation,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
+
+Gives the integration energy bounds for the outgoing particle for annihilation. 
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `Ei::Float64` : energy of the incoming particle.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
 function bounds(this::Annihilation,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String)
     γ = Ei+1
     if type == "P₋"
@@ -115,7 +164,28 @@ function bounds(this::Annihilation,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,typ
     return Ef⁻,Ef⁺,isSkip
 end
 
-function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi::Int64,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,iz::Int64,Ein::Vector{Float64},Ec::Float64)
+"""
+    dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Vector{Int64},
+    iz::Int64,Ein::Vector{Float64},Ec::Float64)
+
+Gives the Legendre moments of the scattering cross-sections for annihilation. 
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Ef::Float64` : outgoing particle energy.
+- `type::String` : type of interaction.
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `iz::Int64` : index of the element in the material.
+- `Ein::Vector{Float64}` : energy boundaries associated with the incoming particle.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
+function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Vector{Int64},iz::Int64,Ein::Vector{Float64},Ec::Float64)
 
     # Initialization
     rₑ = 2.81794092e-13 # (in cm)
@@ -177,6 +247,20 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,gi
     return σℓ
 end
 
+"""
+    tcs(this::Annihilation,Ei::Float64,Z::Int64)
+
+Gives the total cross-section for annihilation. 
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Annihilation,Ei::Float64,Z::Int64)
     γ = Ei+1
     rₑ = 2.81794092e-13 # (in cm)
@@ -185,13 +269,33 @@ function tcs(this::Annihilation,Ei::Float64,Z::Int64)
     return σt
 end
 
-function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,type::String,Eout::Vector{Float64},Ein::Vector{Float64},interactions::Vector{Interaction})
+"""
+    preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,
+    type::String,Eout::Vector{Float64},interactions::Vector{Interaction})
+
+Preload data for multigroup annihilation calculations. 
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.  
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material. 
+- `Emax::Float64` : maximum energy of incoming particle.
+- `Emin::Float64` : minimum energy of incoming particle.
+- `L::Int64` : Legendre truncation order.
+- `type::String` : type of interaction.
+- `Eout::Vector{Float64}` : energy boundaries for outgoing particle.
+- `interactions::Vector{Interaction}` : list of all interactions in the multigroup library.
+
+# Output Argument(s)
+N/A
+
+"""
+function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,type::String,Eout::Vector{Float64},interactions::Vector{Interaction})
 
     # Preload interaction prior to positron scattering under the cutoff
     interaction = missing
     if type ∈ ["P_inel","P_brems","P_pp"]
         if type == "P_inel"
-            # Get impact ionization information for inelastic scattering
+            # Get impact ionization information
             for i in interactions
                 if typeof(i) == Inelastic_Leptons
                     interaction = i
@@ -200,7 +304,7 @@ function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Fl
             end
             if ismissing(interaction) interaction = Inelastic_Leptons() end
         elseif type == "P_brems"
-            # Get impact ionization information for inelastic scattering
+            # Get bremsstrahlung information
             for i in interactions
                 if typeof(i) == Bremsstrahlung
                     interaction = i
@@ -210,7 +314,7 @@ function preload_data(this::Annihilation,Z::Vector{Int64},Emax::Float64,Emin::Fl
             if ismissing(interaction) interaction = Bremsstrahlung() end
             interaction.preload_data(Z,Emax,Emin,L)
         elseif type == "P_pp"
-            # Get impact ionization information for inelastic scattering
+            # Get pair production information
             for i in interactions
                 if typeof(i) == Pair_Production
                     interaction = i

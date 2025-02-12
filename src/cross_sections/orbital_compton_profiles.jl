@@ -1,34 +1,23 @@
+"""
+    orbital_compton_profiles(Z::Int64)
+
+Compute the nuclei density for atomic number Z ∈ {1,100} in a material of density ρ.
+
+# Input Argument(s)
+- 'Z::Int64' : atomic number of the element.
+
+# Output Argument(s)
+- 'J₀::Vector{Float64}' : orbital Compton profiles of Hartree-Fock wavefunctions
+  [in ħ/(mₑe²) → atomic units].
+
+# Reference(s)
+- Biggs et al. (1975), Hartree-Fock Compton profiles for the elements.
+- Carlson (1975), Photoelectron and Auger Spectroscopy (p.337-343).
+- Seltzer (1981), Evaluation of the Collision Stopping Power of Elements and Compounds for
+  Electrons and Positrons.
+
+"""
 function orbital_compton_profiles(Z::Int64)
-#--------------------------------------------------------------
-#
-# Purpose: 
-# Atomic electron subshells data for atomic number Z ∈ {1,102}.
-#
-# Author(s): Charles Bienvenue
-#
-# Parameters: input
-# Z      atomic number of the element.
-# pz     projection of the initial momentum of the electron
-#        [in mₑe²/ħ → atomic units].
-#
-# Parameters: output
-# names  vector with subshells names.
-# Zi     number of electrons per subshells.
-# Ui     binding energy [in eV].
-# J      orbital Compton profiles of Hartree-Fock wavefunctions
-#        [in ħ/(mₑe²) → atomic units].
-# I      mean excitation energy [in eV]
-#
-# References:
-#  (1) Biggs et al. (1975), "Hartree-Fock Compton profiles for
-#      the elements"
-#  (2) Carlson (1975), "Photoelectron and Auger Spectroscopy" 
-#     (p.337-343)
-#  (3) Seltzer (1981), "Evaluation of the Collision Stopping
-#      Power of Elements and Compounds for Electrons and 
-#      Positrons"
-#
-#--------------------------------------------------------------
 
 names = Vector{String}()
 J₀ = Vector{Float64}()

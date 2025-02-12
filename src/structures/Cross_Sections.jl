@@ -74,6 +74,18 @@ mutable struct Cross_Sections
 end
 
 # Method(s)
+"""
+    is_ready_to_build(this::Cross_Sections)
+
+Verify if all the required information to build the cross-section library is present.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+N/A
+
+"""
 function is_ready_to_build(this::Cross_Sections)
     if ismissing(this.source) error("Cannot build multigroup cross-sections data. The source of cross-sections data is not specified.") end
     if lowercase(this.source) == "fmac-m"
@@ -362,6 +374,19 @@ function set_group_structure(this::Cross_Sections,group_structure::Union{Vector{
     this.group_structure = group_structure
 end
 
+"""
+    set_energy_boundaries(this::Cross_Sections,energy_boundaries::Vector{Vector{Float64}})
+
+To set the energy boundaries per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `energy_boundaries::Vector{Vector{Float64}}` : energy boundaries per particle.
+
+# Output Argument(s)
+N/A
+
+"""
 function set_energy_boundaries(this::Cross_Sections,energy_boundaries::Vector{Vector{Float64}})
     this.energy_boundaries = energy_boundaries
 end
@@ -414,64 +439,240 @@ function set_legendre_order(this::Cross_Sections,legendre_order::Int64)
     this.legendre_order = legendre_order
 end
 
+"""
+    set_multigroup_cross_sections(this::Cross_Sections,multigroup_cross_sections::Array{Multigroup_Cross_Sections})
+
+To set the multigroup cross-sections libraries.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `multigroup_cross_sections::Array{Multigroup_Cross_Sections}` : multigroup cross-sections libraries.
+
+# Output Argument(s)
+N/A
+
+"""
 function set_multigroup_cross_sections(this::Cross_Sections,multigroup_cross_sections::Array{Multigroup_Cross_Sections})
     this.multigroup_cross_sections = multigroup_cross_sections
 end
 
+"""
+    set_absorption(this::Cross_Sections,Σa::Vector{Float64})
+
+To set absorption cross-sections.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `Σa::Vector{Float64}` : absorption cross-sections.
+
+# Output Argument(s)
+N/A
+
+"""
 function set_absorption(this::Cross_Sections,Σa::Vector{Float64})
     this.custom_absorption = Σa
 end
 
+"""
+    set_scattering(this::Cross_Sections,Σs::Vector{Float64})
+
+To set isotropic scattering cross-sections.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `Σs::Vector{Float64}` : scattering cross-sections.
+
+# Output Argument(s)
+N/A
+
+"""
 function set_scattering(this::Cross_Sections,Σs::Vector{Float64})
     this.custom_scattering = Σs
 end
 
+"""
+    get_file(this::Cross_Sections)
+
+Get the file directory and name.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `file::String` : file directory and name.
+
+"""
 function get_file(this::Cross_Sections)
     return this.file
 end
 
+"""
+    get_number_of_materials(this::Cross_Sections)
+
+Get the number of material.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `number_of_materials::Int64` : number of material.
+
+"""
 function get_number_of_materials(this::Cross_Sections)
     return this.number_of_materials
 end
 
+"""
+    get_materials(this::Cross_Sections)
+
+Get the material list.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `materials::Vector{Material}` : material list.
+
+"""
 function get_materials(this::Cross_Sections)
     return this.materials
 end
 
+"""
+    get_number_of_particles(this::Cross_Sections)
+
+Get the number of particles.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `number_of_particles::Int64` : number of particles.
+
+"""
 function get_number_of_particles(this::Cross_Sections)
     return this.number_of_particles
 end
 
+"""
+    get_particles(this::Cross_Sections)
+
+Get the particle list.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `particles::Vector{Particle}` : particle list.
+
+"""
 function get_particles(this::Cross_Sections)
     return this.particles
 end
 
+"""
+    get_number_of_groups(this::Cross_Sections)
+
+Get the number of groups for each particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `number_of_groups::Vector{Int64}` : number of groups for each particle.
+
+"""
 function get_number_of_groups(this::Cross_Sections)
     return this.number_of_groups
 end
 
+"""
+    get_number_of_groups(this::Cross_Sections,particle::Particle)
+
+Get the number of groups for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `number_of_groups::Int64` : number of groups.
+
+"""
 function get_number_of_groups(this::Cross_Sections,particle::Particle)
     index = findfirst(x -> x == particle,this.get_particles())
     if isnothing(index) error("Cross-sections don't contain data for the given particle.") end
     return this.number_of_groups[index]
 end
 
+"""
+    get_energy_boundaries(this::Cross_Sections,particle::Particle)
+
+Get the energy boundaries for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `energy_boundaries::Vector{Float64}` : energy boundaries.
+
+"""
 function get_energy_boundaries(this::Cross_Sections,particle::Particle)
     index = findfirst(x -> x == particle,this.get_particles())
     if isnothing(index) error("Cross-sections don't contain data for the given particle.") end
     return this.energy_boundaries[index]
 end
 
+"""
+    get_energies(this::Cross_Sections,particle::Particle)
+
+Get the group midpoint energies for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `energies::Vector{Float64}` : group midpoint energies.
+
+"""
 function get_energies(this::Cross_Sections,particle::Particle)
     Eb = this.get_energy_boundaries(particle)
     return (Eb[1:end-1] + Eb[2:end])/2
 end
 
+"""
+    get_energy_width(this::Cross_Sections,particle::Particle)
+
+Get the energy group width for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `width::Vector{Float64}` : energy group width.
+
+"""
 function get_energy_width(this::Cross_Sections,particle::Particle)
     Eb = this.get_energy_boundaries(particle)
     return (Eb[1:end-1] - Eb[2:end])
 end
 
+"""
+    get_absorption(this::Cross_Sections,particle::Particle)
+
+Get the absorption cross-sections for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `Σa::Array{Float64}` : absorption cross-sections.
+
+"""
 function get_absorption(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup cross-sections. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
@@ -485,6 +686,19 @@ function get_absorption(this::Cross_Sections,particle::Particle)
     return Σa
 end
 
+"""
+    get_total(this::Cross_Sections,particle::Particle)
+
+Get the total cross-sections for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `Σt::Array{Float64}` : total cross-sections.
+
+"""
 function get_total(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup cross-sections. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
@@ -498,6 +712,23 @@ function get_total(this::Cross_Sections,particle::Particle)
     return Σt
 end
 
+"""
+    get_scattering(this::Cross_Sections,particle_in::Particle,particle_out::Particle,
+    legendre_order::Int64)
+
+Get the Legendre moments of the scattering cross-sections for a specified incoming and
+outgoing particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle_in::Particle` : incoming particle.
+- `particle_out::Particle` : outgoing particle.
+- `L::Int64` : Legendre truncation order.
+
+# Output Argument(s)
+- `Σs::Array{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function get_scattering(this::Cross_Sections,particle_in::Particle,particle_out::Particle,legendre_order::Int64)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup scattering cross-sections. Missing data.") end
     index_particle_in = findfirst(x -> x == particle_in,this.get_particles())
@@ -514,19 +745,45 @@ function get_scattering(this::Cross_Sections,particle_in::Particle,particle_out:
     return Σs
 end
 
+"""
+    get_stopping_powers(this::Cross_Sections,particle::Particle)
+
+Get the stopping powers for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `S::Array{Float64}` : stopping powers.
+
+"""
 function get_stopping_powers(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup stopping powers. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
     if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
-    β = zeros(Ng+1,Nmat)
+    S = zeros(Ng+1,Nmat)
     for n in range(1,Nmat)
-        β[:,n] = this.multigroup_cross_sections[index_particle,n].get_stopping_powers()
+        S[:,n] = this.multigroup_cross_sections[index_particle,n].get_stopping_powers()
     end
-    return β
+    return S
 end
 
+"""
+    get_momentum_transfer(this::Cross_Sections,particle::Particle)
+
+Get the momentum transfers for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `α::Array{Float64}` : momentum transfers.
+
+"""
 function get_momentum_transfer(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup momentum transfer. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
@@ -540,6 +797,19 @@ function get_momentum_transfer(this::Cross_Sections,particle::Particle)
     return α
 end
 
+"""
+    get_energy_deposition(this::Cross_Sections,particle::Particle)
+
+Get the energy deposition cross-sections for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `Σe::Array{Float64}` : energy deposition cross-sections.
+
+"""
 function get_energy_deposition(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup momentum transfer. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
@@ -553,6 +823,19 @@ function get_energy_deposition(this::Cross_Sections,particle::Particle)
     return Σe
 end
 
+"""
+    get_charge_deposition(this::Cross_Sections,particle::Particle)
+
+Get the charge deposition cross-sections for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `Σe::Array{Float64}` : charge deposition cross-sections.
+
+"""
 function get_charge_deposition(this::Cross_Sections,particle::Particle)
     if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup momentum transfer. Missing data.") end
     index_particle = findfirst(x -> x == particle,this.get_particles())
@@ -566,6 +849,18 @@ function get_charge_deposition(this::Cross_Sections,particle::Particle)
     return Σc
 end
 
+"""
+    get_densities(this::Cross_Sections)
+
+Get the material densities.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `ρ::Vector{Float64}` : densities.
+
+"""
 function get_densities(this::Cross_Sections)
     Nmat = this.get_number_of_materials()
     ρ = zeros(Nmat)
@@ -575,22 +870,82 @@ function get_densities(this::Cross_Sections)
     return ρ
 end
 
+"""
+    get_energy(this::Cross_Sections)
+
+Get the midpoint energy of the highest energy group.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `energy::Float64` : midpoint energy of the highest energy group.
+
+"""
 function get_energy(this::Cross_Sections)
     return this.energy
 end
 
+"""
+    get_cutoff(this::Cross_Sections)
+
+Get the cutoff energy.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `cutoff::Float64` : cutoff energy.
+
+"""
 function get_cutoff(this::Cross_Sections)
     return this.cutoff
 end
 
+"""
+    get_legendre_order(this::Cross_Sections)
+
+Get the Legendre truncation order.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `legendre_order::Int64` : Legendre truncation order.
+
+"""
 function get_legendre_order(this::Cross_Sections)
     return this.legendre_order
 end
 
+"""
+    get_group_structure(this::Cross_Sections)
+
+Get the type of group structure.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `group_structure::String` : type of group structure.
+
+"""
 function get_group_structure(this::Cross_Sections)
     return this.group_structure
 end
 
+"""
+    get_interactions(this::Cross_Sections)
+
+Get the interaction list.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+
+# Output Argument(s)
+- `interactions::Vector{Interation}` : interaction list.
+
+"""
 function get_interactions(this::Cross_Sections)
     return this.interactions
 end

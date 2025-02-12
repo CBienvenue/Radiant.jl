@@ -1,27 +1,29 @@
 """
     charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,
-    sources::Fixed_Sources,flux::Flux,type::String)
+    sources::Fixed_Sources,flux::Flux,particles::Vector{<:Particle})
 
-Calculate the charge deposition and print it in the output file. 
+Calculate and extract the charge deposition. 
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross section informations.
-- 'geometry::Geometry': geometry informations.
-- 'solvers::Solvers': solvers informations.
-- 'sources::Fixed_Sources': sources informations.
-- 'flux::Flux': flux informations.
-- 'type::String': type of output.
+- 'cross_sections::Cross_Sections' : cross section informations.
+- 'geometry::Geometry' : geometry informations.
+- 'solvers::Solvers' : solvers informations.
+- 'sources::Fixed_Sources' : sources informations.
+- 'flux::Flux' : flux informations.
+- 'particles::Vector{Particle}' : list of particles
 
 # Output Argument(s)
-- 'Ctot::Array{Float64}': charge deposition per voxel [MeV/g × cmⁿ per particle], where
+- 'Ctot::Array{Float64}' : charge deposition per voxel [MeV/g × cmⁿ per particle], where
    n is the geometry dimension. 
 
 # Reference(s)
-- Morel (1996) : A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for Solving the
-  Boltzmann-Fokker-Planck Equation
+- Morel (1996), A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for Solving the
+  Boltzmann-Fokker-Planck Equation.
+- Liscum-Powell (2000), Finite Element Numerical Solution of a Self-Adjoint Transport
+  Equation for Coupled Electron-Photon Problems
 
 """
-function charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,particles::Vector{Particle})
+function charge_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,particles::Vector{<:Particle})
 
 #----
 # Extract geometry data

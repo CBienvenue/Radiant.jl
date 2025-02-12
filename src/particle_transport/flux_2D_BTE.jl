@@ -1,8 +1,7 @@
 """
     flux_2D_BTE(μ::Float64,η::Float64,Σt::Float64,Δx::Float64,Δy::Float64,
     Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝒪x::Int64,𝒪y::Int64,
-    C::Vector{Float64},C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},
-    isAdaptx::Bool,isAdapty::Bool)
+    C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},isAdapt::Bool)
 
 Compute flux solution in a cell in 2D Cartesian geometry for the Boltzmann transport
 equation.
@@ -19,11 +18,9 @@ equation.
 - '𝒪x::Int64': spatial closure relation order.
 - '𝒪y::Int64': spatial closure relation order.
 - 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
 - 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
 - 'ωy::Array{Float64}': weighting factors of the y-axis scheme.
-- 'isAdaptx::Bool': boolean for adaptive calculations.
-- 'isAdapty::Bool': boolean for adaptive calculations.
+- 'isAdapt::Bool': boolean for adaptive calculations.
 
 # Output Argument(s)
 - '𝚽n::Vector{Float64}': angular in-cell flux.

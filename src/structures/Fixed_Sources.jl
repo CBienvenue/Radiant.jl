@@ -82,6 +82,19 @@ function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volum
     this.normalization_factor += fixed_source.get_normalization_factor()
 end
 
+"""
+    get_source(this::Fixed_Sources,particle::Particle)
+
+Get the sources for a given particle.
+
+# Input Argument(s)
+- `this::Fixed_Sources` : collection of fixed sources.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `source::Source` : sources for the given particle.
+
+"""
 function get_source(this::Fixed_Sources,particle::Particle)
     index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
     method = this.solvers.get_method(particle)
@@ -93,10 +106,34 @@ function get_source(this::Fixed_Sources,particle::Particle)
     end
 end
 
+"""
+    get_particles(this::Fixed_Sources)
+
+Get the particle list.
+
+# Input Argument(s)
+- `this::Fixed_Sources` : collection of fixed sources.
+
+# Output Argument(s)
+- `particles::Vector{Particle}` : particle list.
+
+"""
 function get_particles(this::Fixed_Sources)
     return this.particles
 end
 
+"""
+    get_normalization_factor(this::Fixed_Sources)
+
+Get the normalization factor.
+
+# Input Argument(s)
+- `this::Fixed_Sources` : collection of fixed sources.
+
+# Output Argument(s)
+- `normalization_factor::Float64` : normalization factor.
+
+"""
 function get_normalization_factor(this::Fixed_Sources)
     return this.normalization_factor
 end

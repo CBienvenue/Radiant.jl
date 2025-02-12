@@ -4,9 +4,13 @@
 Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 
 # Input Argument(s)
-- 'N::Int64': number of directions.
+- 'N::Int64': quadrature order.
 - 'quadrature_type::String': type of quadrature.
 - 'Ndims::Int64': dimension of the geometry.
+- 'Nd::Int64' : number of directions.
+- 'Mn::Array{Float64}' : moment-to-discrete matrix.
+- 'Dn::Array{Float64}' : discrete-to-moment matrix.
+- 'Qdims::Int64' : quadrature dimension.
 
 # Output Argument(s)
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
@@ -20,11 +24,8 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
   Operator.
 
 """
-function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)
+function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)
 
-Mn_FP = Mn
-Dn_FP = Dn
-N_FP = Nd
 λ₀ = 0.0
 
 if Qdims == 1 
@@ -287,5 +288,5 @@ elseif Qdims == 3
 
 end
 
-return ℳ, λ₀, Mn_FP, Dn_FP, N_FP
+return ℳ, λ₀
 end

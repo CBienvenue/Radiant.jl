@@ -1,10 +1,11 @@
 """
     compute_sweep_1D(𝚽ℓ::Array{Float64,3},Qℓ::Array{Float64,3},Σt::Vector{Float64},
     mat::Vector{Int64},Nx::Int64,Δx::Vector{Float64},μ::Float64,Mn::Vector{Float64},
-    Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool
-    C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},
-    sources::Vector{Union{Float64, Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,
-    ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64})
+    Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,
+    C::Vector{Float64},ω::Vector{Array{Float64}},
+    sources::Vector{Union{Float64, Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,
+    𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},
+    𝒲::Array{Float64})
 
 Compute the flux solution along one direction in 1D geometry.
 
@@ -22,17 +23,19 @@ Compute the flux solution along one direction in 1D geometry.
 - '𝒪::Vector{Int64}': spatial and/or energy closure relation order.
 - 'Nm::Vector{Int64}': number of spatial and/or energy moments.
 - 'isFC::Bool': boolean to indicate if full coupling or not.
-- 'C::Vector{Vector{Float64}}': constants related to the spatial and energy normalized
+- 'C::Vector{Float64}': constants related to the spatial and energy normalized
    Legendre expansion.
 - 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
 - 'sources::Vector{Union{Float64, Array{Float64}}}': surface sources intensities.
-- 'isAdapt::Vector{Bool}': boolean for adaptive calculations.
+- 'isAdapt::Bool': boolean for adaptive calculations.
 - 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in
    calculations.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'S⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
-- 'S⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
+- 'S⁻::Vector{Float64}': stopping powers at higher energy group boundary.
+- 'S⁺::Vector{Float64}': stopping powers at lower energy group boundary.
+- 'S::Array{Float64}': stopping powers.
+- '𝒲::Array{Float64}': weighting constants.
 
 # Output Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.

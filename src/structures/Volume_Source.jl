@@ -136,10 +136,34 @@ function set_boundaries(this::Volume_Source,axis::String,boundaries::Vector{Floa
     this.boundaries[axis] = boundaries
 end
 
+"""
+    get_particle(this::Volume_Source)
+
+Get the source particle.
+
+# Input Argument(s)
+- `this::Volume_Source` : volume source.
+
+# Output Argument(s)
+- `particle::Particle` : particle.
+
+"""
 function get_particle(this::Volume_Source)
     return this.particle
 end
 
+"""
+    get_normalization_factor(this::Volume_Source)
+
+Get the source normalization factor.
+
+# Input Argument(s)
+- `this::Volume_Source` : volume source.
+
+# Output Argument(s)
+- `normalization_factor::Float64` : source normalization factor.
+
+"""
 function get_normalization_factor(this::Volume_Source)
     return this.normalization_factor
 end

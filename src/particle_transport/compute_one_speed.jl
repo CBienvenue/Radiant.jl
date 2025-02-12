@@ -1,13 +1,13 @@
 """
     compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},
     Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,
-    Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Union{Vector{Vector{Float64}},
-    Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},
-    𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Vector{Float64}},
-    ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,
-    sources::Array{Union{Array{Float64},Float64}},isAdapt::Vector{Bool},isCSD::Bool,
+    Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},
+    Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},
+    Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,
+    ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,
     solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},
-    S⁺::Vector{Float64},α::Vector{Float64},ℳ::Array{Float64})
+    S⁺::Vector{Float64},S::Array{Float64},α::Vector{Float64},ℳ::Array{Float64},
+    𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 Solve the one-speed transport equation for a given particle.  
 
@@ -30,34 +30,42 @@ Solve the one-speed transport equation for a given particle.
 - '𝒪::Vector{Int64}': spatial and/or energy closure relation order.
 - 'Nm::Vector{Int64}': number of spatial and/or energy moments.
 - 'isFC::Bool': boolean to indicate if full coupling or not.
-- 'C::Vector{Vector{Float64}}': constants related to the spatial and energy normalized
+- 'C::Vector{Float64}': constants related to the spatial and energy normalized
    Legendre expansion.
 - 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
 - 'I_max::Int64': maximum number of iterations of inner iterations.
 - 'ϵ_max::Float64': convergence criterion on the flux solution.
 - 'sources::Array{Union{Array{Float64},Float64}}': surface sources intensities.
-- 'isAdapt::Vector{Bool}': boolean for adaptive calculations.
+- 'isAdapt::Bool': boolean for adaptive calculations.
 - 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in 
    calculations.
 - 'solver::Int64': indicate the type of solver to execute.
 - 'E::Float64': group midpoint energy.
 - 'ΔE::Float64': energy group width.
 - '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'S⁻::Vector{Float64}': restricted stopping power at higher energy group boundary.
-- 'S⁺::Vector{Float64}': restricted stopping power at lower energy group boundary.
-- 'α::Vector{Float64}': restricted momentum transfer.
+- 'S⁻::Vector{Float64}': stopping power at higher energy group boundary.
+- 'S⁺::Vector{Float64}': stopping power at lower energy group boundary.
+- 'S::Array{Float64}' : stopping powers.
+- 'α::Vector{Float64}': momentum transfer.
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
+- '𝒜::String' : acceleration method for in-group iterations.
+- 'is_CUDA::Bool' : boolean for CUDA parallelism.
+- 'Ntot::Int64' : accumulator for the total number of in-group iterations.
+- 'is_EM::Bool' : boolean for electromagnetic fields.
+- 'ℳ_EM::Array{Float64}' : electromagnetic scattering matrix.
+- '𝒲::Array{Float64}' : weighting constants.
 
 # Output Argument(s)
 - '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
 - '𝚽E12::Array{Float64}': outgoing flux along the energy axis.
 - 'ρ_in::Float64': estimated spectral radius.
+- 'Ntot::Int64' : accumulator for the total number of in-group iterations.
 
 # Reference(s)
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},α::Vector{Float64},ℳ::Array{Float64},Mn_FP::Array{Float64},Dn_FP::Array{Float64},N_FP::Int64,𝒜::String,is_CUDA::Bool,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},α::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
@@ -79,7 +87,7 @@ isInnerConv=false
     if solver ∉ [4,5,6] Qℓ = scattering_source(Qℓ,𝚽ℓ,Σs,mat,P,pℓ,Nm[5],Ns) end
 
     # Finite element treatment of the angular Fokker-Planck term
-    if solver ∈ [2,4] Qℓ = fokker_planck_source(N_FP,P,Nm[5],α,𝚽ℓ,Qℓ,Ns,mat,ℳ,Mn_FP,Dn_FP) end
+    if solver ∈ [2,4] Qℓ = fokker_planck_source(P,Nm[5],α,𝚽ℓ,Qℓ,Ns,mat,ℳ) end
 
     # Electromagnetic source
     if is_EM
@@ -108,17 +116,9 @@ isInnerConv=false
         if ndims == 1
             𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
         elseif ndims == 2
-            if is_CUDA
-                error()
-            else
-                𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
-            end
+            𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
         elseif ndims == 3
-            if is_CUDA
-                error()
-            else
-                𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
-            end
+            𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
         else
             error("Error in computeOneSpeed.jl: Dimension is not 1, 2 or 3.")
         end

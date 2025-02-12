@@ -175,6 +175,21 @@ function set_scattering_model(this::Inelastic_Leptons,scattering_model::String)
     this.scattering_model = uppercase(scattering_model)
 end
 
+"""
+    in_distribution(this::Inelastic_Leptons)
+
+Describe the energy discretization method for the incoming particle in the inelastic lepton
+interaction.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function in_distribution(this::Inelastic_Leptons)
     is_dirac = false
     N = 8
@@ -182,6 +197,21 @@ function in_distribution(this::Inelastic_Leptons)
     return is_dirac, N, quadrature
 end
 
+"""
+    out_distribution(this::Inelastic_Leptons)
+
+Describe the energy discretization method for the outgoing particle in the inelastic lepton
+interaction.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure.
+
+# Output Argument(s)
+- `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
+- `N::Int64` : number of quadrature points.
+- `quadrature::String` : type of quadrature.
+
+"""
 function out_distribution(this::Inelastic_Leptons)
     is_dirac = false
     N = 8
@@ -189,6 +219,28 @@ function out_distribution(this::Inelastic_Leptons)
     return is_dirac, N, quadrature
 end
 
+"""
+    bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,
+    Ec::Float64,Ui::Float64,particle::Particle)
+
+Gives the integration energy bounds for the outgoing particle for inelastic lepton
+interaction. 
+
+# Input Argument(s)
+- `this::Annihilation` : annihilation structure.
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `Ei::Float64` : energy of the incoming particle.
+- `type::String` : type of interaction.
+- `Ec::Float64` : energy cutoff between soft and catastrophic interactions.
+- `particle::Particle` : incoming particle.
+
+# Output Argument(s)
+- `Ef⁻::Float64` : upper bound.
+- `Ef⁺::Float64` : lower bound.
+- `isSkip::Bool` : define if the integration is skipped or not.
+
+"""
 function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64,Ui::Float64,particle::Particle)
     if is_electron(particle)
         # Scattered electron
@@ -224,6 +276,28 @@ function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float6
     return Ef⁻,Ef⁺,isSkip
 end
 
+"""
+    dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,
+    particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
+
+Gives the Legendre moments of the scattering cross-sections for inelastic lepton
+interaction. 
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : incoming particle energy.
+- `Ef::Float64` : outgoing particle energy.
+- `type::String` : type of interaction.
+- `particle::Particle` : incoming particle.
+- `Ui::Float64` : binding energy of the subshell.
+- `Zi::Int64` : number of electrons in the subshell.
+- `Ti::Float64` : mean kinetic energy of electrons in the subshell.
+
+# Output Argument(s)
+- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+
+"""
 function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
 
     # Initialization
@@ -275,7 +349,22 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
     return σℓ
 end
 
+"""
+    tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
+Gives the total cross-section for inelastic lepton interaction. 
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+- `particle::Particle` : incoming particle.
+- `Z::Int64` : atomic number.
+
+# Output Argument(s)
+- `σt::Float64` : total cross-section.
+
+"""
 function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
     # Inititalisation
@@ -315,6 +404,26 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,
     return σt
 end
 
+"""
+    sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,
+    state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
+
+Gives the stopping power for inelastic lepton interaction.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
+- `ρ::Float64` : material density.
+- `state_of_matter::String` : state of matter.
+- `Ei::Float64` : incoming particle energy.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+- `particle::Particle` : incoming particle.
+
+# Output Argument(s)
+- `S::Float64` : stopping power.
+
+"""
 function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
 
     # Initialization
@@ -374,10 +483,38 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
     return Sr
 end
 
+"""
+    mt(this::Inelastic_Leptons)
+
+Gives the momentum transfer for inelastic lepton interaction.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure. 
+
+# Output Argument(s)
+- `α::Float64` : momentum transfer.
+
+"""
 function mt(this::Inelastic_Leptons)
     return 0
 end
 
+"""
+    preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::Particle)
+
+Preload data for multigroup inelastic lepton calculations.
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `ωz::Vector{Float64}` : weight fraction of the elements composing the material. 
+- `ρ::Float64` : material density.
+- `particle::Particle` : incoming particle.
+
+# Output Argument(s)
+N/A
+
+"""
 function preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::Particle)
     this.plasma_energy = plasma_energy(Z,ωz,ρ)
     this.effective_mean_excitation_energy = effective_mean_excitation_energy(Z,ωz)

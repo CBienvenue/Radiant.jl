@@ -7,7 +7,7 @@ Read FMAC-M cross sections file and save their content in a Cross_Sections struc
 - 'cross_sections::Cross_Sections': cross sections informations.
 
 # Output Argument(s)
-- 'cross_sections::Cross_Sections': cross sections with actualized informations.
+N/A
 
 # Reference(s)
 N/A
@@ -371,7 +371,28 @@ cross_sections.set_energy_boundaries(energy_boundaries)
 
 end
 
-# Function to read sequential integer values
+"""
+    read_Int!(index_III::Int64,index_III_line::Int64,Li::Int64,line::String,
+    vector::Vector{Int64})
+
+Read sequential integer values in FMAC-M file.
+
+# Input Argument(s)
+- 'index_III::Int64' : index of the line in the FMAC-M file.
+- 'index_III_line::Int64' : index in the data to be collected.
+- 'Li::Int64' : length of the data to be collected.
+- 'line::String' : line content.
+- 'vector::vector{Int64}' : vector that contain the integer values.
+
+# Output Argument(s)
+- 'index_III::Int64' : index of the line in the FMAC-M file.
+- 'index_III_line::Int64' : index in the data to be collected.
+- 'vector::vector{Int64}' : vector that contain the integer values.
+
+# Reference(s)
+N/A
+
+"""
 function read_Int!(index_III::Int64,index_III_line::Int64,Li::Int64,line::String,vector::Vector{Int64})
     append!(vector,map(x->parse(Int,x),split(line," ")))
     vector=Int64.(vector)
@@ -382,10 +403,31 @@ function read_Int!(index_III::Int64,index_III_line::Int64,Li::Int64,line::String
     else
         index_III_line += 1
     end
-    return index_III, index_III_line,vector
+    return index_III,index_III_line,vector
 end
 
-# Function to read sequential real values
+"""
+    read_Float!(index_III::Int64,index_III_line::Int64,Li::Int64,line::String,
+    vector::Vector{Float64})
+
+Read sequential real values in FMAC-M file.
+
+# Input Argument(s)
+- 'index_III::Int64' : index of the line in the FMAC-M file.
+- 'index_III_line::Int64' : index in the data to be collected.
+- 'Li::Int64' : length of the data to be collected.
+- 'line::String' : line content.
+- 'vector::vector{Float64}' : vector that contain the real values.
+
+# Output Argument(s)
+- 'index_III::Int64' : index of the line in the FMAC-M file.
+- 'index_III_line::Int64' : index in the data to be collected.
+- 'vector::vector{Float64}' : vector that contain the real values.
+
+# Reference(s)
+N/A
+
+"""
 function read_Float!(index_III::Int64,index_III_line::Int64,Li::Int64,line::String,vector::Vector{Float64})
     if string(line[1]) != "-" line = "+" * line end
     # Is it the last line of the record ?
@@ -411,5 +453,5 @@ function read_Float!(index_III::Int64,index_III_line::Int64,Li::Int64,line::Stri
         append!(vector,mantissa * 10^expo)
         vector=Float64.(vector)
     end
-    return index_III, index_III_line,vector
+    return index_III,index_III_line,vector
 end

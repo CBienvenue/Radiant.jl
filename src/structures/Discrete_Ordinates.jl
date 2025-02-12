@@ -323,36 +323,122 @@ function set_acceleration(this::Discrete_Ordinates,acceleration::String)
     this.acceleration = acceleration
 end
 
+"""
+    get_legendre_order(this::Discrete_Ordinates)
+
+Get the Legendre truncation order.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `legendre_order::Int64` : Legendre truncation order.
+
+"""
 function get_legendre_order(this::Discrete_Ordinates)
     if ismissing(this.legendre_order) error("Unable to get Legendre order. Missing data.") end
     return this.legendre_order
 end
 
+"""
+    get_quadrature_order(this::Discrete_Ordinates)
+
+Get the quadrature order.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `quadrature_order::Int64` : quadrature order.
+
+"""
 function get_quadrature_order(this::Discrete_Ordinates)
     if ismissing(this.quadrature_order) error("Unable to get quadrature order. Missing data.") end
     return this.quadrature_order
 end
 
+"""
+    get_quadrature_type(this::Discrete_Ordinates)
+
+Get the quadrature type.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `quadrature_type::String` : quadrature type.
+
+"""
 function get_quadrature_type(this::Discrete_Ordinates)
     if ismissing(this.quadrature_type) error("Unable to get quadrature type. Missing data.") end
     return this.quadrature_type
 end
 
+"""
+    get_angular_boltzmann(this::Discrete_Ordinates)
+
+Get the type of angular discretization for the Boltzmann operator.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `angular_boltzmann::String` : type of angular discretization for the Boltzmann operator.
+
+"""
 function get_angular_boltzmann(this::Discrete_Ordinates)
     if ismissing(this.angular_boltzmann) error("Unable to get angular Boltzmann treatment type. Missing data.") end
     return this.angular_boltzmann
 end
 
+"""
+    get_angular_fokker_planck(this::Discrete_Ordinates)
+
+Get the type of angular discretization for the Fokker-Planck operator.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `angular_fokker_planck::String` : type of angular discretization for the Fokker-Planck
+  operator.
+
+"""
 function get_angular_fokker_planck(this::Discrete_Ordinates)
     if ismissing(this.angular_fokker_planck) error("Unable to get angular Fokker-Planck treatment type. Missing data.") end
     return this.angular_fokker_planck
 end
 
+"""
+    get_particle(this::Discrete_Ordinates)
+
+Get the particle associated with the discretization methods.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `particle::Particle` : particle.
+
+"""
 function get_particle(this::Discrete_Ordinates)
     if ismissing(this.particle) error("Unable to get particle. Missing data.") end
     return this.particle
 end
 
+"""
+    get_solver_type(this::Discrete_Ordinates)
+
+Get the type of solver for transport calculations.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `solver::String` : type of solver for transport calculations.
+- `isCSD::Bool` : indicate if continuous slowing-down term is used or not.
+
+"""
 function get_solver_type(this::Discrete_Ordinates)
     if ismissing(this.solver_type) error("Unable to get solver type. Missing data.") end
     if this.solver_type == "BTE"
@@ -379,6 +465,23 @@ function get_solver_type(this::Discrete_Ordinates)
     return solver, isCSD
 end
 
+"""
+    get_schemes(this::Discrete_Ordinates,geometry::Geometry,is_full_coupling::Bool)
+
+Get the space and/or energy schemes informations.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+- `geometry::Geometry` : geometry.
+- `is_full_coupling::Bool` : indicate if high-order moments are coupled with high-order
+  schemes.
+
+# Output Argument(s)
+- `schemes::Vector{String}` : scheme types.
+- `𝒪::Vector{Int64}` : order of the schemes.
+- `Nm::Vector{Int64}` : numbers of moments.
+
+"""
 function get_schemes(this::Discrete_Ordinates,geometry::Geometry,is_full_coupling::Bool)
     schemes = Vector{String}(undef,4)
     𝒪 = Vector{Int64}(undef,4)
@@ -405,18 +508,66 @@ function get_schemes(this::Discrete_Ordinates,geometry::Geometry,is_full_couplin
     return schemes,𝒪,Nm
 end
 
+"""
+    get_convergence_criterion(this::Discrete_Ordinates)
+
+Get the convergence criterion for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `convergence_criterion::Float64` : convergence criterion.
+
+"""
 function get_convergence_criterion(this::Discrete_Ordinates)
     return this.convergence_criterion
 end
 
+"""
+    get_maximum_iteration(this::Discrete_Ordinates)
+
+Get the maximum number of iterations for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `maximum_iteration::Int64` : maximum number of iterations.
+
+"""
 function get_maximum_iteration(this::Discrete_Ordinates)
     return this.maximum_iteration
 end
 
+"""
+    get_acceleration(this::Discrete_Ordinates)
+
+Get the acceleration method for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `acceleration::String` : acceleration method.
+
+"""
 function get_acceleration(this::Discrete_Ordinates)
     return this.acceleration
 end
 
+"""
+    get_quadrature_dimension(this::Discrete_Ordinates)
+
+Get the quadrature dimension.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `quadrature_dimension::Int64` : quadrature dimension.
+
+"""
 function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
     if this.quadrature_type ∈ ["gauss-legendre","gauss-lobatto"]
         return 1

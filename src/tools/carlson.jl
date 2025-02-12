@@ -13,7 +13,7 @@ Computing the Carlson quadrature on the unit sphere.
 - 'w::Vector{Float64}': vector with wᵢ weights.
 
 # Reference(s)
-- Carlson (1976) : A Method of Characteristics and Other Improvements in Solution Methods
+- Carlson (1976), A Method of Characteristics and Other Improvements in Solution Methods
   for the Transport Equation.
 
 """

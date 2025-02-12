@@ -1,8 +1,8 @@
 """
-    energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,
-    solvers::Solvers,sources::Fixed_Sources,flux::Flux,type::String)
+    energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,
+    sources::Fixed_Sources,flux::Flux,particles::Vector{<:Particle})
 
-Calculate the energy deposition and print it in the output file. 
+Calculate and extract the energy deposition. 
 
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
@@ -10,7 +10,7 @@ Calculate the energy deposition and print it in the output file.
 - 'solvers::Solvers': solvers informations.
 - 'sources::Sources': sources informations.
 - 'flux::Flux': flux informations.
-- 'type::String': type of output.
+- 'particles::Vector{<:Particle}': particle list.
 
 # Output Argument(s)
 - 'Dtot::Array{Float64}': energy deposition per voxel [MeV/g × cmⁿ per particle], where

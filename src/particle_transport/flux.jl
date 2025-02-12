@@ -1,13 +1,13 @@
 """
-    flux(cross_sections::Cross_Sections,geometry::Geometry,flux::Flux,type::String)
+    flux(cross_sections::Cross_Sections,geometry::Geometry,flux::Flux,particle::Particle)
 
-Calculate the flux solution and print it in the output file.
+Calculate and extract the flux solution for a given particle.
 
 # Input Argument(s)
 - 'cross_sections::Cross_Sections': cross section informations.
 - 'geometry::Geometry': geometry informations.
 - 'flux::Flux': flux informations.
-- 'type::String': type of output.
+- 'particle::Particle': particle.
 
 # Output Argument(s)
 - 'F::Array{Float64}': integrated flux [particle per cm² per s] per group and per voxel.

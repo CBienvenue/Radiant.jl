@@ -6,18 +6,20 @@ Compute the polynomial interpolation basis, based on a choice of quadrature and
 discretization, and produce both discrete-to-moments and moments-to-discrete matrices.  
 
 # Input Argument(s)
-- 'Ndims::Int64': geometry dimension.
-- 'Ω::Union{Vector{Vector{Float64}}': director cosines.
-- 'w::Vector{Float64}': quadrature weights.
-- 'L::Int64': legendre order.
-- 'N::Int64': quadrature order.
-- 'type::String': type of scattering source treatment.
+- 'Ndims::Int64' : geometry dimension.
+- 'Ω::Union{Vector{Vector{Float64}}' : director cosines.
+- 'w::Vector{Float64}' : quadrature weights.
+- 'L::Int64' : legendre order.
+- 'N::Int64' : quadrature order.
+- 'type::String' : type of scattering source treatment.
+- 'Qdims::Int64' : quadrature dimension.
 
 # Output Argument(s)
-- 'P::Int64': number of interpolation basis.
-- 'Mn::Array{Float64}': discrete-to-moment matrix.
-- 'Dn::Array{Float64}': moment-to-discrete matrix.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis.
+- 'P::Int64' : number of interpolation basis.
+- 'Mn::Array{Float64}' : discrete-to-moment matrix.
+- 'Dn::Array{Float64}' : moment-to-discrete matrix.
+- 'pℓ::Vector{Int64}' : legendre order associated with each interpolation basis.
+- 'pm::Vector{INt64}' : spherical harmonics order associated with each interpolation basis.
 
 # Reference(s)
 - Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
@@ -183,7 +185,34 @@ end
 return P,Mn,Dn,pℓ,pm
 end
 
-function angular_matrix_gram_schmidt(N,L,Rℓm,w,Qdims,g_type=1)
+"""
+    angular_matrix_gram_schmidt(N::Int64,L::Int64,Rℓm::Array{Float64},w::Vector{Float64},
+    Qdims::Int64,g_type::Int64=1)
+
+Choose a suitable interpolation basis based on a Gram-Schmidt process and produce both
+discrete-to-moments and moments-to-discrete matrices.
+
+# Input Argument(s)
+- 'N::Int64' : number of directions in the quadrature set.
+- 'L::Int64' : legendre truncation order.
+- 'Rℓm::Array{Float64}' : spherical harmonics.
+- 'w::Vector{Float64}' : quadrature weights.
+- 'Qdims::Int64' : quadrature dimension.
+- 'g_type::Int64' : type of Galerkin method.
+
+# Output Argument(s)
+- 'P::Int64' : number of interpolation basis.
+- 'Mn::Array{Float64}' : discrete-to-moment matrix.
+- 'Dn::Array{Float64}' : moment-to-discrete matrix.
+- 'pℓ::Vector{Int64}' : legendre order associated with each interpolation basis.
+- 'pm::Vector{INt64}' : spherical harmonics order associated with each interpolation basis.
+
+# Reference(s)
+- Drumm (2011) : Least squares finite elements algorithms in the SCEPTRE radiation
+  transport code.
+
+"""
+function angular_matrix_gram_schmidt(N::Int64,L::Int64,Rℓm::Array{Float64},w::Vector{Float64},Qdims::Int64,g_type::Int64=1)
 
     norm(a) = sqrt(sum(a.*a))
     inner_product(a,b) = sum(a.*b)

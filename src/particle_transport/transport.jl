@@ -11,13 +11,13 @@ Solve transport calculations.
 - 'sources::Fixed_Sources': sources informations.
 
 # Output Argument(s)
-N/A
+- 'flux::Flux': flux solution.
 
 # Reference(s)
 N/A
 
 """
-function transport(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,is_CUDA::Bool)
+function transport(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources)
 
 #----
 # Initialization
@@ -37,7 +37,7 @@ if Npart == 1
     method = solvers.get_method(particle)
     fixed_source = sources.get_source(particle)
 
-    particle_flux = compute_flux(cross_sections,geometry,method,fixed_source,is_CUDA)
+    particle_flux = compute_flux(cross_sections,geometry,method,fixed_source)
     flux.add_flux(particle_flux)
 
 #----
@@ -89,7 +89,7 @@ else
             if n == 1 source += fixed_source[i] end
 
             # Transport
-            particle_flux = compute_flux(cross_sections,geometry,method[i],source,is_CUDA)
+            particle_flux = compute_flux(cross_sections,geometry,method[i],source)
             flux.add_flux(particle_flux)
 
             # Compute scattered particles sources

@@ -1,4 +1,42 @@
-function electromagnetic_scattering_matrix(𝓔::Vector{Float64},𝓑::Vector{Float64},q::Real,Ω,w,Ndims::Int64,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,Eb::Vector{Float64},ΔE::Vector{Float64},Qdims::Int64)
+"""
+    electromagnetic_scattering_matrix(𝓔::Vector{Float64},𝓑::Vector{Float64},q::Real,
+    Ω::Vector{Vector{Float64}},w::Vector{Float64},Ndims::Int64,Mn::Array{Float64},
+    Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,
+    Eb::Vector{Float64},ΔE::Vector{Float64},Qdims::Int64)
+
+Compute the scattering matrix corresponding to the Lorentz force by external
+electromagnetic fields.
+
+# Input Argument(s)
+- '𝓔::Vector{Float64}' : electric field along x-, y- and z-axis.
+- '𝓑::Vector{Float64}' : magnetic field along x-, y- and z-axis.
+- 'q::Real' : particle charge.
+- 'Ω::Vector{Vector{Float64}}' : angular quadrature points.
+- 'w::Vector{Float64}' : angulare quadrature weights.
+- 'Ndims::Int64' : dimension of the geometry.
+- 'Mn::Array{Float64}' : moment-to-discrete matrix.
+- 'Dn::Array{Float64}' : discrete-to-moment matrix.
+- 'pℓ::Vector{Int64}' : legendre order associated with each of the spherical harmonics in
+  the interpolation basis.
+- 'pm::Vector{Int64}' : spherical harmonics order associated with each of the spherical
+  harmonics in the interpolation basis.
+- 'P::Int64' : number of spherical harmonics in the interpolation basis.
+- 'Ng::Int64' : number of groups.
+- 'Eb::Vector{Float64}' : energy boundaries.
+- 'ΔE::Vector{Float64}' : energy widths.
+- 'Qdims::Int64' : dimension of the quadrature.
+
+# Output Argument(s)
+- 'ℳ_EM::Array{Float64}' : scattering matrix. 
+
+# Reference(s)
+- Fan et al. (2013), Modeling Electron Transport in the Presence of Electric and Magnetic
+  Fields.
+- St-Aubin et al. (2015), A deterministic solution to the first order linear Boltzmann
+  transport equation in the presence of external magnetic fields.
+
+"""
+function electromagnetic_scattering_matrix(𝓔::Vector{Float64},𝓑::Vector{Float64},q::Real,Ω::Vector{Vector{Float64}},w::Vector{Float64},Ndims::Int64,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,Eb::Vector{Float64},ΔE::Vector{Float64},Qdims::Int64)
 
 c = 1 # Speed of light (to set)
 # case $μ = ±1$ to deal with

@@ -39,6 +39,18 @@ mutable struct Material
 end
 
 # Method(s)
+"""
+    println(this::Material)
+
+To print the material properties.
+
+# Input Argument(s)
+- `this::Material` : material.
+
+# Output Argument(s)
+N/A
+
+"""
 function println(this::Material)
     println("Material:")
     println("   ID:                           $(this.id)")

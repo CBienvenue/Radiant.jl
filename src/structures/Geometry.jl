@@ -61,6 +61,18 @@ mutable struct Geometry
 end
 
 # Method(s)
+"""
+    is_ready_to_build(this::Geometry)
+
+Verify if all the required information to build the geometry is present.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+N/A
+
+"""
 function is_ready_to_build(this::Geometry)
     if ismissing(this.type) error("The type of geometry has to be specified.") end
     if ismissing(this.dimension) error("The geometry dimension has to be specified.") end
@@ -342,21 +354,69 @@ function set_region_boundaries(this::Geometry,axis::String,region_boundaries::Ve
     this.region_boundaries[lowercase(axis)] = region_boundaries
 end
 
+"""
+    get_type(this::Geometry)
+
+Get the type of geometry.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+- `type::String` : type of geometry.
+
+"""
 function get_type(this::Geometry)
     if ismissing(this.type) error("Unable to get geometry type. Missing data.") end
     return this.type
 end
 
+"""
+    get_dimension(this::Geometry)
+
+Get the dimension of geometry.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+- `dimension::Int64` : dimension of geometry.
+
+"""
 function get_dimension(this::Geometry)
     if ismissing(this.dimension) error("Unable to get geometry dimension. Missing data.") end
     return this.dimension
 end
 
+"""
+    get_axis(this::Geometry)
+
+Get the axis associated with the geometry.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+- `axis::Vector{String}` : axis associated with the geometry.
+
+"""
 function get_axis(this::Geometry)
     if ismissing(this.axis) error("Unable to get geometry axis system. Missing data.") end
     return this.axis
 end
 
+"""
+    get_number_of_voxels(this::Geometry)
+
+Get the number of voxels along each axis.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+- `number_of_voxels::Vector{Int64}` : number of voxels along each axis.
+
+"""
 function get_number_of_voxels(this::Geometry)
     N = this.get_dimension()
     axis = this.get_axis()
@@ -368,6 +428,18 @@ function get_number_of_voxels(this::Geometry)
     return Ns
 end
 
+"""
+    get_voxels_width(this::Geometry)
+
+Get the voxels width along each axis.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+- `voxels_width::Vector{Vector{Float64}}` : voxels width along each axis.
+
+"""
 function get_voxels_width(this::Geometry)
     N = this.get_dimension()
     axis = this.get_axis()
@@ -379,11 +451,36 @@ function get_voxels_width(this::Geometry)
     return Δs
 end
 
+"""
+    get_material_per_voxel(this::Geometry)
+
+Get the material in each voxel.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+
+# Output Argument(s)
+- `material_per_voxel::Array{Float64}` : material in each voxel.
+
+"""
 function get_material_per_voxel(this::Geometry)
     if ismissing(this.material_per_voxel) error("Unable to get material per voxel array. Missing data.") end
     return this.material_per_voxel
 end
 
+"""
+    get_voxels_position(this::Geometry,axis::String)
+
+Get the voxel position along a specified axis.
+
+# Input Argument(s)
+- `this::Geometry` : cross-sections library.
+- `axis::String` : axis.
+
+# Output Argument(s)
+- `voxels_position::Vector{Float64}` : voxels positions along the axis.
+
+"""
 function get_voxels_position(this::Geometry,axis::String)
     if ismissing(this.voxels_position) error("Unable to get voxel positions. Missing data.") end
     if axis ∉ this.get_axis() error("Unknown axis.") end
