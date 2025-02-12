@@ -20,8 +20,6 @@ Computing the Lebedev quadrature on the unit sphere.
 """
 function lebedev(N::Int64)
 
-N = N + 1
-
 # Correspondance between quadrature order and number of points
 rules = Dict(
      3  =>    6,
