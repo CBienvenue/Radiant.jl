@@ -6,19 +6,19 @@ Compute flux solution in a cell in 1D Cartesian geometry for the Boltzmann trans
 equation.
 
 # Input Argument(s)
-- 'μ::Float64': direction cosine.
-- 'Σt::Float64': total cross-sections.
-- 'Δx::Float64': size of voxels along x-axis.
-- 'Qn::Vector{Float64}': angular in-cell source.
-- '𝚽x12::Vector{Float64}': incoming angular flux along x-axis.
-- '𝒪x::Int64': spatial closure relation order.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'ωx::Vector{Float64}': weighting factors of the x-axis scheme.
-- 'isAdapt::Bool': boolean for adaptive calculations.
+- `μ::Float64`: direction cosine.
+- `Σt::Float64`: total cross-sections.
+- `Δx::Float64`: size of voxels along x-axis.
+- `Qn::Vector{Float64}`: angular in-cell source.
+- `𝚽x12::Vector{Float64}`: incoming angular flux along x-axis.
+- `𝒪x::Int64`: spatial closure relation order.
+- `C::Vector{Float64}`: constants related to normalized Legendre.
+- `ωx::Vector{Float64}`: weighting factors of the x-axis scheme.
+- `isAdapt::Bool`: boolean for adaptive calculations.
 
 # Output Argument(s)
-- '𝚽n::Vector{Float64}': angular in-cell flux.
-- '𝚽x12::Float64': outgoing angular flux along x-axis.
+- `𝚽n::Vector{Float64}`: angular in-cell flux.
+- `𝚽x12::Float64`: outgoing angular flux along x-axis.
 
 # Reference(s)
 N/A

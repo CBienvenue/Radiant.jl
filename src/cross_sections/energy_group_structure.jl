@@ -4,13 +4,13 @@
 Generate the group structure for multigroup calculations.
 
 # Input Argument(s)
-- 'Ng::Int64': number of groups.
-- 'E::Number': midpoint energy of the highest energy group.
-- 'Ec::Number': cutoff energy.
-- 'type::String': type of group structure.
+- `Ng::Int64`: number of groups.
+- `E::Number`: midpoint energy of the highest energy group.
+- `Ec::Number`: cutoff energy.
+- `type::String`: type of group structure.
 
 # Output Argument(s)
-- 'Eᵇ::Vector{Float64}': vector containing the (Ng+1)-boundaries of the group structure.
+- `Eᵇ::Vector{Float64}`: vector containing the (Ng+1)-boundaries of the group structure.
 
 # Reference(s)
 N/A

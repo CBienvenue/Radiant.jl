@@ -8,29 +8,29 @@ Compute flux solution in a cell in 1D Cartesian geometry for the Boltzmann Fokke
 equation.
 
 # Input Argument(s)
-- 'isFC::Bool': boolean to indicate if full coupling or not.
-- 'μ::Float64': direction cosine.
-- 'Σt::Float64': total cross-sections.
-- 'Δx::Float64': size of voxels along x-axis.
-- 'Qn::Vector{Float64}': angular in-cell source.
-- '𝚽x12::Vector{Float64}': incoming angular flux along x-axis.
-- 'S⁻::Float64': stopping powers at upper energy group boundary.
-- 'S⁺::Float64': stopping powers at lower energy group boundary.
-- 'S::Vector{Float64}': stopping powers.
-- 'ΔE::Float64': energy group width.
-- '𝚽E12::Vector{Float64}': incoming angular flux along E-axis.
-- '𝒪E::Int64': energy closure relation order.
-- '𝒪x::Int64': spatial closure relation order.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'ωE::Array{Float64}': weighting factors of the E-axis scheme.
-- 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
-- 'isAdapt::Bool': boolean for adaptive calculations.
-- '𝒲::Array{Float64}' : weighting constants.
+- `isFC::Bool`: boolean to indicate if full coupling or not.
+- `μ::Float64`: direction cosine.
+- `Σt::Float64`: total cross-sections.
+- `Δx::Float64`: size of voxels along x-axis.
+- `Qn::Vector{Float64}`: angular in-cell source.
+- `𝚽x12::Vector{Float64}`: incoming angular flux along x-axis.
+- `S⁻::Float64`: stopping powers at upper energy group boundary.
+- `S⁺::Float64`: stopping powers at lower energy group boundary.
+- `S::Vector{Float64}`: stopping powers.
+- `ΔE::Float64`: energy group width.
+- `𝚽E12::Vector{Float64}`: incoming angular flux along E-axis.
+- `𝒪E::Int64`: energy closure relation order.
+- `𝒪x::Int64`: spatial closure relation order.
+- `C::Vector{Float64}`: constants related to normalized Legendre.
+- `ωE::Array{Float64}`: weighting factors of the E-axis scheme.
+- `ωx::Array{Float64}`: weighting factors of the x-axis scheme.
+- `isAdapt::Bool`: boolean for adaptive calculations.
+- `𝒲::Array{Float64}` : weighting constants.
 
 # Output Argument(s)
-- '𝚽n::Vector{Float64}': angular in-cell flux.
-- '𝚽x12::Vector{Float64}': outgoing angular flux along x-axis.
-- '𝚽E12::Vector{Float64}': outgoing angular flux along E-axis.
+- `𝚽n::Vector{Float64}`: angular in-cell flux.
+- `𝚽x12::Vector{Float64}`: outgoing angular flux along x-axis.
+- `𝚽E12::Vector{Float64}`: outgoing angular flux along E-axis.
 
 # Reference(s)
 N/A

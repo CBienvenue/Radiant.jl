@@ -5,18 +5,18 @@
 Compute the elastic (in-group) scattering source.
 
 # Input Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- 'ndims::Int64': dimension of the geometry.
-- 'Σs::Array{Float64}': Legendre moments of the scattering differential cross-sections.
-- 'mat::Array{Int64}': material identifier per voxel.
-- 'P::Int64': number of angular interpolation basis.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis. 
-- 'Nm::Int64': number of spatial and/or energy moments.
-- 'Ns::Vector{Int64}': number of voxels per axis.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `ndims::Int64`: dimension of the geometry.
+- `Σs::Array{Float64}`: Legendre moments of the scattering differential cross-sections.
+- `mat::Array{Int64}`: material identifier per voxel.
+- `P::Int64`: number of angular interpolation basis.
+- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `Nm::Int64`: number of spatial and/or energy moments.
+- `Ns::Vector{Int64}`: number of voxels per axis.
 
 # Output Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
 
 # Reference(s)
 N/A
@@ -37,20 +37,20 @@ end
 Compute the inelastic (out-of-group) scattering source.
 
 # Input Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- 'ndims::Int64': dimension of the geometry.
-- 'Σs::Array{Float64}': Legendre moments of the scattering differential cross-sections.
-- 'mat::Array{Int64}': material identifier per voxel.
-- 'P::Int64': number of angular interpolation basis.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis. 
-- 'Nm::Int64': number of spatial and/or energy moments.
-- 'Ns::Vector{Int64}': number of voxels per axis.
-- 'Ngi::Int64': number of energy groups.
-- 'gf::Int64': group in which the particles scatter.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `ndims::Int64`: dimension of the geometry.
+- `Σs::Array{Float64}`: Legendre moments of the scattering differential cross-sections.
+- `mat::Array{Int64}`: material identifier per voxel.
+- `P::Int64`: number of angular interpolation basis.
+- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `Nm::Int64`: number of spatial and/or energy moments.
+- `Ns::Vector{Int64}`: number of voxels per axis.
+- `Ngi::Int64`: number of energy groups.
+- `gf::Int64`: group in which the particles scatter.
 
 # Output Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
 
 # Reference(s)
 N/A
@@ -75,20 +75,20 @@ end
 Compute the source produced by a secondary particle.
 
 # Input Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- 'ndims::Int64': dimension of the geometry.
-- 'Σs::Array{Float64}': Legendre moments of the scattering differential cross-sections.
-- 'mat::Array{Int64}': material identifier per voxel.
-- 'P::Int64': number of angular interpolation basis.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis. 
-- 'Nm::Int64': number of spatial and/or energy moments.
-- 'Ns::Vector{Int64}': number of voxels per axis.
-- 'Ngi::Int64': number of energy groups for the incoming particle.
-- 'Ngf::Int64': number of energy groups for the outgoing particle.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `ndims::Int64`: dimension of the geometry.
+- `Σs::Array{Float64}`: Legendre moments of the scattering differential cross-sections.
+- `mat::Array{Int64}`: material identifier per voxel.
+- `P::Int64`: number of angular interpolation basis.
+- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `Nm::Int64`: number of spatial and/or energy moments.
+- `Ns::Vector{Int64}`: number of voxels per axis.
+- `Ngi::Int64`: number of energy groups for the incoming particle.
+- `Ngf::Int64`: number of energy groups for the outgoing particle.
 
 # Output Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
 
 # Reference(s)
 N/A

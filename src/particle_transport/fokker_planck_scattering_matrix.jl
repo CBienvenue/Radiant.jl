@@ -6,24 +6,24 @@
 Calculate the Fokker-Planck scattering matrix.
 
 # Input Argument(s)
-- 'N::Int64': number of directions.
-- 'Ω::Union{Vector{Vector{Float64}},Vector{Float64}}': director cosines.
-- 'w::Vector{Float64}': quadrature weights.
-- 'Ndims::Int64': dimension of the geometry.
-- 'method::String': discretisation method for the angular Fokker-Planck term.
-- 'Mn::Array{Float64}': moment-to-discrete matrix.
-- 'Dn::Array{Float64}': discrete-to-moment matrix.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis. 
-- 'P::Int64': number of angular interpolation basis.
-- 'Qdims::Int64': quadrature dimension.
+- `N::Int64`: number of directions.
+- `Ω::Union{Vector{Vector{Float64}},Vector{Float64}}`: director cosines.
+- `w::Vector{Float64}`: quadrature weights.
+- `Ndims::Int64`: dimension of the geometry.
+- `method::String`: discretisation method for the angular Fokker-Planck term.
+- `Mn::Array{Float64}`: moment-to-discrete matrix.
+- `Dn::Array{Float64}`: discrete-to-moment matrix.
+- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `P::Int64`: number of angular interpolation basis.
+- `Qdims::Int64`: quadrature dimension.
 
 # Output Argument(s)
-- 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
-- 'λ₀::Float64': correction factor for total cross-section.
+- `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
+- `λ₀::Float64`: correction factor for total cross-section.
 
 # Reference(s)
-- Warsa (2012) : Moment-Preserving SN Discretizations for the One-Dimensional Fokker-Planck
-  Equation.
+- Warsa and Prinja (2012) : Moment-Preserving SN Discretizations for the One-Dimensional   
+  Fokker-Planck Equation.
 
 """
 function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},P::Int64,Qdims::Int64)

@@ -4,11 +4,11 @@
 Compute the resonance energy of a set of subshells.
 
 # Input Argument(s)
-- 'Z::Int64': atomic number of the element.
-- 'Ωp::Float64': plasma energy of the medium [in mₑc²].
+- `Z::Int64`: atomic number of the element.
+- `Ωp::Float64`: plasma energy of the medium [in mₑc²].
 
 # Output Argument(s)
-- 'Wi::Vector{Float64}': resonance energy per subshells [in mₑc²].
+- `Wi::Vector{Float64}`: resonance energy per subshells [in mₑc²].
 
 # Reference(s)
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and

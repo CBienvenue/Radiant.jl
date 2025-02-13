@@ -4,11 +4,11 @@
 Produce the natural cubic spline function for (x,y) dataset.
 
 # Input Argument(s)
-- 'x::Vector{Float64}': x.
-- 'y::Vector{Float64}': y.
+- `x::Vector{Float64}`: x.
+- `y::Vector{Float64}`: y.
 
 # Output Argument(s)
-- 'f::function': monotone cubic hermite spline function
+- `f::function`: monotone cubic hermite spline function
 
 """
 function natural_cubic_spline(x,y)
@@ -72,11 +72,11 @@ end
 Produce the monotone cubic hermite spline function for (x,y) dataset.
 
 # Input Argument(s)
-- 'x::Vector{Float64}': x.
-- 'y::Vector{Float64}': y.
+- `x::Vector{Float64}`: x.
+- `y::Vector{Float64}`: y.
 
 # Output Argument(s)
-- 'f::function': monotone cubic hermite spline function
+- `f::function`: monotone cubic hermite spline function
 
 # Reference(s)
 - Fritsch and Carlson (1980), Monotone piecewise cubic interpolation.

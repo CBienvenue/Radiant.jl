@@ -4,12 +4,12 @@
 Calculate the plasma energy of a free-electron gas with the electron density of the medium.
 
 # Input Argument(s)
-- 'Z::Vector{Int64}': atomic number of the element(s) composing the material.
-- 'ωz::Vector{Float64}': weight fraction of the element(s) composing the material.
-- 'ρ::Float64': density of the material [in g/cm³].
+- `Z::Vector{Int64}`: atomic number of the element(s) composing the material.
+- `ωz::Vector{Float64}`: weight fraction of the element(s) composing the material.
+- `ρ::Float64`: density of the material [in g/cm³].
 
 # Output Argument(s)
-- 'Ωp::Float64': plasma energy [in mₑc²].
+- `Ωp::Float64`: plasma energy [in mₑc²].
 
 # Reference(s)
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and

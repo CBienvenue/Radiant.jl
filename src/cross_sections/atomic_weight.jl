@@ -4,14 +4,14 @@
 Extract the atomic weight for atomic number Z ∈ {1,100}.
 
 # Input Argument(s)
-- 'Z::Int64': atomic number of the element.
+- `Z::Int64`: atomic number of the element.
 
 # Output Argument(s)
-- 'A::Float64': atomic weight [u].
+- `A::Float64`: atomic weight [u].
 
 # Reference(s)
-- Kawrakow (2021), The EGSnrc Code System: Monte Carlo Simulation of Electron and Photon
-  Transport.
+- Kawrakow et al. (2021), The EGSnrc Code System: Monte Carlo Simulation of Electron and   
+  Photon Transport.
 
 """
 function atomic_weight(Z::Int64)

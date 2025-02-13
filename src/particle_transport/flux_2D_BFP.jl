@@ -9,33 +9,33 @@ Compute flux solution in a cell in 2D Cartesian geometry for the Boltzmann Fokke
 equation.
 
 # Input Argument(s)
-- 'μ::Float64': direction cosine.
-- 'η::Float64': direction cosine.
-- 'Σt::Float64': total cross-sections.
-- 'Δx::Float64': size of voxels along x-axis.
-- 'Δy::Float64': size of voxels along y-axis.
-- 'Qn::Vector{Float64}': angular in-cell source.
-- '𝚽x12::Vector{Float64}': incoming angular flux along x-axis.
-- '𝚽y12::Vector{Float64}': incoming angular flux along y-axis.
-- 'S⁻::Float64': restricted stopping power at upper energy group boundary.
-- 'S⁺::Float64': restricted stopping power at lower energy group boundary.
-- 'ΔE::Float64': energy group width.
-- '𝚽E12::Vector{Float64}': incoming angular flux along E-axis.
-- '𝒪E::Int64': energy closure relation order.
-- '𝒪x::Int64': spatial closure relation order.
-- '𝒪y::Int64': spatial closure relation order.
-- 'C::Vector{Float64}': constants related to normalized Legendre.
-- 'ωE::Array{Float64}': weighting factors of the E-axis scheme.
-- 'ωx::Array{Float64}': weighting factors of the x-axis scheme.
-- 'ωy::Array{Float64}': weighting factors of the y-axis scheme.
-- 'isAdapt::Bool': boolean for adaptive calculations.
-- '𝒲::Array{Float64}' : weighting constants.
+- `μ::Float64`: direction cosine.
+- `η::Float64`: direction cosine.
+- `Σt::Float64`: total cross-sections.
+- `Δx::Float64`: size of voxels along x-axis.
+- `Δy::Float64`: size of voxels along y-axis.
+- `Qn::Vector{Float64}`: angular in-cell source.
+- `𝚽x12::Vector{Float64}`: incoming angular flux along x-axis.
+- `𝚽y12::Vector{Float64}`: incoming angular flux along y-axis.
+- `S⁻::Float64`: restricted stopping power at upper energy group boundary.
+- `S⁺::Float64`: restricted stopping power at lower energy group boundary.
+- `ΔE::Float64`: energy group width.
+- `𝚽E12::Vector{Float64}`: incoming angular flux along E-axis.
+- `𝒪E::Int64`: energy closure relation order.
+- `𝒪x::Int64`: spatial closure relation order.
+- `𝒪y::Int64`: spatial closure relation order.
+- `C::Vector{Float64}`: constants related to normalized Legendre.
+- `ωE::Array{Float64}`: weighting factors of the E-axis scheme.
+- `ωx::Array{Float64}`: weighting factors of the x-axis scheme.
+- `ωy::Array{Float64}`: weighting factors of the y-axis scheme.
+- `isAdapt::Bool`: boolean for adaptive calculations.
+- `𝒲::Array{Float64}` : weighting constants.
 
 # Output Argument(s)
-- '𝚽n::Vector{Float64}': angular in-cell flux.
-- '𝚽x12::Vector{Float64}': outgoing angular flux along x-axis.
-- '𝚽y12::Vector{Float64}': outgoing angular flux along y-axis.
-- '𝚽E12::Vector{Float64}': outgoing angular flux along E-axis.
+- `𝚽n::Vector{Float64}`: angular in-cell flux.
+- `𝚽x12::Vector{Float64}`: outgoing angular flux along x-axis.
+- `𝚽y12::Vector{Float64}`: outgoing angular flux along y-axis.
+- `𝚽E12::Vector{Float64}`: outgoing angular flux along E-axis.
 
 # Reference(s)
 N/A

@@ -4,16 +4,16 @@
 Compute weighting factors for linear flux expansion on 2D finite-element.
 
 # Input Argument(s)
-- 'x::Float64': centroid x-position of the linear part.
-- 'y::Float64': centroid y-position of the linear part.
+- `x::Float64`: centroid x-position of the linear part.
+- `y::Float64`: centroid y-position of the linear part.
 
 # Output Argument(s)
-- 'Q::Vector{Float64}': vector containing Q-values.
-- 'T::Vector{Float64}': vector containing T-values.
+- `Q::Vector{Float64}`: vector containing Q-values.
+- `T::Vector{Float64}`: vector containing T-values.
 
 # Reference(s)
-- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
-  for Charged Particle Transport.
+- Bienvenue et al. (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their
+  Usefulness for Charged Particle Transport.
 
 """
 function constant_linear(x::Float64,y::Float64)
@@ -31,17 +31,17 @@ end
 To compute δ lenghts corresponding to the subdomain.
 
 # Input Argument(s)
-- 'δ1::Float64' : parameter δ1.
-- 'δ2::Float64' : parameter δ2.
-- 'subdomain::String' : subdomain.
+- `δ1::Float64` : parameter δ1.
+- `δ2::Float64` : parameter δ2.
+- `subdomain::String` : subdomain.
 
 # Output Argument(s)
-- 'Q::Vector{Float64}' : vector with Qx and Qy.
-- 'T::Vector{Float64}' : vector with Tx and Ty.
+- `Q::Vector{Float64}` : vector with Qx and Qy.
+- `T::Vector{Float64}` : vector with Tx and Ty.
 
 # Reference(s)
-- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
-  for Charged Particle Transport.
+- Bienvenue et al. (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their
+  Usefulness for Charged Particle Transport.
 
 """
 function compute_QT(δ1::Float64,δ2::Float64,subdomain::String)
@@ -124,17 +124,17 @@ end
 To compute δ lenghts corresponding to the subdomain.
 
 # Input Argument(s)
-- 'x::Float64' : centroid x-position of the linear part.
-- 'y::Float64' : centroid y-position of the linear part.
-- 'subdomain::String' : subdomain.
+- `x::Float64` : centroid x-position of the linear part.
+- `y::Float64` : centroid y-position of the linear part.
+- `subdomain::String` : subdomain.
 
 # Output Argument(s)
-- 'δ1::Float64' : parameter δ1.
-- 'δ2::Float64' : parameter δ2.
+- `δ1::Float64` : parameter δ1.
+- `δ2::Float64` : parameter δ2.
 
 # Reference(s)
-- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
-  for Charged Particle Transport.
+- Bienvenue et al. (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their
+  Usefulness for Charged Particle Transport.
 
 """
 function compute_δ(x::Float64,y::Float64,subdomain::String)
@@ -187,15 +187,15 @@ end
 To determine the subdomain corresponding to a centroid position (x,y) 
 
 # Input Argument(s)
-- 'x::Float64': centroid x-position of the linear part.
-- 'y::Float64': centroid y-position of the linear part.
+- `x::Float64`: centroid x-position of the linear part.
+- `y::Float64`: centroid y-position of the linear part.
 
 # Output Argument(s)
-- 'subdomain::String': subdomain.
+- `subdomain::String`: subdomain.
 
 # Reference(s)
-- Bienvenue (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their Usefulness
-  for Charged Particle Transport.
+- Bienvenue et al. (2023) : Adaptive Gradient-Driven Coupled Linear Schemes and their
+  Usefulness for Charged Particle Transport.
 
 """
 function which_subdomain(x::Float64,y::Float64)

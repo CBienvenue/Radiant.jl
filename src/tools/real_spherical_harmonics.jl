@@ -4,16 +4,16 @@
 Calculate the real spherical harmonics components Rℓm(μ,ϕ). 
 
 # Input Argument(s)
-- 'ℓ::Int64': order of the associated Legendre polynomial.
-- 'm::Int64': degree of the associated Legendre polynomial.
-- 'μ::Float64': direction cosine.
-- 'ϕ::Float64': azimuthal angle.
+- `ℓ::Int64`: order of the associated Legendre polynomial.
+- `m::Int64`: degree of the associated Legendre polynomial.
+- `μ::Float64`: direction cosine.
+- `ϕ::Float64`: azimuthal angle.
 
 # Output Argument(s)
-- 'Rℓm::Float64': real spherical harmonics of order ℓ and degree m evaluated at μ and ϕ.
+- `Rℓm::Float64`: real spherical harmonics of order ℓ and degree m evaluated at μ and ϕ.
 
 # Reference(s)
-- Hébert (2016): Applied Reactor Physics
+- Hébert (2016), Applied Reactor Physics.
 
 """
 function real_spherical_harmonics(ℓ::Int64,m::Int64,μ::Float64,ϕ::Float64)

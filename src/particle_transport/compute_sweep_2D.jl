@@ -9,35 +9,35 @@
 Compute the flux solution along one direction in 2D geometry.
 
 # Input Argument(s)
-- '𝚽ℓ::Array{Float64,4}': Legendre components of the in-cell flux.
-- 'Qℓ::Array{Float64,4}': Legendre components of the in-cell source.
-- 'Σt::Vector{Float64}': total cross-sections.
-- 'mat::Array{Int64,2}': material identifier per voxel.
-- 'Ns::Vector{Int64}': number of voxels along x- and y-axis.
-- 'Δs::Vector{Vector{Float64}}': size of voxels along x- and y-axis.
-- 'Ω::Vector{Float64}': direction cosines μ and η.
-- 'Mn::Vector{Float64}': moment-to-discrete matrix.
-- 'Dn::Vector{Float64}': discrete-to-moment matrix.
-- 'P::Int64': number of angular interpolation basis.
-- '𝒪::Vector{Int64}': spatial and/or energy closure relation order.
-- 'Nm::Vector{Int64}': number of spatial and/or energy moments.
-- 'C::Vector{Float64}': constants related to the spatial and energy normalized
+- `𝚽ℓ::Array{Float64,4}`: Legendre components of the in-cell flux.
+- `Qℓ::Array{Float64,4}`: Legendre components of the in-cell source.
+- `Σt::Vector{Float64}`: total cross-sections.
+- `mat::Array{Int64,2}`: material identifier per voxel.
+- `Ns::Vector{Int64}`: number of voxels along x- and y-axis.
+- `Δs::Vector{Vector{Float64}}`: size of voxels along x- and y-axis.
+- `Ω::Vector{Float64}`: direction cosines μ and η.
+- `Mn::Vector{Float64}`: moment-to-discrete matrix.
+- `Dn::Vector{Float64}`: discrete-to-moment matrix.
+- `P::Int64`: number of angular interpolation basis.
+- `𝒪::Vector{Int64}`: spatial and/or energy closure relation order.
+- `Nm::Vector{Int64}`: number of spatial and/or energy moments.
+- `C::Vector{Float64}`: constants related to the spatial and energy normalized
    Legendre expansion.
-- 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
-- 'sources::Vector{Union{Float64, Array{Float64}}}': surface sources intensities.
-- 'isAdapt::Bool': boolean for adaptive calculations.
-- 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in
+- `ω::Vector{Array{Float64}}`: weighting factors of the closure relations.
+- `sources::Vector{Union{Float64, Array{Float64}}}`: surface sources intensities.
+- `isAdapt::Bool`: boolean for adaptive calculations.
+- `isCSD::Bool`: boolean to indicate if continuous slowing-down term is treated in
    calculations.
-- 'ΔE::Float64': energy group width.
-- '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'S⁻::Vector{Float64}': stopping power at higher energy group boundary.
-- 'S⁺::Vector{Float64}': stopping power at lower energy group boundary.
-- 'S::Array{Float64}': stopping powers.
-- '𝒲::Array{Float64}': weighting constants.
+- `ΔE::Float64`: energy group width.
+- `𝚽E12::Array{Float64}`: incoming flux along the energy axis.
+- `S⁻::Vector{Float64}`: stopping power at higher energy group boundary.
+- `S⁺::Vector{Float64}`: stopping power at lower energy group boundary.
+- `S::Array{Float64}`: stopping powers.
+- `𝒲::Array{Float64}`: weighting constants.
 
 # Output Argument(s)
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- '𝚽E12::Array{Float64}': outgoing flux along the energy axis.
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `𝚽E12::Array{Float64}`: outgoing flux along the energy axis.
 
 # Reference(s)
 N/A

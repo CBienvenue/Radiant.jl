@@ -4,10 +4,10 @@
 Transform any space in the input string into one unique space.
 
 # Input Argument(s)
-- 'line::String': string.
+- `line::String`: string.
 
 # Output Argument(s)
-- 'line_new::String': line only with "one space" spaces.
+- `line_new::String`: line only with "one space" spaces.
 
 # Reference(s)
 N/A

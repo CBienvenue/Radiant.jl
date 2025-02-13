@@ -4,14 +4,14 @@
 Extract the mean excitation energy for atomic number Z ∈ {1,100}.
 
 # Input Argument(s)
-- 'Z::Int64': atomic number of the element.
+- `Z::Int64`: atomic number of the element.
 
 # Output Argument(s)
-- 'I::Float64': mean excitation energy [in mₑc²].
+- `I::Float64`: mean excitation energy [in mₑc²].
 
 # Reference(s)
-- Seltzer (1981) : Evaluation of the Collision Stopping Power of Elements and Compounds for
-  Electrons and Positrons.
+- Seltzer and Berger (1981) : Evaluation of the Collision Stopping Power of Elements and
+  Compounds for Electrons and Positrons.
 
 """
 function mean_excitation_energy(Z::Int64)

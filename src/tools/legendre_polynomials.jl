@@ -4,14 +4,14 @@
 Calculate the Legendre polynomials Pℓ(x) values for ℓ=0,L.
 
 # Input Argument(s)
-- 'L::Int64': truncation order.
-- 'x::Float64': evaluation points.
+- `L::Int64`: truncation order.
+- `x::Float64`: evaluation points.
 
 # Output Argument(s)
-- 'Pℓ::Vector{Float64}': Legendre polynomials.
+- `Pℓ::Vector{Float64}`: Legendre polynomials.
 
 # Reference(s)
-- Weisstein (2023) : Legendre Polynomial [MathWorld - A Wolfram Web Resource].
+- Weisstein (2023), Legendre Polynomial [MathWorld - A Wolfram Web Resource].
 
 """
 function legendre_polynomials(L::Int64,x::Float64)

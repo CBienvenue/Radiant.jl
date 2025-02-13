@@ -4,7 +4,7 @@
 Write FMAC-M cross sections file.
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross sections informations.
+- `cross_sections::Cross_Sections`: cross sections informations.
 
 # Output Argument(s)
 N/A
@@ -257,8 +257,8 @@ end
 Write a single integer to the FMAC-M file.
 
 # Input Argument(s)
-- 'file::IOStream' : file.
-- 'i::Int64' : integer to write in the file.
+- `file::IOStream` : file.
+- `i::Int64` : integer to write in the file.
 
 # Output Argument(s)
 N/A
@@ -278,8 +278,8 @@ end
 Write a single real to the FMAC-M file.
 
 # Input Argument(s)
-- 'file::IOStream' : file.
-- 'i::Float64' : real to write in the file.
+- `file::IOStream` : file.
+- `i::Float64` : real to write in the file.
 
 # Output Argument(s)
 N/A
@@ -325,8 +325,8 @@ end
 Write a vector of integer to the FMAC-M file.
 
 # Input Argument(s)
-- 'file::IOStream' : file.
-- 'v::Vector{Int64}' : integer vector to write in the file.
+- `file::IOStream` : file.
+- `v::Vector{Int64}` : integer vector to write in the file.
 
 # Output Argument(s)
 N/A
@@ -351,8 +351,8 @@ end
 Write a vector of real to the FMAC-M file.
 
 # Input Argument(s)
-- 'file::IOStream' : file.
-- 'v::Vector{Float64}' : real vector to write in the file.
+- `file::IOStream` : file.
+- `v::Vector{Float64}` : real vector to write in the file.
 
 # Output Argument(s)
 N/A

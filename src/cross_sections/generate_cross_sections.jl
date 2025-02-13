@@ -4,7 +4,7 @@
 Generate cross sections and save their content in a Cross_Sections structure.
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross sections informations.
+- `cross_sections::Cross_Sections`: cross sections informations.
 
 # Output Argument(s)
 N/A

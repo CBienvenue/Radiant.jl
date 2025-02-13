@@ -4,13 +4,13 @@
 Computing the product of Gauss-Legendre and Gauss-Chebyshev quadratures on the unit sphere.
 
 # Input Argument(s)
-- 'N::Int64': quadrature order.
+- `N::Int64`: quadrature order.
 
 # Output Argument(s)
-- 'μ::Vector{Float64}': vector with μᵢ points.
-- 'η::Vector{Float64}': vector with ηᵢ points.
-- 'ξ::Vector{Float64}': vector with ξᵢ points.
-- 'w::Vector{Float64}': vector with wᵢ weights.
+- `μ::Vector{Float64}`: vector with μᵢ points.
+- `η::Vector{Float64}`: vector with ηᵢ points.
+- `ξ::Vector{Float64}`: vector with ξᵢ points.
+- `w::Vector{Float64}`: vector with wᵢ weights.
 
 # Reference(s)
 N/A

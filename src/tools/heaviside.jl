@@ -4,10 +4,10 @@
 Heaviside step function H(x).
 
 # Input Argument(s)
-- 'x::Number': input value of the function.
+- `x::Number`: input value of the function.
 
 # Output Argument(s)
-- 'H::Number': Heaviside function H(x).
+- `H::Number`: Heaviside function H(x).
 
 # Reference(s)
 N/A

@@ -9,31 +9,31 @@ group gf) for each Legendremoments up to order L. Also calculate the energy weig
 feed function 𝓕ₑ for energy-deposition cross section.
 
 # Input Argument(s)
-- 'Z::Vector{Int64}' : atomic number of the element(s) composing the material.
-- 'ωz::Vector{Float64}' : weight fraction of the element(s) composing the material.
-- 'ρ::Float64' : density of the material [in g/cm³].
-- 'L::Int64' : Legendre truncation order.
-- 'Ei::Float64' : energy of the incoming particle [in mₑc²].
-- 'Eout::Vector{Float64}' : energy group boundaries [in mₑc²].
-- 'Ng::Int64' : number of groups.
-- 'interaction::Interaction' : interaction informations.
-- 'gi::Int64' : incoming particle group index.
-- 'Ngi::Int64' :  number of groups for the incoming particle.
-- 'particles::Vector{Particle}' : list of the particles imply in the interaction.
-- 'Npts::Int64' : number of points in the quadrature.
-- 'type::String' : type of interaction (scattering or production).
-- 'incoming_particle::Particle' : incoming particle.
-- 'scattered_particle::Particle' : scattered particle.
-- 'Ein::Vector{Float64}' : energy group boundaries corresponding to the incoming
+- `Z::Vector{Int64}` : atomic number of the element(s) composing the material.
+- `ωz::Vector{Float64}` : weight fraction of the element(s) composing the material.
+- `ρ::Float64` : density of the material [in g/cm³].
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : energy of the incoming particle [in mₑc²].
+- `Eout::Vector{Float64}` : energy group boundaries [in mₑc²].
+- `Ng::Int64` : number of groups.
+- `interaction::Interaction` : interaction informations.
+- `gi::Int64` : incoming particle group index.
+- `Ngi::Int64` :  number of groups for the incoming particle.
+- `particles::Vector{Particle}` : list of the particles imply in the interaction.
+- `Npts::Int64` : number of points in the quadrature.
+- `type::String` : type of interaction (scattering or production).
+- `incoming_particle::Particle` : incoming particle.
+- `scattered_particle::Particle` : scattered particle.
+- `Ein::Vector{Float64}` : energy group boundaries corresponding to the incoming
   particle [in mₑc²].
-- 'Ec::Float64' : cutoff energy between soft and catastrophic interaction.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interaction.
 
 # Output Argument(s)
-- '𝓕::Array{Float64}' : feed function.
-- '𝓕ₑ::Vector{Float64}' : energy weighted feed function.
+- `𝓕::Array{Float64}` : feed function.
+- `𝓕ₑ::Vector{Float64}` : energy weighted feed function.
 
 # Reference(s)
-- MacFarlane (2021) : The NJOY Nuclear Data Processing System, Version 2012.
+- MacFarlane et al. (2021) : The NJOY Nuclear Data Processing System, Version 2012.
 
 """
 function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},Npts::Int64,type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64)

@@ -5,20 +5,20 @@
 Calculate and extract the charge deposition. 
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections' : cross section informations.
-- 'geometry::Geometry' : geometry informations.
-- 'solvers::Solvers' : solvers informations.
-- 'sources::Fixed_Sources' : sources informations.
-- 'flux::Flux' : flux informations.
-- 'particles::Vector{Particle}' : list of particles
+- `cross_sections::Cross_Sections` : cross section informations.
+- `geometry::Geometry` : geometry informations.
+- `solvers::Solvers` : solvers informations.
+- `sources::Fixed_Sources` : sources informations.
+- `flux::Flux` : flux informations.
+- `particles::Vector{Particle}` : list of particles
 
 # Output Argument(s)
-- 'Ctot::Array{Float64}' : charge deposition per voxel [MeV/g × cmⁿ per particle], where
+- `Ctot::Array{Float64}` : charge deposition per voxel [MeV/g × cmⁿ per particle], where
    n is the geometry dimension. 
 
 # Reference(s)
-- Morel (1996), A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for Solving the
-  Boltzmann-Fokker-Planck Equation.
+- Morel et al. (1996), A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for Solving
+  the Boltzmann-Fokker-Planck Equation.
 - Liscum-Powell (2000), Finite Element Numerical Solution of a Self-Adjoint Transport
   Equation for Coupled Electron-Photon Problems
 

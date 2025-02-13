@@ -4,10 +4,10 @@
 Extract the atomic number for element.
 
 # Input Argument(s)
-- 'id::String': symbol of an element.
+- `id::String`: symbol of an element.
 
 # Output Argument(s)
-- 'Z::Int64': atomic number of the element.
+- `Z::Int64`: atomic number of the element.
 
 # Reference(s)
 N/A

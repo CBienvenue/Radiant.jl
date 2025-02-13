@@ -5,20 +5,21 @@
 Compute the angular Fokker-Planck scattering matrix using Galerkin quadrature.
 
 # Input Argument(s)
-- 'N::Int64': number of directions.
-- 'Mn::Array{Float64}': moment-to-discrete matrix.
-- 'Dn::Array{Float64}': discrete-to-moment matrix.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis. 
-- 'P::Int64': number of angular interpolation basis.
+- `N::Int64`: number of directions.
+- `Mn::Array{Float64}`: moment-to-discrete matrix.
+- `Dn::Array{Float64}`: discrete-to-moment matrix.
+- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `P::Int64`: number of angular interpolation basis.
 
 # Output Argument(s)
-- 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
-- 'λ₀::Float64': correction factor for total cross-section.
+- `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
+- `λ₀::Float64`: correction factor for total cross-section.
 
 # Reference(s)
-- Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
+- Morel et al. (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
   Transport Equation.
-- Landesman (1988) : Angular Fokker-Pianck Decomposition and Representation Techniques.
+- Landesman and Morel (1988) : Angular Fokker-Pianck Decomposition and Representation
+  Techniques.
 
 """
 function fokker_planck_galerkin(N::Int64,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},P::Int64)

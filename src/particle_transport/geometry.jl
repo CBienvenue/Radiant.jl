@@ -4,11 +4,11 @@
 Compute the geometry properties for transport calculations. 
 
 # Input Argument(s)
-- 'geo::Geometry': geometry informations.
-- 'cs::Cross_Sections': cross section informations.
+- `geo::Geometry`: geometry informations.
+- `cs::Cross_Sections`: cross section informations.
 
 # Output Argument(s)
-- 'geo::Geometry': geometry informations.
+- `geo::Geometry`: geometry informations.
 
 # Reference(s)
 N/A

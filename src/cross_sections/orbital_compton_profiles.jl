@@ -4,17 +4,17 @@
 Compute the nuclei density for atomic number Z ∈ {1,100} in a material of density ρ.
 
 # Input Argument(s)
-- 'Z::Int64' : atomic number of the element.
+- `Z::Int64` : atomic number of the element.
 
 # Output Argument(s)
-- 'J₀::Vector{Float64}' : orbital Compton profiles of Hartree-Fock wavefunctions
+- `J₀::Vector{Float64}` : orbital Compton profiles of Hartree-Fock wavefunctions
   [in ħ/(mₑe²) → atomic units].
 
 # Reference(s)
 - Biggs et al. (1975), Hartree-Fock Compton profiles for the elements.
 - Carlson (1975), Photoelectron and Auger Spectroscopy (p.337-343).
-- Seltzer (1981), Evaluation of the Collision Stopping Power of Elements and Compounds for
-  Electrons and Positrons.
+- Seltzer and Berger (1981), Evaluation of the Collision Stopping Power of Elements and
+  Compounds for Electrons and Positrons.
 
 """
 function orbital_compton_profiles(Z::Int64)

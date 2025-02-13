@@ -5,13 +5,13 @@
 Solve transport calculations.
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross section informations.
-- 'geometry::Geometry': geometry informations.
-- 'solvers::Solvers': solvers informations.
-- 'sources::Fixed_Sources': sources informations.
+- `cross_sections::Cross_Sections`: cross section informations.
+- `geometry::Geometry`: geometry informations.
+- `solvers::Solvers`: solvers informations.
+- `sources::Fixed_Sources`: sources informations.
 
 # Output Argument(s)
-- 'flux::Flux': flux solution.
+- `flux::Flux`: flux solution.
 
 # Reference(s)
 N/A

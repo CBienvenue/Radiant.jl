@@ -8,26 +8,26 @@ Compute the scattering matrix corresponding to the Lorentz force by external
 electromagnetic fields.
 
 # Input Argument(s)
-- '𝓔::Vector{Float64}' : electric field along x-, y- and z-axis.
-- '𝓑::Vector{Float64}' : magnetic field along x-, y- and z-axis.
-- 'q::Real' : particle charge.
-- 'Ω::Vector{Vector{Float64}}' : angular quadrature points.
-- 'w::Vector{Float64}' : angulare quadrature weights.
-- 'Ndims::Int64' : dimension of the geometry.
-- 'Mn::Array{Float64}' : moment-to-discrete matrix.
-- 'Dn::Array{Float64}' : discrete-to-moment matrix.
-- 'pℓ::Vector{Int64}' : legendre order associated with each of the spherical harmonics in
+- `𝓔::Vector{Float64}` : electric field along x-, y- and z-axis.
+- `𝓑::Vector{Float64}` : magnetic field along x-, y- and z-axis.
+- `q::Real` : particle charge.
+- `Ω::Vector{Vector{Float64}}` : angular quadrature points.
+- `w::Vector{Float64}` : angulare quadrature weights.
+- `Ndims::Int64` : dimension of the geometry.
+- `Mn::Array{Float64}` : moment-to-discrete matrix.
+- `Dn::Array{Float64}` : discrete-to-moment matrix.
+- `pℓ::Vector{Int64}` : legendre order associated with each of the spherical harmonics in
   the interpolation basis.
-- 'pm::Vector{Int64}' : spherical harmonics order associated with each of the spherical
+- `pm::Vector{Int64}` : spherical harmonics order associated with each of the spherical
   harmonics in the interpolation basis.
-- 'P::Int64' : number of spherical harmonics in the interpolation basis.
-- 'Ng::Int64' : number of groups.
-- 'Eb::Vector{Float64}' : energy boundaries.
-- 'ΔE::Vector{Float64}' : energy widths.
-- 'Qdims::Int64' : dimension of the quadrature.
+- `P::Int64` : number of spherical harmonics in the interpolation basis.
+- `Ng::Int64` : number of groups.
+- `Eb::Vector{Float64}` : energy boundaries.
+- `ΔE::Vector{Float64}` : energy widths.
+- `Qdims::Int64` : dimension of the quadrature.
 
 # Output Argument(s)
-- 'ℳ_EM::Array{Float64}' : scattering matrix. 
+- `ℳ_EM::Array{Float64}` : scattering matrix. 
 
 # Reference(s)
 - Fan et al. (2013), Modeling Electron Transport in the Presence of Electric and Magnetic

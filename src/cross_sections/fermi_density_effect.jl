@@ -5,19 +5,19 @@
 Compute the Fermi density effect correction.
 
 # Input Argument(s)
-- 'Z::Vector{Int64}': atomic number of the element(s) composing the material.
-- 'ωz::Vector{Float64}': weight fraction of the element(s) composing the material.
-- 'ρ::Float64': density of the material [in g/cm³].
-- 'Ei::Float64': energy of the incoming particle [in mₑc²].
-- 'type::String': type of calculation.
+- `Z::Vector{Int64}`: atomic number of the element(s) composing the material.
+- `ωz::Vector{Float64}`: weight fraction of the element(s) composing the material.
+- `ρ::Float64`: density of the material [in g/cm³].
+- `Ei::Float64`: energy of the incoming particle [in mₑc²].
+- `type::String`: type of calculation.
 
 # Output Argument(s)
-- 'δF::Float64': Fermi density effect correction.
+- `δF::Float64`: Fermi density effect correction.
 
 # Reference(s)
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and
   Photon Transport.
-- Lorence (1989) : Physics Guide to CEPXS: A Multigroup Coupled Electron-Photon
+- Lorence et al. (1989) : Physics Guide to CEPXS: A Multigroup Coupled Electron-Photon
   Cross-Section Generating Code.
 
 """
@@ -113,7 +113,7 @@ elseif type == "sternheimer"
 elseif type == "none"
     δF = 0
 else    
-    error("Unknown '$type' of Fermi density effect calculations")
+    error("Unknown `$type` of Fermi density effect calculations")
 end
 
 return δF

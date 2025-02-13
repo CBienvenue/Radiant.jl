@@ -11,39 +11,39 @@ Identify atomic transition and accumulate the probability and energy of the prod
 radiation they generate.
 
 # Input Argument(s)
-- 'ΔE_auger::Vector{Vector{Float64}}' : energies of produced Auger electrons associated to
+- `ΔE_auger::Vector{Vector{Float64}}` : energies of produced Auger electrons associated to
   a vacancy in each energy shell.
-- 'ΔE_fluorescence::Vector{Vector{Float64}}' : energies of produced fluorescence photons
+- `ΔE_fluorescence::Vector{Vector{Float64}}` : energies of produced fluorescence photons
   associated to a vacancy in each energy shell.
-- 'η_auger::Vector{Vector{Float64}}' : probability of produced Auger electrons associated
+- `η_auger::Vector{Vector{Float64}}` : probability of produced Auger electrons associated
   to a vacancy in each energy shell.
-- 'η_fluorescence::Vector{Vector{Float64}}' : probability of produced fluorescence photons
+- `η_fluorescence::Vector{Vector{Float64}}` : probability of produced fluorescence photons
   associated to a vacancy in each energy shell.
-- 'ΔE⁻::Vector{Float64}' : energy transition of the cascade.
-- 'η⁻::Vector{Float64}' : transition probability of the cascade.
-- 'primary_shell⁻::Vector{String}' : subshell which contain a vacancy.
-- 'secondary_shell⁻::Vector{String}' : subshell which electron is filling the vacancy.
-- 'tertiary_shell⁻::Vector{String}' : subshell which electron is ejected (Auger electron) 
+- `ΔE⁻::Vector{Float64}` : energy transition of the cascade.
+- `η⁻::Vector{Float64}` : transition probability of the cascade.
+- `primary_shell⁻::Vector{String}` : subshell which contain a vacancy.
+- `secondary_shell⁻::Vector{String}` : subshell which electron is filling the vacancy.
+- `tertiary_shell⁻::Vector{String}` : subshell which electron is ejected (Auger electron) 
   following the filling of the vacancy.
-- 'ΔE::Vector{Float64}' : energy transition of the following cascade.
-- 'η::Vector{Float64}' : transition probability of the following cascade.
-- 'PS::Vector{String}' : subshell which contain a vacancy.
-- 'SS::Vector{String}' : subshell which electron is filling the vacancy.
-- 'TS::Vector{String}' : subshell which electron is ejected (Auger electron) 
+- `ΔE::Vector{Float64}` : energy transition of the following cascade.
+- `η::Vector{Float64}` : transition probability of the following cascade.
+- `PS::Vector{String}` : subshell which contain a vacancy.
+- `SS::Vector{String}` : subshell which electron is filling the vacancy.
+- `TS::Vector{String}` : subshell which electron is ejected (Auger electron) 
   following the filling of the vacancy.
-- 'Nshells::Int64' : Number of subshells.
-- 'subshells::Vector{String}' : List of subshells in the atom.
-- 'PS₀::Vector{String}' : subshell which contain the first vacancy (before cascades).
-- 'ηmin::Float64' : minimum probability of the particle production to be considered.
+- `Nshells::Int64` : Number of subshells.
+- `subshells::Vector{String}` : List of subshells in the atom.
+- `PS₀::Vector{String}` : subshell which contain the first vacancy (before cascades).
+- `ηmin::Float64` : minimum probability of the particle production to be considered.
 
 # Output Argument(s)
-- 'ΔE_auger::Vector{Vector{Float64}}' : energies of produced Auger electrons associated to
+- `ΔE_auger::Vector{Vector{Float64}}` : energies of produced Auger electrons associated to
   a vacancy in each energy shell.
-- 'ΔE_fluorescence::Vector{Vector{Float64}}' : energies of produced fluorescence photons
+- `ΔE_fluorescence::Vector{Vector{Float64}}` : energies of produced fluorescence photons
   associated to a vacancy in each energy shell.
-- 'η_auger::Vector{Vector{Float64}}' : probability of produced Auger electrons associated
+- `η_auger::Vector{Vector{Float64}}` : probability of produced Auger electrons associated
   to a vacancy in each energy shell.
-- 'η_fluorescence::Vector{Vector{Float64}}' : probability of produced fluorescence photons
+- `η_fluorescence::Vector{Vector{Float64}}` : probability of produced fluorescence photons
   associated to a vacancy in each energy shell.
 
 # Reference(s)
@@ -116,16 +116,16 @@ Accumulate the probability and energy of the radiation produced by vacancies in 
 structure for each atom in the material.
 
 # Input Argument(s)
-- 'type::String' : type of the radiation (auger or fluorescence).
-- 'Z::Vector{Int64}' : atomic number of the elements in the material.
-- 'Ecutoff::Float64' : cutoff energy.
-- 'ηmin::Float64' : minimum probability of the production of specific Auger electrons
+- `type::String` : type of the radiation (auger or fluorescence).
+- `Z::Vector{Int64}` : atomic number of the elements in the material.
+- `Ecutoff::Float64` : cutoff energy.
+- `ηmin::Float64` : minimum probability of the production of specific Auger electrons
   following electron cascades.
 
 # Output Argument(s)
-- 'vec_ΔE::Vector{Vector{Vector{Float64}}}' : energy of the particles produced, by material
+- `vec_ΔE::Vector{Vector{Vector{Float64}}}` : energy of the particles produced, by material
   and by a vacancy in each subshell. 
-- 'vec_η::Vector{Vector{Vector{Float64}}}' : probability of the particles production, by
+- `vec_η::Vector{Vector{Vector{Float64}}}` : probability of the particles production, by
   material and by a vacancy in each subshell. 
 
 # Reference(s)

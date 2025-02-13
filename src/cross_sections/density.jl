@@ -4,14 +4,14 @@
 Extract the mass density for atomic number Z ∈ {1,100}.
 
 # Input Argument(s)
-- 'Z::Int64': atomic number of the element.
+- `Z::Int64`: atomic number of the element.
 
 # Output Argument(s)
-- 'ρ::Float64': density [in g/cm³].
+- `ρ::Float64`: density [in g/cm³].
 
 # Reference(s)
-- Kawrakow (2021), The EGSnrc Code System: Monte Carlo Simulation of Electron and Photon
-  Transport.
+- Kawrakow et al. (2021), The EGSnrc Code System: Monte Carlo Simulation of Electron and
+  Photon Transport.
 
 """
 function density(Z::Int64)

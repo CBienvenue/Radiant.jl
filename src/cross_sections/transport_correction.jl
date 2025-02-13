@@ -6,17 +6,17 @@ Compute the transport correction and/or the decomposition of elastic scattering 
 soft and catastrophic components.
 
 # Input Argument(s)
-- 'interaction::Interaction' : type of interaction.
-- 'L::Int64' : Legendre truncation order.
-- 'Σt::Float64' : total cross-section.
-- 'Σsℓ::Vector{Float64}' : Legendre moments of the scattering cross-section.
-- 'α::Float64' : momentum transfer.
-- 'solver::String' : solver type.
+- `interaction::Interaction` : type of interaction.
+- `L::Int64` : Legendre truncation order.
+- `Σt::Float64` : total cross-section.
+- `Σsℓ::Vector{Float64}` : Legendre moments of the scattering cross-section.
+- `α::Float64` : momentum transfer.
+- `solver::String` : solver type.
 
 # Output Argument(s)
-- 'Σt::Float64' : total cross-section.
-- 'Σsℓ::Vector{Float64}' : Legendre moments of the scattering cross-section.
-- 'α::Float64' : momentum transfer.
+- `Σt::Float64` : total cross-section.
+- `Σsℓ::Vector{Float64}` : Legendre moments of the scattering cross-section.
+- `α::Float64` : momentum transfer.
 
 # Reference(s)
 - Hébert (2016), Applied Reactor Physics.

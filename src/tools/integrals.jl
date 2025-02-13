@@ -4,13 +4,13 @@
 Compute the integral I = ∫(xⁿ/R²)dx, where R = a + bx, evaluated at x.
 
 # Input Argument(s)
-- 'x::Float64': evaluation point.
-- 'n::Int64': exponent.
-- 'a::Float64': coefficient.
-- 'b::Float64': coefficient.
+- `x::Float64`: evaluation point.
+- `n::Int64`: exponent.
+- `a::Float64`: coefficient.
+- `b::Float64`: coefficient.
 
 # Output Argument(s)
-- 'v::Vector{Float64}': integral evaluated at x for 0 ≤ n ≤ N.
+- `v::Vector{Float64}`: integral evaluated at x for 0 ≤ n ≤ N.
 
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
@@ -40,16 +40,13 @@ end
 Compute the integral I = ∫(xⁿ/R²)dx, where R = a + bx^2, evaluated at x.
 
 # Input Argument(s)
-- 'x::Float64': evaluation point.
-- 'n::Int64': exponent.
-- 'a::Float64': coefficient.
-- 'b::Float64': coefficient.
+- `x::Float64`: evaluation point.
+- `n::Int64`: exponent.
+- `a::Float64`: coefficient.
+- `b::Float64`: coefficient.
 
 # Output Argument(s)
-- 'v::Vector{Float64}': integral evaluated at x for 2 ≤ n ≤ N and n even only.
-
-# Author(s)
-Charles Bienvenue
+- `v::Vector{Float64}`: integral evaluated at x for 2 ≤ n ≤ N and n even only.
 
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
@@ -80,19 +77,16 @@ end
 Compute the integral I = ∫tⁿzᵐdx, where z = a + bx and t = α + βx, evaluated at x.
 
 # Input Argument(s)
-- 'x::Float64': evaluation point.
-- 'n::Int64': exponent.
-- 'm::Int64': exponent.
-- 'a::Float64': coefficient.
-- 'b::Float64': coefficient.
-- 'α::Float64': coefficient.
-- 'β::Float64': coefficient.
+- `x::Float64`: evaluation point.
+- `n::Int64`: exponent.
+- `m::Int64`: exponent.
+- `a::Float64`: coefficient.
+- `b::Float64`: coefficient.
+- `α::Float64`: coefficient.
+- `β::Float64`: coefficient.
 
 # Output Argument(s)
-- 'v::Vector{Float64}': integral evaluated at x for (n,m).
-
-# Author(s)
-Charles Bienvenue
+- `v::Vector{Float64}`: integral evaluated at x for (n,m).
 
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
@@ -149,19 +143,16 @@ end
 Compute the integral I = ∫(1/(tⁿzᵐ√z))dx, where z = a + bx and t = α + βx, evaluated at x.
 
 # Input Argument(s)
-- 'x::Float64': evaluation point.
-- 'n::Int64': exponent.
-- 'm::Int64': exponent.
-- 'a::Float64': coefficient.
-- 'b::Float64': coefficient.
-- 'α::Float64': coefficient.
-- 'β::Float64': coefficient.
+- `x::Float64`: evaluation point.
+- `n::Int64`: exponent.
+- `m::Int64`: exponent.
+- `a::Float64`: coefficient.
+- `b::Float64`: coefficient.
+- `α::Float64`: coefficient.
+- `β::Float64`: coefficient.
 
 # Output Argument(s)
-- 'v::Vector{Float64}': integral evaluated at x for (n,m).
-
-# Author(s)
-Charles Bienvenue
+- `v::Vector{Float64}`: integral evaluated at x for (n,m).
 
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
@@ -206,17 +197,14 @@ end
 Compute the integral I = ∫(xⁿ/√R)dx, where R = a + bx + cx², evaluated at x.
 
 # Input Argument(s)
-- 'x::Real': evaluation point.
-- 'n::Int64': exponent.
-- 'a::Real': coefficient.
-- 'b::Real': coefficient.
-- 'c::Real': coefficient.
+- `x::Real`: evaluation point.
+- `n::Int64`: exponent.
+- `a::Real`: coefficient.
+- `b::Real`: coefficient.
+- `c::Real`: coefficient.
 
 # Output Argument(s)
-- 'v::Vector{Float64}': integral evaluated at x up to order n.
-
-# Author(s)
-Charles Bienvenue
+- `v::Vector{Float64}`: integral evaluated at x up to order n.
 
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
@@ -255,15 +243,12 @@ end
 Compute the integral I = 0.5 ∫ Pⱼ₁(x)Pⱼ₂(x)Pⱼ₃(x) dx evaluated between -1 and 1.
 
 # Input Argument(s)
-- 'j₁::Int64': first Legendre polynomial index.
-- 'j₂::Int64': second Legendre polynomial index.
-- 'j₃::Int64': third Legendre polynomial index.
+- `j₁::Int64`: first Legendre polynomial index.
+- `j₂::Int64`: second Legendre polynomial index.
+- `j₃::Int64`: third Legendre polynomial index.
 
 # Output Argument(s)
-- '𝒲::Float64': integral evaluated between -1 and 1.
-
-# Author(s)
-Charles Bienvenue
+- `𝒲::Float64`: integral evaluated between -1 and 1.
 
 """
 function 𝒢₆(j₁::Int64,j₂::Int64,j₃::Int64)

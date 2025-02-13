@@ -4,24 +4,25 @@
 Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 
 # Input Argument(s)
-- 'N::Int64': quadrature order.
-- 'quadrature_type::String': type of quadrature.
-- 'Ndims::Int64': dimension of the geometry.
-- 'Nd::Int64' : number of directions.
-- 'Mn::Array{Float64}' : moment-to-discrete matrix.
-- 'Dn::Array{Float64}' : discrete-to-moment matrix.
-- 'Qdims::Int64' : quadrature dimension.
+- `N::Int64`: quadrature order.
+- `quadrature_type::String`: type of quadrature.
+- `Ndims::Int64`: dimension of the geometry.
+- `Nd::Int64` : number of directions.
+- `Mn::Array{Float64}` : moment-to-discrete matrix.
+- `Dn::Array{Float64}` : discrete-to-moment matrix.
+- `Qdims::Int64` : quadrature dimension.
 
 # Output Argument(s)
-- 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
-- 'λ₀::Float64': correction factor for total cross-section.
+- `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
+- `λ₀::Float64`: correction factor for total cross-section.
 
 # Reference(s)
 - Morel (1985) : An Improved Fokker-Planck Angular Differencing Scheme.
-- Landesman (1988) : Angular Fokker-Pianck Decomposition and Representation Techniques.
-- Larsen (2010) : Advances in Discrete-Ordinates Methodology.
-- Morel (2007) : A Discretization Scheme for the Three-Dimensional Angular Fokker-Planck
-  Operator.
+- Landesman and Morel (1988) : Angular Fokker-Pianck Decomposition and Representation
+  Techniques.
+- Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
+- Morel et al. (2007) : A Discretization Scheme for the Three-Dimensional Angular
+  Fokker-Planck Operator.
 
 """
 function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)

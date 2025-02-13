@@ -5,14 +5,14 @@
 Prepare the volume source produced by fixed sources for transport calculations.
 
 # Input Argument(s)
-- 'particle::Particle': particule type.
-- 'source::Volume_Source': volume source information.
-- 'cross_sections::Cross_Sections': cross-sections information.
-- 'geometry::Geometry': geometry information.
+- `particle::Particle`: particule type.
+- `source::Volume_Source`: volume source information.
+- `cross_sections::Cross_Sections`: cross-sections information.
+- `geometry::Geometry`: geometry information.
 
 # Output Argument(s)
-- 'Q': source density.
-- 'norm': normalization factor.
+- `Q`: source density.
+- `norm`: normalization factor.
 
 # Reference(s)
 N/A

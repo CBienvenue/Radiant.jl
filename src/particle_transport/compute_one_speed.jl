@@ -12,57 +12,57 @@
 Solve the one-speed transport equation for a given particle.  
 
 # Input Argument(s)
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- 'Qℓout::Array{Float64}': Legendre components of the out-of-group in-cell source.
-- 'Σt::Vector{Float64}': total cross-sections.
-- 'Σs::Array{Float64}': Legendre moments of the scattering differential cross-sections.
-- 'mat::Array{Int64,3}': material identifier per voxel.
-- 'ndims::Int64': dimension of the geometry.
-- 'N::Int64': number of discrete ordinates.
-- 'ig::Int64': energy group index.
-- 'Ns::Vector{Int64}': number of voxels per axis.
-- 'Δs::Vector{Vector{Float64}}': size of each voxels per axis.
-- 'Ω::Union{Vector{Vector{Float64}},Vector{Float64}}': director cosines.
-- 'Mn::Array{Float64,2}': moment-to-discrete matrix.
-- 'Dn::Array{Float64,2}': discrete-to-moment matrix.
-- 'P::Int64': number of angular interpolation basis.
-- 'pℓ::Vector{Int64}': legendre order associated with each interpolation basis. 
-- '𝒪::Vector{Int64}': spatial and/or energy closure relation order.
-- 'Nm::Vector{Int64}': number of spatial and/or energy moments.
-- 'isFC::Bool': boolean to indicate if full coupling or not.
-- 'C::Vector{Float64}': constants related to the spatial and energy normalized
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `Qℓout::Array{Float64}`: Legendre components of the out-of-group in-cell source.
+- `Σt::Vector{Float64}`: total cross-sections.
+- `Σs::Array{Float64}`: Legendre moments of the scattering differential cross-sections.
+- `mat::Array{Int64,3}`: material identifier per voxel.
+- `ndims::Int64`: dimension of the geometry.
+- `N::Int64`: number of discrete ordinates.
+- `ig::Int64`: energy group index.
+- `Ns::Vector{Int64}`: number of voxels per axis.
+- `Δs::Vector{Vector{Float64}}`: size of each voxels per axis.
+- `Ω::Union{Vector{Vector{Float64}},Vector{Float64}}`: director cosines.
+- `Mn::Array{Float64,2}`: moment-to-discrete matrix.
+- `Dn::Array{Float64,2}`: discrete-to-moment matrix.
+- `P::Int64`: number of angular interpolation basis.
+- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `𝒪::Vector{Int64}`: spatial and/or energy closure relation order.
+- `Nm::Vector{Int64}`: number of spatial and/or energy moments.
+- `isFC::Bool`: boolean to indicate if full coupling or not.
+- `C::Vector{Float64}`: constants related to the spatial and energy normalized
    Legendre expansion.
-- 'ω::Vector{Array{Float64}}': weighting factors of the closure relations.
-- 'I_max::Int64': maximum number of iterations of inner iterations.
-- 'ϵ_max::Float64': convergence criterion on the flux solution.
-- 'sources::Array{Union{Array{Float64},Float64}}': surface sources intensities.
-- 'isAdapt::Bool': boolean for adaptive calculations.
-- 'isCSD::Bool': boolean to indicate if continuous slowing-down term is treated in 
+- `ω::Vector{Array{Float64}}`: weighting factors of the closure relations.
+- `I_max::Int64`: maximum number of iterations of inner iterations.
+- `ϵ_max::Float64`: convergence criterion on the flux solution.
+- `sources::Array{Union{Array{Float64},Float64}}`: surface sources intensities.
+- `isAdapt::Bool`: boolean for adaptive calculations.
+- `isCSD::Bool`: boolean to indicate if continuous slowing-down term is treated in 
    calculations.
-- 'solver::Int64': indicate the type of solver to execute.
-- 'E::Float64': group midpoint energy.
-- 'ΔE::Float64': energy group width.
-- '𝚽E12::Array{Float64}': incoming flux along the energy axis.
-- 'S⁻::Vector{Float64}': stopping power at higher energy group boundary.
-- 'S⁺::Vector{Float64}': stopping power at lower energy group boundary.
-- 'S::Array{Float64}' : stopping powers.
-- 'T::Vector{Float64}': momentum transfer.
-- 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
-- '𝒜::String' : acceleration method for in-group iterations.
-- 'is_CUDA::Bool' : boolean for CUDA parallelism.
-- 'Ntot::Int64' : accumulator for the total number of in-group iterations.
-- 'is_EM::Bool' : boolean for electromagnetic fields.
-- 'ℳ_EM::Array{Float64}' : electromagnetic scattering matrix.
-- '𝒲::Array{Float64}' : weighting constants.
+- `solver::Int64`: indicate the type of solver to execute.
+- `E::Float64`: group midpoint energy.
+- `ΔE::Float64`: energy group width.
+- `𝚽E12::Array{Float64}`: incoming flux along the energy axis.
+- `S⁻::Vector{Float64}`: stopping power at higher energy group boundary.
+- `S⁺::Vector{Float64}`: stopping power at lower energy group boundary.
+- `S::Array{Float64}` : stopping powers.
+- `T::Vector{Float64}`: momentum transfer.
+- `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
+- `𝒜::String` : acceleration method for in-group iterations.
+- `is_CUDA::Bool` : boolean for CUDA parallelism.
+- `Ntot::Int64` : accumulator for the total number of in-group iterations.
+- `is_EM::Bool` : boolean for electromagnetic fields.
+- `ℳ_EM::Array{Float64}` : electromagnetic scattering matrix.
+- `𝒲::Array{Float64}` : weighting constants.
 
 # Output Argument(s)
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- '𝚽E12::Array{Float64}': outgoing flux along the energy axis.
-- 'ρ_in::Float64': estimated spectral radius.
-- 'Ntot::Int64' : accumulator for the total number of in-group iterations.
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `𝚽E12::Array{Float64}`: outgoing flux along the energy axis.
+- `ρ_in::Float64`: estimated spectral radius.
+- `Ntot::Int64` : accumulator for the total number of in-group iterations.
 
 # Reference(s)
-- Larsen (2010) : Advances in Discrete-Ordinates Methodology.
+- Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
 function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})

@@ -4,17 +4,17 @@
 Computing the Lebedev quadrature on the unit sphere.
 
 # Input Argument(s)
-- 'N::Int64': quadrature order.
+- `N::Int64`: quadrature order.
 
 # Output Argument(s)
-- 'μ::Vector{Float64}': vector with μᵢ points.
-- 'η::Vector{Float64}': vector with ηᵢ points.
-- 'ξ::Vector{Float64}': vector with ξᵢ points.
-- 'w::Vector{Float64}': vector with wᵢ weights.
+- `μ::Vector{Float64}`: vector with μᵢ points.
+- `η::Vector{Float64}`: vector with ηᵢ points.
+- `ξ::Vector{Float64}`: vector with ξᵢ points.
+- `w::Vector{Float64}`: vector with wᵢ weights.
 
 # Reference(s)
 - Extracted from (and sightly modified): https://github.com/stefabat/Lebedev.jl
-- Lebedev and Laikov (1999) : A quadrature formula for the sphere of the 131st algebraic
+- Lebedev and Laikov (1999), A quadrature formula for the sphere of the 131st algebraic
   order of accuracy.
 
 """

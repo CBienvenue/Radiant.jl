@@ -4,13 +4,13 @@
 Computing the weights and evaluation points of requested quadrature.
 
 # Input Argument(s)
-- 'N::Int64': quadrature order.
-- 'type::String': type of quadrature.
-- 'Ndims::Int64=1': geometry dimension.
+- `N::Int64`: quadrature order.
+- `type::String`: type of quadrature.
+- `Ndims::Int64=1`: geometry dimension.
 
 # Output Argument(s)
-- 'Ω::Vector{Vector{Float64}}': evaluation points.
-- 'w::Vector{Float64}': weights.
+- `Ω::Vector{Vector{Float64}}`: evaluation points.
+- `w::Vector{Float64}`: weights.
 
 # Reference(s)
 N/A

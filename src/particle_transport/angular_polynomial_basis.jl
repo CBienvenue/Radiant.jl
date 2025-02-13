@@ -6,29 +6,30 @@ Compute the polynomial interpolation basis, based on a choice of quadrature and
 discretization, and produce both discrete-to-moments and moments-to-discrete matrices.  
 
 # Input Argument(s)
-- 'Ndims::Int64' : geometry dimension.
-- 'Ω::Union{Vector{Vector{Float64}}' : director cosines.
-- 'w::Vector{Float64}' : quadrature weights.
-- 'L::Int64' : legendre order.
-- 'N::Int64' : quadrature order.
-- 'type::String' : type of scattering source treatment.
-- 'Qdims::Int64' : quadrature dimension.
+- `Ndims::Int64` : geometry dimension.
+- `Ω::Union{Vector{Vector{Float64}}` : director cosines.
+- `w::Vector{Float64}` : quadrature weights.
+- `L::Int64` : legendre order.
+- `N::Int64` : quadrature order.
+- `type::String` : type of scattering source treatment.
+- `Qdims::Int64` : quadrature dimension.
 
 # Output Argument(s)
-- 'P::Int64' : number of interpolation basis.
-- 'Mn::Array{Float64}' : discrete-to-moment matrix.
-- 'Dn::Array{Float64}' : moment-to-discrete matrix.
-- 'pℓ::Vector{Int64}' : legendre order associated with each interpolation basis.
-- 'pm::Vector{INt64}' : spherical harmonics order associated with each interpolation basis.
+- `P::Int64` : number of interpolation basis.
+- `Mn::Array{Float64}` : discrete-to-moment matrix.
+- `Dn::Array{Float64}` : moment-to-discrete matrix.
+- `pℓ::Vector{Int64}` : legendre order associated with each interpolation basis.
+- `pm::Vector{INt64}` : spherical harmonics order associated with each interpolation basis.
 
 # Reference(s)
-- Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
+- Lewis (1984), Computational Methods of Neutron Transport.
+- Morel (1988), A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann
   Transport Equation.
-- Morel (2017) : Comparison of Two Galerkin Quadrature Methods.
-- Sanchez (2011) : On the Construction of Galerkin Angular Quadratures.
-- Lewis (1984) : Computational Methods of Neutron Transport.
-- Drumm (2011) : Least squares finite elements algorithms in the SCEPTRE radiation
+- Sanchez and Ragusa (2011), On the Construction of Galerkin Angular Quadratures.
+- Drumm et al. (2011), Least squares finite elements algorithms in the SCEPTRE radiation
   transport code.
+- Morel et al. (2017), Comparison of Two Galerkin Quadrature Methods.
+- Shands et al. (2024), A New Galerkin Quadrature Method Not Requiring a Matrix Inverse.
 
 """
 function angular_polynomial_basis(Ndims::Int64,Ω::Vector{Vector{Float64}},w::Vector{Float64},L::Int64,N::Int64,type::String,Qdims::Int64)
@@ -193,22 +194,22 @@ Choose a suitable interpolation basis based on a Gram-Schmidt process and produc
 discrete-to-moments and moments-to-discrete matrices.
 
 # Input Argument(s)
-- 'N::Int64' : number of directions in the quadrature set.
-- 'L::Int64' : legendre truncation order.
-- 'Rℓm::Array{Float64}' : spherical harmonics.
-- 'w::Vector{Float64}' : quadrature weights.
-- 'Qdims::Int64' : quadrature dimension.
-- 'g_type::Int64' : type of Galerkin method.
+- `N::Int64` : number of directions in the quadrature set.
+- `L::Int64` : legendre truncation order.
+- `Rℓm::Array{Float64}` : spherical harmonics.
+- `w::Vector{Float64}` : quadrature weights.
+- `Qdims::Int64` : quadrature dimension.
+- `g_type::Int64` : type of Galerkin method.
 
 # Output Argument(s)
-- 'P::Int64' : number of interpolation basis.
-- 'Mn::Array{Float64}' : discrete-to-moment matrix.
-- 'Dn::Array{Float64}' : moment-to-discrete matrix.
-- 'pℓ::Vector{Int64}' : legendre order associated with each interpolation basis.
-- 'pm::Vector{INt64}' : spherical harmonics order associated with each interpolation basis.
+- `P::Int64` : number of interpolation basis.
+- `Mn::Array{Float64}` : discrete-to-moment matrix.
+- `Dn::Array{Float64}` : moment-to-discrete matrix.
+- `pℓ::Vector{Int64}` : legendre order associated with each interpolation basis.
+- `pm::Vector{INt64}` : spherical harmonics order associated with each interpolation basis.
 
 # Reference(s)
-- Drumm (2011) : Least squares finite elements algorithms in the SCEPTRE radiation
+- Drumm et al. (2011) : Least squares finite elements algorithms in the SCEPTRE radiation
   transport code.
 
 """

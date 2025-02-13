@@ -8,38 +8,40 @@
 Produce the multigroup macroscopic cross sections.
 
 # Input Argument(s)
-- 'Z::Int64' : atomic number of the element.
-- 'ωz::Vector{Float64}' : weight fraction of the element(s) composing the material.
-- 'ρ::Float64' : density of the material [in g/cm³].
-- 'state_of_matter::String' : state of matter (solid, liquid or gaz).
-- 'Eiᵇ::Vector{Float64}': energy boundaries of the incoming particle [in MeV].
-- 'Efᵇ::Vector{Float64}': energy boundaries of the outgoing particle [in MeV].
-- 'L::Int64': Legendre truncation order.
-- 'interaction::Interaction': structure containing information about the interaction.
-- 'full_type::String' : type of interaction (scattering, production or absorption).
-- 'incoming_particle::Particle' : incoming particle in the interaction.
-- 'scattered_particle::Particle' : scattered particle in the interaction.
-- 'particles::Vector{Particle}' : list of particles involved in the interaction.
-- 'Npts::Int64' : number of points in the quadrature.
-- 'isStandard::Bool' : indicate if a new interaction is defined or not when calling
+- `Z::Int64` : atomic number of the element.
+- `ωz::Vector{Float64}` : weight fraction of the element(s) composing the material.
+- `ρ::Float64` : density of the material [in g/cm³].
+- `state_of_matter::String` : state of matter (solid, liquid or gaz).
+- `Eiᵇ::Vector{Float64}`: energy boundaries of the incoming particle [in MeV].
+- `Efᵇ::Vector{Float64}`: energy boundaries of the outgoing particle [in MeV].
+- `L::Int64`: Legendre truncation order.
+- `interaction::Interaction`: structure containing information about the interaction.
+- `full_type::String` : type of interaction (scattering, production or absorption).
+- `incoming_particle::Particle` : incoming particle in the interaction.
+- `scattered_particle::Particle` : scattered particle in the interaction.
+- `particles::Vector{Particle}` : list of particles involved in the interaction.
+- `Npts::Int64` : number of points in the quadrature.
+- `isStandard::Bool` : indicate if a new interaction is defined or not when calling
   multigroup function.
-- 'interactions::Vector{Interaction}' : list of all interactions that are taken into
+- `interactions::Vector{Interaction}` : list of all interactions that are taken into
   account for the cross-sections library.
 
 # Output Argument(s)
-- 'Σsℓ::Array{Float64,3}': Legendre moments of the differential cross section [in cm⁻¹].
-- 'Σt::Vector{Float64}': total cross sections [in cm⁻¹].
-- 'Σa::Vector{Float64}': absorption cross sections [in cm⁻¹].
-- 'Σs::Vector{Float64}': secondary production cross sections [in cm⁻¹].
-- 'Σe::Vector{Float64}': energy deposition cross sections [in MeV × cm⁻¹].
-- 'Σc::Vector{Float64}': charge deposition cross sections [in cm⁻¹].
-- 'Sb::Vector{Float64}': stopping power at boundaries [MeV × cm⁻¹].
-- 'S::Vector{Float64}': stopping power [MeV × cm⁻¹].
-- 'T::Vector{Float64}': momentum transfer [in cm⁻¹].
+- `Σsℓ::Array{Float64,3}`: Legendre moments of the differential cross section [in cm⁻¹].
+- `Σt::Vector{Float64}`: total cross sections [in cm⁻¹].
+- `Σa::Vector{Float64}`: absorption cross sections [in cm⁻¹].
+- `Σs::Vector{Float64}`: secondary production cross sections [in cm⁻¹].
+- `Σe::Vector{Float64}`: energy deposition cross sections [in MeV × cm⁻¹].
+- `Σc::Vector{Float64}`: charge deposition cross sections [in cm⁻¹].
+- `Sb::Vector{Float64}`: stopping power at boundaries [MeV × cm⁻¹].
+- `S::Vector{Float64}`: stopping power [MeV × cm⁻¹].
+- `T::Vector{Float64}`: momentum transfer [in cm⁻¹].
 
 # Reference(s)
-- Lorence (1989), Physics Guide to CEPXS: A Multigroup Coupled Electron-Photon
+- Lorence et al. (1989), Physics Guide to CEPXS: A Multigroup Coupled Electron-Photon
   Cross-Section Generating Code.
+- Bienvenue et al. (2025), Toward highly accurate multigroup coupled photon-electron-positron
+  cross-sections for the Boltzmann Fokker-Planck equation.
 
 """
 function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},Npts::Int64,isStandard::Bool,interactions::Vector{Interaction})

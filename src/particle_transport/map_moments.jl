@@ -4,11 +4,11 @@
 Produce a map between different space/energy moments configuration of the angular flux.
 
 # Input Argument(s)
-- '𝒪i::Vector{Int64}': incoming moment orders in space and energy.
-- '𝒪f::Vector{Int64}': outgoing moment orders in space and energy.
+- `𝒪i::Vector{Int64}`: incoming moment orders in space and energy.
+- `𝒪f::Vector{Int64}`: outgoing moment orders in space and energy.
 
 # Output Argument(s)
-- 'map::Vector{Int64}': vector of correspondance between the incoming and outgoing moments.
+- `map::Vector{Int64}`: vector of correspondance between the incoming and outgoing moments.
 
 # Reference(s)
 N/A

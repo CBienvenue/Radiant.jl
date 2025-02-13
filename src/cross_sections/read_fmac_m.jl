@@ -4,7 +4,7 @@
 Read FMAC-M cross sections file and save their content in a Cross_Sections structure.
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross sections informations.
+- `cross_sections::Cross_Sections`: cross sections informations.
 
 # Output Argument(s)
 N/A
@@ -378,16 +378,16 @@ end
 Read sequential integer values in FMAC-M file.
 
 # Input Argument(s)
-- 'index_III::Int64' : index of the line in the FMAC-M file.
-- 'index_III_line::Int64' : index in the data to be collected.
-- 'Li::Int64' : length of the data to be collected.
-- 'line::String' : line content.
-- 'vector::vector{Int64}' : vector that contain the integer values.
+- `index_III::Int64` : index of the line in the FMAC-M file.
+- `index_III_line::Int64` : index in the data to be collected.
+- `Li::Int64` : length of the data to be collected.
+- `line::String` : line content.
+- `vector::vector{Int64}` : vector that contain the integer values.
 
 # Output Argument(s)
-- 'index_III::Int64' : index of the line in the FMAC-M file.
-- 'index_III_line::Int64' : index in the data to be collected.
-- 'vector::vector{Int64}' : vector that contain the integer values.
+- `index_III::Int64` : index of the line in the FMAC-M file.
+- `index_III_line::Int64` : index in the data to be collected.
+- `vector::vector{Int64}` : vector that contain the integer values.
 
 # Reference(s)
 N/A
@@ -413,16 +413,16 @@ end
 Read sequential real values in FMAC-M file.
 
 # Input Argument(s)
-- 'index_III::Int64' : index of the line in the FMAC-M file.
-- 'index_III_line::Int64' : index in the data to be collected.
-- 'Li::Int64' : length of the data to be collected.
-- 'line::String' : line content.
-- 'vector::vector{Float64}' : vector that contain the real values.
+- `index_III::Int64` : index of the line in the FMAC-M file.
+- `index_III_line::Int64` : index in the data to be collected.
+- `Li::Int64` : length of the data to be collected.
+- `line::String` : line content.
+- `vector::vector{Float64}` : vector that contain the real values.
 
 # Output Argument(s)
-- 'index_III::Int64' : index of the line in the FMAC-M file.
-- 'index_III_line::Int64' : index in the data to be collected.
-- 'vector::vector{Float64}' : vector that contain the real values.
+- `index_III::Int64` : index of the line in the FMAC-M file.
+- `index_III_line::Int64` : index in the data to be collected.
+- `vector::vector{Float64}` : vector that contain the real values.
 
 # Reference(s)
 N/A

@@ -93,8 +93,8 @@ To define the elastic scattering model.
 - `model::String` : model of elastic scattering:
     - `rutherford` : screened Rutherford cross-sections.
     - `mott` : screened Mott cross-sections.
-- `is_KC::Bool` : Apply Karakow's Correction (true) or not (false).
-- `is_SC::Bool` : Apply Seltzer's Correction (true) or not (false).
+- `is_KC::Bool` : Apply Karakow correction (true) or not (false).
+- `is_SC::Bool` : Apply Seltzer correction (true) or not (false).
 
 # Output Argument(s)
 N/A
@@ -106,7 +106,7 @@ julia> elastic_leptons.set_model("rutherford")
 ```
 """
 function set_model(this::Elastic_Leptons,model::String,is_KC::Bool=false,is_SC::Bool=false)
-    if lowercase(model) ∉ ["rutherford","mott"] error("Unkown elastic model: '$model'.") end
+    if lowercase(model) ∉ ["rutherford","mott"] error("Unkown elastic model: $model.") end
     this.model = lowercase(model)
     this.is_kawrakow_correction = is_KC
     this.is_seltzer_correction = is_SC
@@ -155,7 +155,7 @@ julia> elastic_leptons.is_AFP(false)
 ```
 """
 function set_solver(this::Elastic_Leptons,solver::String)
-    if uppercase(solver) ∉ ["BTE","FP","BFP"] error("Unkown elastic model: '$model'.") end
+    if uppercase(solver) ∉ ["BTE","FP","BFP"] error("Unkown elastic model: $model.") end
     if uppercase(solver) ∈ ["FP","BFP"] this.is_AFP = true else this.is_AFP = false end
     this.solver = uppercase(solver)
     this.scattering_model = uppercase(solver)

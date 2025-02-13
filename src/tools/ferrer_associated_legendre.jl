@@ -5,16 +5,16 @@ Calculate the associated Legendre polynomial Pℓm(x), using Ferrer definition
 (without (-1)ᵐ factor). 
 
 # Input Argument(s)
-- 'ℓ::Int64': order of the associated Legendre polynomial.
-- 'm::Int64': degree of the associated Legendre polynomial.
-- 'x::Real': evaluation point.
+- `ℓ::Int64`: order of the associated Legendre polynomial.
+- `m::Int64`: degree of the associated Legendre polynomial.
+- `x::Real`: evaluation point.
 
 # Output Argument(s)
-- 'Pℓm::Float64': associated Legendre polynomials of order ℓ and degree m evaluated at
+- `Pℓm::Float64`: associated Legendre polynomials of order ℓ and degree m evaluated at
    point x.
 
 # Reference(s)
-- Hébert (2016), Applied Reactor Physics
+- Hébert (2016), Applied Reactor Physics.
 
 """
 function ferrer_associated_legendre(ℓ::Int64,m::Int64,x::Real)

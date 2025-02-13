@@ -7,14 +7,14 @@ Compute the source of particle produced by interaction of another type of partic
 matter.
 
 # Input Argument(s)
-- 'flux::Flux_Per_Particle': flux informations of the incoming particle.
-- 'cross_sections::Cross_Sections': cross section informations.
-- 'geometry::Geometry': geometry informations.
-- 'discrete_ordinates_in::Discrete_Ordinates': method informations of the incoming particle.
-- 'discrete_ordinates_out::Discrete_Ordinates': method informations of the outgoing particle.
+- `flux::Flux_Per_Particle`: flux informations of the incoming particle.
+- `cross_sections::Cross_Sections`: cross section informations.
+- `geometry::Geometry`: geometry informations.
+- `discrete_ordinates_in::Discrete_Ordinates`: method informations of the incoming particle.
+- `discrete_ordinates_out::Discrete_Ordinates`: method informations of the outgoing particle.
 
 # Output Argument(s)
-- 'ps::Source': source information of the outgoing particle.
+- `ps::Source`: source information of the outgoing particle.
 
 # Reference(s)
 N/A

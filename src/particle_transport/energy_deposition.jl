@@ -5,20 +5,20 @@
 Calculate and extract the energy deposition. 
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross section informations.
-- 'geometry::Geometry': geometry informations.
-- 'solvers::Solvers': solvers informations.
-- 'sources::Sources': sources informations.
-- 'flux::Flux': flux informations.
-- 'particles::Vector{<:Particle}': particle list.
+- `cross_sections::Cross_Sections`: cross section informations.
+- `geometry::Geometry`: geometry informations.
+- `solvers::Solvers`: solvers informations.
+- `sources::Sources`: sources informations.
+- `flux::Flux`: flux informations.
+- `particles::Vector{<:Particle}`: particle list.
 
 # Output Argument(s)
-- 'Dtot::Array{Float64}': energy deposition per voxel [MeV/g × cmⁿ per particle], where
+- `Dtot::Array{Float64}`: energy deposition per voxel [MeV/g × cmⁿ per particle], where
    n is the geometry dimension. 
 
 # Reference(s)
-- Morel (1996) : A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for Solving the
-  Boltzmann-Fokker-Planck Equation
+- Morel et al. (1996), A Hybrid Multigroup/Continuous-Energy Monte Carlo Method for
+  Solving the Boltzmann-Fokker-Planck Equation.
 
 """
 function energy_deposition(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,flux::Flux,particles::Vector{<:Particle})

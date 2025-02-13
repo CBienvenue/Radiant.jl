@@ -4,20 +4,20 @@
 Extract atomic electron subshells, number and energies for atomic number Z ∈ {1,100}.
 
 # Input Argument(s)
-- 'Z::Int64': atomic number of the element.
+- `Z::Int64`: atomic number of the element.
 
 # Output Argument(s)
-- 'Zi::Vector{Float64}': mean number of electrons per subshells.
-- 'Ui::Vector{Float64}': binding energy per subshell [in mₑc²].
-- 'Ti::Vector{Float64}': mean kinetic energy per subshell [in mₑc²].
-- 'ri::Vector{Float64}': average radius per subshell [in cm].
-- 'Nshells::Int64': number of electron subshells.
-- 'subshells::Vector{String}': subshells subshells.
+- `Zi::Vector{Float64}`: mean number of electrons per subshells.
+- `Ui::Vector{Float64}`: binding energy per subshell [in mₑc²].
+- `Ti::Vector{Float64}`: mean kinetic energy per subshell [in mₑc²].
+- `ri::Vector{Float64}`: average radius per subshell [in cm].
+- `Nshells::Int64`: number of electron subshells.
+- `subshells::Vector{String}`: subshells subshells.
 
 # Reference(s)
 - Carlson (1975) : Photoelectron and Auger Spectroscopy (p.337-343).
-- Perkins (1991) : Tables and graphs of atomic subshell and relaxation data derived from
-  the LLNL evaluated atomic data library (EADL), Z = 1 - 100.
+- Perkins et al. (1991) : Tables and graphs of atomic subshell and relaxation data derived
+  from the LLNL evaluated atomic data library (EADL), Z = 1 - 100.
 
 """
 function electron_subshells(Z::Int64)

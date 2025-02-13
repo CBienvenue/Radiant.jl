@@ -93,7 +93,7 @@ julia> photoelectric.set_model("biggs_lighthill")
 ```
 """
 function set_model(this::Photoelectric,model::String)
-    if lowercase(model) ∉ ["jendl5","biggs_lighthill"] error("Unkown elastic model: '$model'.") end
+    if lowercase(model) ∉ ["jendl5","biggs_lighthill"] error("Unkown photoelectric model: $model.") end
     this.model = lowercase(model)
     if this.model == "jendl5"
         this.is_subshells_dependant = true

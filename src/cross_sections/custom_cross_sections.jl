@@ -4,7 +4,7 @@
 Generate custom cross-sections.
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections': cross sections informations.
+- `cross_sections::Cross_Sections`: cross sections informations.
 
 # Output Argument(s)
 N/A

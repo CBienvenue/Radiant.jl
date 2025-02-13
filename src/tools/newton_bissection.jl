@@ -4,13 +4,13 @@
 Mixed Newton-bissection iterative root-finding method.
 
 # Input Argument(s)
-- 'f::Function': function f(x).
-- 'dfdx::Function': derivative of f(x).
-- 'x⁻::Real': x-value such as f(x⁻) < 0.
-- 'x⁺::Real': x-value such as f(x⁺) > 0.
+- `f::Function`: function f(x).
+- `dfdx::Function`: derivative of f(x).
+- `x⁻::Real`: x-value such as f(x⁻) < 0.
+- `x⁺::Real`: x-value such as f(x⁺) > 0.
 
 # Output Argument(s)
-- 'x::Real': root of f(x).
+- `x::Real`: root of f(x).
 
 # Reference(s)
 

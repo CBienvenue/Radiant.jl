@@ -4,18 +4,18 @@
 Calculate the Fokker-Planck scattering matrix using differential quadrature.
 
 # Input Argument(s)
-- 'N::Int64' : number of directions.
-- 'quadrature_type::String' : type of quadrature.
-- 'Ndims::Int64' : dimension of the geometry.
-- 'Qdims::Int64' : dimension of the quadrature.
+- `N::Int64` : number of directions.
+- `quadrature_type::String` : type of quadrature.
+- `Ndims::Int64` : dimension of the geometry.
+- `Qdims::Int64` : dimension of the quadrature.
 
 # Output Argument(s)
-- 'ℳ::Array{Float64}' : Fokker-Planck scattering matrix.
-- 'λ₀::Float64' : correction factor for total cross-section.
+- `ℳ::Array{Float64}` : Fokker-Planck scattering matrix.
+- `λ₀::Float64` : correction factor for total cross-section.
 
 # Reference(s)
-- Warsa (2012) : Moment-Preserving SN Discretizations for the One-Dimensional Fokker-Planck
-  Equation.
+- Warsa and Prinja (2012), Moment-Preserving SN Discretizations for the One-Dimensional
+  Fokker-Planck Equation.
 
 """
 function fokker_planck_differential_quadrature(N::Int64,quadrature_type::String,Ndims::Int64,Qdims::Int64)

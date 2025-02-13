@@ -5,13 +5,13 @@
 Solve the transport equation for a given particle.  
 
 # Input Argument(s)
-- 'cross_sections::Cross_Sections' : cross section informations.
-- 'geometry::Geometry' : geometry informations.
-- 'discrete_ordinates::Discrete_Ordinates' : discrete_ordinates informations.
-- 'source::Source' : source informations.
+- `cross_sections::Cross_Sections` : cross section informations.
+- `geometry::Geometry` : geometry informations.
+- `discrete_ordinates::Discrete_Ordinates` : discrete_ordinates informations.
+- `source::Source` : source informations.
 
 # Output Argument(s)
-- 'flux::Flux_Per_Particle': flux informations.
+- `flux::Flux_Per_Particle`: flux informations.
 
 # Reference(s)
 N/A

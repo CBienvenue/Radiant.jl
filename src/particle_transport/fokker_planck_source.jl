@@ -6,17 +6,17 @@
 Calculate the angular Fokker-Planck source term in Cartesian geometry.
 
 # Input Argument(s)
-- 'P::Int64': number of angular interpolation basis.
-- 'Nm::Int64': total number of spatial and energy moments.
-- 'T::Vector{Float64}': restricted momentum transfer.
-- '𝚽ℓ::Array{Float64}': Legendre components of the in-cell flux.
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
-- 'Ns::Vector{Int64}': number of voxels per axis.    
-- 'mat::Array{Int64,3}': material identifier per voxel.
-- 'ℳ::Array{Float64,2}': Fokker-Planck scattering matrix.
+- `P::Int64`: number of angular interpolation basis.
+- `Nm::Int64`: total number of spatial and energy moments.
+- `T::Vector{Float64}`: restricted momentum transfer.
+- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
+- `Ns::Vector{Int64}`: number of voxels per axis.    
+- `mat::Array{Int64,3}`: material identifier per voxel.
+- `ℳ::Array{Float64,2}`: Fokker-Planck scattering matrix.
 
 # Output Argument(s)
-- 'Qℓ::Array{Float64}': Legendre components of the in-cell source.
+- `Qℓ::Array{Float64}`: Legendre components of the in-cell source.
 
 # Reference(s)
 - Morel (1988) : A Hybrid Collocation-Galerkin-Sn Method for Solving the Boltzmann

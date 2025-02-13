@@ -4,15 +4,15 @@
 Computing the Gauss-Legendre quadrature.
 
 # Input Argument(s)
-- 'N::Int64': quadrature order.
+- `N::Int64`: quadrature order.
 
 # Output Argument(s)
-- 'μ::Vector{Float64}': vector with μᵢ points.
-- 'w::Vector{Float64}': vector with wᵢ weights.
+- `μ::Vector{Float64}`: vector with μᵢ points.
+- `w::Vector{Float64}`: vector with wᵢ weights.
 
 # Reference(s)
-- Hale (2013), Fast and accurate computation of Gauss-Legendre and Gauss-Jacobi quadrature
-  nodes and weights.
+- Hale and Townsend (2013), Fast and accurate computation of Gauss-Legendre and
+  Gauss-Jacobi quadrature nodes and weights.
 
 """
 function gauss_legendre(N::Int64)

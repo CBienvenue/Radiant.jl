@@ -5,14 +5,15 @@ Extract the screening parameter (rs) and the asymptotic triplet contribution fac
 for Baró cross-sections calculations.
 
 # Input Argument(s)
-- 'Z::Int64': atomic number of the element.
+- `Z::Int64`: atomic number of the element.
 
 # Output Argument(s)
-- 'rs::Float64': screening parameter.
-- 'n∞::Float64': asymptotic triplet contribution factor.
+- `rs::Float64`: screening parameter.
+- `n∞::Float64`: asymptotic triplet contribution factor.
 
 # Reference(s)
-- Baró (1994), Analytical cross sections for Monte Carlo simulation of photon transport.
+- Baró et al. (1994), Analytical cross sections for Monte Carlo simulation of photon
+  transport.
 - Salvat (2019), PENELOPE-2018: A Code System for Monte Carlo Simulation of Electron and
   Photon Transport.
 
