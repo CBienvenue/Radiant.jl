@@ -33,6 +33,7 @@ Produce the multigroup macroscopic cross sections.
 - 'Σs::Vector{Float64}': secondary production cross sections [in cm⁻¹].
 - 'Σe::Vector{Float64}': energy deposition cross sections [in MeV × cm⁻¹].
 - 'Σc::Vector{Float64}': charge deposition cross sections [in cm⁻¹].
+- 'Sb::Vector{Float64}': stopping power at boundaries [MeV × cm⁻¹].
 - 'S::Vector{Float64}': stopping power [MeV × cm⁻¹].
 - 'T::Vector{Float64}': momentum transfer [in cm⁻¹].
 
@@ -47,21 +48,22 @@ if isStandard
     println("Start of ",interaction.name," calculations.") 
 end
 
+#----
 # Initialization
+#----
 mₑc² = 0.510999
 Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
-Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); S = zeros(Ngi+1); Sm = zeros(Ngi); T = zeros(Ngi)
+Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); Sb = zeros(Ngi+1); S = zeros(Ngi); T = zeros(Ngi)
 Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
 charge_in = incoming_particle.get_charge()
 charge_out = scattered_particle.get_charge()
 type = string(full_type[1])
+E_in = Eiᵇ./mₑc²; E_out = Efᵇ./mₑc²; # Change of units (MeV → mₑc²)
 
-
+#----
 # Multigroup cross sections preparation
-
-# Change of units (MeV → mₑc²)
-E_in = Eiᵇ./mₑc²; E_out = Efᵇ./mₑc²;
+#----
 
 # Incoming particle energy spectrum
 is_dirac, Np, q_type = in_distribution_dispatch(interaction)
@@ -131,16 +133,16 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
 
         # Stopping power
         if (interaction.is_CSD) && type != "P"
-            Sm[gi] += 1/2 * w[ni] * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out)
-            if is_dirac Sm[gi] ./= ΔEi end
+            S[gi] += 1/2 * w[ni] * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out)
+            if is_dirac S[gi] ./= ΔEi end
         end
 
     end
 
     # Stopping power at boundaries
-    if (interaction.is_CSD) && type != "P" && full_type != "Aₐ"
-        S[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ei⁺,incoming_particle,E_out)
-        if (gi == Ngi) S[gi+1] += sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,0.0,incoming_particle,E_out) end
+    if (interaction.is_CSD) && type != "P"
+        Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ei⁺,incoming_particle,E_out)
+        if (gi == Ngi) Sb[gi+1] += sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,0.0,incoming_particle,E_out) end
     end
 
     # Elastic transport corrections
@@ -186,7 +188,7 @@ end
         Σa[gi] = Σt[gi] - sum(Σsℓ[gi,:,1])
 
         # Energy deposition cross sections
-        Σe[gi] = Σtₑ[gi] - sum(Σsₑ[gi,:]) + Sm[gi]
+        Σe[gi] = Σtₑ[gi] - sum(Σsₑ[gi,:]) + S[gi]
 
         # No secondary production cross section
         # ∅
@@ -222,14 +224,13 @@ end
 
 # Slowing-down under the cutoff contributions
 if type != "P"
-    Σe[Ngi+1] = S[Ngi+1] * E_in[end]/(E_in[end-1]-E_in[end])
-    Σc[Ngi+1] = S[Ngi+1] * (-charge_in)/(E_in[end-1]-E_in[end])
+    Σe[Ngi+1] = Sb[Ngi+1] * E_in[end]/(E_in[end-1]-E_in[end])
+    Σc[Ngi+1] = Sb[Ngi+1] * (-charge_in)/(E_in[end-1]-E_in[end])
 end
 
-# Change of units (mₑc² → MeV)
-Σe *= mₑc²; S *= mₑc²;
+Σe *= mₑc²; Sb *= mₑc²; S *= mₑc² ; # Change of units (mₑc² → MeV)
 
 if isStandard println("End of ",interaction.name," calculations."); println() end
 
-return Σsℓ, Σt, Σa, Σs, Σe, Σc, S, T
+return Σsℓ, Σt, Σa, Σs, Σe, Σc, Sb, S, T
 end

@@ -746,6 +746,32 @@ function get_scattering(this::Cross_Sections,particle_in::Particle,particle_out:
 end
 
 """
+    get_boundary_stopping_powers(this::Cross_Sections,particle::Particle)
+
+Get the stopping powers at group boundaries for a specified particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `S::Array{Float64}` : stopping powers at group boundaries.
+
+"""
+function get_boundary_stopping_powers(this::Cross_Sections,particle::Particle)
+    if ismissing(this.multigroup_cross_sections) error("Unable to get multigroup stopping powers. Missing data.") end
+    index_particle = findfirst(x -> x == particle,this.get_particles())
+    if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
+    Nmat = this.get_number_of_materials()
+    Ng = this.get_number_of_groups(particle)
+    Sb = zeros(Ng+1,Nmat)
+    for n in range(1,Nmat)
+        Sb[:,n] = this.multigroup_cross_sections[index_particle,n].get_boundary_stopping_powers()
+    end
+    return Sb
+end
+
+"""
     get_stopping_powers(this::Cross_Sections,particle::Particle)
 
 Get the stopping powers for a specified particle.
@@ -764,7 +790,7 @@ function get_stopping_powers(this::Cross_Sections,particle::Particle)
     if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
-    S = zeros(Ng+1,Nmat)
+    S = zeros(Ng,Nmat)
     for n in range(1,Nmat)
         S[:,n] = this.multigroup_cross_sections[index_particle,n].get_stopping_powers()
     end

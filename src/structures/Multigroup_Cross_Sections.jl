@@ -10,6 +10,7 @@ mutable struct Multigroup_Cross_Sections
     number_of_groups               ::Int64
     total                          ::Union{Missing,Vector{Float64}}
     absorption                     ::Union{Missing,Vector{Float64}}
+    boundary_stopping_powers       ::Union{Missing,Vector{Float64}}
     stopping_powers                ::Union{Missing,Vector{Float64}}
     momentum_transfer              ::Union{Missing,Vector{Float64}}
     energy_deposition              ::Union{Missing,Vector{Float64}}
@@ -23,6 +24,7 @@ mutable struct Multigroup_Cross_Sections
         this.number_of_groups = number_of_groups
         this.total = missing
         this.absorption = missing
+        this.boundary_stopping_powers = missing
         this.stopping_powers = missing
         this.momentum_transfer = missing
         this.energy_deposition = missing
@@ -71,6 +73,24 @@ function set_absorption(this::Multigroup_Cross_Sections,absorption::Vector{Float
 end
 
 """
+    set_boundary_stopping_powers(this::Multigroup_Cross_Sections,stopping_powers::Vector{Float64})
+
+To set the stopping powers at group boundaries.
+
+# Input Argument(s)
+- `this::Multigroup_Cross_Sections` : multigroup cross-sections structure.
+- `boundary_stopping_powers::Vector{Float64}` : stopping powers at group boundaries.
+
+# Output Argument(s)
+N/A
+
+"""
+function set_boundary_stopping_powers(this::Multigroup_Cross_Sections,boundary_stopping_powers::Vector{Float64})
+    if length(boundary_stopping_powers) != this.number_of_groups + 1 error("The length of the boundary_stopping_powers don't fit the number of groups.") end
+    this.boundary_stopping_powers = boundary_stopping_powers
+end
+
+"""
     set_stopping_powers(this::Multigroup_Cross_Sections,stopping_powers::Vector{Float64})
 
 To set the stopping powers.
@@ -84,7 +104,7 @@ N/A
 
 """
 function set_stopping_powers(this::Multigroup_Cross_Sections,stopping_powers::Vector{Float64})
-    if length(stopping_powers) != this.number_of_groups + 1 error("The length of the stopping_powers don't fit the number of groups.") end
+    if length(stopping_powers) != this.number_of_groups error("The length of the stopping_powers don't fit the number of groups.") end
     this.stopping_powers = stopping_powers
 end
 
@@ -210,6 +230,22 @@ Get the scattering cross-sections, for a given outgoing particle.
 """
 function get_scattering(this::Multigroup_Cross_Sections,index_particle_out::Int64)
     return this.scattering[index_particle_out]
+end
+
+"""
+    get_boundary_stopping_powers(this::Multigroup_Cross_Sections)
+
+Get the stopping powers at group boundaries.
+
+# Input Argument(s)
+- `this::Multigroup_Cross_Sections` : multigroup cross-sections structure.
+
+# Output Argument(s)
+- `boundary_stopping_powers::Vector{Float64}` : stopping powers at group boundaries.
+
+"""
+function get_boundary_stopping_powers(this::Multigroup_Cross_Sections)
+    return this.boundary_stopping_powers
 end
 
 """

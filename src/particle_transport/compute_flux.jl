@@ -82,7 +82,7 @@ end
 # Stopping powers
 if isCSD
     S⁻ = zeros(Ng,Nmat); S⁺ = zeros(Ng,Nmat)
-    Sb = cross_sections.get_stopping_powers(part)
+    Sb = cross_sections.get_boundary_stopping_powers(part)
     for n in range(1,Nmat)
         S⁻[:,n] = Sb[1:Ng,n] ; S⁺[:,n] = Sb[2:Ng+1,n]
     end

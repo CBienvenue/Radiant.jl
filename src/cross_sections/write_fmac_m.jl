@@ -137,13 +137,13 @@ open(fmac_file,"w") do file
         particle_names = cross_sections.get_particles()
         stopping_powers = Vector{Float64}()
         for i in range(1,Npart)
-            sp = cross_sections.get_stopping_powers(particle_names[i])
+            sp = cross_sections.get_boundary_stopping_powers(particle_names[i])
             for n in range(1,Nmat)
                 append!(stopping_powers,sp[1:end-1,n])
             end
         end
         for i in range(1,Npart)
-            sp = cross_sections.get_stopping_powers(particle_names[Npart-i+1])
+            sp = cross_sections.get_boundary_stopping_powers(particle_names[Npart-i+1])
             for n in range(1,Nmat)
                 append!(stopping_powers,sp[end,n])
             end

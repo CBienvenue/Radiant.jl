@@ -326,7 +326,7 @@ for n in range(1,numberOfParticles)
         mcs = Multigroup_Cross_Sections(numberOfGroups[n])
         mcs.set_total(totalCrossSections[index+1:index+numberOfGroups[n],imat])
         mcs.set_absorption(absorptionCrossSections[index+1:index+numberOfGroups[n],imat])
-        mcs.set_stopping_powers(stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat])
+        mcs.set_boundary_stopping_powers(stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat])
         mcs.set_momentum_transfer(continuousScatteringCrossSections[index+1:index+numberOfGroups[n],imat])
 
         sp_cutoff = stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat][end]
