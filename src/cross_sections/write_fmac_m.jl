@@ -160,7 +160,7 @@ open(fmac_file,"w") do file
         particle_names = cross_sections.get_particles()
         momentum_transfer = Vector{Float64}()
         for i in range(1,Npart)
-            mt = cross_sections.get_momentum_transfer(particle_names[i])./2
+            mt = cross_sections.get_momentum_transfer(particle_names[i])
             for n in range(1,Nmat)
                 append!(momentum_transfer,mt[:,n])
             end

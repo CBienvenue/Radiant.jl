@@ -34,7 +34,7 @@ Produce the multigroup macroscopic cross sections.
 - 'Σe::Vector{Float64}': energy deposition cross sections [in MeV × cm⁻¹].
 - 'Σc::Vector{Float64}': charge deposition cross sections [in cm⁻¹].
 - 'S::Vector{Float64}': stopping power [MeV × cm⁻¹].
-- 'α::Vector{Float64}': momentum transfer [in cm⁻¹].
+- 'T::Vector{Float64}': momentum transfer [in cm⁻¹].
 
 # Reference(s)
 - Lorence (1989), Physics Guide to CEPXS: A Multigroup Coupled Electron-Photon
@@ -50,7 +50,7 @@ end
 # Initialization
 mₑc² = 0.510999
 Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
-Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); S = zeros(Ngi+1); Sm = zeros(Ngi); α = zeros(Ngi)
+Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); S = zeros(Ngi+1); Sm = zeros(Ngi); T = zeros(Ngi)
 Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
 charge_in = incoming_particle.get_charge()
@@ -122,11 +122,11 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
         # Momentum transfer
         if  (interaction.name == "mott" && interaction.scattering_model == "FP") || (interaction.is_CSD && type != "P")
             Nz = length(Z)
-            α[gi] = 0.0
+            T[gi] = 0.0
             for i in range(1,Nz)
-                α[gi] += 1/2 * w[ni] * mt_dispatch(interaction) * nuclei_density(Z[i],ρ) * ωz[i]
+                T[gi] += 1/2 * w[ni] * mt_dispatch(interaction) * nuclei_density(Z[i],ρ) * ωz[i]
             end
-            if is_dirac α[gi] ./= ΔEi end
+            if is_dirac T[gi] ./= ΔEi end
         end
 
         # Stopping power
@@ -144,7 +144,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
     end
 
     # Elastic transport corrections
-    Σt[gi],Σsℓ[gi,gi,:],α[gi] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:],α[gi],interaction.scattering_model)
+    Σt[gi],Σsℓ[gi,gi,:],T[gi] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:],T[gi],interaction.scattering_model)
 
 end
 
@@ -231,5 +231,5 @@ end
 
 if isStandard println("End of ",interaction.name," calculations."); println() end
 
-return Σsℓ, Σt, Σa, Σs, Σe, Σc, S, α
+return Σsℓ, Σt, Σa, Σs, Σe, Σc, S, T
 end

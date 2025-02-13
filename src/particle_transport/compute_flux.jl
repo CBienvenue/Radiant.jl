@@ -95,11 +95,11 @@ end
 
 # Momentum transfer
 if solver ∈ [2,4]
-    α = zeros(Ng,Nmat)
-    α = cross_sections.get_momentum_transfer(part)
+    T = zeros(Ng,Nmat)
+    T = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = discrete_ordinates.get_angular_fokker_planck()
     ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,P,Qdims)
-    Σtot .+= α .* λ₀/2
+    Σtot .+= T .* λ₀
 end
 
 # Elastic-free approximation
@@ -175,9 +175,9 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             Sg⁺ = S⁺[ig,:]/ΔEg
             Sg = S[ig,:,:]/ΔEg
             if solver ∈ [2,4]
-                αg = α[ig,:]
+                Tg = T[ig,:]
             else
-                αg = Vector{Float64}()
+                Tg = Vector{Float64}()
                 ℳ = Array{Float64}(undef)
             end
         else
@@ -186,10 +186,10 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             Sg⁻ = Vector{Float64}()
             Sg⁺ = Vector{Float64}()
             Sg = Vector{Float64}()
-            αg = Vector{Float64}()
+            Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,αg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
         
     end
 

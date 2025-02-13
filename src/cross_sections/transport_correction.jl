@@ -24,7 +24,7 @@ soft and catastrophic components.
   Techniques.
 
 """
-function transport_correction(interaction::Interaction,L::Int64,Σt::Float64,Σsℓ::Vector{Float64},α::Float64,solver::String)
+function transport_correction(interaction::Interaction,L::Int64,Σt::Float64,Σsℓ::Vector{Float64},T::Float64,solver::String)
 
 if interaction.is_elastic && solver ∈ ["BFP","BTE"]
 
@@ -63,15 +63,15 @@ if interaction.is_elastic && solver ∈ ["BFP","BTE"]
 
     # Momentum transfer
     if ℓmax > 1 && solver == "BFP" && interaction.is_AFP
-        αt = (Σsℓ[ℓmax]-Σsℓ[ℓmax+1])/ℓmax
-        α += αt
-        Σt -= αt/2*ℓmax*(ℓmax+1) + Σsℓ[ℓmax+1]
+        Tt = (Σsℓ[ℓmax]-Σsℓ[ℓmax+1])/(2*ℓmax)
+        T += Tt
+        Σt -= Tt*ℓmax*(ℓmax+1) + Σsℓ[ℓmax+1]
         for ℓ in range(0,ℓmax)
-            Σsℓ[ℓ+1] -= αt/2*(ℓmax*(ℓmax+1)-ℓ*(ℓ+1)) + Σsℓ[ℓmax+1]
+            Σsℓ[ℓ+1] -= Tt*(ℓmax*(ℓmax+1)-ℓ*(ℓ+1)) + Σsℓ[ℓmax+1]
         end 
     end
 
 end
 
-return Σt, Σsℓ, α
+return Σt, Σsℓ, T
 end

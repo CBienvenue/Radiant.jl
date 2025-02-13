@@ -492,11 +492,12 @@ Gives the momentum transfer for inelastic lepton interaction.
 - `this::Inelastic_Leptons` : inelastic lepton structure. 
 
 # Output Argument(s)
-- `α::Float64` : momentum transfer.
+- `T::Float64` : momentum transfer.
 
 """
 function mt(this::Inelastic_Leptons)
-    return 0
+    T = 0.0
+    return T
 end
 
 """

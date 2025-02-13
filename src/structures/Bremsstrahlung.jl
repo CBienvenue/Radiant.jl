@@ -453,12 +453,12 @@ Gives the momentum transfer for bremsstrahlung.
 - `this::Bremsstrahlung` : bremsstrahlung structure. 
 
 # Output Argument(s)
-- `α::Float64` : momentum transfer.
+- `T::Float64` : momentum transfer.
 
 """
 function mt(this::Bremsstrahlung)
-    α = 0.0 # Because μ = 1.0
-    return α
+    T = 0.0 # Because μ = 1.0
+    return T
 end
 
 """

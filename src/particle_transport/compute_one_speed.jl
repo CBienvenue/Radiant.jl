@@ -6,7 +6,7 @@
     Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,
     ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,
     solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},
-    S⁺::Vector{Float64},S::Array{Float64},α::Vector{Float64},ℳ::Array{Float64},
+    S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},
     𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 Solve the one-speed transport equation for a given particle.  
@@ -46,7 +46,7 @@ Solve the one-speed transport equation for a given particle.
 - 'S⁻::Vector{Float64}': stopping power at higher energy group boundary.
 - 'S⁺::Vector{Float64}': stopping power at lower energy group boundary.
 - 'S::Array{Float64}' : stopping powers.
-- 'α::Vector{Float64}': momentum transfer.
+- 'T::Vector{Float64}': momentum transfer.
 - 'ℳ::Array{Float64}': Fokker-Planck scattering matrix.
 - '𝒜::String' : acceleration method for in-group iterations.
 - 'is_CUDA::Bool' : boolean for CUDA parallelism.
@@ -65,7 +65,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},α::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
+function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
@@ -87,7 +87,7 @@ isInnerConv=false
     if solver ∉ [4,5,6] Qℓ = scattering_source(Qℓ,𝚽ℓ,Σs,mat,P,pℓ,Nm[5],Ns) end
 
     # Finite element treatment of the angular Fokker-Planck term
-    if solver ∈ [2,4] Qℓ = fokker_planck_source(P,Nm[5],α,𝚽ℓ,Qℓ,Ns,mat,ℳ) end
+    if solver ∈ [2,4] Qℓ = fokker_planck_source(P,Nm[5],T,𝚽ℓ,Qℓ,Ns,mat,ℳ) end
 
     # Electromagnetic source
     if is_EM

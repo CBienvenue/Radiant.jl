@@ -229,7 +229,7 @@ elseif record_III[index_III] == 36
     index_III, index_III_line,continuousScatteringCrossSections_temp = read_Float!(index_III,index_III_line,L[36],line,continuousScatteringCrossSections_temp)
     if index_III_line == 1
         for imat in range(1,numberOfMaterials)
-            continuousScatteringCrossSections[:,imat] = continuousScatteringCrossSections_temp[imat:numberOfMaterials:end] .* 2
+            continuousScatteringCrossSections[:,imat] = continuousScatteringCrossSections_temp[imat:numberOfMaterials:end]
         end
     end
 

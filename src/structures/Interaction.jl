@@ -336,7 +336,7 @@ Gives the momentum transfer.
 - `this::Interaction` : Interaction structure. 
 
 # Output Argument(s)
-- `α::Float64` : momentum transfer.
+- `T::Float64` : momentum transfer.
 
 """
 function mt_dispatch(interaction::Interaction)

@@ -781,7 +781,7 @@ Get the momentum transfers for a specified particle.
 - `particle::Particle` : particle.
 
 # Output Argument(s)
-- `α::Array{Float64}` : momentum transfers.
+- `T::Array{Float64}` : momentum transfers.
 
 """
 function get_momentum_transfer(this::Cross_Sections,particle::Particle)
@@ -790,11 +790,11 @@ function get_momentum_transfer(this::Cross_Sections,particle::Particle)
     if isnothing(index_particle) error("Cross-sections don't contain data for the given particle.") end
     Nmat = this.get_number_of_materials()
     Ng = this.get_number_of_groups(particle)
-    α = zeros(Ng,Nmat)
+    T = zeros(Ng,Nmat)
     for n in range(1,Nmat)
-        α[:,n] = this.multigroup_cross_sections[index_particle,n].get_momentum_transfer()
+        T[:,n] = this.multigroup_cross_sections[index_particle,n].get_momentum_transfer()
     end
-    return α
+    return T
 end
 
 """
