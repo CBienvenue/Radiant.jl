@@ -49,7 +49,7 @@ if isAdapt ωx,ωy = adaptive(𝒪x,𝒪y,ωx,ωy,hx,hy,sx,sy,𝚽x12,𝚽y12,Qn
 # Matrix of Legendre moment coefficients of the flux
 for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y)
     i = 𝒪x*(iy-1)+ix
-    j = 𝒪y*(jy-1)+jx
+    j = 𝒪x*(jy-1)+jx
     if (i == j) S[i,j] += Σt end
     if iy == jy
         if (ix ≥ jx + 1) S[i,j] -= C[ix] * hx * sx * C[jx] * (1-(-1)^(ix-jx)) end
