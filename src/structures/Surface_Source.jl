@@ -91,7 +91,7 @@ julia> ss.set_intensity(100)
 ```
 """
 function set_intensity(this::Surface_Source,intensity::Real)
-    if intensity ≤ 0 error("The intensity should be greater than 0.") end
+    if intensity < 0 error("The intensity should be greater than 0.") end
     this.intensity = intensity
 end
 

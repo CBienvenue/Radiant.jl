@@ -3,7 +3,7 @@
     S::Vector{Float64},ΔE::Float64,Δx::Float64,Δy::Float64,Qn::Vector{Float64},
     𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,
     𝒪y::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},ωy::Array{Float64},
-    isAdapt::Bool,𝒲::Array{Float64})
+    isAdapt::Bool,𝒲::Array{Float64},isFC::Bool)
 
 Compute flux solution in a cell in 2D Cartesian geometry for the Boltzmann Fokker-Planck
 equation.
@@ -30,6 +30,7 @@ equation.
 - `ωy::Array{Float64}`: weighting factors of the y-axis scheme.
 - `isAdapt::Bool`: boolean for adaptive calculations.
 - `𝒲::Array{Float64}` : weighting constants.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 
 # Output Argument(s)
 - `𝚽n::Vector{Float64}`: angular in-cell flux.
@@ -41,25 +42,35 @@ equation.
 N/A
 
 """
-function flux_2D_BFP(μ::Float64,η::Float64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::Vector{Float64},ΔE::Float64,Δx::Float64,Δy::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},ωy::Array{Float64},isAdapt::Bool,𝒲::Array{Float64})
+function flux_2D_BFP(μ::Float64,η::Float64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::Vector{Float64},ΔE::Float64,Δx::Float64,Δy::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,𝒪y::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},ωy::Array{Float64},isAdapt::Bool,𝒲::Array{Float64},isFC::Bool)
 
 # Initialization
 sx = sign(μ)
 sy = sign(η)
 hx = abs(μ)/Δx
 hy = abs(η)/Δy
-Nm = 𝒪E*𝒪x*𝒪y
+if isFC Nm = 𝒪E*𝒪x*𝒪y else Nm = 𝒪E+𝒪x+𝒪y-2 end
 𝒮 = zeros(Nm,Nm)
 Q = zeros(Nm)
 𝚽n = Q
 
 # Adaptive weight calculations
-if isAdapt ωx,ωy,ωE = adaptive(𝒪x,𝒪y,𝒪E,ωx,ωy,ωE,hx,hy,1/ΔE,sx,sy,-1,𝚽x12,𝚽y12,𝚽E12,Qn,Σt) end
+if isAdapt ωx,ωy,ωE = adaptive(𝒪x,𝒪y,𝒪E,ωx,ωy,ωE,hx,hy,1/ΔE,sx,sy,-1,𝚽x12,𝚽y12,𝚽E12,Qn,Σt,isFC) end
 
 # Matrix of Legendre moment coefficients of the flux
-@inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y), iE in range(1,𝒪E), jE in range(1,𝒪E)
-    i = 𝒪x*𝒪E * (iy-1) + 𝒪E * (ix-1) + iE
-    j = 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
+for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y), iE in range(1,𝒪E), jE in range(1,𝒪E)
+    if isFC
+        i = 𝒪x*𝒪E * (iy-1) + 𝒪E * (ix-1) + iE
+        j = 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
+    else
+        if count(>(1),(ix,iy,iE)) ≥ 2 || count(>(1),(jx,jy,jE)) ≥ 2 continue end
+        i = 1 + (iE-1) + (ix-1) + (iy-1)
+        j = 1 + (jE-1) + (jx-1) + (iy-1)
+        if ix > 1 i += 𝒪E-1 end
+        if iy > 1 i += 𝒪E-1 + 𝒪x-1 end
+        if jx > 1 j += 𝒪E-1 end
+        if jy > 1 j += 𝒪E-1 + 𝒪x-1 end
+    end
 
     # Collision term
     if (i == j) 𝒮[i,j] += Σt end
@@ -86,11 +97,24 @@ if isAdapt ωx,ωy,ωE = adaptive(𝒪x,𝒪y,𝒪E,ωx,ωy,ωE,hx,hy,1/ΔE,sx,s
 end
 
 # Source vector
-@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jE in range(1,𝒪E)
-    j = 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
-    jEm = 𝒪x*(jy-1) + jx
-    jxm = 𝒪E*(jy-1) + jE
-    jym = 𝒪E*(jx-1) + jE
+for jx in range(1,𝒪x), jy in range(1,𝒪y), jE in range(1,𝒪E)
+    if isFC
+        j = 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
+        jEm = 𝒪x*(jy-1) + jx
+        jxm = 𝒪E*(jy-1) + jE
+        jym = 𝒪E*(jx-1) + jE
+    else
+        if count(>(1),(jx,jy,jE)) ≥ 2 continue end
+        j = 1 + (jE-1) + (jx-1) + (jy-1)
+        jEm = 1 + (jx-1) + (jy-1)
+        jxm = 1 + (jE-1) + (jy-1)
+        jym = 1 + (jE-1) + (jx-1)
+        if jx > 1 j += 𝒪E-1 end
+        if jy > 1 j += 𝒪E-1 + 𝒪x-1 end
+        if jy > 1 jEm += 𝒪x-1 end
+        if jy > 1 jxm += 𝒪E-1 end
+        if jx > 1 jym += 𝒪E-1 end
+    end
     Q[j] += Qn[j]
     Q[j] -= C[jx] * hx * (sx^(jx-1) * ωx[1,jy,jE] - (-sx)^(jx-1)) * 𝚽x12[jxm] 
     Q[j] -= C[jy] * hy * (sy^(jy-1) * ωy[1,jx,jE] - (-sy)^(jy-1)) * 𝚽y12[jym] 
@@ -100,11 +124,24 @@ end
 𝚽n = 𝒮\Q
 
 # Closure relation
-@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jE in range(1,𝒪E)
-    j = 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
-    jEm = 𝒪x*(jy-1) + jx
-    jxm = 𝒪E*(jy-1) + jE
-    jym = 𝒪E*(jx-1) + jE
+for jx in range(1,𝒪x), jy in range(1,𝒪y), jE in range(1,𝒪E)
+    if isFC
+        j = 𝒪x*𝒪E * (jy-1) + 𝒪E * (jx-1) + jE
+        jEm = 𝒪x*(jy-1) + jx
+        jxm = 𝒪E*(jy-1) + jE
+        jym = 𝒪E*(jx-1) + jE
+    else
+        if count(>(1),(jx,jy,jE)) ≥ 2 continue end
+        j = 1 + (jE-1) + (jx-1) + (jy-1)
+        jEm = 1 + (jx-1) + (jy-1)
+        jxm = 1 + (jE-1) + (jy-1)
+        jym = 1 + (jE-1) + (jx-1)
+        if jx > 1 j += 𝒪E-1 end
+        if jy > 1 j += 𝒪E-1 + 𝒪x-1 end
+        if jy > 1 jEm += 𝒪x-1 end
+        if jy > 1 jxm += 𝒪E-1 end
+        if jx > 1 jym += 𝒪E-1 end
+    end
     if (jx == 1) 𝚽x12[jxm] = ωx[1,jy,jE] * 𝚽x12[jxm] end
     if (jy == 1) 𝚽y12[jym] = ωy[1,jx,jE] * 𝚽y12[jym] end
     if (jE == 1) 𝚽E12[jEm] = ωE[1,jx,jy] * 𝚽E12[jEm] end

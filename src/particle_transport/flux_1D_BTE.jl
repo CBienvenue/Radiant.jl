@@ -29,7 +29,7 @@ function flux_1D_BTE(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},�
 # Initialization
 sx = sign(μ)
 hx = abs(μ)/Δx
-S = zeros(𝒪x,𝒪x)
+𝒮 = zeros(𝒪x,𝒪x)
 Q = zeros(𝒪x)
 𝚽n = Q
 
@@ -37,24 +37,24 @@ Q = zeros(𝒪x)
 if isAdapt ωx = adaptive(𝒪x,ωx,hx,sx,𝚽x12,Qn,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
-@inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x)
-    if (ix == jx) S[ix,jx] += Σt end
-    if (ix ≥ jx + 1) S[ix,jx] -= C[ix] * hx * sx * C[jx] * (1-(-1)^(ix-jx)) end
-    S[ix,jx] += C[ix] * hx * sx^(ix-1) * C[jx] * sx^(jx-1) * ωx[jx+1]
+for ix in range(1,𝒪x), jx in range(1,𝒪x)
+    if (ix == jx) 𝒮[ix,jx] += Σt end
+    if (ix ≥ jx + 1) 𝒮[ix,jx] -= C[ix] * hx * sx * C[jx] * (1-(-1)^(ix-jx)) end
+    𝒮[ix,jx] += C[ix] * hx * sx^(ix-1) * C[jx] * sx^(jx-1) * ωx[jx+1]
 end
 
 # Source vector
-@inbounds for jx in range(1,𝒪x)
+for jx in range(1,𝒪x)
     Q[jx] += Qn[jx]
     Q[jx] -= C[jx] * hx * (sx^(jx-1) * ωx[1] - (-sx)^(jx-1)) * 𝚽x12
 end
 
 # Solve the equation system
-𝚽n = S\Q
+𝚽n = 𝒮\Q
 
 # Closure relation
 𝚽x12 = ωx[1] * 𝚽x12
-@inbounds for jx in range(1,𝒪x)
+for jx in range(1,𝒪x)
     𝚽x12 += C[jx] * sx^(jx-1) * ωx[jx+1] * 𝚽n[jx]
 end
 

@@ -33,8 +33,10 @@ particle_in = discrete_ordinates_in.get_particle()
 particle_out = discrete_ordinates_out.get_particle()
 L_in = discrete_ordinates_in.get_legendre_order()
 L_out = discrete_ordinates_out.get_legendre_order()
-_,𝒪_in,Nm_in = discrete_ordinates_in.get_schemes(geometry,true)
-_,𝒪_out,Nm_out = discrete_ordinates_out.get_schemes(geometry,true)
+isFC_in = discrete_ordinates_in.get_is_full_coupling()
+isFC_out = discrete_ordinates_out.get_is_full_coupling()
+_,𝒪_in,Nm_in = discrete_ordinates_in.get_schemes(geometry,isFC_in)
+_,𝒪_out,Nm_out = discrete_ordinates_out.get_schemes(geometry,isFC_out)
 Nm_in = Nm_in[5]; Nm_out = Nm_out[5]
 Qdims_in = discrete_ordinates_in.get_quadrature_dimension(Ndims)
 Qdims_out = discrete_ordinates_out.get_quadrature_dimension(Ndims)
@@ -90,7 +92,7 @@ Qℓ_out = zeros(Ng_out,P_out,Nm_out,Ns[1],Ns[2],Ns[3])
 particle_source(Qℓ_in,𝚽ℓ,Σs,mat,P_in,pℓ_in,Nm_in,Ns,Ng_in,Ng_out)
 
 # Adapt the source to the new particle flux expansions
-map = map_moments(𝒪_in,𝒪_out)
+map = map_moments(𝒪_in,𝒪_out,isFC_in,isFC_out)
 T = Dn_out*Mn_tr
 for i in range(1,length(map))
     m = map[i]

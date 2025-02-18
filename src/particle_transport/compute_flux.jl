@@ -59,8 +59,8 @@ if isCSD
     Eb = cross_sections.get_energy_boundaries(part)
 end
 
-is_full_coupling = true
-schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,is_full_coupling)
+isFC = discrete_ordinates.get_is_full_coupling()
+schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,isFC)
 ω,𝒞,is_adaptive,𝒲 = scheme_weights(𝒪,schemes,Ndims,isCSD)
 
 println(">>>Particle: $(get_type(part)) <<<")
@@ -151,13 +151,13 @@ is_outer_iteration = false
 Ntot = 0
 if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 
-@inbounds while ~(is_outer_convergence)
+while ~(is_outer_convergence)
 
     ρ_in = -ones(Ng) # In-group spectral radius
     isCSD ? 𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3]) : 𝚽E12 = Array{Float64}(undef)
 
     # Loop over energy group
-    @inbounds for ig in range(1,Ng)
+    for ig in range(1,Ng)
 
         # Calculation of the Legendre components of the source (out-scattering)
         Qℓout = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
@@ -189,7 +189,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,is_full_coupling,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
+        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
         
     end
 
@@ -202,7 +202,7 @@ if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
         is_outer_convergence = true
         # Calculate the flux at the cutoff energy
         if isCSD
-            @inbounds for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,P)
+            for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,P)
                 𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
             end
         end

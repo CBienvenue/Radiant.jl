@@ -100,6 +100,7 @@ finite-element.
 - `𝚽y12::Float64` : incoming flux at the edge of the finite-element along y-axis.
 - `Qn::Vector{Float64}` : source moments.
 - `Σ::Float64` : total cross-section.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 
 # Output Argument(s)
 - `ωx::Array{Float64}`: updated weighting factors along x-axis.
@@ -117,7 +118,7 @@ finite-element.
   for Charged Particle Transport.
 
 """
-function adaptive(𝒪x::Int64,𝒪y::Int64,ωx::Array{Float64},ωy::Array{Float64},hx::Float64,hy::Float64,sx::Real,sy::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
+function adaptive(𝒪x::Int64,𝒪y::Int64,ωx::Array{Float64},ωy::Array{Float64},hx::Float64,hy::Float64,sx::Real,sy::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},Qn::Vector{Float64},Σ::Float64,isFC::Bool)
 
 # Initialization    
 ϵ = 1e-16
@@ -156,7 +157,7 @@ if 𝒪x == 1 && 𝒪y == 1
 #----
 # Adaptive AWD₁
 #----
-elseif 𝒪x == 2 && 𝒪y == 2
+elseif 𝒪x == 2 && 𝒪y == 2 && isFC
 
     # Loop over both axis to estimate CM position
     x_CM = zeros(2)
@@ -257,6 +258,7 @@ finite-element.
 - `𝚽z12::Float64` : incoming flux at the edge of the finite-element along z-axis.
 - `Qn::Vector{Float64}` : source moments.
 - `Σ::Float64` : total cross-section.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 
 # Output Argument(s)
 - `ωx::Vector{Float64}`: updated weighting factors along x-axis.
@@ -270,7 +272,7 @@ finite-element.
   equation with pulsed sources.
 
 """
-function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},hx::Float64,hy::Float64,hz::Float64,sx::Real,sy::Real,sz::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
+function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},hx::Float64,hy::Float64,hz::Float64,sx::Real,sy::Real,sz::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},Qn::Vector{Float64},Σ::Float64,isFC::Bool)
 
 # Initialization    
 ϵ = 1e-16
@@ -356,6 +358,7 @@ finite-element.
 - `𝚽w12::Float64` : incoming flux at the edge of the finite-element along w-axis.
 - `Qn::Vector{Float64}` : source moments.
 - `Σ::Float64` : total cross-section.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 
 # Output Argument(s)
 - `ωx::Vector{Float64}`: updated weighting factors along x-axis.
@@ -370,7 +373,7 @@ finite-element.
   equation with pulsed sources.
 
 """
-function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,𝒪w::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},ωw::Array{Float64},hx::Float64,hy::Float64,hz::Float64,hw::Float64,sx::Real,sy::Real,sz::Real,sw::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝚽w12::Vector{Float64},Qn::Vector{Float64},Σ::Float64)
+function adaptive(𝒪x::Int64,𝒪y::Int64,𝒪z::Int64,𝒪w::Int64,ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},ωw::Array{Float64},hx::Float64,hy::Float64,hz::Float64,hw::Float64,sx::Real,sy::Real,sz::Real,sw::Real,𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},𝚽w12::Vector{Float64},Qn::Vector{Float64},Σ::Float64,isFC::Bool)
 
     # Initialization    
     ϵ = 1e-16

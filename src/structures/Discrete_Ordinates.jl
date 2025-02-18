@@ -35,6 +35,7 @@ mutable struct Discrete_Ordinates
     scheme_type                ::Dict{String,String}
     scheme_order               ::Dict{String,Int64}
     acceleration               ::String
+    isFC           ::Bool
 
     # Constructor(s)
     function Discrete_Ordinates()
@@ -53,6 +54,7 @@ mutable struct Discrete_Ordinates
         this.scheme_type = Dict{String,String}()
         this.scheme_order = Dict{String,Int64}()
         this.acceleration = "none"
+        this.isFC = true
 
         return this
     end
@@ -466,15 +468,14 @@ function get_solver_type(this::Discrete_Ordinates)
 end
 
 """
-    get_schemes(this::Discrete_Ordinates,geometry::Geometry,is_full_coupling::Bool)
+    get_schemes(this::Discrete_Ordinates,geometry::Geometry,isFC::Bool)
 
 Get the space and/or energy schemes informations.
 
 # Input Argument(s)
 - `this::Discrete_Ordinates` : discretization method.
 - `geometry::Geometry` : geometry.
-- `is_full_coupling::Bool` : indicate if high-order moments are coupled with high-order
-  schemes.
+- `isFC::Bool` : boolean indicating if the high-order moments are fully coupled.
 
 # Output Argument(s)
 - `schemes::Vector{String}` : scheme types.
@@ -482,7 +483,7 @@ Get the space and/or energy schemes informations.
 - `Nm::Vector{Int64}` : numbers of moments.
 
 """
-function get_schemes(this::Discrete_Ordinates,geometry::Geometry,is_full_coupling::Bool)
+function get_schemes(this::Discrete_Ordinates,geometry::Geometry,isFC::Bool)
     schemes = Vector{String}(undef,4)
     𝒪 = Vector{Int64}(undef,4)
     axis = geometry.get_axis()
@@ -500,10 +501,10 @@ function get_schemes(this::Discrete_Ordinates,geometry::Geometry,is_full_couplin
         end
         n += 1
     end
-    if is_full_coupling
+    if isFC
         Nm = [𝒪[2]*𝒪[3]*𝒪[4],𝒪[1]*𝒪[3]*𝒪[4],𝒪[1]*𝒪[2]*𝒪[4],𝒪[1]*𝒪[2]*𝒪[3],prod(𝒪)]
     else
-        Nm = [𝒪[2]+𝒪[3]+𝒪[4]+1,𝒪[1]+𝒪[3]+𝒪[4]+1,𝒪[1]+𝒪[2]+𝒪[4]+1,𝒪[1]+𝒪[2]+𝒪[3]+1,sum(𝒪)+1]
+        Nm = [1+(𝒪[2]-1)+(𝒪[3]-1)+(𝒪[4]-1),1+(𝒪[1]-1)+(𝒪[3]-1)+(𝒪[4]-1),1+(𝒪[1]-1)+(𝒪[2]-1)+(𝒪[4]-1),1+(𝒪[1]-1)+(𝒪[2]-1)+(𝒪[3]-1),1+sum(𝒪.-1)]
     end
     return schemes,𝒪,Nm
 end
@@ -580,4 +581,43 @@ function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
     else
         error("Unkown quadrature type.")
     end
+end
+
+"""
+    set_is_full_coupling(this::Discrete_Ordinates,isFC::Bool)
+
+Set, for multidimensional high-order schemes, if the high-order moments are fully coupled
+or not. For example, with two linear schemes, the moments are either fully coupled
+[00,10,01,11] or not [00,10,01].
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+- `isFC::Bool` : boolean indicating if the high-orde moments are fully coupled
+  or not.
+
+# Output Argument(s)
+N/A
+
+"""
+function set_is_full_coupling(this::Discrete_Ordinates,isFC::Bool)
+    this.isFC = isFC
+end
+
+"""
+    get_is_full_coupling(this::Discrete_Ordinates)
+
+Get, for multidimensional high-order schemes, if the high-order moments are fully coupled
+or not. For example, with two linear schemes, the moments are either fully coupled
+[00,10,01,11] or not [00,10,01].
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `isFC::Bool` : boolean indicating if the high-orde moments are fully coupled
+  or not.
+
+"""
+function get_is_full_coupling(this::Discrete_Ordinates)
+    return this.isFC
 end

@@ -8,7 +8,6 @@ Compute flux solution in a cell in 1D Cartesian geometry for the Boltzmann Fokke
 equation.
 
 # Input Argument(s)
-- `isFC::Bool`: boolean to indicate if full coupling or not.
 - `μ::Float64`: direction cosine.
 - `Σt::Float64`: total cross-sections.
 - `Δx::Float64`: size of voxels along x-axis.
@@ -26,6 +25,7 @@ equation.
 - `ωx::Array{Float64}`: weighting factors of the x-axis scheme.
 - `isAdapt::Bool`: boolean for adaptive calculations.
 - `𝒲::Array{Float64}` : weighting constants.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 
 # Output Argument(s)
 - `𝚽n::Vector{Float64}`: angular in-cell flux.
@@ -36,23 +36,31 @@ equation.
 N/A
 
 """
-function flux_1D_BFP(isFC::Bool,μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},S⁻::Float64,S⁺::Float64,S::Vector{Float64},ΔE::Float64,𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},isAdapt::Bool,𝒲::Array{Float64})
-
+function flux_1D_BFP(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},𝚽x12::Vector{Float64},S⁻::Float64,S⁺::Float64,S::Vector{Float64},ΔE::Float64,𝚽E12::Vector{Float64},𝒪E::Int64,𝒪x::Int64,C::Vector{Float64},ωE::Array{Float64},ωx::Array{Float64},isAdapt::Bool,𝒲::Array{Float64},isFC::Bool)
+    
 # Initialization
 sx = sign(μ)
 hx = abs(μ)/Δx
-Nm = 𝒪x*𝒪E
+if isFC Nm = 𝒪x*𝒪E else Nm = 𝒪x+𝒪E-1 end
 𝒮 = zeros(Nm,Nm)
 Q = zeros(Nm)
 𝚽n = Q
 
 # Adaptive weight calculations
-if isAdapt ωx,ωE = adaptive(𝒪x,𝒪E,ωx,ωE,hx,1/ΔE,sx,-1,𝚽x12,𝚽E12,Qn,Σt) end
+if isAdapt ωx,ωE = adaptive(𝒪x,𝒪E,ωx,ωE,hx,1/ΔE,sx,-1,𝚽x12,𝚽E12,Qn,Σt,isFC) end
 
 # Matrix of Legendre moment coefficients of the flux
-@inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x), iE in range(1,𝒪E), jE in range(1,𝒪E)
-    i = 𝒪E*(ix-1)+iE
-    j = 𝒪E*(jx-1)+jE
+for ix in range(1,𝒪x), jx in range(1,𝒪x), iE in range(1,𝒪E), jE in range(1,𝒪E)
+    if isFC
+        i = 𝒪E*(ix-1)+iE
+        j = 𝒪E*(jx-1)+jE
+    else
+        if count(>(1),(ix,iE)) ≥ 2 || count(>(1),(jx,jE)) ≥ 2 continue end
+        i = 1 + (iE-1) + (ix-1)
+        j = 1 + (jE-1) + (jx-1)
+        if ix > 1 i += 𝒪E-1 end
+        if jx > 1 j += 𝒪E-1 end
+    end
 
     # Collision term
     if (i == j) 𝒮[i,j] += Σt end
@@ -74,8 +82,14 @@ if isAdapt ωx,ωE = adaptive(𝒪x,𝒪E,ωx,ωE,hx,1/ΔE,sx,-1,𝚽x12,𝚽E12
 end
 
 # Source vector
-@inbounds for jx in range(1,𝒪x), jE in range(1,𝒪E)
-    j = 𝒪E*(jx-1)+jE
+for jx in range(1,𝒪x), jE in range(1,𝒪E)
+    if isFC
+        j = 𝒪E*(jx-1)+jE
+    else
+        if count(>(1),(jx,jE)) ≥ 2 continue end
+        j = 1 + (jE-1) + (jx-1)
+        if jx > 1 j += 𝒪E-1 end
+    end
     Q[j] += Qn[j]
     Q[j] -= C[jx] * hx * (sx^(jx-1) * ωx[1,jE,jE] - (-sx)^(jx-1)) * 𝚽x12[jE] 
     Q[j] -= C[jE] * ((-1)^(jE-1)*S⁺*ωE[1,jx,jx] - S⁻) * 𝚽E12[jx]
@@ -85,8 +99,14 @@ end
 𝚽n = 𝒮\Q
 
 # Closure relations
-@inbounds for jx in range(1,𝒪x), jE in range(1,𝒪E)
-    j = 𝒪E*(jx-1)+jE
+for jx in range(1,𝒪x), jE in range(1,𝒪E)
+    if isFC
+        j = 𝒪E*(jx-1)+jE
+    else
+        if count(>(1),(jx,jE)) ≥ 2 continue end
+        j = 1 + (jE-1) + (jx-1)
+        if jx > 1 j += 𝒪E-1 end
+    end
     if (jx == 1) 𝚽x12[jE] = ωx[1,jE,jE] * 𝚽x12[jE] end
     if (jE == 1) 𝚽E12[jx] = ωE[1,jx,jx] * 𝚽E12[jx] end
     for iE in range(1,𝒪E)

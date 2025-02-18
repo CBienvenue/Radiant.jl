@@ -59,7 +59,7 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
     if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
     number_of_directions = length(w)
     P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.quadrature_order,discrete_ordinates.get_angular_boltzmann(),Qdims)
-    _,_,Nm = discrete_ordinates.get_schemes(geometry,true)
+    _,_,Nm = discrete_ordinates.get_schemes(geometry,discrete_ordinates.get_is_full_coupling())
 
     this.volume_sources = zeros(Ng,P,Nm[5],Nx,Ny,Nz)
     this.surface_sources = Array{Union{Array{Float64},Float64}}(undef,Ng,number_of_directions,2*geometry.dimension)

@@ -29,7 +29,7 @@ Solve the one-speed transport equation for a given particle.
 - `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
 - `𝒪::Vector{Int64}`: spatial and/or energy closure relation order.
 - `Nm::Vector{Int64}`: number of spatial and/or energy moments.
-- `isFC::Bool`: boolean to indicate if full coupling or not.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 - `C::Vector{Float64}`: constants related to the spatial and energy normalized
    Legendre expansion.
 - `ω::Vector{Array{Float64}}`: weighting factors of the closure relations.
@@ -80,7 +80,7 @@ i_in = 1
 ϵ_in = 0.0
 ρ_in = NaN
 isInnerConv=false
-@inbounds while ~(isInnerConv)
+while ~(isInnerConv)
 
     # Calculation of the Legendre components of the source (in-scattering)
     Qℓ = copy(Qℓout)
@@ -111,14 +111,14 @@ isInnerConv=false
     #----
     #println(string(i_in," ",ϵ_in))
     𝚽ℓ .= 0
-    @inbounds for n in range(1,N)
+    for n in range(1,N)
         if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end
         if ndims == 1
-            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,isFC,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
+            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
         elseif ndims == 2
-            𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
+            𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
         elseif ndims == 3
-            𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲)
+            𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
         else
             error("Error in computeOneSpeed.jl: Dimension is not 1, 2 or 3.")
         end

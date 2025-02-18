@@ -4,7 +4,7 @@
     Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},
     C::Vector{Vector{Float64}},ω::Vector{Array{Float64}},
     sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Vector{Bool},isCSD::Bool,ΔE::Float64,
-    𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64})
+    𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},isFC::Bool)
 
 Compute the flux solution along one direction in 3D geometry.
 
@@ -34,6 +34,7 @@ Compute the flux solution along one direction in 3D geometry.
 - `S⁺::Vector{Float64}`: stopping power at lower energy group boundary.
 - `S::Array{Float64}`: stopping powers.
 - `𝒲::Array{Float64}`: weighting constants.
+- `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
 
 # Output Argument(s)
 - `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
@@ -43,7 +44,7 @@ Compute the flux solution along one direction in 3D geometry.
 N/A
 
 """
-function compute_sweep_3D(𝚽ℓ::Array{Float64,5},Qℓ::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64})
+function compute_sweep_3D(𝚽ℓ::Array{Float64,5},Qℓ::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Vector{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool)
 
 # Initialization
 𝒪x = 𝒪[1]; 𝒪y = 𝒪[2]; 𝒪z = 𝒪[3]; 𝒪E = 𝒪[4]
@@ -56,11 +57,11 @@ if (ξ >= 0) z_sweep = (1:Nz) else z_sweep = (Nz:-1:1) end
 
 # Sweeping over x-axis
 𝚽12x = zeros(Nm[1],Ny,Nz)
-@inbounds for ix in x_sweep
+for ix in x_sweep
 
 # Sweeping over y-axis
 𝚽12y = zeros(Nm[2],Nz)
-@inbounds for iy in y_sweep
+for iy in y_sweep
 𝚽12z = zeros(Nm[3])
 if ξ >= 0
     if sources[5] != 0 # Surface Z-
@@ -73,7 +74,7 @@ else
 end
 
 # Sweeping over z-axis
-@inbounds for iz in z_sweep
+for iz in z_sweep
 if (iy == 1 &&  η >= 0) || (iy == Ny && η < 0 )
     if η >= 0
         if sources[3] != 0  # Surface Y-
@@ -99,19 +100,19 @@ end
 
 # Source term
 Qn = zeros(Nm[5])
-@inbounds for is in range(1,Nm[5]), p in range(1,P)
+for is in range(1,Nm[5]), p in range(1,P)
     Qn[is] += Mn[p] * Qℓ[p,is,ix,iy,iz]
 end
 
 # Flux calculation
 if ~isCSD
-    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt)
+    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt,isFC)
 else
-    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],S⁻[mat[ix,iy,iz]],S⁺[mat[ix,iy,iz]],S[mat[ix,iy,iz],:],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),copy(ω[4]),isAdapt,𝒲)
+    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],S⁻[mat[ix,iy,iz]],S⁺[mat[ix,iy,iz]],S[mat[ix,iy,iz],:],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),copy(ω[4]),isAdapt,𝒲,isFC)
 end
 
 # Calculation of the Legendre components of the flux
-@inbounds for is in range(1,Nm[5]), p in range(1,P)
+for is in range(1,Nm[5]), p in range(1,P)
     𝚽ℓ[p,is,ix,iy,iz] += Dn[p] * 𝚽n[is]
 end
 
