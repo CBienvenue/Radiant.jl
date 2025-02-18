@@ -133,7 +133,7 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         Mz = 𝒪[3]-1
         ωx = zeros(Mx+2,My+1,Mz+1)
         ωy = zeros(My+2,Mx+1,Mz+1)
-        ωz = zeros(My+2,Mx+1,My+1)
+        ωz = zeros(Mz+2,Mx+1,My+1)
 
         if xscheme == "DD" || (xscheme == "AWD" && Mx == 0)
             for m in range(0,My), t in range(0,Mz)
