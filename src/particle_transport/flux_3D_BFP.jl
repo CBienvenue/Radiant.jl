@@ -110,7 +110,7 @@ end
     Q[j] += Qn[j]
     Q[j] -= C[jx] * hx * (sx^(jx-1) * ωx[1,jy,jz,jE] - (-sx)^(jx-1)) * 𝚽x12[jxm] 
     Q[j] -= C[jy] * hy * (sy^(jy-1) * ωy[1,jx,jz,jE] - (-sy)^(jy-1)) * 𝚽y12[jym]
-    Q[j] -= C[jz] * hz * (sz^(jz-1) * ωy[1,jx,jy,jE] - (-sz)^(jz-1)) * 𝚽z12[jzm]  
+    Q[j] -= C[jz] * hz * (sz^(jz-1) * ωz[1,jx,jy,jE] - (-sz)^(jz-1)) * 𝚽z12[jzm]  
     Q[j] -= C[jE] * ((-1)^(jE-1)*S⁺*ωE[1,jx,jy,jz] - S⁻) * 𝚽E12[jEm]
 end
 
