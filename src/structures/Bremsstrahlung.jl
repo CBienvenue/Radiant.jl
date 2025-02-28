@@ -26,6 +26,7 @@ mutable struct Bremsstrahlung <: Interaction
     interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
+    is_AFP_decomposition::Bool
     is_elastic::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
@@ -45,6 +46,7 @@ mutable struct Bremsstrahlung <: Interaction
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = true
         this.is_AFP = true
+        this.is_AFP_decomposition = false
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
@@ -338,7 +340,7 @@ Gives the total cross-section for bremsstrahlung.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,type::String,Eout::Vector{Float64})
+function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Eout::Vector{Float64})
 
     # Inititalization
     β² = 1-1/(Ei+1)^2
@@ -358,7 +360,7 @@ function tcs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,par
     for gf in range(1,Ngf+1)
         Ef⁻ = Eout[gf]
         if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-        Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,type,Ec)
+        Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"S",Ec)
         if isSkip continue end
         ΔEf = Ef⁻ - Ef⁺
         for n in range(1,Np)

@@ -54,118 +54,108 @@ end
 # Initialization
 #----
 mₑc² = 0.510999
+Nz = length(Z)
 Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
 Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); Sb = zeros(Ngi+1); S = zeros(Ngi); T = zeros(Ngi)
 Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
 charge_in = incoming_particle.get_charge()
 charge_out = scattered_particle.get_charge()
+q_deposited, q_extracted = get_charge_variation(interaction,full_type,charge_in,charge_out)
 type = string(full_type[1])
+scattering_model, is_CSD, is_AFP, is_AFP_decomposition, is_ETC = interaction.get_scattering_model()
+is_elastic = is_elastic_scattering(interaction)
+ΔQ = get_mass_energy_variation(interaction)
 E_in = Eiᵇ./mₑc²; E_out = Efᵇ./mₑc²; # Change of units (MeV → mₑc²)
 
 #----
 # Multigroup cross sections preparation
 #----
 
-# Incoming particle energy spectrum
+# Incoming particle energy discretization
 is_dirac, Np, q_type = in_distribution_dispatch(interaction)
 if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
 
 # Preloading data for calculations
 if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_in[end],L,ωz,ρ,E_out,incoming_particle,full_type,interactions) end
 
-# Compute cross sections in each energy group
+# Compute cross sections, stopping powers and momentum transfers in each energy group
 @inbounds for gi in range(1,Ngi)
 
-    # Initial energy group
+    # Incoming particle energy group
     Ei⁻ = E_in[gi]; Ei⁺ = E_in[gi+1]
     if (gi < Ngi) Ei²⁺ = E_in[gi+2] else Ei²⁺ = 0.0 end
     ΔEi = Ei⁻ - Ei⁺
 
-    # Total and scattering differential cross section
+    # Quadrature over energy group
     for ni in range(1,Np)
 
         # Incoming energy
         Ei = (u[ni]*ΔEi + (Ei⁻+Ei⁺))/2
 
         # Boundary between catastrophic and soft interactions
-        Ec = Ei * (Ei⁺-Ei²⁺)/ (Ei⁻-Ei⁺) - (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺)
-        if (interaction.scattering_model == "FP") Ec = 0.0 end
+        if scattering_model == "BFP"
+            Ec = Ei * (Ei⁺-Ei²⁺)/ (Ei⁻-Ei⁺) - (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺)
+        elseif scattering_model == "FP"
+            Ec = 0.0
+        elseif scattering_model == "BTE"
+            Ec = Ei
+        else
+            error("Unknown scattering model $scattering_model.")
+        end
 
         # Total cross sections
-        if type != "P" && ~(interaction.scattering_model == "FP" && type == "S")
-            Nz = length(Z)
+        if type ∈ ["S","A"]
             Σtᵢ = 0.0
             for i in range(1,Nz)
-                Σtᵢ += 1/2 * w[ni] * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out,full_type) * nuclei_density(Z[i],ρ) * ωz[i]
+                Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out) * nuclei_density(Z[i],ρ) * ωz[i]
             end
             if is_dirac Σtᵢ /= ΔEi end
             Σt[gi] += Σtᵢ
-            if (~interaction.is_elastic)
-                if typeof(interaction) == Pair_Production
-                    Σtₑ[gi] += Σtᵢ * (Ei-2)
-                elseif typeof(interaction) == Annihilation
-                    Σtₑ[gi] += Σtᵢ * (Ei+2)
-                else
-                    Σtₑ[gi] += Σtᵢ * Ei
-                end
-            end
+            Σtₑ[gi] += Σtᵢ * (Ei-ΔQ)
         end
+        if type == "A" continue end # No scattering, stopping powers or momentum transfer for absorption interaction
 
         # Scattering cross sections
-        if type == "A" continue end # No scattering for absorption interaction
-        if ~(interaction.scattering_model == "FP" && type == "S")
-            𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,Npts,full_type,incoming_particle,scattered_particle,E_in,Ec)
-            if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
-            for gf in range(1,Ngf)
-                Σsℓ[gi,gf,:] += 1/2 * w[ni] * 𝓕[gf,:]
-                if (~interaction.is_elastic) Σsₑ[gi,gf] += 1/2 * w[ni] * 𝓕ₑ[gf] end
-            end
+        𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,Npts,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic)
+        if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
+        for gf in range(1,Ngf)
+            Σsℓ[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1]
+            Σsₑ[gi,gf] += w[ni]/2 * 𝓕ₑ[gf] 
         end
 
         # Momentum transfer
-        if  (interaction.name == "mott" && interaction.scattering_model == "FP") || (interaction.is_CSD && type != "P")
-            Nz = length(Z)
+        if is_AFP && type == "S"
             T[gi] = 0.0
             for i in range(1,Nz)
-                T[gi] += 1/2 * w[ni] * mt_dispatch(interaction) * nuclei_density(Z[i],ρ) * ωz[i]
+                T[gi] += w[ni]/2 * mt_dispatch(interaction) * nuclei_density(Z[i],ρ) * ωz[i]
             end
             if is_dirac T[gi] ./= ΔEi end
         end
 
         # Stopping power
-        if (interaction.is_CSD) && type != "P"
-            S[gi] += 1/2 * w[ni] * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out)
+        if is_CSD && type == "S"
+            S[gi] += w[ni]/2 * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out)
             if is_dirac S[gi] ./= ΔEi end
         end
-
     end
 
-    # Stopping power at boundaries
-    if (interaction.is_CSD) && type != "P"
+    # Stopping power at energy group boundaries
+    if is_CSD && type == "S"
         Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ei⁺,incoming_particle,E_out)
-        if (gi == Ngi) Sb[gi+1] += sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,0.0,incoming_particle,E_out) end
+        if (gi == Ngi) Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,0.0,incoming_particle,E_out) end
     end
 
-    # Elastic transport corrections
-    Σt[gi],Σsℓ[gi,gi,:],T[gi] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:],T[gi],interaction.scattering_model)
-
-end
-
-if typeof(interaction) == Annihilation
-    if full_type == "P_pp"
-        α_p = 0
-        β_p = 1/2
-    else
-        α_p = 1
-        β_p = 0
+    # Extended transport corrections
+    if scattering_model ∈ ["BFP","BTE"] && is_ETC
+        Σt[gi],Σsℓ[gi,gi,:] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:])
     end
-elseif typeof(interaction) == Pair_Production
-    α_p = 0
-    β_p = 0 # no electron extracted from medium in pair production
-else
-    α_p = -charge_in
-    β_p = -charge_out
+
+    # Elastic decomposition in soft and catastrophic components
+    if scattering_model == "BFP" && is_AFP_decomposition
+        Σt[gi],Σsℓ[gi,gi,:],T[gi] = angular_fokker_planck_decomposition(interaction,L,Σt[gi],Σsℓ[gi,gi,:],T[gi])
+    end
+
 end
 
 @inbounds for gi in range(1,Ngi)
@@ -182,7 +172,7 @@ end
         # ∅
 
         # Charge deposition cross sections
-        Σc[gi] = Σt[gi] * α_p
+        Σc[gi] = Σt[gi] * q_deposited
 
     elseif type == "S"
 
@@ -196,7 +186,7 @@ end
         # ∅
 
         # Charge deposition cross sections
-        Σc[gi] = Σt[gi] * α_p - sum(Σsℓ[gi,:,1]) * β_p
+        Σc[gi] = Σt[gi] * q_deposited - sum(Σsℓ[gi,:,1]) * q_extracted
 
     elseif type == "P"
 
@@ -213,14 +203,12 @@ end
         Σs[gi] = sum(Σsℓ[gi,:,1])
 
         # Charge deposition cross sections
-        Σc[gi] = -sum(Σsℓ[gi,:,1]) * β_p
+        Σc[gi] = -sum(Σsℓ[gi,:,1]) * q_extracted
 
     end
 
     # Particle conservation
-    if Σa[gi] != Σt[gi] + Σs[gi] - sum(Σsℓ[gi,:,1])
-        error("Particle conservation is not satisfied: ",[Σa[gi],Σt[gi],Σs[gi],sum(Σsℓ[gi,:,1])])
-    end
+    if Σa[gi] != Σt[gi] + Σs[gi] - sum(Σsℓ[gi,:,1]) error("Particle conservation is not satisfied.") end
 
 end
 

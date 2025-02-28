@@ -25,6 +25,7 @@ mutable struct Annihilation <: Interaction
     interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
+    is_AFP_decomposition::Bool
     is_elastic::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
@@ -40,6 +41,7 @@ mutable struct Annihilation <: Interaction
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_AFP = false
+        this.is_AFP_decomposition = false
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
@@ -234,12 +236,12 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z:
 
     # Annihilation of positrons scattered under the cutoff from Bremsstrahlung interaction
     elseif type == "P_brems"
-        σa = tcs(this.prior_interaction,Ei,Z[iz],min(Ein[end],Ec),iz,Positron(),"S",[Ein[end]])
+        σa = tcs(this.prior_interaction,Ei,Z[iz],min(Ein[end],Ec),iz,Positron(),[Ein[end]])
         σℓ[1] += 2 * σa
 
     # Annihilation of positrons produced under the cutoff following pair production event
     elseif type == "P_pp"
-        σa = tcs(this.prior_interaction,Ei,Z[iz],iz,[Ein[end]],"A")
+        σa = tcs(this.prior_interaction,Ei,Z[iz],iz,[Ein[end]])
         σℓ[1] += 2 * σa
     else
         error("Unknown interaction.")

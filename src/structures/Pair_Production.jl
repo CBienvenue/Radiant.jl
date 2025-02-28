@@ -25,6 +25,7 @@ mutable struct Pair_Production <: Interaction
     interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
+    is_AFP_decomposition::Bool
     is_elastic::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
@@ -44,6 +45,7 @@ mutable struct Pair_Production <: Interaction
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_AFP = false
+        this.is_AFP_decomposition = false
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
@@ -305,7 +307,7 @@ Gives the total cross-section for pair production.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{Float64},type::String)
+function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{Float64})
 
     # Initialization
     mₑc² = 0.510999
@@ -334,7 +336,7 @@ function tcs(this::Pair_Production,Ei::Float64,Z::Int64,iz::Int64,Eout::Vector{F
         for gf in range(1,Ngf+1)
             Ef⁻ = Eout[gf]
             if (gf != Ngf+1) Ef⁺ = Eout[gf+1] else Ef⁺ = 0.0 end
-            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,type)
+            Ef⁻,Ef⁺,isSkip = bounds(this,Ef⁻,Ef⁺,Ei,"A")
             if isSkip continue end
             ΔEf = Ef⁻ - Ef⁺
             for n in range(1,Np)
@@ -429,7 +431,7 @@ function preload_normalization_factor(this::Pair_Production,Z::Vector{Int64},Ema
         Ng = length(E[iz])
         σt = zeros(Ng)
         for i in range(1,Ng)
-            σt[i] = tcs(this,E[iz][i],Z[iz],iz,E_out,"A")
+            σt[i] = tcs(this,E[iz][i],Z[iz],iz,E_out)
         end
         A[iz] = zeros(Ng)
         for i in range(1,Ng)

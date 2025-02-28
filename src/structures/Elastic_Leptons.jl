@@ -23,6 +23,7 @@ mutable struct Elastic_Leptons <: Interaction
     is_elastic::Bool
     is_ETC::Bool
     is_AFP::Bool
+    is_AFP_decomposition::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
     is_kawrakow_correction::Bool
@@ -45,7 +46,8 @@ mutable struct Elastic_Leptons <: Interaction
         this.is_CSD = false
         this.is_elastic = true
         this.is_ETC = true
-        this.is_AFP = true
+        this.is_AFP = false
+        this.is_AFP_decomposition = true
         this.is_preload_data = true
         this.is_subshells_dependant = false
         this.model = "mott"

@@ -23,6 +23,7 @@ mutable struct Inelastic_Leptons <: Interaction
     interaction_types::Dict{Tuple{Type,Type},Vector{String}}
     is_CSD::Bool
     is_AFP::Bool
+    is_AFP_decomposition::Bool
     is_elastic::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
@@ -43,6 +44,7 @@ mutable struct Inelastic_Leptons <: Interaction
         this.set_density_correction("fano")
         this.is_CSD = true
         this.is_AFP = true
+        this.is_AFP_decomposition = false
         this.is_elastic = false
         this.is_preload_data = true
         this.set_is_subshells_dependant(true)

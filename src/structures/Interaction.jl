@@ -57,6 +57,107 @@ function get_types(interaction::Interaction,particle_in::Type,particle_out::Type
 end
 
 """
+    get_mass_energy_variation(interaction::Interaction,type::String="")
+
+Get the mass energy variation in the interaction.
+
+# Input Argument(s)
+- `interaction::Interaction` : interaction.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `ΔQ::Float64` : types of interaction.
+
+"""
+function get_mass_energy_variation(interaction::Interaction,type::String="")
+    if typeof(interaction) == Pair_Production
+        return 2.0
+    elseif typeof(interaction) == Annihilation
+        if type ∈ ["P_inel","P_brems"]
+            return 1.0
+        else
+            return -2.0
+        end
+    else
+        return 0.0
+    end
+end
+
+"""
+    get_charge_variation(interaction::Interaction,type::String)
+
+Get the charge deposited and extracted in the interaction.
+
+# Input Argument(s)
+- `interaction::Interaction` : interaction.
+- `type::String` : type of interaction.
+- `charge_in::Real` : type of interaction.
+- `charge_out::Real` : type of interaction.
+
+# Output Argument(s)
+- `q_deposited::Float64` : charge deposited by the incoming particle.
+- `q_extracted::Float64` : charge extracted by the production of particle(s).
+
+"""
+function get_charge_variation(interaction::Interaction,type::String,charge_in::Real,charge_out::Real)
+    if typeof(interaction) == Annihilation
+        if type == "P_pp"
+            q_deposited = 0; q_extracted = 1/2
+        else
+            q_deposited = 1; q_extracted = 0
+        end
+    elseif typeof(interaction) == Pair_Production
+        q_deposited = 0; q_extracted = 0 # no electron extracted from medium in pair production
+    else
+        q_deposited = -charge_in; q_extracted = -charge_out
+    end
+    return q_deposited, q_extracted
+end
+
+"""
+    get_scattering_model(interaction::Interaction)
+
+Get the scattering model associated with the interaction.
+
+# Input Argument(s)
+- `interaction::Interaction` : interaction.
+
+# Output Argument(s)
+- `scattering_model::String` : scattering model.
+- `is_CSD::Bool` : boolean indicating if continuous slowing-down term are employed.
+- `is_AFP::Bool` : boolean indicating if angular Fokker-Planck term are employed.
+- `is_AFP_decomposition::Bool` : boolean indicating if angular Fokker-Planck decomposition
+  method is employed.
+
+"""
+function get_scattering_model(interaction::Interaction)
+
+    if hasfield(typeof(interaction), :is_ETC)
+        is_ETC = interaction.is_ETC
+    else
+        is_ETC = false
+    end
+    
+    return interaction.scattering_model, interaction.is_CSD, interaction.is_AFP, interaction.is_AFP_decomposition, is_ETC
+end
+
+"""
+    is_elastic_scattering(interaction::Interaction)
+
+Indicate if the scattering is elastic or not.
+
+# Input Argument(s)
+- `interaction::Interaction` : interaction.
+
+# Output Argument(s)
+- `is_elastic::Bool` : boolean indicating if the scattering is elastic.
+
+"""
+function is_elastic_scattering(interaction::Interaction)
+    return interaction.is_elastic
+end
+
+"""
     in_distribution_dispatch(interaction::Interaction)
 
 Describe the energy discretization method for the incoming particle.
@@ -271,12 +372,12 @@ Gives the total cross-section.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},type::String)
+function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64})
     itype = typeof(interaction)
     if itype == Annihilation
         return tcs(interaction,Ei,Z)
     elseif itype == Bremsstrahlung
-        return tcs(interaction,Ei,Z,Ec,iz,particle,type,Eout)
+        return tcs(interaction,Ei,Z,Ec,iz,particle,Eout)
     elseif itype == Compton
         return tcs(interaction,Ei,Z,Eout,iz)
     elseif itype == Elastic_Leptons
@@ -284,7 +385,7 @@ function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,
     elseif itype == Inelastic_Leptons
         return tcs(interaction,Ei,Ec,particle,Z)
     elseif itype == Pair_Production
-        return tcs(interaction,Ei,Z,iz,Eout,type)
+        return tcs(interaction,Ei,Z,iz,Eout)
     elseif itype == Photoelectric
         return tcs(interaction,Ei,Z,iz)
     elseif itype == Rayleigh

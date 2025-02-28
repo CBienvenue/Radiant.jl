@@ -27,6 +27,7 @@ feed function 𝓕ₑ for energy-deposition cross section.
 - `Ein::Vector{Float64}` : energy group boundaries corresponding to the incoming
   particle [in mₑc²].
 - `Ec::Float64` : cutoff energy between soft and catastrophic interaction.
+- `is_elastic_scattering::Bool` : boolean indicating if the scattering is elastic.
 
 # Output Argument(s)
 - `𝓕::Array{Float64}` : feed function.
@@ -36,14 +37,14 @@ feed function 𝓕ₑ for energy-deposition cross section.
 - MacFarlane et al. (2021) : The NJOY Nuclear Data Processing System, Version 2012.
 
 """
-function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},Npts::Int64,type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64)
+function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},Npts::Int64,type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64,is_elastic::Bool)
 
 #----
 # Initialization
 #----
-
 𝓕 = zeros(Ng+1,L+1)
 𝓕ₑ = zeros(Ng+1)
+ΔQ = get_mass_energy_variation(interaction,type)
 
 # Outgoing particle energy spectrum
 is_dirac, Np, q_type = out_distribution_dispatch(interaction,type)
@@ -76,19 +77,18 @@ Nz = length(Z)
         𝓕i = zeros(L+1)
         𝓕iₑ = 0
         for n in range(1,Np)
-            Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
+
+            # Outgoing particle energy group
+            if (is_elastic) Ef = Ei else Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2 end
+
             if ΔEf > 0
 
                 # Compute Legendre angular flux moments
-                Σsᵢ = w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
+                Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
 
-                if ~is_dirac Σsᵢ *= ΔEf  end
+                if is_dirac Σsᵢ /= ΔEf  end
                 𝓕i .+= Σsᵢ
-                if typeof(interaction) == Annihilation && type ∈ ["P_inel","P_brems"]
-                    𝓕iₑ += Σsᵢ[1] * (Ef-1)
-                else
-                    𝓕iₑ += Σsᵢ[1] * Ef
-                end
+                𝓕iₑ += Σsᵢ[1] * (Ef-ΔQ)
             end
         end
         𝓕[gf,:] .+= 𝓕i

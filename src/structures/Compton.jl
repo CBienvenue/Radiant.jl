@@ -23,6 +23,7 @@ mutable struct Compton <: Interaction
     Cℓki::Array{Float64}
     is_CSD::Bool
     is_AFP::Bool
+    is_AFP_decomposition::Bool
     is_elastic::Bool
     is_preload_data::Bool
     is_subshells_dependant::Bool
@@ -40,6 +41,7 @@ mutable struct Compton <: Interaction
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
         this.is_AFP = false
+        this.is_AFP_decomposition = false
         this.is_elastic = false
         this.is_preload_data = true
         this.is_subshells_dependant = false
