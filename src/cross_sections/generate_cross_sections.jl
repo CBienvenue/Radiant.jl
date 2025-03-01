@@ -53,7 +53,7 @@ end
 multigroup_cross_sections = Array{Multigroup_Cross_Sections}(undef,Npart,Nmat)
 for i in range(1,Npart), n in range(1,Nmat)
     mcs = Multigroup_Cross_Sections(Ng[i])
-    Σt = zeros(Ng[i]); Σa = zeros(Ng[i]); Σs = zeros(Ng[i]); Σe = zeros(Ng[i]+1); Σc = zeros(Ng[i]+1); Sb = zeros(Ng[i]+1); S = zeros(Ng[i]); T = zeros(Ng[i]);
+    Σt = zeros(Ng[i]); Σa = zeros(Ng[i]); Σe = zeros(Ng[i]+1); Σc = zeros(Ng[i]+1); Sb = zeros(Ng[i]+1); S = zeros(Ng[i]); T = zeros(Ng[i]);
     for j in range(1,Npart)
         Σsℓ = zeros(Ng[i],Ng[j],L+1)
         for interaction in interactions
@@ -61,8 +61,8 @@ for i in range(1,Npart), n in range(1,Nmat)
                 if pin != get_type(particles[i]) || pout != get_type(particles[j]) continue end
                 for type in interaction.get_types(pin,pout)
                     println([type,get_type(particles[i]),get_type(particles[j])])
-                    Σsℓi, Σti, Σai, Σsi, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,8,true,interactions)
-                    Σsℓ .+= Σsℓi; Σt .+= Σti; Σa .+= Σai; Σs .+= Σsi; Σe .+= Σei; Σc .+= Σci; Sb .+= Sbi; S .+= Si; T .+= Ti;
+                    Σsℓi, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,8,true,interactions)
+                    Σsℓ .+= Σsℓi; Σt .+= Σti; Σa .+= Σai; Σe .+= Σei; Σc .+= Σci; Sb .+= Sbi; S .+= Si; T .+= Ti;
                 end
             end
         end

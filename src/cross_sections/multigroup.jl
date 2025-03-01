@@ -30,7 +30,6 @@ Produce the multigroup macroscopic cross sections.
 - `Σsℓ::Array{Float64,3}`: Legendre moments of the differential cross section [in cm⁻¹].
 - `Σt::Vector{Float64}`: total cross sections [in cm⁻¹].
 - `Σa::Vector{Float64}`: absorption cross sections [in cm⁻¹].
-- `Σs::Vector{Float64}`: secondary production cross sections [in cm⁻¹].
 - `Σe::Vector{Float64}`: energy deposition cross sections [in MeV × cm⁻¹].
 - `Σc::Vector{Float64}`: charge deposition cross sections [in cm⁻¹].
 - `Sb::Vector{Float64}`: stopping power at boundaries [MeV × cm⁻¹].
@@ -56,7 +55,7 @@ end
 mₑc² = 0.510999
 Nz = length(Z)
 Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
-Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σs = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); Sb = zeros(Ngi+1); S = zeros(Ngi); T = zeros(Ngi)
+Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); Sb = zeros(Ngi+1); S = zeros(Ngi); T = zeros(Ngi)
 Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
 charge_in = incoming_particle.get_charge()
@@ -156,64 +155,18 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
         Σt[gi],Σsℓ[gi,gi,:],T[gi] = angular_fokker_planck_decomposition(interaction,L,Σt[gi],Σsℓ[gi,gi,:],T[gi])
     end
 
+    # Absorption cross section
+    Σa[gi] = Σt[gi] - sum(Σsℓ[gi,:,1])
+
+    # Energy deposition cross sections
+    Σe[gi] = Σtₑ[gi] - sum(Σsₑ[gi,:]) + S[gi]
+
+    # Charge deposition cross sections
+    Σc[gi] = Σt[gi] * q_deposited - sum(Σsℓ[gi,:,1]) * q_extracted
 end
 
-@inbounds for gi in range(1,Ngi)
-
-    if type == "A"
-
-        # Absorption cross section
-        Σa[gi] = Σt[gi]
-
-        # Energy deposition cross sections
-        Σe[gi] = Σtₑ[gi]
-
-        # No secondary production cross section
-        # ∅
-
-        # Charge deposition cross sections
-        Σc[gi] = Σt[gi] * q_deposited
-
-    elseif type == "S"
-
-        # Absorption cross section
-        Σa[gi] = Σt[gi] - sum(Σsℓ[gi,:,1])
-
-        # Energy deposition cross sections
-        Σe[gi] = Σtₑ[gi] - sum(Σsₑ[gi,:]) + S[gi]
-
-        # No secondary production cross section
-        # ∅
-
-        # Charge deposition cross sections
-        Σc[gi] = Σt[gi] * q_deposited - sum(Σsℓ[gi,:,1]) * q_extracted
-
-    elseif type == "P"
-
-        # Total cross-section
-        Σt[gi] = 0.0
-
-        # No absorption cross section
-        # ∅
-
-        # Energy deposition cross sections
-        Σe[gi] = -sum(Σsₑ[gi,:])
-
-        # Secondary production cross section
-        Σs[gi] = sum(Σsℓ[gi,:,1])
-
-        # Charge deposition cross sections
-        Σc[gi] = -sum(Σsℓ[gi,:,1]) * q_extracted
-
-    end
-
-    # Particle conservation
-    if Σa[gi] != Σt[gi] + Σs[gi] - sum(Σsℓ[gi,:,1]) error("Particle conservation is not satisfied.") end
-
-end
-
-# Slowing-down under the cutoff contributions
-if type != "P"
+# Contributions of particle slowing-down to the cutoff energy to the energy and charge deposition
+if type ∈ ["S","A"]
     Σe[Ngi+1] = Sb[Ngi+1] * E_in[end]/(E_in[end-1]-E_in[end])
     Σc[Ngi+1] = Sb[Ngi+1] * (-charge_in)/(E_in[end-1]-E_in[end])
 end
@@ -222,5 +175,5 @@ end
 
 if isStandard println("End of ",interaction.name," calculations."); println() end
 
-return Σsℓ, Σt, Σa, Σs, Σe, Σc, Sb, S, T
+return Σsℓ, Σt, Σa, Σe, Σc, Sb, S, T
 end
