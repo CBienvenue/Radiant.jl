@@ -2,7 +2,7 @@
     multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,
     Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,
     full_type::String,incoming_particle::Particle,scattered_particle::Particle,
-    particles::Vector{Particle},Npts::Int64,isStandard::Bool,
+    particles::Vector{Particle},isStandard::Bool,
     interactions::Vector{Interaction})
 
 Produce the multigroup macroscopic cross sections.
@@ -20,7 +20,6 @@ Produce the multigroup macroscopic cross sections.
 - `incoming_particle::Particle` : incoming particle in the interaction.
 - `scattered_particle::Particle` : scattered particle in the interaction.
 - `particles::Vector{Particle}` : list of particles involved in the interaction.
-- `Npts::Int64` : number of points in the quadrature.
 - `isStandard::Bool` : indicate if a new interaction is defined or not when calling
   multigroup function.
 - `interactions::Vector{Interaction}` : list of all interactions that are taken into
@@ -43,10 +42,10 @@ Produce the multigroup macroscopic cross sections.
   cross-sections for the Boltzmann Fokker-Planck equation.
 
 """
-function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},Npts::Int64,isStandard::Bool,interactions::Vector{Interaction})
+function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},isStandard::Bool,interactions::Vector{Interaction})
 
 if isStandard
-    println("Start of ",interaction.name," calculations.") 
+    println("Start of $(interaction.name) calculations.") 
 end
 
 #----
@@ -65,6 +64,7 @@ type = string(full_type[1])
 scattering_model, is_CSD, is_AFP, is_AFP_decomposition, is_ETC = interaction.get_scattering_model()
 is_elastic = is_elastic_scattering(interaction)
 ΔQ = get_mass_energy_variation(interaction)
+is_subshells = interaction.get_is_subshells_dependant()
 E_in = Eiᵇ./mₑc²; E_out = Efᵇ./mₑc²; # Change of units (MeV → mₑc²)
 
 #----
@@ -94,7 +94,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
 
         # Boundary between catastrophic and soft interactions
         if scattering_model == "BFP"
-            Ec = Ei * (Ei⁺-Ei²⁺)/ (Ei⁻-Ei⁺) - (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺)
+            Ec = Ei*(Ei⁺-Ei²⁺)/(Ei⁻-Ei⁺) - (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺)
         elseif scattering_model == "FP"
             Ec = 0.0
         elseif scattering_model == "BTE"
@@ -116,7 +116,7 @@ if (interaction.is_preload_data) preload_data_dispatch(interaction,Z,E_in[1],E_i
         if type == "A" continue end # No scattering, stopping powers or momentum transfer for absorption interaction
 
         # Scattering cross sections
-        𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,Npts,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic)
+        𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
         if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
         for gf in range(1,Ngf)
             Σsℓ[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1]
@@ -173,7 +173,7 @@ end
 
 Σe *= mₑc²; Sb *= mₑc²; S *= mₑc² ; # Change of units (mₑc² → MeV)
 
-if isStandard println("End of ",interaction.name," calculations."); println() end
+if isStandard println("End of $(interaction.name) calculations."); println() end
 
 return Σsℓ, Σt, Σa, Σe, Σc, Sb, S, T
 end

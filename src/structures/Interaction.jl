@@ -35,6 +35,24 @@ function get_out_particles(interaction::Interaction)
 end
 
 """
+    get_is_subshells_dependant(interaction::Interaction)
+
+Is the interaction cross-sections are subshells dependant.
+
+# Input Argument(s)
+- `interaction::Interaction` : interaction.
+
+# Output Argument(s)
+- `is_subshells_dependant::Bool` : is the interaction cross-sections are subshells
+  dependant.
+
+"""
+function get_is_subshells_dependant(interaction::Interaction)
+    return interaction.is_subshells_dependant
+end
+
+
+"""
     get_types(interaction::Interaction,particle_in::Type,particle_out::Type)
 
 Get the interaction types.

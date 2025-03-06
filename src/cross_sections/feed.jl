@@ -1,7 +1,7 @@
 """
     feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,
     Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,
-    particles::Vector{Particle},Npts::Int64,type::String,incoming_particle::Particle,
+    particles::Vector{Particle},type::String,incoming_particle::Particle,
     scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64)
 
 Calculate the feed function 𝓕 (normalized probability of scattering from Ei into each
@@ -20,7 +20,6 @@ feed function 𝓕ₑ for energy-deposition cross section.
 - `gi::Int64` : incoming particle group index.
 - `Ngi::Int64` :  number of groups for the incoming particle.
 - `particles::Vector{Particle}` : list of the particles imply in the interaction.
-- `Npts::Int64` : number of points in the quadrature.
 - `type::String` : type of interaction (scattering or production).
 - `incoming_particle::Particle` : incoming particle.
 - `scattered_particle::Particle` : scattered particle.
@@ -28,6 +27,7 @@ feed function 𝓕ₑ for energy-deposition cross section.
   particle [in mₑc²].
 - `Ec::Float64` : cutoff energy between soft and catastrophic interaction.
 - `is_elastic_scattering::Bool` : boolean indicating if the scattering is elastic.
+- `is_subshells::Bool` : boolean indicating if the cross-sections are subshells dependant.
 
 # Output Argument(s)
 - `𝓕::Array{Float64}` : feed function.
@@ -37,7 +37,7 @@ feed function 𝓕ₑ for energy-deposition cross section.
 - MacFarlane et al. (2021) : The NJOY Nuclear Data Processing System, Version 2012.
 
 """
-function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},Npts::Int64,type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64,is_elastic::Bool)
+function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64,is_elastic::Bool,is_subshells::Bool)
 
 #----
 # Initialization
@@ -59,12 +59,7 @@ Nz = length(Z)
 @inbounds for i in range(1,Nz)
 
     # Loop over subshells
-    if interaction.is_subshells_dependant
-        Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[i])
-    else
-        Ui = [0.0]; Nshells = 1; Zi = Z[i]; Ti = [0.0]; ri = [0.0]; subshells = [""]; # Free atomic electron
-    end
-
+    Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z[i],~is_subshells)
     for gf in range(1,Ng), δi in range(1,Nshells)
         
         # Final energy group
@@ -81,20 +76,16 @@ Nz = length(Z)
             # Outgoing particle energy group
             if (is_elastic) Ef = Ei else Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2 end
 
-            if ΔEf > 0
+            # Compute Legendre angular flux moments
+            Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
+            if is_dirac Σsᵢ /= ΔEf  end
+            𝓕i .+= Σsᵢ
+            𝓕iₑ += Σsᵢ[1] * (Ef-ΔQ)
 
-                # Compute Legendre angular flux moments
-                Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
-
-                if is_dirac Σsᵢ /= ΔEf  end
-                𝓕i .+= Σsᵢ
-                𝓕iₑ += Σsᵢ[1] * (Ef-ΔQ)
-            end
         end
         𝓕[gf,:] .+= 𝓕i
         𝓕ₑ[gf] += 𝓕iₑ
     end
 end
-
 return 𝓕, 𝓕ₑ
 end
