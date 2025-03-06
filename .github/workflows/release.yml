@@ -48,3 +48,10 @@ jobs:
             https://github.com/${{ github.repository }}/compare/${{ steps.get_prev_tag.outputs.prev_tag }}...v${{ steps.get_version.outputs.version }})
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open an issue for JuliaRegistrator
+        uses: dacbd/create-issue-action@main
+        with:
+          title: "Register new release v${{ steps.get_version.outputs.version }}"
+          body: "@JuliaRegistrator register"
+          token: ${{ secrets.GITHUB_TOKEN }}
