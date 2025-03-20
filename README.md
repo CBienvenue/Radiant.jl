@@ -44,8 +44,7 @@ For a detailed account of the theory and the features of the Radiant package, pl
 
 ## Examples
 
-> [!WARNING]
-> Missing - Work in progress
+Examples for the Radiant package can be found in the GitHub repository [Radiant - Examples](https://github.com/CBienvenue/Radiant-Examples).
 
 ## Questions and Contributions
 
