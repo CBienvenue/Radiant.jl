@@ -332,7 +332,7 @@ for n in range(1,numberOfParticles)
         sp_cutoff = stoppingPowers[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1),imat][end]
         charge = get_charge(particles[n])
         mcs.set_energy_deposition(push!(energyDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*energy_boundaries[n][end]/(energy_boundaries[n][end-1]-energy_boundaries[n][end])))
-        mcs.set_charge_deposition(push!(chargeDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*(-charge)))
+        mcs.set_charge_deposition(push!(chargeDepositionCrossSections[index+1:index+numberOfGroups[n],imat],sp_cutoff*(-charge)/(energy_boundaries[n][end-1]-energy_boundaries[n][end])))
 
         # Per scattered particle
         for m in range(1,numberOfParticles)
