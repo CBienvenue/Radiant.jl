@@ -67,7 +67,7 @@ end
 Verify if all the required information to build the geometry is present.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 N/A
@@ -112,7 +112,7 @@ To build the geometry structure.
 
 # Input Argument(s)
 - `this::Geometry` : geometry.
-- `cs::Cross_Sections` : cross-sections library.
+- `cs::Cross_Sections` : geometry.
 
 # Output Argument(s)
 N/A
@@ -360,7 +360,7 @@ end
 Get the type of geometry.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 - `type::String` : type of geometry.
@@ -377,7 +377,7 @@ end
 Get the dimension of geometry.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 - `dimension::Int64` : dimension of geometry.
@@ -394,7 +394,7 @@ end
 Get the axis associated with the geometry.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 - `axis::Vector{String}` : axis associated with the geometry.
@@ -411,7 +411,7 @@ end
 Get the number of voxels along each axis.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 - `number_of_voxels::Vector{Int64}` : number of voxels along each axis.
@@ -434,7 +434,7 @@ end
 Get the voxels width along each axis.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 - `voxels_width::Vector{Vector{Float64}}` : voxels width along each axis.
@@ -457,7 +457,7 @@ end
 Get the material in each voxel.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 
 # Output Argument(s)
 - `material_per_voxel::Array{Float64}` : material in each voxel.
@@ -474,7 +474,7 @@ end
 Get the voxel position along a specified axis.
 
 # Input Argument(s)
-- `this::Geometry` : cross-sections library.
+- `this::Geometry` : geometry.
 - `axis::String` : axis.
 
 # Output Argument(s)

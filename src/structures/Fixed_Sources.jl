@@ -24,6 +24,8 @@ mutable struct Fixed_Sources
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
     solvers                    ::Solvers
+    source_collection          ::Vector{Union{Surface_Source,Volume_Source}}
+    is_build                   ::Bool
 
     # Constructor(s)
     function Fixed_Sources(cross_sections,geometry,solvers)
@@ -38,6 +40,8 @@ mutable struct Fixed_Sources
         this.cross_sections = cross_sections
         this.geometry = geometry
         this.solvers = solvers
+        this.source_collection = Vector{Union{Surface_Source,Volume_Source}}()
+        this.is_build = false
 
         return this
     end
@@ -65,21 +69,45 @@ julia> fs.add_source(vs)
 ```
 """
 function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
-    particle = fixed_source.get_particle()
-    method = this.solvers.get_method(particle)
-    if get_id(particle) ∈ get_id.(this.particles)
-        source = Source(particle,this.cross_sections,this.geometry,method)
-        source.add_source(fixed_source)
-        index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
-        this.sources_list[index] += source
-    else
-        this.number_of_particles += 1
-        push!(this.particles,particle)
-        source = Source(particle,this.cross_sections,this.geometry,method)
-        source.add_source(fixed_source)
-        push!(this.sources_list,source)
+    push!(this.source_collection,fixed_source)
+end
+
+"""
+    build(this::Fixed_Sources)
+
+To build the fixed sources structure.
+
+# Input Argument(s)
+- `this::Fixed_Sources` : fixed sources.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> fs = Fixed_Sources()
+julia> ... # Defining the fixed sources properties
+julia> fs.build()
+```
+"""
+function build(this::Fixed_Sources)
+    for fixed_source in this.source_collection
+        particle = fixed_source.get_particle()
+        method = this.solvers.get_method(particle)
+        if get_id(particle) ∈ get_id.(this.particles)
+            source = Source(particle,this.cross_sections,this.geometry,method)
+            source.add_source(fixed_source)
+            index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+            this.sources_list[index] += source
+        else
+            this.number_of_particles += 1
+            push!(this.particles,particle)
+            source = Source(particle,this.cross_sections,this.geometry,method)
+            source.add_source(fixed_source)
+            push!(this.sources_list,source)
+        end
+        this.normalization_factor += fixed_source.get_normalization_factor()
     end
-    this.normalization_factor += fixed_source.get_normalization_factor()
 end
 
 """

@@ -106,7 +106,7 @@ else
             end
         end
 
-        # Verify convergence of the fluxes
+        # Verify convergence of the fluxes, energy deposition or charge deposition
         px = 0
         ϵmax = 0
         if n != 1

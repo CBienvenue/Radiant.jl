@@ -153,6 +153,17 @@ julia> cu.run()
 ```
 """
 function run(this::Computation_Unit)
+    
+    # Build the cross-section library if it is not done yet.
+    if ~this.cross_sections.is_build this.cross_sections.build() end
+
+    # Build the geometry if it is not done yet.
+    if ~this.geometry.is_build this.geometry.build(this.cross_sections) end
+
+    # Build the fixed sources if it is not done yet.
+    if ~this.sources.is_build this.sources.build() end
+
+    # Run transport calculations
     this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources)
 end
 
