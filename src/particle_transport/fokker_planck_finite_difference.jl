@@ -102,10 +102,8 @@ elseif Qdims == 2
         # Compute the scattering matrix
         ℳ = zeros(Nᵢ^2,Nᵢ^2)
         for n in range(1,Nᵢ), i in range(1,Nᵢ), m in range(1,Nᵢ), j in range(1,Nᵢ)
-
             ii = i+Nᵢ*(n-1)
             jj = j+Nᵢ*(m-1)
-
             if m == n && j == i
                 if n == 1
                     ℳ[ii,jj] -= 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
@@ -121,26 +119,21 @@ elseif Qdims == 2
                 else
                     ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 end
-
             elseif m == n - 1 && j == i
                 if n != 1
                     ℳ[ii,jj] += 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
                 end
-                
             elseif m == n + 1 && j == i
                 if n != Nᵢ
                     ℳ[ii,jj] += 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
                 end
-
             elseif m == n && j == i - 1
                 ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
 
             elseif m == n && j == i + 1
                 ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
             end
-
         end
-
     else
 
         # 3D voronoi data
@@ -159,7 +152,7 @@ elseif Qdims == 2
         for n_3D in range(1,Nd_3D)
             ϵ_ξ = ones(Nd)*Inf
             for j in range(1,Nd)
-                ϵ_ξ[j] = abs(Ω_3D[1][n_3D] - Ω[1][j])^2 + abs(Ω_3D[2][n_3D] - Ω[2][j])^2 + abs(Ω_3D[3][n_3D] - sign(Ω_3D[3][n_3D]) * Ω[3][j])^2
+                ϵ_ξ[j] = abs(Ω_3D[1][n_3D] - Ω[1][j])^2 + abs(Ω_3D[2][n_3D] - Ω[2][j])^2 + abs(sign(Ω_3D[3][n_3D]) * Ω_3D[3][n_3D] - Ω[3][j])^2
             end
             map_3D_to_2D[n_3D] = argmin(ϵ_ξ)
             if Ω_3D[3][n_3D] ≥ 0
@@ -183,6 +176,12 @@ elseif Qdims == 2
                 ℳ[n,n] -= γ[index_γ]/w[n]
             end
         end
+    end
+
+    diag_ℳ = [abs(ℳ[i,i]) for i in range(1,Nd)]
+    λ₀ = maximum(diag_ℳ)
+    for i in range(1,Nd)
+        ℳ[i,i] += λ₀
     end
 
 elseif Qdims == 3
@@ -213,10 +212,8 @@ elseif Qdims == 3
         # Compute the scattering matrix
         ℳ = zeros(2*Nᵢ^2,2*Nᵢ^2)
         for n in range(1,Nᵢ), i in range(1,2*Nᵢ), m in range(1,Nᵢ), j in range(1,2*Nᵢ)
-
             ii = i+2*Nᵢ*(n-1)
             jj = j+2*Nᵢ*(m-1)
-
             if m == n && j == i
                 if n == 1
                     ℳ[ii,jj] -= 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
@@ -232,24 +229,20 @@ elseif Qdims == 3
                 else
                     ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 end
-
             elseif m == n - 1 && j == i
                 if n != 1
                     ℳ[ii,jj] += 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
                 end
-                
             elseif m == n + 1 && j == i
                 if n != Nᵢ
                     ℳ[ii,jj] += 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
                 end
-
             elseif m == n && (j == i - 1 || i == 1 && j == 2*Nᵢ)
                 if i != 1
                     ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
                 else
                     ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]+2*π-ωⱼ[end])
                 end
-
             elseif m == n && (j == i + 1 || i == 2*Nᵢ && j == 1)
                 if i != 2*Nᵢ
                     ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
@@ -281,10 +274,10 @@ elseif Qdims == 3
         end
     end
 
-    diag_ℳ = [abs(ℳ[i, i]) for i in range(1,Nd)]
+    diag_ℳ = [abs(ℳ[i,i]) for i in range(1,Nd)]
     λ₀ = maximum(diag_ℳ)
     for i in range(1,Nd)
-        ℳ[i, i] += λ₀
+        ℳ[i,i] += λ₀
     end
 
 end

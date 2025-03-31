@@ -27,6 +27,7 @@ mutable struct Discrete_Ordinates
     solver_type                ::Union{Missing,String}
     quadrature_type            ::Union{Missing,String}
     quadrature_order           ::Union{Missing,Int64}
+    quadrature_dimension       ::Int64
     legendre_order             ::Union{Missing,Int64}
     angular_fokker_planck      ::Union{Missing,String}
     angular_boltzmann          ::Union{Missing,String}
@@ -35,17 +36,16 @@ mutable struct Discrete_Ordinates
     scheme_type                ::Dict{String,String}
     scheme_order               ::Dict{String,Int64}
     acceleration               ::String
-    isFC           ::Bool
+    isFC                       ::Bool
 
     # Constructor(s)
     function Discrete_Ordinates()
-
         this = new()
-
         this.particle = missing
         this.solver_type = missing
         this.quadrature_type = missing
         this.quadrature_order = missing
+        this.quadrature_dimension = 0
         this.legendre_order = missing
         this.angular_fokker_planck = "finite-difference"
         this.angular_boltzmann = "galerkin-d"
@@ -55,7 +55,6 @@ mutable struct Discrete_Ordinates
         this.scheme_order = Dict{String,Int64}()
         this.acceleration = "none"
         this.isFC = true
-
         return this
     end
 end
@@ -113,19 +112,26 @@ function set_solver_type(this::Discrete_Ordinates,solver_type::String)
 end
 
 """
-    set_quadrature(this::Discrete_Ordinates,type::String,order::Int64)
+    set_quadrature(this::Discrete_Ordinates,type::String,order::Int64,Qdims::Int64=0)
 
 To set the quadrature properties for the discretization of the angular domain.
 
 # Input Argument(s)
 - `this::Discrete_Ordinates` : discretization method.
 - `type::String` : type of quadrature, which can takes the following values:
-    - `type = "gauss-legendre"` : Gauss-Legendre quadrature (1D Cartesian geometry only)
-    - `type = "gauss-lobatto"` : Gauss-Lobatto quadrature (1D Cartesian geometry only)
-    - `type = "carlson"` : Carlson quadrature (2D or 3D Cartesian geometry only)
-    - `type = "gauss-legendre-chebychev"` : product quadrature between Gauss-Legendre and Chebychev quadratures (2D or 3D Cartesian geometry only)
-    - `type = "lebedev"` : Lebedev quadrature (2D or 3D Cartesian geometry only)
+    - `type = "gauss-legendre"` : Gauss-Legendre quadrature (1D Cartesian geometry only).
+    - `type = "gauss-lobatto"` : Gauss-Lobatto quadrature (1D Cartesian geometry only).
+    - `type = "carlson"` : Carlson quadrature (2D or 3D Cartesian geometry only).
+    - `type = "gauss-legendre-chebychev"` : product quadrature between Gauss-Legendre and
+      Chebychev quadratures (2D or 3D Cartesian geometry only).
+    - `type = "lebedev"` : Lebedev quadrature (2D or 3D Cartesian geometry only).
 - `order::Int64` : order of the quadrature, which is any integer greater than 2.
+- `Qdims::Int64` : quadrature dimension, which can takes the following values:
+    - `Qdims = 0` : default value, Qdims = 1 with 1D quadrature, Qdims = 2 with quadrature
+      over the unit sphere in 1D or in 2D geometry and Qdims = 3 in 3D geometry.
+    - `Qdims = 1` : 1D quadrature.
+    - `Qdims = 2` : quadrature over half the unit-sphere.
+    - `Qdims = 3` : quadrature over the unit sphere. 
 
 # Output Argument(s)
 N/A
@@ -136,11 +142,13 @@ julia> m = Discrete_Ordinates()
 julia> m.set_quadrature("gauss-legendre",4)
 ```
 """
-function set_quadrature(this::Discrete_Ordinates,type::String,order::Int64)
+function set_quadrature(this::Discrete_Ordinates,type::String,order::Int64,Qdims::Int64=0)
     if lowercase(type) ∉ ["gauss-legendre","gauss-lobatto","carlson","lebedev","gauss-legendre-chebychev"] error("Unknown quadrature type.") end
     if order ≤ 1 error("Quadrature order should be at least 2.") end
+    if ~(0 ≤ Qdims ≤ 3) error("Quadrature dimension should be either 1, 2 or 3.") end
     this.quadrature_type = lowercase(type)
     this.quadrature_order = order
+    this.quadrature_dimension = Qdims
 end
 
 """
@@ -570,13 +578,22 @@ Get the quadrature dimension.
 
 """
 function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
-    if this.quadrature_type ∈ ["gauss-legendre","gauss-lobatto"]
+    quadrature_type = this.get_quadrature_type()
+    Qdims = this.get_quadrature_dimension()
+    if quadrature_type ∈ ["gauss-legendre","gauss-lobatto"]
+        if Qdims ∈ [2,3] error("Quadrature dimension should be 1 with quadrature over the direction cosine.") end
         return 1
-    elseif this.quadrature_type ∈ ["gauss-legendre-chebychev","lebedev","carlson"]
-        if Ndims == 1
-            return 3
+    elseif quadrature_type ∈ ["gauss-legendre-chebychev","lebedev","carlson"]
+        if Ndims ∈ [1,2]
+            if Qdims == 1 error("Quadrature dimension should not be 1 with quadrature over the unit sphere.") end
+            if Qdims == 3
+                return 3
+            else
+                return 2
+            end
         else
-            return Ndims
+            if Qdims ∈ [1,2] error("Quadrature dimension should not be 1 or 2 in 3D geometry.") end
+            return 3
         end
     else
         error("Unkown quadrature type.")
@@ -620,4 +637,20 @@ or not. For example, with two linear schemes, the moments are either fully coupl
 """
 function get_is_full_coupling(this::Discrete_Ordinates)
     return this.isFC
+end
+
+"""
+    get_quadrature_dimension(this::Discrete_Ordinates)
+
+Get the quadrature dimension.
+
+# Input Argument(s)
+- `this::Discrete_Ordinates` : discretization method.
+
+# Output Argument(s)
+- `quadrature_dimension::Int64` : quadrature dimension.
+
+"""
+function get_quadrature_dimension(this::Discrete_Ordinates)
+    return this.quadrature_dimension
 end

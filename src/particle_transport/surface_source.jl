@@ -23,23 +23,29 @@ N/A
 """
 function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
+    #----
+    # Initialization
+    #----
     if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
     index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
     if particle != discrete_ordinates.particle error(string("No methods available for ",get_type(particle)," particle.")) end
-    quadrature_type = discrete_ordinates.quadrature_type
-    N = discrete_ordinates.quadrature_order 
+    Ndims = geometry.get_dimension()
+    geometry_type = geometry.get_type()
+    quadrature_type = discrete_ordinates.get_quadrature_type()
+    N = discrete_ordinates.get_quadrature_order() 
+    Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
     norm = 0.0
 
-    if geometry.type == "cartesian"
+    if geometry_type == "cartesian"
 
     #----
     # Cartesian 1D geometry
     #----
-    if geometry.dimension == 1
+    if Ndims == 1
 
     # Extract quadrature
-    Ω,w = quadrature(N,quadrature_type,1)
+    Ω,w = quadrature(N,quadrature_type,Qdims)
     if typeof(Ω) != Vector{Float64} μ = Ω[1] else μ = Ω end
     Nd = length(μ)
 
@@ -91,9 +97,9 @@ function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Partic
     #----
     # Cartesian 2D geometry
     #----
-    elseif geometry.dimension == 2
+    elseif Ndims == 2
 
-    Ω,w = quadrature(N,quadrature_type,2)
+    Ω,w = quadrature(N,quadrature_type,Qdims)
     μ = Ω[1]; η = Ω[2]
     Nd = length(w)
 
@@ -185,9 +191,9 @@ function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Partic
     #----
     # Cartesian 3D geometry
     #----
-    elseif geometry.dimension == 3
+    elseif Ndims == 3
 
-    Ω,w = quadrature(N,quadrature_type,3)
+    Ω,w = quadrature(N,quadrature_type,Qdims)
     μ = Ω[1]; η = Ω[2]; ξ = Ω[3]
     Nd = length(w)
 

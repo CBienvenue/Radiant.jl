@@ -1,4 +1,16 @@
-function voronoi_sphere(Ω)
+"""
+    voronoi_sphere(Ω::Vector{Vector{Float64}})
+
+Produce a Voronoi discretization of the unit sphere based on a set of nodes.
+
+# Input Argument(s)
+- `Ω::Vector{Vector{Float64}}` : nodes coordinates on the unit sphere.
+
+# Output Argument(s)
+- `voronoi_data::Vector{Dict{String,Any}}` : Voronoi discretization information.
+
+"""
+function voronoi_sphere(Ω::Vector{Vector{Float64}})
 
     Nd = length(Ω[1])
     xn = Vector{Vector{Float64}}(undef,Nd); yn = Vector{Vector{Float64}}(undef,Nd); zn = Vector{Vector{Float64}}(undef,Nd)
@@ -187,7 +199,24 @@ function voronoi_sphere(Ω)
     return voronoi_data
 end
 
-function fokker_planck_weights_3D(Ω,w,voronoi_data)
+"""
+    fokker_planck_weights_3D(Ω::Vector{Vector{Float64}},w::Vector{Float64},
+    voronoi_data::Vector{Dict{String,Any}})
+
+Compute the parameters γ that conserves the zeroth and three first spherical harmonics
+moments of the Fokker-Planck operator over the unit sphere.
+
+# Input Argument(s)
+- `Ω::Vector{Vector{Float64}}` : nodes coordinates on the unit sphere.
+- `w::Vector{Float64}` : quadrature weights associated with each nodes.
+- `voronoi_data::Vector{Dict{String,Any}}` : Voronoi discretization information.
+
+# Output Argument(s)
+- `γ::Vector{Float64}` : Voronoi discretization information.
+- `edge_list::Vector{Tuple{Int64,Int64}}` : list of each Voronoi cell edges.
+
+"""
+function fokker_planck_weights_3D(Ω::Vector{Vector{Float64}},w::Vector{Float64},voronoi_data::Vector{Dict{String,Any}})
     
     Nd = length(w)
 
@@ -210,40 +239,48 @@ function fokker_planck_weights_3D(Ω,w,voronoi_data)
     Q = zeros(Neqs)
     index_eq = 1
     for n in range(1,Nd), k in range(1,3)
-
-        if k == 0
-            R = ones(length(Ω[1]))
-            ℓ = 0
-        elseif k == 1
-            R = Ω[1]
-            ℓ = 1
-        elseif k == 2
-            R = Ω[2]
-            ℓ = 1
-        elseif k == 3
-            R = Ω[3]
-            ℓ = 1
-        else
-            error()
-        end
-
         Nn_triangle = voronoi_data[n]["Ni_triangle"]
         for j in range(1,Nn_triangle)
             m = voronoi_data[n]["data_triangle_ij"][j]["index"]
             index_unk = findfirst(x -> x == (min(n,m),max(n,m)), edge_list)
-            Γ[index_eq,index_unk] -= R[n]
-            Γ[index_eq,index_unk] += R[m]
-            Q[index_eq] = -2*w[n]*R[n]
+            Γ[index_eq,index_unk] -= Ω[k][n]
+            Γ[index_eq,index_unk] += Ω[k][m]
+            Q[index_eq] = -2*w[n]*Ω[k][n]
         end
         index_eq += 1
     end
-    γ = pinv(Γ)*Q
 
+    # Compute the pseudo-inverse
+    pinv_Γ = pinv(Γ)
+    if norm(pinv_Γ*Γ-Matrix{Float64}(I, Nunk, Nunk)) > 1e-7
+        error("The equation system to find γ-parameters does not have a solution.")
+    end
+    γ = pinv_Γ*Q
+    
     return γ, edge_list
-
 end
 
-function fokker_planck_weights_2D(Ω,w,Ω_3D,w_3D,voronoi_data)
+"""
+    fokker_planck_weights_2D(Ω::Vector{Vector{Float64}},w::Vector{Float64},
+    Ω_3D::Vector{Vector{Float64}},w_3D::Vector{Float64},
+    voronoi_data::Vector{Dict{String,Any}})
+
+Compute the parameters γ that conserves the zeroth and three first spherical harmonics
+moments of the Fokker-Planck operator over the unit half-sphere.
+
+# Input Argument(s)
+- `Ω::Vector{Vector{Float64}}` : nodes coordinates on the unit half-sphere.
+- `w::Vector{Float64}` : quadrature weights associated with each nodes on the unit half-sphere.
+- `Ω::Vector{Vector{Float64}}` : nodes coordinates on the unit sphere.
+- `w::Vector{Float64}` : quadrature weights associated with each nodes on the unit sphere.
+- `voronoi_data::Vector{Dict{String,Any}}` : Voronoi discretization information.
+
+# Output Argument(s)
+- `γ::Vector{Float64}` : Voronoi discretization information.
+- `edge_list::Vector{Tuple{Int64,Int64}}` : list of each Voronoi cell edges.
+
+"""
+function fokker_planck_weights_2D(Ω::Vector{Vector{Float64}},w::Vector{Float64},Ω_3D::Vector{Vector{Float64}},w_3D::Vector{Float64},voronoi_data::Vector{Dict{String,Any}})
 
     Nd = length(w)
     Nd_3D = length(w_3D)
@@ -254,7 +291,7 @@ function fokker_planck_weights_2D(Ω,w,Ω_3D,w_3D,voronoi_data)
     for n_3D in range(1,Nd_3D)
         ϵ_ξ = ones(Nd)*Inf
         for j in range(1,Nd)
-            ϵ_ξ[j] = abs(Ω_3D[1][n_3D] - Ω[1][j])^2 + abs(Ω_3D[2][n_3D] - Ω[2][j])^2 + abs(Ω_3D[3][n_3D] - sign(Ω_3D[3][n_3D]) * Ω[3][j])^2
+            ϵ_ξ[j] = abs(Ω_3D[1][n_3D] - Ω[1][j])^2 + abs(Ω_3D[2][n_3D] - Ω[2][j])^2 + abs(sign(Ω_3D[3][n_3D]) * Ω_3D[3][n_3D] - Ω[3][j])^2
         end
         map_3D_to_2D[n_3D] = argmin(ϵ_ξ)
         if Ω_3D[3][n_3D] ≥ 0
@@ -282,57 +319,7 @@ function fokker_planck_weights_2D(Ω,w,Ω_3D,w_3D,voronoi_data)
     Γ = zeros(Neqs,Nunk)
     Q = zeros(Neqs)
     index_eq = 1
-    for n in range(1,Nd), k in range(0,2)
-
-        if k == 0
-            R = ones(length(Ω[1]))
-            ℓ = 0
-        elseif k == 1
-            R = Ω[1]
-            ℓ = 1
-        elseif k == 2
-            R = Ω[2]
-            ℓ = 1
-        elseif k == 3
-            R = (3*Ω[1].^2 .- 1)./2
-            ℓ = 2
-        elseif k == 4
-            R = sqrt(3) .* Ω[1] .* Ω[2]
-            ℓ = 2
-        elseif k == 5
-            R = sqrt(3)/2 .* (Ω[2].^2 .- Ω[3].^2)
-            ℓ = 2
-        elseif k == 6
-            R = Ω[1] .* (5*Ω[1].^2 .- 3)./2
-            ℓ = 3
-        elseif k == 7
-            R = sqrt(3/8) .* Ω[2] .* (5*Ω[1].^2 .- 1)
-            ℓ = 3
-        elseif k == 8
-            R = sqrt(15)/2 .* Ω[1] .* (Ω[2].^2 .- Ω[3].^2)
-            ℓ = 3
-        elseif k == 9
-            R = sqrt(5/8) .* Ω[2] .* (Ω[2].^2 .- 3*Ω[3].^2)
-            ℓ = 3
-        elseif k == 10
-            R = 35/8 .* Ω[1].^4 - 15/4 .* Ω[1].^2 .+ 3/8
-            ℓ = 4
-        elseif k == 11
-            R = sqrt(10)/4 .* Ω[1] .* Ω[2] .* (7 .* Ω[1].^2 .- 3)
-            ℓ = 4
-        elseif k == 12
-            R = sqrt(5)/4 .* (Ω[1].^2 + 2 .* Ω[2].^2 .- 1) .* (7 .* Ω[1].^2 .- 1)
-            ℓ = 4
-        elseif k == 13
-            R = sqrt(70)/4 .* Ω[1] .* Ω[2] .* (3 .* Ω[1].^2 + 4 .* Ω[2].^2 .- 3)
-            ℓ = 4
-        elseif k == 14
-            R = sqrt(35)/8 .* (Ω[1].^4 + (8 .* Ω[2].^2 .- 2) .* Ω[1].^2 + 8 .* Ω[2].^4 - 8 .* Ω[2].^2 .+ 1)
-            ℓ = 4
-        else
-            error()
-        end
-
+    for n in range(1,Nd), k in range(1,3)
         Nn_triangle = voronoi_data[map_2D_to_3D[n]]["Ni_triangle"]
         for j in range(1,Nn_triangle)
             m_3D = voronoi_data[map_2D_to_3D[n]]["data_triangle_ij"][j]["index"]
@@ -340,15 +327,19 @@ function fokker_planck_weights_2D(Ω,w,Ω_3D,w_3D,voronoi_data)
             m = map_3D_to_2D[m_3D]
             if n == m continue end
             index_unk = findfirst(x -> x == (min(n,m),max(n,m)), edge_list)
-            Γ[index_eq,index_unk] -= R[n]
-            Γ[index_eq,index_unk] += R[m]
+            Γ[index_eq,index_unk] -= Ω[k][n]
+            Γ[index_eq,index_unk] += Ω[k][m]
+            Q[index_eq] = -2*w[n]*Ω[k][n]
         end
-
-        Q[index_eq] = -ℓ*(ℓ+1)/2 * 2 * w[n] * R[n]
-    
         index_eq += 1
     end
-    γ = pinv(Γ)*Q
+
+    # Compute the pseudo-inverse
+    pinv_Γ = pinv(Γ)
+    if norm(pinv_Γ*Γ-Matrix{Float64}(I, Nunk, Nunk)) > 1e-7
+        error("The equation system to find γ-parameters does not have a solution.")
+    end
+    γ = pinv_Γ*Q
 
     return γ, edge_list
 
