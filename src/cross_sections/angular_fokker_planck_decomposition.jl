@@ -46,7 +46,7 @@ for ℓ in range(L,1,step=-1)
 end
 
 # Momentum transfer, total cross-sections and elastic scattering cross-sections modification
-if ℓmax > 1 && interaction.is_AFP
+if ℓmax > 1 && interaction.is_AFP_decomposition
     Tt = (Σsℓ[ℓmax]-Σsℓ[ℓmax+1])/(2*ℓmax)
     T += Tt
     Σt -= Tt*ℓmax*(ℓmax+1) + Σsℓ[ℓmax+1]
