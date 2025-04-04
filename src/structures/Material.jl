@@ -53,7 +53,6 @@ N/A
 """
 function println(this::Material)
     println("Material:")
-    println("   ID:                           $(this.id)")
     println("   Density (g/cm³):              $(this.density)")
     println("   Elements in the compound:     $(this.elements)")
     println("   Weight fractions:             $(this.weight_fractions)")

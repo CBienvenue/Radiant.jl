@@ -29,9 +29,6 @@ mutable struct Inelastic_Leptons <: Interaction
     is_subshells_dependant::Bool
     is_shell_correction::Bool
     density_correction::String
-    plasma_energy::Float64
-    effective_mean_excitation_energy::Float64
-    shell_correction::Function
     scattering_model::String
 
     # Constructor(s)
@@ -46,7 +43,7 @@ mutable struct Inelastic_Leptons <: Interaction
         this.is_AFP = true
         this.is_AFP_decomposition = false
         this.is_elastic = false
-        this.is_preload_data = true
+        this.is_preload_data = false
         this.set_is_subshells_dependant(true)
         this.set_is_shell_correction(true)
         this.set_scattering_model("BFP")
@@ -432,21 +429,9 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
     rₑ = 2.81794092e-13 # (in cm)
     γ = Ei+1
     β² = Ei*(Ei+2)/(Ei+1)^2
-    𝒩ₑ = Z.*nuclei_density.(Z,ρ)        # (in cm⁻³)
-    𝒩ₑ_eff = sum(ωz.*𝒩ₑ)               # (in cm⁻³)
-    I = this.effective_mean_excitation_energy
-    δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,this.density_correction)
-    if (this.is_shell_correction) Cz = this.shell_correction(Z,ωz,Ei) else Cz = 0 end
 
-    # Compute the total stopping power
-    if is_electron(particle)
-        f = (1-β²) - (2*γ-1)/γ^2*log(2) + ((γ-1)/γ)^2/8
-    elseif is_positron(particle)
-        f = 2*log(2) - β²/12 * (23 + 14/(γ+1) + 10/(γ+1)^2 + 4/(γ+1)^3)
-    else
-        error("Unknown particle")
-    end
-    Stot = 2*π*rₑ^2/β² * 𝒩ₑ_eff * ( log((Ei/I)^2*(γ+1)/2) + f - δF - 2*Cz)
+    # Compute the total cross-section
+    Stot = bethe(Z,ωz,ρ,Ei,particle)
     
     # Compute the catastrophic Møller- or Bhabha- derived stopping power
     Sc = 0
@@ -501,104 +486,4 @@ function mt(this::Inelastic_Leptons)
     T = 0.0
     return T
 end
-
-"""
-    preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::Particle)
-
-Preload data for multigroup inelastic lepton calculations.
-
-# Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure. 
-- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
-- `ωz::Vector{Float64}` : weight fraction of the elements composing the material. 
-- `ρ::Float64` : material density.
-- `particle::Particle` : incoming particle.
-
-# Output Argument(s)
-N/A
-
-"""
-function preload_data(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,particle::Particle)
-    this.plasma_energy = plasma_energy(Z,ωz,ρ)
-    this.effective_mean_excitation_energy = effective_mean_excitation_energy(Z,ωz)
-    if (this.is_shell_correction) this.preload_shell_corrections(Z,ωz,particle) end
-end
-
-"""
-    preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},particle::String)
-
-Compute the shell corrections term for the collisional stopping powers.
-
-# Input Argument(s)
-- 'Z::Vector{Int64}': atomic number of the element(s) composing the material.
-- 'ωz::Vector{Float64}': weight fraction of the element(s) composing the material.
-- 'particle::String': particle type.
-
-# Output Argument(s)
-- 'shell_correction::Function': shell correction function.
-
-# Author(s)
-Charles Bienvenue
-
-# Reference(s)
-- Salvat (2023), SBETHE: Stopping powers of materials for swift charged particles from
-  the corrected Bethe formula.
-
-"""
-function preload_shell_corrections(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},particle::Particle)
-    
-    # Initialization
-    Nz = length(Z)
-    S₀ = zeros(Nz)
-    Ec = zeros(Nz)
-    pn = zeros(Nz,6)
-    E = zeros(Nz,153)
-    Cz_prime = zeros(Nz,153)
-    spline_Cz = Vector{Function}(undef,Nz)
-    if is_electron(particle)
-        particle_name = "electrons"
-    elseif is_positron(particle)
-        particle_name = "positrons"
-    else
-        error("Unknown particle.")
-    end
-
-    # Read shell correction data
-    path = joinpath(find_package_root(), "data", "shell_corrections_salvat_2023.jld2")
-    data = load(path)
-    for iz in range(1,Nz)
-        datai = data[particle_name][Z[iz]]
-        for n in range(1,153)
-            Cz_prime[iz,n] = datai["modified_shell_corrections"][n]
-            E[iz,n] = datai["energies"][n]
-        end
-        Ec[iz] = datai["cutoff_energy"]
-        for n in range(1,6)
-            pn[iz,n] = datai["fit_parameters"][n]
-        end
-        S₀[iz] = datai["S₀"]
-
-        spline_Cz[iz] = cubic_hermite_spline(E[iz,:],Cz_prime[iz,:])
-    end
-    
-    this.shell_correction = function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},Ei::Float64)
-        Cz = 0.0
-        β² = Ei*(Ei+2)/(Ei+1)^2
-        Nz = length(Z)
-        Zeff = sum(ωz.*Z) 
-        for iz in range(1,Nz)
-            if Ei < E[iz,end]
-                Czprime = spline_Cz[iz](Ei)
-            elseif Ei+1 < 2
-                Czprime = sum(pn[iz,:] .* Ei.^(1:6))
-            else
-                Czprime = sum(pn[iz,:] .* 2 .^(1:6))
-            end
-            Cz += Z[iz]/Zeff * (Czprime + (S₀[iz]-Z[iz])/(2*Z[iz])*(log(β²*(Ei+1)^2)-β²))
-        end
-        return Cz
-    end
-
-end
-
 

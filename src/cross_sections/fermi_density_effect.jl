@@ -21,12 +21,13 @@ Compute the Fermi density effect correction.
   Cross-Section Generating Code.
 
 """
-function fermi_density_effect(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,state_of_matter::String,type::String)
+function fermi_density_effect(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,state_of_matter::String,type::String,ratio_mass::Float64=1.0)
 
 if type == "fano"
 
     # Initialization
-    β² = Ei*(Ei+2)/(Ei+1)^2
+    γ = (Ei + ratio_mass)/ratio_mass
+    β² = (γ^2-1)/γ^2
     Ωp = plasma_energy(Z,ωz,ρ)
     Zeff = sum(ωz.*Z)
     I = effective_mean_excitation_energy(Z,ωz)
@@ -63,7 +64,7 @@ elseif type == "sternheimer"
     Ωp = plasma_energy(Z,ωz,ρ)
 
     C = -2*log(I/Ωp) - 1
-    X = log10(sqrt(2*Ei+Ei^2))
+    X = log10(sqrt(2*Ei*ratio_mass+Ei^2))
 
     if state_of_matter ∈ ["solid","liquid"]
         if I ≥ 0.0001/mₑc² && -C ≥ 5.215

@@ -32,6 +32,11 @@ module Radiant
     end
 
     #----
+    # Cache
+    #----
+    const cache_files = Ref{Dict{String,Any}}(Dict())
+
+    #----
     # Include files
     #----
     radiant_src = Dict{String,Vector{String}}()
@@ -56,7 +61,8 @@ module Radiant
         "atomic_number.jl",
         "baro_coefficients.jl",
         "transport_correction.jl",
-        "angular_fokker_planck_decomposition.jl"
+        "angular_fokker_planck_decomposition.jl",
+        "bethe.jl"
     ]
     radiant_src["particle_transport/"] = [
         "geometry.jl",
@@ -145,7 +151,7 @@ module Radiant
     #----
     # Export objects
     #----
-    export Particle, Photon, Electron, Positron
+    export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
     export Elastic_Leptons, Inelastic_Leptons, Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Fluorescence,Auger
     export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit
 

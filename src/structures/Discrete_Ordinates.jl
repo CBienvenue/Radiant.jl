@@ -127,8 +127,8 @@ To set the quadrature properties for the discretization of the angular domain.
     - `type = "lebedev"` : Lebedev quadrature (2D or 3D Cartesian geometry only).
 - `order::Int64` : order of the quadrature, which is any integer greater than 2.
 - `Qdims::Int64` : quadrature dimension, which can takes the following values:
-    - `Qdims = 0` : default value, Qdims = 1 with 1D quadrature, Qdims = 2 with quadrature
-      over the unit sphere in 1D or in 2D geometry and Qdims = 3 in 3D geometry.
+    - `Qdims = 0` : default value, Qdims = 1 with 1D quadrature, Qdims = 3 with quadrature
+      over the unit sphere in 1D or in 2D geometry or in 3D geometry.
     - `Qdims = 1` : 1D quadrature.
     - `Qdims = 2` : quadrature over half the unit-sphere.
     - `Qdims = 3` : quadrature over the unit sphere. 
@@ -586,10 +586,10 @@ function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
     elseif quadrature_type ∈ ["gauss-legendre-chebychev","lebedev","carlson"]
         if Ndims ∈ [1,2]
             if Qdims == 1 error("Quadrature dimension should not be 1 with quadrature over the unit sphere.") end
-            if Qdims == 3
-                return 3
-            else
+            if Qdims == 2
                 return 2
+            else
+                return 3
             end
         else
             if Qdims ∈ [1,2] error("Quadrature dimension should not be 1 or 2 in 3D geometry.") end
