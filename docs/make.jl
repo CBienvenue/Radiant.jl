@@ -61,21 +61,20 @@ makedocs(
             "Computation_Unit" => "api_computation_unit.md",
             "Cross_Sections"   => "api_cross_sections.md",
             "Solvers" => [
-                "Discrete_Ordinates" => "api_discrete_ordinates.md"
+                "Discrete_Ordinates" => "api_discrete_ordinates.md",
                 "Solvers"            => "api_solvers.md"
             ],
             "Geometry"     => "api_geometry.md",
             "Interactions" => [
                 "Annihilation"      => "api_annihilation.md",
-                "Auger "            => "api_auger.md",
                 "Bremsstrahlung"    => "api_bremsstrahlung.md",
                 "Compton"           => "api_compton.md",
                 "Elastic_Leptons"   => "api_elastic_leptons.md",
-                "Fluorescence"      => "api_fluorescence.md",
                 "Inelastic_Leptons" => "api_inelastic_leptons.md",
                 "Pair_Production"   => "api_pair_production.md",
                 "Photoelectric"     => "api_photoelectric.md",
                 "Rayleigh"          => "api_rayleigh.md",
+                "Relaxation "       => "api_relaxation.md"
             ],
             "Material" => "api_material.md",
             "Sources" => [
