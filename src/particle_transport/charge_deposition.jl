@@ -64,7 +64,7 @@ for part in particles
     #----
     # Charge deposition calculations
     #----
-    @inbounds for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+    for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
 
         # In-group charge deposition
         for ig in range(1,Ng)

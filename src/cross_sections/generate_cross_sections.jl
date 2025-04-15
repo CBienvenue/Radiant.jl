@@ -48,6 +48,11 @@ for n in range(1,Npart)
 end
 
 #----
+# Deal with interaction interdependances
+#----
+interaction_interdependances(interactions,particles)
+
+#----
 # Multigroup cross-sections production
 #----
 multigroup_cross_sections = Array{Multigroup_Cross_Sections}(undef,Npart,Nmat)
@@ -60,8 +65,8 @@ for i in range(1,Npart), n in range(1,Nmat)
             for pin in interaction.get_in_particles(), pout in interaction.get_out_particles()
                 if pin != get_type(particles[i]) || pout != get_type(particles[j]) continue end
                 for type in interaction.get_types(pin,pout)
-                    println([type,get_type(particles[i]),get_type(particles[j])])
-                    Σsℓi, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,true,interactions)
+                    println("\n Interaction: $(typeof(interaction)) | Type: $type | Incoming particle: $(get_type(particles[i])) | Outgoing particle: $(get_type(particles[j]))")
+                    @time Σsℓi, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,interactions)
                     Σsℓ .+= Σsℓi; Σt .+= Σti; Σa .+= Σai; Σe .+= Σei; Σc .+= Σci; Sb .+= Sbi; S .+= Si; T .+= Ti;
                 end
             end

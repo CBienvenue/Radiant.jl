@@ -26,7 +26,7 @@ Calculate the angular Fokker-Planck source term in Cartesian geometry.
 function fokker_planck_source(P::Int64,Nm::Int64,T::Vector{Float64},𝚽ℓ::Array{Float64},Qℓ::Array{Float64},Ns::Vector{Int64},mat::Array{Int64,3},ℳ::Array{Float64,2})
 
 # Compute the angular Fokker-Planck source term
-@inbounds for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
   for is in range(1,Nm), n in range(1,P), m in range(1,P)
     Qℓ[n,is,ix,iy,iz] += T[mat[ix,iy,iz]] * ℳ[n,m] * 𝚽ℓ[m,is,ix,iy,iz]
   end

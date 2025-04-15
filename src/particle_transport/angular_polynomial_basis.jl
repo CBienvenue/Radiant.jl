@@ -41,14 +41,14 @@ function angular_polynomial_basis(Ndims::Int64,Ω::Vector{Vector{Float64}},w::Ve
 if Qdims == 1
     μ = Ω[1]
     Pℓ = zeros(N,L+1,1)
-    @inbounds for n in range(1,N)
+    for n in range(1,N)
         Pℓ[n,:] = legendre_polynomials(L,μ[n])
     end
 else
     μ = Ω[1]; η = Ω[2]; ξ = Ω[3];
     N = length(w)
     Rℓm = zeros(N,L+1,2*L+1)
-    @inbounds for n in range(1,N)
+    for n in range(1,N)
         if ξ[n] != 0
             if η[n] > 0
                 ϕ = sign(ξ[n]) * atan(abs(ξ[n]/η[n]))

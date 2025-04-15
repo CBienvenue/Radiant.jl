@@ -9,16 +9,13 @@ Transform any space in the input string into one unique space.
 # Output Argument(s)
 - `line_new::String`: line only with "one space" spaces.
 
-# Reference(s)
-N/A
-
 """
 function one_space(line::String)
 
 line_new = ""
 il=1
 
-@inbounds for i in line
+for i in line
     if il==1 && isspace(i)==false
         line_new = line_new * i
     else

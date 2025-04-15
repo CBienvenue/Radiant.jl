@@ -82,22 +82,27 @@ Get the mass energy variation in the interaction.
 # Input Argument(s)
 - `interaction::Interaction` : interaction.
 - `type::String` : type of interaction.
+- `is_production::Bool` : is the mass energy variation comes from production interaction.
 
 # Output Argument(s)
 - `ΔQ::Float64` : types of interaction.
 
 """
-function get_mass_energy_variation(interaction::Interaction,type::String="")
-    if typeof(interaction) == Pair_Production
-        return 2.0
+function get_mass_energy_variation(interaction::Interaction,type::String,is_production::Bool)
+    if typeof(interaction) == Pair_Production && ~is_production
+        return 2.0 # One electron and one positron are created
     elseif typeof(interaction) == Annihilation
-        if type ∈ ["P_inel","P_brems"]
-            return 1.0
-        else
+        if type ∈ ["P_inel","P_brems"] && is_production
+            return -1.0 # One electron and one positron are annihilated
+        elseif type ∈ ["P_pp"] && is_production
+            return 0.0 # One electron and one positron are created, then the positron annihilate with an electron
+        elseif ~is_production
             return -2.0
+        else
+            return 0.0
         end
     else
-        return 0.0
+        return 0.0 # No particle are created nor annihilated
     end
 end
 
@@ -207,9 +212,7 @@ function in_distribution_dispatch(interaction::Interaction)
         return in_distribution(interaction)
     elseif itype == Rayleigh
         return in_distribution(interaction)
-    elseif itype == Fluorescence
-        return in_distribution(interaction)
-    elseif itype == Auger
+    elseif itype == Relaxation
         return in_distribution(interaction)
     else
         error("Unknown interaction.")
@@ -249,9 +252,7 @@ function out_distribution_dispatch(interaction::Interaction,type::String)
         return out_distribution(interaction,type)
     elseif itype == Rayleigh
         return out_distribution(interaction)
-    elseif itype == Fluorescence
-        return out_distribution(interaction)
-    elseif itype == Auger
+    elseif itype == Relaxation
         return out_distribution(interaction)
     else
         error("Unknown interaction.")
@@ -300,9 +301,7 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
         return bounds(interaction,Ef⁻,Ef⁺)
     elseif itype == Rayleigh
         return bounds(interaction,Ef⁻,Ef⁺,gi,gf)
-    elseif itype == Fluorescence
-        return bounds(interaction,Ef⁻,Ef⁺)
-    elseif itype == Auger
+    elseif itype == Relaxation
         return bounds(interaction,Ef⁻,Ef⁺)
     else
         error("Unknown interaction.")
@@ -342,28 +341,26 @@ Gives the Legendre moments of the scattering cross-sections.
 - `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},vec_Z::Vector{Int64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,Ec::Float64,incoming_particle::Particle)
+function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},vec_Z::Vector{Int64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,Ec::Float64,incoming_particle::Particle,ρ::Float64)
     itype = typeof(interaction)
     if itype == Annihilation
-        return dcs(interaction,L,Ei,Ef,type,vec_Z,iz,Ein,Ec)
+        return dcs(interaction,L,Ei,Ef,type,Z,Ein,Ec)
     elseif itype == Bremsstrahlung
-        return dcs(interaction,L,Ei,Ef,Z,particle,type,iz)
+        return dcs(interaction,L,Ei,Ef,Z,incoming_particle,type,iz)
     elseif itype == Compton
-        return dcs(interaction,L,Ei,Ef,type,Z,iz,δi)
+        return dcs(interaction,L,Ei,Ef,type,Z,iz,δi,scattered_particle)
     elseif itype == Elastic_Leptons
-        return dcs(interaction,L,Ei,Z,particle,Ein[end],iz)
+        return dcs(interaction,L,Ei,Z,incoming_particle,Ein[end])
     elseif itype == Inelastic_Leptons
         return dcs(interaction,L,Ei,Ef,type,incoming_particle,Ui,Zi,Ti)
     elseif itype == Pair_Production
         return dcs(interaction,L,Ei,Ef,Z,type,iz,particles)
     elseif itype == Photoelectric
-        return dcs(interaction,L,Ei,Z,iz,δi,Ef⁻,Ef⁺)
+        return dcs(interaction,L,Ei,Z,δi,Ef⁻,Ef⁺)
     elseif itype == Rayleigh
         return dcs(interaction,L,Ei,Z,iz)
-    elseif itype == Fluorescence
-        return dcs(interaction,L,Ei,Z,iz,δi,Ef⁻,Ef⁺,incoming_particle)
-    elseif itype == Auger
-        return dcs(interaction,L,Ei,Z,iz,δi,Ef⁻,Ef⁺,incoming_particle)
+    elseif itype == Relaxation
+        return dcs(interaction,L,Ei,Ein[end],Ec,Z,δi,Ef⁻,Ef⁺,incoming_particle,scattered_particle)
     else
         error("Unknown interaction.")
     end
@@ -390,24 +387,68 @@ Gives the total cross-section.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64})
+function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},ρ::Float64)
     itype = typeof(interaction)
     if itype == Annihilation
         return tcs(interaction,Ei,Z)
     elseif itype == Bremsstrahlung
-        return tcs(interaction,Ei,Z,Ec,iz,particle,Eout)
+        return tcs(interaction,Ei,Z,Ec,particle,Eout)
     elseif itype == Compton
-        return tcs(interaction,Ei,Z,Eout,iz)
+        return tcs(interaction,Ei,Z,Eout)
     elseif itype == Elastic_Leptons
-        return tcs(interaction,Ei,Z,particle,Ecutoff,iz)
+        return tcs(interaction,Ei,Z,particle,Ecutoff)
     elseif itype == Inelastic_Leptons
         return tcs(interaction,Ei,Ec,particle,Z)
     elseif itype == Pair_Production
-        return tcs(interaction,Ei,Z,iz,Eout)
+        return tcs(interaction,Ei,Z,Eout)
     elseif itype == Photoelectric
-        return tcs(interaction,Ei,Z,iz)
+        return tcs(interaction,Ei,Z)
     elseif itype == Rayleigh
         return tcs(interaction,Ei,Z,iz)
+    else
+        error("Unknown interaction.")
+    end
+end
+
+"""
+    acs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,
+    particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},type::String)
+
+Gives the absorption cross-section. 
+
+# Input Argument(s)
+- `this::Interaction` : Interaction structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Z::Int64` : atomic number.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+- `iz::Int64` : index of the element in the material.
+- `particle::Particle` : incoming particle.
+- `Ecutoff::Float64` : cutoff energy.
+- `Eout::Vector{Float64}` : outgoing energy boundaries.
+- `type::String` : type of interaction.
+
+# Output Argument(s)
+- `σa::Float64` : absorption cross-section.
+
+"""
+function acs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},ρ::Float64)
+    itype = typeof(interaction)
+    if itype == Annihilation
+        return acs(interaction,Ei,Z)
+    elseif itype == Bremsstrahlung
+        return acs(interaction,Ei,Z,Ec,particle,Ecutoff)
+    elseif itype == Compton
+        return acs(interaction,Ei,Z,Ecutoff)
+    elseif itype == Elastic_Leptons
+        return acs(interaction)
+    elseif itype == Inelastic_Leptons
+        return acs(interaction,Ei,Ec,particle,Z,Ecutoff)
+    elseif itype == Pair_Production
+        return acs(interaction,Ei,Z,Eout)
+    elseif itype == Photoelectric
+        return acs(interaction,Ei,Z)
+    elseif itype == Rayleigh
+        return acs(interaction)
     else
         error("Unknown interaction.")
     end
@@ -468,53 +509,3 @@ function mt_dispatch(interaction::Interaction)
         error("Unknown interaction.")
     end
 end
-
-"""
-    preload_data(this::Bremsstrahlung,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64)
-
-Preload data for multigroup calculations.
-
-# Input Argument(s)
-- `this::Interaction` : Interaction structure. 
-- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
-- `Emax::Float64` : maximum energy of the incoming particle.
-- `Emin::Float64` : minimum energy of the incoming particle.
-- `L::Int64` : Legendre truncation order.
-- `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
-- `ρ::Float64` : material density.
-- `Eout::Vector{Float64}` : energy boundaries for outgoing particle.
-- `particle::Particle` : incoming particle.
-- `type::String` : interaction type.
-- `interactions::Vector{Interaction}` : interaction list.
-
-# Output Argument(s)
-N/A
-
-"""
-function preload_data_dispatch(interaction::Interaction,Z::Vector{Int64},Emax::Float64,Emin::Float64,L::Int64,ωz::Vector{Float64},ρ::Float64,Eout::Vector{Float64},particle::Particle,type::String,interactions::Vector{Interaction})
-    itype = typeof(interaction)
-    if itype == Annihilation
-        return  preload_data(interaction,Z,Emax,Emin,L,type,Eout,interactions)
-    elseif itype == Bremsstrahlung
-        return preload_data(interaction,Z,Emax,Emin,L)
-    elseif itype == Compton
-        return preload_data(interaction,Z)
-    elseif itype == Elastic_Leptons
-        return preload_data(interaction,Z,L,particle,interactions)
-    elseif itype == Inelastic_Leptons
-        return preload_data(interaction,Z,ωz,ρ,particle)
-    elseif itype == Pair_Production
-        return preload_data(interaction,Z,Emax,Emin,Eout,L)
-    elseif itype == Photoelectric
-        return preload_data(interaction,Z,ρ,L)
-    elseif itype == Rayleigh
-        return preload_data(interaction,Z)
-    elseif itype == Fluorescence
-        return preload_data(interaction,Z,ρ,particle,Eout[end])
-    elseif itype == Auger
-        return preload_data(interaction,Z,ρ,particle,Eout[end])
-    else
-        error("Unknown interaction.")
-    end
-end
-

@@ -22,10 +22,8 @@ mutable struct Rayleigh <: Interaction
     is_AFP::Bool
     is_AFP_decomposition::Bool
     is_elastic::Bool
-    is_preload_data::Bool
     is_subshells_dependant::Bool
     is_ETC::Bool
-    rayleigh_cross_sections::Function
     scattering_model::String
 
     # Constructor(s)
@@ -39,7 +37,6 @@ mutable struct Rayleigh <: Interaction
         this.is_AFP = false
         this.is_AFP_decomposition = false
         this.is_elastic = true
-        this.is_preload_data = true
         this.is_subshells_dependant = false
         this.is_ETC = true
         this.scattering_model = "BTE"
@@ -142,7 +139,7 @@ function dcs(this::Rayleigh,L::Int64,Ei::Float64,Z::Int64,iz::Int64)
     # Angular quadrature
     μ,w = quadrature(32,"gauss-legendre")
     for n in range(1,32)
-        σs = this.rayleigh_cross_sections(iz,Z,Ei,μ[n])
+        σs = rayleigh(Z,Ei,μ[n])
         Pℓμ = legendre_polynomials(L,μ[n])
         for ℓ in range(0,L) σℓ[ℓ+1] += w[n] * σs * Pℓμ[ℓ+1] end
     end
@@ -170,47 +167,17 @@ function tcs(this::Rayleigh,Ei::Float64,Z::Int64,iz::Int64)
 end
 
 """
-    preload_data(this::Rayleigh,Z::Vector{Int64})
+    acs(this::Rayleigh)
 
-Preload data for multigroup Rayleigh calculations.
+Gives the absorption cross-section for Rayleigh. 
 
 # Input Argument(s)
-- `this::Rayleigh` : Rayleigh structure. 
-- `Z::Vector{Int64}` : atomic numbers of the elements in the material.
+- `this::Rayleigh` : Rayleigh structure.
 
 # Output Argument(s)
-N/A
+- `σa::Float64` : absorption cross-section.
 
 """
-function preload_data(this::Rayleigh,Z::Vector{Int64})
-    
-    path = joinpath(find_package_root(), "data", "rayleigh_factors_JENDL5.jld2")
-    data = load(path)
-    Nz = length(Z)
-    x = Vector{Vector{Float64}}(undef,Nz)
-    F = Vector{Vector{Float64}}(undef,Nz)
-    E_real = Vector{Vector{Float64}}(undef,Nz)
-    f_real = Vector{Vector{Float64}}(undef,Nz)
-    E_imag = Vector{Vector{Float64}}(undef,Nz)
-    f_imag = Vector{Vector{Float64}}(undef,Nz)
-    for iz in range(1,Nz)
-        x[iz] = data["x"][Z[iz]]
-        F[iz] = data["F"][Z[iz]]
-        E_real[iz] = data["E_real"][Z[iz]]
-        f_real[iz] = data["f_real"][Z[iz]]
-        E_imag[iz] = data["E_imag"][Z[iz]]
-        f_imag[iz] = data["f_imag"][Z[iz]]
-    end
-
-    # Return the interpolation function
-    this.rayleigh_cross_sections = function rayleigh_cross_sections(iz::Int64,Z::Int64,Ei::Float64,μ::Float64)
-        rₑ = 2.81794092E-13 # (in cm)
-        hc = 1/20.60744 # (hc in mₑc² × Å)
-        xi = 2*Ei/(hc)*sqrt((1-μ)/2)
-        Fi = linear_interpolation(xi,x[iz],F[iz])
-        if Ei < E_real[iz][end] fi_real = linear_interpolation(Ei,E_real[iz],f_real[iz]) else fi_real = 0 end
-        if Ei < E_imag[iz][end] fi_imag = linear_interpolation(Ei,E_imag[iz],f_imag[iz]) else fi_imag = 0 end
-        return π*rₑ^2 * (1+μ^2) * ((Fi + fi_real)^2 + fi_imag^2)
-    end
-
+function acs(this::Rayleigh)
+    return 0
 end

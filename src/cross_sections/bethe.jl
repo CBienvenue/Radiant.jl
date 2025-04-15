@@ -231,10 +231,11 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
     #----
     # Read shell correction data
     #----
-    if ~haskey(cache_files[],"shell_corrections_salvat_2023")
-        cache_files[]["shell_corrections_salvat_2023"] = load(joinpath(find_package_root(), "data", "shell_corrections_salvat_2023.jld2"))
-    end
-    data = cache_files[]["shell_corrections_salvat_2023"]
+
+    # Extract data
+    data = fast_load("shell_corrections_salvat_2023.jld2")
+
+    # Extract parameters
     for iz in range(1,Nz)
         datai = data[particle_name][Z[iz]]
         for n in range(1,153)
@@ -325,14 +326,14 @@ function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ:
     for iz in range(1,Nz)
         for δi in range(1,length(Zi))
             ξ = 0.5616 * CB * Wi[δi]/(γ*β²)
-            ΔLB += ωz[iz] * charge*α/(γ^2*β²^(3/2))/Z[iz] * Zi[δi] * Wi[δi] * (I₁(ξ) + I₂(ξ)/γ^2)
+            ΔLB += ωz[iz] * charge*α/(γ^2*β²^(3/2))/Z[iz] * Zi[δi] * Wi[δi] * (I₁_barkas(ξ) + I₂_barkas(ξ)/γ^2)
         end
     end
     return ΔLB
 end
 
 """
-    I₁(x::Float64)
+    I₁_barkas(x::Float64)
 
 Approximation of integral I₁ (Eq. 96a) from Salvat (2022).
 
@@ -340,7 +341,7 @@ Approximation of integral I₁ (Eq. 96a) from Salvat (2022).
 - `x::Float64` : evaluation point.
 
 # Output Argument(s)
-- `I₁::Float64` : evaluated integral.
+- `I₁_barkas::Float64` : evaluated integral.
 
 # Reference(s)
 - Salvat (2022), Bethe stopping-power formula and its corrections.
@@ -348,7 +349,7 @@ Approximation of integral I₁ (Eq. 96a) from Salvat (2022).
   particles from the corrected Bethe formula.
 
 """
-function I₁(x::Float64)
+function I₁_barkas(x::Float64)
     if x < 1.0e-10
         return 1.5 * π * log(0.375 / x)
     elseif x < 0.25
@@ -372,7 +373,7 @@ function I₁(x::Float64)
 end
 
 """
-    I₂(x::Float64)
+    I₂_barkas(x::Float64)
 
 Approximation of integral I₂ (Eq. 96b) from Salvat (2022).
 
@@ -380,7 +381,7 @@ Approximation of integral I₂ (Eq. 96b) from Salvat (2022).
 - `x::Float64` : evaluation point.
 
 # Output Argument(s)
-- `I₂::Float64` : evaluated integral.
+- `I₂_barkas::Float64` : evaluated integral.
 
 # Reference(s)
 - Salvat (2022), Bethe stopping-power formula and its corrections.
@@ -388,7 +389,7 @@ Approximation of integral I₂ (Eq. 96b) from Salvat (2022).
   particles from the corrected Bethe formula.
 
 """
-function I₂(x::Float64)
+function I₂_barkas(x::Float64)
     if x < 1.0e-9
         return 2.17759
     elseif x < 0.25

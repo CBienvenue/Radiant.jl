@@ -57,7 +57,7 @@ if (Qdims_in == 1 && Qdims_out ∈ [2,3]) || (Qdims_in ∈ [2,3] && Qdims_out ==
     Nd = length(w_out)
     μ = Ω_out[1]
     Pℓ = zeros(Nd,maximum(pℓ_in)+1,1)
-    @inbounds for n in range(1,Nd)
+    for n in range(1,Nd)
         Pℓ[n,:] = legendre_polynomials(maximum(pℓ_in),μ[n])
     end
     P = length(pℓ_in)

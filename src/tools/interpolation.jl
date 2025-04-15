@@ -61,3 +61,45 @@ function linear_interpolation(xi::Float64,yi::Float64,x::Vector{Float64},y::Vect
 
 end
 
+"""
+    log_interpolation(xi::Float64,x::Vector{Float64},f::Vector{Float64},
+    is_negative::Bool=true)
+
+Logarithmic interpolation.
+
+# Input Argument(s)
+- `xi::Float64`: x-value at which to estimate fi.
+- `x::Vector{Float64}`: vector of x-values.
+- `f::Vector{Float64}`: vector of f-values.
+- `is_negative::Bool` : enable negative input values, which are dealt with linear
+  interpolation.
+
+# Output Argument(s)
+- `fi::Float64`: interpolated f-value.
+
+"""
+function log_interpolation(xi::Float64,x::Vector{Float64},f::Vector{Float64},is_negative::Bool=true)
+
+    # Validation of input parameters
+    if xi ≤ 0 || x[1] ≤ 0 || x[2] ≤ 0 || f[1] ≤ 0 || f[2] ≤ 0
+        if is_negative # Change to linear interpolation if negative values
+            return linear_interpolation(xi,x,f)
+        else # Error if negative values
+            error("Unexpected negative values.")
+        end
+    end
+    
+    # Find the index
+    i = searchsortedfirst(x,xi)
+    if (i == 1 && x[1] ≈ xi) i=2; xi=x[1] end
+    if (i == length(x)+1 && x[end] ≈ xi) i=length(x); xi=x[end] end
+    if (i == 1 || i > length(x)) error("Interpolation value is outside the interpolation vector.") end
+    
+    # Compute interpolation factor in log space
+    t = (log(xi) - log(x[i-1])) / (log(x[i]) - log(x[i-1]))
+    
+    # Linear interpolation in log-space
+    fi = exp( log(f[i-1]) + t * (log(f[i]) - log(f[i-1])) )
+
+    return fi
+end

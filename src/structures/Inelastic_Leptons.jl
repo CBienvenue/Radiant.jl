@@ -25,7 +25,6 @@ mutable struct Inelastic_Leptons <: Interaction
     is_AFP::Bool
     is_AFP_decomposition::Bool
     is_elastic::Bool
-    is_preload_data::Bool
     is_subshells_dependant::Bool
     is_shell_correction::Bool
     density_correction::String
@@ -43,7 +42,6 @@ mutable struct Inelastic_Leptons <: Interaction
         this.is_AFP = true
         this.is_AFP_decomposition = false
         this.is_elastic = false
-        this.is_preload_data = false
         this.set_is_subshells_dependant(true)
         this.set_is_shell_correction(true)
         this.set_scattering_model("BFP")
@@ -300,9 +298,6 @@ interaction.
 function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
 
     # Initialization
-    rₑ = 2.81794092e-13 # (in cm)
-    γ = Ei+1
-    β² = Ei*(Ei+2)/(Ei+1)^2
     σs = 0.0
     σℓ = zeros(L+1)
     if type == "S"
@@ -318,33 +313,19 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
     # Close collisions
     if W ≥ 0
         if is_electron(particle)
-           F = 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui))
+            σs += moller(Zi,Ei,W,Ui)
         elseif is_positron(particle)
-            b = ((γ-1)/γ)^2
-            b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
-            b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
-            b3 = b * (2*(γ-1)*γ)/(γ+1)^2
-            b4 = b * (γ-1)^2/(γ+1)^2
-            F = (1 - b1*((W+Ui)/Ei) + b2*((W+Ui)/Ei)^2 - b3*((W+Ui)/Ei)^3 + b4*((W+Ui)/Ei)^4)/(W+Ui)^2
+            σs += bhabha(Zi,Ei,W,Ui)
         else
             error("Unknown particle")
         end
-        σs += 2*π*rₑ^2/β² * Zi * F
     end
 
-    # Compute the Legendre moments of the flux
-    if type == "S" 
-        μ = sqrt((Ep*(Ei+2))/(Ei*(Ep+2)))
-        Pℓμ = legendre_polynomials(L,μ)
-        for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs end
-    elseif type == "P"
-        μ = sqrt((W*(Ei+2))/(Ei*(W+2)))
-        Pℓμ = legendre_polynomials(L,μ)
-        for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs end
-    else
-        error("Unknown type")
-    end
+    # Compute the angular distribution
+    Wℓ = angular_moller(Ei,Ef,L)
 
+    # Compute the Legendre moments of the cross-section
+    for ℓ in range(0,L) σℓ[ℓ+1] += Wℓ[ℓ+1] * σs end
     return σℓ
 end
 
@@ -366,41 +347,46 @@ Gives the total cross-section for inelastic lepton interaction.
 """
 function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
-    # Inititalisation
-    rₑ = 2.81794092E-13       # (in cm)
-    γ = Ei+1
-    β² = Ei*(Ei+2)/(Ei+1)^2
-    Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z)
-    σt = 0.0
-
     # Close collisions
     if is_electron(particle)
-        for δi in range(1,Nshells)
-            Wmax = (Ei-Ui[δi])/2
-            Wmin = Ei-Ec
-            if Wmax > Wmin
-                J₀⁻(x) = -1/(x+Ui[δi]) + 1/(Ei-x) + x/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * (log(x+Ui[δi])-log(Ei-x))/(Ei+Ui[δi])
-                σt += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁻(Wmax)-J₀⁻(Wmin))
-            end
-        end
+        σt = integrate_moller(Z,Ei,0,Ei-Ec,Ei)
     elseif is_positron(particle)
-        b = ((γ-1)/γ)^2
-        b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
-        b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
-        b3 = b * (2*(γ-1)*γ)/(γ+1)^2
-        b4 = b * (γ-1)^2/(γ+1)^2
-        for δi in range(1,Nshells)
-            Wmax = Ei-Ui[δi]
-            Wmin = Ei-Ec
-            if Wmax > Wmin
-                J₀⁺(x) = -1/(x+Ui[δi]) - b1*log(x+Ui[δi])/Ei + b2*x/Ei^2 - b3*(x^2/2+Ui[δi]*x)/Ei^3 + b4*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^4
-                σt += 2*π*rₑ^2/β² * Zi[δi] * (J₀⁺(Wmax)-J₀⁺(Wmin))
-            end
-        end
+        σt = integrate_bhabha(Z,Ei,0,Ei-Ec,Ei)
     else
         error("Unknown particle")
     end
     return σt
+end
+
+"""
+    acs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
+
+Gives the absorption cross-section for inelastic lepton interaction. 
+
+# Input Argument(s)
+- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `Ei::Float64` : incoming particle energy.
+- `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
+- `particle::Particle` : incoming particle.
+- `Z::Int64` : atomic number.
+- `Ecutoff::Float64` : cutoff energy.
+
+# Output Argument(s)
+- `σa::Float64` : absorption cross-section.
+
+"""
+function acs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64,Ecutoff::Float64)
+
+    # Close collisions
+    if is_electron(particle)
+        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei)
+    elseif is_positron(particle)
+        σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei)
+    else
+        error("Unknown particle")
+    end
+    return σa
+    
 end
 
 """
@@ -425,11 +411,6 @@ Gives the stopping power for inelastic lepton interaction.
 """
 function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
 
-    # Initialization
-    rₑ = 2.81794092e-13 # (in cm)
-    γ = Ei+1
-    β² = Ei*(Ei+2)/(Ei+1)^2
-
     # Compute the total cross-section
     Stot = bethe(Z,ωz,ρ,Ei,particle)
     
@@ -437,30 +418,10 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
     Sc = 0
     Nz = length(Z)
     for i in range(1,Nz)
-        Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[i])
         if is_electron(particle)
-            for δi in range(1,Nshells)
-                Wmax = (Ei-Ui[δi])/2
-                Wmin = Ei-Ec
-                if Wmax > Wmin
-                    J₁⁻(x) = log(x+Ui[δi]) + log(Ei-x) + (Ei+Ui[δi])/(Ei-x) + x*(x+2*Ui[δi])/(2*(Ei+1)^2) + (2*Ei+1)/(Ei+1)^2 * log(Ei-x)
-                    Sc += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * (J₁⁻(Wmax)-J₁⁻(Wmin))
-                end
-            end
+            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,Ei)
         elseif is_positron(particle)
-            b = ((γ-1)/γ)^2
-            b1 = b * (2*(γ+1)^2-1)/(γ^2-1)
-            b2 = b * (3*(γ+1)^2+1)/(γ+1)^2
-            b3 = b * (2*(γ-1)*γ)/(γ+1)^2
-            b4 = b * (γ-1)^2/(γ+1)^2
-            for δi in range(1,Nshells)
-                Wmax = Ei-Ui[δi]
-                Wmin = Ei-Ec
-                if Wmax > Wmin
-                    J₁⁺(x) = log(x+Ui[δi]) - b1*x/Ei + b2*(x^2/2+Ui[δi]*x)/Ei^2 - b3*(x^3/3+Ui[δi]*x^2+Ui[δi]^2*x)/Ei^3 + b4*(x^4/4+Ui[δi]*x^3+3*Ui[δi]^2*x^2/2+Ui[δi]^3*x)/Ei^4
-                    Sc += 2*π*rₑ^2/β² * ωz[i] * nuclei_density(Z[i],ρ) * Zi[δi] * (J₁⁺(Wmax)-J₁⁺(Wmin))
-                end
-            end
+            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_bhabha(Z[i],Ei,1,Ei-Ec,Ei)
         end
     end
 

@@ -46,7 +46,7 @@ if Qdims != 3 error("Quadrature on the unit sphere is required for electromagnet
 μ = Ω[1]; η = Ω[2]; ξ = Ω[3];
 Nd = length(w)
 M = zeros(Nd,P)
-@inbounds for n in range(1,Nd)
+for n in range(1,Nd)
 
     # Compute ϕ
     if ξ[n] != 0

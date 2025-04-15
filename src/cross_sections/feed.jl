@@ -44,7 +44,7 @@ function feed(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,L::Int64,Ei::Flo
 #----
 𝓕 = zeros(Ng+1,L+1)
 𝓕ₑ = zeros(Ng+1)
-ΔQ = get_mass_energy_variation(interaction,type)
+ΔQ = get_mass_energy_variation(interaction,type,true)
 
 # Outgoing particle energy spectrum
 is_dirac, Np, q_type = out_distribution_dispatch(interaction,type)
@@ -56,7 +56,7 @@ if is_dirac Np = 1; u = [0]; w = [2] else u,w = quadrature(Np,q_type) end
 
 # Loop over the coumpound elements
 Nz = length(Z)
-@inbounds for i in range(1,Nz)
+for i in range(1,Nz)
 
     # Loop over subshells
     Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z[i],~is_subshells)
@@ -77,10 +77,10 @@ Nz = length(Z)
             if (is_elastic) Ef = Ei else Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2 end
 
             # Compute Legendre angular flux moments
-            Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
+            Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle,ρ) * nuclei_density(Z[i],ρ) * ωz[i]
             if is_dirac Σsᵢ /= ΔEf  end
             𝓕i .+= Σsᵢ
-            𝓕iₑ += Σsᵢ[1] * (Ef-ΔQ)
+            𝓕iₑ += Σsᵢ[1] * (Ef+ΔQ)
 
         end
         𝓕[gf,:] .+= 𝓕i

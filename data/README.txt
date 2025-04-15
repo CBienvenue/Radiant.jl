@@ -48,10 +48,13 @@ where:
 -------------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------
-    FILE: relaxation_JENDL5.jld2
+    FILE: relaxation_EADL.jld2
 -------------------------------------------------------------------------------------------
 REFERENCE: 
-    - JENDL-5 library on https://www-nds.iaea.org/exfor/endf.htm.
+    - Perkins, S. T., Cullen, D. E., Chen, M. H., Rathkopf, J., Scofield, J., & Hubbell,
+      J. H. (1991). Tables and graphs of atomic subshell and relaxation data derived from
+      the LLNL Evaluated Atomic Data Library (EADL), Z= 1--100 (No. UCRL-50400-Vol. 30). 
+      Lawrence Livermore National Lab.(LLNL), Livermore, CA (United States).
 -------------------------------------------------------------------------------------------
 DATA STRUCTURE:
 ├── ["Fluorescence"]
@@ -77,10 +80,12 @@ where:
 -------------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------
-    FILE: rayleigh_factors_JENDL5.jld2
+    FILE: rayleigh_factors_EPDL97.jld2
 -------------------------------------------------------------------------------------------
 REFERENCE: 
-    - JENDL-5 library on https://www-nds.iaea.org/exfor/endf.htm.
+    - Cullen, D. E., Hubbell, J. H., & Kissel, L. (1997). EPDL97: the evaluated photo data 
+      library97 version (No. UCRL-50400-Vol. 6-Rev. 5). Lawrence Livermore National Lab.
+      (LLNL), Livermore, CA (United States).
     - Trkov, A., Herman, M., & Brown, D. A. (2012). ENDF-6 formats manual. Brookhaven
       National Laboratory, 80.
 -------------------------------------------------------------------------------------------
@@ -108,10 +113,12 @@ where:
 -------------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------
-    FILE: photoelectric_JENDL5.jld2
+    FILE: photoelectric_EPDL97.jld2
 -------------------------------------------------------------------------------------------
 REFERENCE: 
-    - JENDL-5 library on https://www-nds.iaea.org/exfor/endf.htm.
+    - Cullen, D. E., Hubbell, J. H., & Kissel, L. (1997). EPDL97: the evaluated photo data 
+      library97 version (No. UCRL-50400-Vol. 6-Rev. 5). Lawrence Livermore National Lab.
+      (LLNL), Livermore, CA (United States).
 -------------------------------------------------------------------------------------------
 DATA STRUCTURE:
 ├── ["E"]
@@ -146,10 +153,12 @@ where:
 -------------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------
-    FILE: pair_production_JENDL5.jld2
+    FILE: pair_production_EPDL97.jld2
 -------------------------------------------------------------------------------------------
 REFERENCE: 
-    - JENDL-5 library on https://www-nds.iaea.org/exfor/endf.htm.
+    - Cullen, D. E., Hubbell, J. H., & Kissel, L. (1997). EPDL97: the evaluated photo data 
+      library97 version (No. UCRL-50400-Vol. 6-Rev. 5). Lawrence Livermore National Lab.
+      (LLNL), Livermore, CA (United States).
 -------------------------------------------------------------------------------------------
 DATA STRUCTURE:
 ├── ["E"]
@@ -163,10 +172,12 @@ where:
 -------------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------
-    FILE: compton_factors_JENDL5.jld2
+    FILE: compton_factors_EPDL97.jld2
 -------------------------------------------------------------------------------------------
 REFERENCE: 
-    - JENDL-5 library on https://www-nds.iaea.org/exfor/endf.htm.
+    - Cullen, D. E., Hubbell, J. H., & Kissel, L. (1997). EPDL97: the evaluated photo data 
+      library97 version (No. UCRL-50400-Vol. 6-Rev. 5). Lawrence Livermore National Lab.
+      (LLNL), Livermore, CA (United States).
     - Trkov, A., Herman, M., & Brown, D. A. (2012). ENDF-6 formats manual. Brookhaven
       National Laboratory, 80.
 -------------------------------------------------------------------------------------------

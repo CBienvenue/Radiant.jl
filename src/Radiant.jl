@@ -9,34 +9,6 @@ module Radiant
     using JLD2
 
     #----
-    # Find root of Radiant
-    #----
-    function find_package_root()
-        current_dir = @__DIR__
-        while current_dir != "/"
-            if isfile(joinpath(current_dir, "Project.toml"))
-                return current_dir
-            end
-            current_dir = dirname(current_dir)
-        end
-        error("Package root not found.")
-    end
-
-    #----
-    # Global unique ID generator
-    #----
-    const unique_id_counter = Ref(0)
-    function generate_unique_id()
-        unique_id_counter[] += 1
-        return unique_id_counter[]
-    end
-
-    #----
-    # Cache
-    #----
-    const cache_files = Ref{Dict{String,Any}}(Dict())
-
-    #----
     # Include files
     #----
     radiant_src = Dict{String,Vector{String}}()
@@ -59,10 +31,30 @@ module Radiant
         "resonance_energy.jl",
         "fermi_density_effect.jl",
         "atomic_number.jl",
-        "baro_coefficients.jl",
         "transport_correction.jl",
         "angular_fokker_planck_decomposition.jl",
-        "bethe.jl"
+        "bethe.jl",
+        "moller.jl",
+        "bhabha.jl",
+        "kawrakow_correction.jl",
+        "moliere_screening.jl",
+        "mott.jl",
+        "sommerfield.jl",
+        "poskus.jl",
+        "ratio_positron_electron_bremsstrahlung.jl",
+        "seltzer_berger.jl",
+        "klein_nishina.jl",
+        "waller_hartree.jl",
+        "impulse_approximation.jl",
+        "biggs_lighthill.jl",
+        "photoelectric_per_subshell.jl",
+        "sauter.jl",
+        "rayleigh.jl",
+        "high_energy_Coulomb_correction.jl",
+        "baro.jl",
+        "heitler.jl",
+        "relaxation.jl",
+        "interaction_interdependances.jl"
     ]
     radiant_src["particle_transport/"] = [
         "geometry.jl",
@@ -109,8 +101,7 @@ module Radiant
         "Photoelectric.jl",
         "Annihilation.jl",
         "Rayleigh.jl",
-        "Fluorescence.jl",
-        "Auger.jl",
+        "Relaxation.jl",
         "Multigroup_Cross_Sections.jl",
         "Material.jl",
         "Cross_Sections.jl",
@@ -142,7 +133,10 @@ module Radiant
         "spline.jl",
         "voronoi.jl",
         "newton_bissection.jl",
-        "one_space.jl"
+        "one_space.jl",
+        "cache.jl",
+        "find_package_root.jl",
+        "python_method_notation.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end
@@ -152,60 +146,7 @@ module Radiant
     # Export objects
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
-    export Elastic_Leptons, Inelastic_Leptons, Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Fluorescence,Auger
+    export Elastic_Leptons,Inelastic_Leptons,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
     export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit
-
-    #----
-    # To use Python-like notation for methods
-    #----
-    RadiantObject = Union{
-        Material,
-        Cross_Sections,
-        Multigroup_Cross_Sections,
-        Geometry,
-        Discrete_Ordinates,
-        Solvers,
-        Surface_Source,
-        Volume_Source,
-        Fixed_Sources,
-        Source,
-        Sources,
-        Computation_Unit,
-        Flux_Per_Particle,
-        Flux,
-        Interaction,
-        Particle
-    }
-
-    """
-        Base.getproperty(object::RadiantObject, s::Symbol)
-
-    Special function to enable calling a method "m(this::T,...)" on a struct "S" of type "T"
-    using the notation "S.m(...)" for a subset of struct.
-
-    """
-    function Base.getproperty(object::RadiantObject, s::Symbol)
-        if hasfield(typeof(object), s)
-            return getfield(object, s)
-        else
-            # Check if the function is defined in the Radiant module
-            if isdefined(Radiant, s) && getproperty(Radiant, s) isa Function
-                try
-                    return function(x...)
-                        func = getproperty(Radiant, s)
-                        return func(object, x...)
-                    end
-                catch e
-                    # Log the original error and rethrow it
-                    type = typeof(object)
-                    @error "Failed to invoke function '$s' on object of type '$type'. Error: $e"
-                    rethrow()
-                end
-            else
-                type = typeof(object)
-                throw(error("The object of type '$type' has no function '$s'."))
-            end
-        end
-    end
 
 end

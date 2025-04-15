@@ -143,7 +143,14 @@ function build(this::Cross_Sections)
     if lowercase(this.source) == "fmac-m"
         read_fmac_m(this)
     elseif lowercase(this.source) == "physics-models"
-        generate_cross_sections(this)
+        try
+            generate_cross_sections(this)
+        catch
+            rethrow()
+        finally
+            empty!(cache_radiant[]) # Clean cache before throwing an error.
+        end
+        empty!(cache_radiant[]) # Clean cache
     elseif lowercase(this.source) == "custom"
         custom_cross_sections(this)
     else

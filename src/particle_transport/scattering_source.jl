@@ -23,7 +23,7 @@ N/A
 
 """
 function scattering_source(Qℓ::Array{Float64},𝚽ℓ::Array{Float64},Σs::Array{Float64},mat::Array{Int64},P::Int64,pℓ::Vector{Int64},Nm::Int64,Ns::Vector{Int64})
-    @inbounds for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), p in range(1,P), is in range(1,Nm)
+    for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), p in range(1,P), is in range(1,Nm)
         Qℓ[p,is,ix,iy,iz] += Σs[mat[ix,iy,iz],pℓ[p]+1] * 𝚽ℓ[p,is,ix,iy,iz]
     end
     return Qℓ 
@@ -57,7 +57,7 @@ N/A
 
 """
 function scattering_source(Qℓ::Array{Float64},𝚽ℓ::Array{Float64},Σs::Array{Float64},mat::Array{Int64},P::Int64,pℓ::Vector{Int64},Nm::Int64,Ns::Vector{Int64},Ngi::Int64,gf::Int64)
-    @inbounds for gi in range(1,Ngi)
+    for gi in range(1,Ngi)
         if gi != gf
             for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), p in range(1,P), is in range(1,Nm)
                 Qℓ[p,is,ix,iy,iz] += Σs[mat[ix,iy,iz],gi,pℓ[p]+1] * 𝚽ℓ[gi,p,is,ix,iy,iz]
@@ -95,7 +95,7 @@ N/A
 
 """
 function particle_source(Qℓ::Array{Float64},𝚽ℓ::Array{Float64},Σs::Array{Float64},mat::Array{Int64},P::Int64,pℓ::Vector{Int64},Nm::Int64,Ns::Vector{Int64},Ngi::Int64,Ngf::Int64)
-    @inbounds for gf in range(1,Ngf), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+    for gf in range(1,Ngf), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
         for gi in range(1,Ngi), is in range(1,Nm), p in range(1,P)
             Qℓ[gf,p,is,ix,iy,iz] += Σs[mat[ix,iy,iz],gi,gf,pℓ[p]+1] * 𝚽ℓ[gi,p,is,ix,iy,iz]
         end

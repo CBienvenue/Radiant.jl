@@ -24,7 +24,7 @@ function 𝒢₁(x::Real,N::Int64,a::Real,b::Real)
     R = a+b*x
 
     # Eq. 2.111 (4)
-    @inbounds for n in range(0,N)
+    for n in range(0,N)
         v[n+1] += (-1)^(n-1)*a^n/(b^(n+1)*R) + (-1)^(n+1)*n*a^(n-1)/b^(n+1)*log(R)
         for g in range(1,n-1)
             v[n+1] += (-1)^(g-1) * (g*a^(g-1)*x^(n-g))/((n-g)*b^(g+1))
@@ -64,7 +64,7 @@ function 𝒢₂(x::Real,N::Int64,a::Real,b::Real)
 
     # Eq. 2.174 (1)
     v[2] = -x/(b*R) + a/b*v₀
-    @inbounds for n in range(4,N,step=2)
+    for n in range(4,N,step=2)
         v[n] = -x^(n-1)/((3-n)*b*R) + (n-1)*a/((3-n)*b)*v[n-2]
     end
 

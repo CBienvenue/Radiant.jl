@@ -142,7 +142,7 @@ function voronoi_sphere(Ω::Vector{Vector{Float64}})
 
     # Store information
     voronoi_data = Vector{Dict{String,Any}}(undef,Nd)
-    @inbounds for n in range(1,Nd)
+    for n in range(1,Nd)
         voronoi_data_i = Dict{String,Any}()
         N_triangle = length(xn[n])
         x1 = Ω[1][n]; y1 = Ω[2][n]; z1 = Ω[3][n]

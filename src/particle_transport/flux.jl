@@ -30,7 +30,7 @@ Ns = geometry.get_number_of_voxels()
 Ng = cross_sections.get_number_of_groups(particle)
 F = zeros(Ng,Ns[1],Ns[2],Ns[3])
 𝚽l = flux.get_flux(particle)
-@inbounds for ig in range(1,Ng) ,ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+for ig in range(1,Ng) ,ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
     F[ig,ix,iy,iz] = 𝚽l[ig,1,1,ix,iy,iz]
 end
 

@@ -41,24 +41,24 @@ if Qdims == 1
 
     # Compute the scattering matrix
     β12 = zeros(N+1)
-    @inbounds for n in range(2,N)
+    for n in range(2,N)
         β12[n] = β12[n-1] - 2*wn[n-1]*μn[n-1]
     end
 
     Cn⁻ = zeros(N)
-    @inbounds for n in range(2,N)
+    for n in range(2,N)
         Cn⁻[n] = β12[n]/(wn[n]*(μn[n]-μn[n-1]))
     end
 
     Cn⁺ = zeros(N)
-    @inbounds for n in range(1,N-1)
+    for n in range(1,N-1)
         Cn⁺[n] = β12[n+1]/(wn[n]*(μn[n+1]-μn[n]))
     end
     
     Cn = Cn⁻ + Cn⁺
     λ₀ = maximum(Cn)
     ℳ_temp = zeros(N,N)
-    @inbounds for n in range(1,N), m in range(1,N)
+    for n in range(1,N), m in range(1,N)
         if n == m
             ℳ_temp[n,m] = λ₀ - Cn[n]
         elseif m == n - 1
@@ -70,7 +70,7 @@ if Qdims == 1
 
     # Reorder the scattering matrix
     ℳ = zeros(N,N)
-    @inbounds for n in range(1,N), m in range(1,N)
+    for n in range(1,N), m in range(1,N)
         ℳ[index[n],index[m]] = ℳ_temp[n,m]
     end
 

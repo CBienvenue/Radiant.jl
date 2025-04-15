@@ -57,7 +57,7 @@ Q = zeros(Nm)
 if isAdapt ωx,ωy,ωz = adaptive(𝒪x,𝒪y,𝒪z,ωx,ωy,ωz,hx,hy,hz,sx,sy,sz,𝚽x12,𝚽y12,𝚽z12,Qn,Σt,isFC) end
 
 # Matrix of Legendre moment coefficients of the flux
-@inbounds for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y), iz in range(1,𝒪z), jz in range(1,𝒪z)
+for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in range(1,𝒪y), iz in range(1,𝒪z), jz in range(1,𝒪z)
     if isFC
         i = 𝒪y*𝒪x*(iz-1) + 𝒪x * (iy-1) + ix
         j = 𝒪y*𝒪x*(jz-1) + 𝒪x * (jy-1) + jx
@@ -94,7 +94,7 @@ if isAdapt ωx,ωy,ωz = adaptive(𝒪x,𝒪y,𝒪z,ωx,ωy,ωz,hx,hy,hz,sx,sy,s
 end
 
 # Source vector
-@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
+for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
     if isFC
         j = 𝒪y*𝒪x*(jz-1) + 𝒪x * (jy-1) + jx
         jxm = 𝒪y*(jz-1) + jy
@@ -122,7 +122,7 @@ end
 𝚽n = 𝒮\Q
 
 # Closure relation
-@inbounds for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
+for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
     if isFC
         j = 𝒪y*𝒪x*(jz-1) + 𝒪x * (jy-1) + jx
         jxm = 𝒪y*(jz-1) + jy

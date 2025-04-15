@@ -47,14 +47,15 @@ radiation they generate.
   associated to a vacancy in each energy shell.
 
 # Reference(s)
-N/A
+- Perkins et al. (1991), Tables and Graphs of Atomic Subshell and Relaxation Data Derived
+  from the LLNL Evaluated Atomic Data Library (EADL), Z = 1 - 100.
 
 """
 function electron_cascades(ΔE_auger::Vector{Vector{Float64}},ΔE_fluorescence::Vector{Vector{Float64}},η_auger::Vector{Vector{Float64}},η_fluorescence::Vector{Vector{Float64}},ΔE⁻::Vector{Float64},η⁻::Vector{Float64},primary_shell⁻::Vector{String},secondary_shell⁻::Vector{String},tertiary_shell⁻::Vector{String},ΔE::Vector{Float64},η::Vector{Float64},PS::Vector{String},SS::Vector{String},TS::Vector{String},Nshells::Int64,subshells::Vector{String},PS₀::Vector{String},ηmin::Float64)
 
     Nt⁻ = length(ΔE⁻)
     Nt = length(ΔE)
-    @inbounds for i in range(1,Nt⁻)
+    for i in range(1,Nt⁻)
 
         # Accumulate the probability that an initial transition i results in the production of a specific transition in an outer shell
         for δi in range(1,Nshells)
@@ -129,102 +130,86 @@ structure for each atom in the material.
   material and by a vacancy in each subshell. 
 
 # Reference(s)
-N/A
+- Perkins et al. (1991), Tables and Graphs of Atomic Subshell and Relaxation Data Derived
+  from the LLNL Evaluated Atomic Data Library (EADL), Z = 1 - 100.
 
 """
-function atomic_electron_cascades(type::String,Z::Vector{Int64},Ecutoff::Float64,ηmin::Float64=0.001)
+function atomic_electron_cascades(Z::Int64,Ecutoff::Float64,ηmin::Float64=0.001)
 
     # Initialization
-    if type ∉ ["auger","fluorescence"] error("Type of radiation following electron cascades is either auger of fluorescence.") end
-    Nz = length(Z)
-    vec_ΔE = Vector{Vector{Vector{Float64}}}(undef,Nz)
-    vec_η = Vector{Vector{Vector{Float64}}}(undef,Nz)
-    path = joinpath(find_package_root(), "data", "relaxation_JENDL5.jld2")
+    path = joinpath(find_package_root(), "data", "relaxation_EADL.jld2")
     data = load(path)
-    
-    for iz in range(1,Nz)
+    fluorescence = data["Fluorescence"][Z]
+    auger = data["Auger"][Z]
 
-        fluorescence = data["Fluorescence"][Z[iz]]
-        auger = data["Auger"][Z[iz]]
-
-        # Produce lists
-        Nt = 0
-        ΔE = Vector{Float64}()
-        η = Vector{Float64}()
-        PS = Vector{String}()
-        SS = Vector{String}()
-        TS = Vector{String}()
-        Nshells,Zi,Ui,Ti,ri,subshells = electron_subshells(Z[iz])
-        for δi in range(1,Nshells)
-            fi = fluorescence[subshells[δi]]
-            ai = auger[subshells[δi]]
-            Nti = length(fi["ΔE"])
-            for δj in range(1,Nti)
-                Nt += 1
-                push!(ΔE,fi["ΔE"][δj])
-                push!(η,fi["P"][δj])
-                push!(PS,subshells[δi])
-                push!(SS,fi["Secondary_shells"][δj])
-                push!(TS,"")
-            end
-            Nti = length(ai["ΔE"])
-            for δj in range(1,Nti)
-                Nt += 1
-                push!(ΔE,ai["ΔE"][δj])
-                push!(η,ai["P"][δj])
-                push!(PS,subshells[δi])
-                push!(SS,ai["Secondary_shells"][δj])
-                push!(TS,ai["Tertiary_shells"][δj])
-            end
+    # Produce lists
+    Nt = 0
+    ΔE = Vector{Float64}()
+    η = Vector{Float64}()
+    PS = Vector{String}()
+    SS = Vector{String}()
+    TS = Vector{String}()
+    Nshells,_,_,_,_,subshells = electron_subshells(Z)
+    for δi in range(1,Nshells)
+        fi = fluorescence[subshells[δi]]
+        ai = auger[subshells[δi]]
+        Nti = length(fi["ΔE"])
+        for δj in range(1,Nti)
+            Nt += 1
+            push!(ΔE,fi["ΔE"][δj])
+            push!(η,fi["P"][δj])
+            push!(PS,subshells[δi])
+            push!(SS,fi["Secondary_shells"][δj])
+            push!(TS,"")
         end
-
-        # Extract electron cascades
-        ΔE_auger_temp = Vector{Vector{Float64}}(undef,Nshells)
-        η_auger_temp = Vector{Vector{Float64}}(undef,Nshells)
-        ΔE_fluorescence_temp = Vector{Vector{Float64}}(undef,Nshells)
-        η_fluorescence_temp = Vector{Vector{Float64}}(undef,Nshells)
-        for δi in range(1,Nshells)
-            ΔE_auger_temp[δi] = Vector{Float64}()
-            ΔE_fluorescence_temp[δi] = Vector{Float64}()
-            η_auger_temp[δi] = Vector{Float64}()
-            η_fluorescence_temp[δi] = Vector{Float64}()
-        end
-        ΔE_auger_temp,ΔE_fluorescence_temp,η_auger_temp,η_fluorescence_temp = electron_cascades(ΔE_auger_temp,ΔE_fluorescence_temp,η_auger_temp,η_fluorescence_temp,ΔE,η,PS,SS,TS,ΔE,η,PS,SS,TS,Nshells,subshells,PS,ηmin)
-
-        if type == "auger"
-            ΔE_auger = Vector{Vector{Float64}}(undef,Nshells)
-            η_auger = Vector{Vector{Float64}}(undef,Nshells)
-            for δi in range(1,Nshells)
-                ΔE_auger[δi] = Vector{Float64}()
-                η_auger[δi] = Vector{Float64}()
-                Nt = length(ΔE_auger_temp[δi])
-                for i in range(1,Nt)
-                    if ΔE_auger_temp[δi][i] > Ecutoff
-                        push!(ΔE_auger[δi],ΔE_auger_temp[δi][i])
-                        push!(η_auger[δi],η_auger_temp[δi][i])
-                    end
-                end
-            end
-            vec_ΔE[iz] = ΔE_auger
-            vec_η[iz] = η_auger
-        elseif type == "fluorescence"
-            ΔE_fluorescence = Vector{Vector{Float64}}(undef,Nshells)
-            η_fluorescence = Vector{Vector{Float64}}(undef,Nshells)
-            for δi in range(1,Nshells)
-                ΔE_fluorescence[δi] = Vector{Float64}()
-                η_fluorescence[δi] = Vector{Float64}()
-                Nt = length(ΔE_fluorescence_temp[δi])
-                for i in range(1,Nt)
-                    if ΔE_fluorescence_temp[δi][i] > Ecutoff
-                        push!(ΔE_fluorescence[δi],ΔE_fluorescence_temp[δi][i])
-                        push!(η_fluorescence[δi],η_fluorescence_temp[δi][i])
-                    end
-                end
-            end
-            vec_ΔE[iz] = ΔE_fluorescence
-            vec_η[iz] = η_fluorescence
+        Nti = length(ai["ΔE"])
+        for δj in range(1,Nti)
+            Nt += 1
+            push!(ΔE,ai["ΔE"][δj])
+            push!(η,ai["P"][δj])
+            push!(PS,subshells[δi])
+            push!(SS,ai["Secondary_shells"][δj])
+            push!(TS,ai["Tertiary_shells"][δj])
         end
     end
 
-    return vec_ΔE, vec_η
+    # Extract electron cascades
+    ΔE_auger_temp = Vector{Vector{Float64}}(undef,Nshells)
+    η_auger_temp = Vector{Vector{Float64}}(undef,Nshells)
+    ΔE_fluorescence_temp = Vector{Vector{Float64}}(undef,Nshells)
+    η_fluorescence_temp = Vector{Vector{Float64}}(undef,Nshells)
+    for δi in range(1,Nshells)
+        ΔE_auger_temp[δi] = Vector{Float64}()
+        ΔE_fluorescence_temp[δi] = Vector{Float64}()
+        η_auger_temp[δi] = Vector{Float64}()
+        η_fluorescence_temp[δi] = Vector{Float64}()
+    end
+    ΔE_auger_temp,ΔE_fluorescence_temp,η_auger_temp,η_fluorescence_temp = electron_cascades(ΔE_auger_temp,ΔE_fluorescence_temp,η_auger_temp,η_fluorescence_temp,ΔE,η,PS,SS,TS,ΔE,η,PS,SS,TS,Nshells,subshells,PS,ηmin)
+
+    # Save data
+    ΔE_auger = Vector{Vector{Float64}}(undef,Nshells)
+    η_auger = Vector{Vector{Float64}}(undef,Nshells)
+    ΔE_fluorescence = Vector{Vector{Float64}}(undef,Nshells)
+    η_fluorescence = Vector{Vector{Float64}}(undef,Nshells)
+    for δi in range(1,Nshells)
+        ΔE_auger[δi] = Vector{Float64}()
+        η_auger[δi] = Vector{Float64}()
+        ΔE_fluorescence[δi] = Vector{Float64}()
+        η_fluorescence[δi] = Vector{Float64}()
+        Nt = length(ΔE_auger_temp[δi])
+        for i in range(1,Nt)
+            if ΔE_auger_temp[δi][i] > Ecutoff
+                push!(ΔE_auger[δi],ΔE_auger_temp[δi][i])
+                push!(η_auger[δi],η_auger_temp[δi][i])
+            end
+        end
+        Nt = length(ΔE_fluorescence_temp[δi])
+        for i in range(1,Nt)
+            if ΔE_fluorescence_temp[δi][i] > Ecutoff
+                push!(ΔE_fluorescence[δi],ΔE_fluorescence_temp[δi][i])
+                push!(η_fluorescence[δi],η_fluorescence_temp[δi][i])
+            end
+        end
+    end
+    return ΔE_auger, η_auger, ΔE_fluorescence, η_fluorescence
 end
