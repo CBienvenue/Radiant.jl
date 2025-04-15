@@ -50,7 +50,7 @@ module Radiant
         "photoelectric_per_subshell.jl",
         "sauter.jl",
         "rayleigh.jl",
-        "high_energy_Coulomb_correction.jl",
+        "high_energy_coulomb_correction.jl",
         "baro.jl",
         "heitler.jl",
         "relaxation.jl",
