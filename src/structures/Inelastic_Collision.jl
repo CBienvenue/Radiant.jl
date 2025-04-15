@@ -1,7 +1,7 @@
 """
-Inelastic_Leptons
+Inelastic_Collision
 
-Structure used to define parameters for production of multigroup inelastic collisional cross-sections for leptons.
+Structure used to define parameters for production of multigroup inelastic collisional cross-sections.
 
 # Mandatory field(s)
 - N/A
@@ -14,7 +14,7 @@ Structure used to define parameters for production of multigroup inelastic colli
     - `(Electron,Electron) => ["P"]` : production of electrons by incident electrons
 
 """
-mutable struct Inelastic_Leptons <: Interaction
+mutable struct Inelastic_Collision <: Interaction
 
     # Variable(s)
     name::String
@@ -31,9 +31,9 @@ mutable struct Inelastic_Leptons <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Inelastic_Leptons()
+    function Inelastic_Collision()
         this = new()
-        this.name = "inelastic_leptons"
+        this.name = "Inelastic_Collision"
         this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
@@ -51,12 +51,12 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Inelastic_Leptons,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
+    set_interaction_types(this::Inelastic_Collision,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
-To define the interaction types for inelastic leptons processes.
+To define the interaction types for inelastic collision processes.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 - `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
     - `(Positron,Positron) => ["S"]` : scattering of incident positrons
     - `(Electron,Electron) => ["S"]` : scattering of incident electrons
@@ -68,21 +68,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Inelastic_Leptons()
-julia> elastic_leptons.set_interaction_types( Dict((Electron,Electron) => ["S"]) ) # No knock-on electrons.
+julia> elastic_collision = Inelastic_Collision()
+julia> elastic_collision.set_interaction_types( Dict((Electron,Electron) => ["S"]) ) # No knock-on electrons.
 ```
 """
-function set_interaction_types(this::Inelastic_Leptons,interaction_types)
+function set_interaction_types(this::Inelastic_Collision,interaction_types)
     this.interaction_types = interaction_types
 end
 
 """
-    set_density_correction(this::Inelastic_Leptons,density_correction::String)
+    set_density_correction(this::Inelastic_Collision,density_correction::String)
 
 Set the Fermi density correction.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 - `density_correction::String` : type of density effect:
     - `fano` : Fano density effect.
     - `sternheimer` : Sternheimer semi-empirical density effect.
@@ -93,22 +93,22 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Inelastic_Leptons()
-julia> elastic_leptons.set_density_correction("sternheimer")
+julia> elastic_collision = Inelastic_Collision()
+julia> elastic_collision.set_density_correction("sternheimer")
 ```
 """
-function set_density_correction(this::Inelastic_Leptons,density_correction::String)
+function set_density_correction(this::Inelastic_Collision,density_correction::String)
     if lowercase(density_correction) ∉ ["fano","sternheimer","none"] error("Unknown '$density_correction' density correction.") end
     this.density_correction = lowercase(density_correction)
 end
 
 """
-    set_is_shell_correction(this::Inelastic_Leptons,is_shell_correction::Bool)
+    set_is_shell_correction(this::Inelastic_Collision,is_shell_correction::Bool)
 
 Activate or desactivate shell correction for stopping powers.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 - `is_shell_correction::Bool` : activate (true) or desactivate (false) the shell correction.
 
 # Output Argument(s)
@@ -116,21 +116,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Inelastic_Leptons()
-julia> elastic_leptons.set_is_shell_correction(false)
+julia> elastic_collision = Inelastic_Collision()
+julia> elastic_collision.set_is_shell_correction(false)
 ```
 """
-function set_is_shell_correction(this::Inelastic_Leptons,is_shell_correction::Bool)
+function set_is_shell_correction(this::Inelastic_Collision,is_shell_correction::Bool)
     this.is_shell_correction = is_shell_correction
 end
 
 """
-    set_is_subshells_dependant(this::Inelastic_Leptons,is_subshells_dependant::Bool)
+    set_is_subshells_dependant(this::Inelastic_Collision,is_subshells_dependant::Bool)
 
 Compute the inelastic cross-sections assuming bounded or unbounded electrons.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic leptons structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 - `is_subshells_dependant::Bool` : bounded (true) or unbounded (false) electrons.
 
 # Output Argument(s)
@@ -138,21 +138,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Inelastic_Leptons()
-julia> elastic_leptons.set_is_subshells_dependant(false)
+julia> elastic_collision = Inelastic_Collision()
+julia> elastic_collision.set_is_subshells_dependant(false)
 ```
 """
-function set_is_subshells_dependant(this::Inelastic_Leptons,is_subshells_dependant::Bool)
+function set_is_subshells_dependant(this::Inelastic_Collision,is_subshells_dependant::Bool)
     this.is_subshells_dependant = is_subshells_dependant
 end
 
 """
-    scattering_model(this::Inelastic_Leptons,scattering_model::String)
+    scattering_model(this::Inelastic_Collision,scattering_model::String)
 
 To define the solver for inelastic scattering.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic structure.
+- `this::Inelastic_Collision` : inelastic structure.
 - `solver::String` : solver for inelastic scattering, which can be:
     - `BFP` : Boltzmann Fokker-Planck solver.
     - `FP` : Fokker-Planck solver.
@@ -163,23 +163,23 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Inelastic_Leptons()
-julia> elastic_leptons.set_scattering_model("FP")
+julia> elastic_collision = Inelastic_Collision()
+julia> elastic_collision.set_scattering_model("FP")
 ```
 """
-function set_scattering_model(this::Inelastic_Leptons,scattering_model::String)
+function set_scattering_model(this::Inelastic_Collision,scattering_model::String)
     if uppercase(scattering_model) ∉ ["BFP","FP","BTE"] error("Unknown scattering model (should be BFP, FP or BTE).") end
     this.scattering_model = uppercase(scattering_model)
 end
 
 """
-    in_distribution(this::Inelastic_Leptons)
+    in_distribution(this::Inelastic_Collision)
 
-Describe the energy discretization method for the incoming particle in the inelastic lepton
+Describe the energy discretization method for the incoming particle in the inelastic collision
 interaction.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 
 # Output Argument(s)
 - `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
@@ -187,7 +187,7 @@ interaction.
 - `quadrature::String` : type of quadrature.
 
 """
-function in_distribution(this::Inelastic_Leptons)
+function in_distribution(this::Inelastic_Collision)
     is_dirac = false
     N = 8
     quadrature = "gauss-legendre"
@@ -195,13 +195,13 @@ function in_distribution(this::Inelastic_Leptons)
 end
 
 """
-    out_distribution(this::Inelastic_Leptons)
+    out_distribution(this::Inelastic_Collision)
 
-Describe the energy discretization method for the outgoing particle in the inelastic lepton
+Describe the energy discretization method for the outgoing particle in the inelastic collision
 interaction.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 
 # Output Argument(s)
 - `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
@@ -209,7 +209,7 @@ interaction.
 - `quadrature::String` : type of quadrature.
 
 """
-function out_distribution(this::Inelastic_Leptons)
+function out_distribution(this::Inelastic_Collision)
     is_dirac = false
     N = 8
     quadrature = "gauss-legendre"
@@ -217,10 +217,10 @@ function out_distribution(this::Inelastic_Leptons)
 end
 
 """
-    bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,
+    bounds(this::Inelastic_Collision,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,
     Ec::Float64,Ui::Float64,particle::Particle)
 
-Gives the integration energy bounds for the outgoing particle for inelastic lepton
+Gives the integration energy bounds for the outgoing particle for inelastic collision
 interaction. 
 
 # Input Argument(s)
@@ -238,7 +238,7 @@ interaction.
 - `isSkip::Bool` : define if the integration is skipped or not.
 
 """
-function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64,Ui::Float64,particle::Particle)
+function bounds(this::Inelastic_Collision,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,type::String,Ec::Float64,Ui::Float64,particle::Particle)
     if is_electron(particle)
         # Scattered electron
         if type == "S"
@@ -274,14 +274,14 @@ function bounds(this::Inelastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,Ei::Float6
 end
 
 """
-    dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,
+    dcs(this::Inelastic_Collision,L::Int64,Ei::Float64,Ef::Float64,type::String,
     particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
 
-Gives the Legendre moments of the scattering cross-sections for inelastic lepton
+Gives the Legendre moments of the scattering cross-sections for inelastic collision
 interaction. 
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure.
+- `this::Inelastic_Collision` : inelastic collision structure.
 - `L::Int64` : Legendre truncation order.
 - `Ei::Float64` : incoming particle energy.
 - `Ef::Float64` : outgoing particle energy.
@@ -295,7 +295,7 @@ interaction.
 - `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
+function dcs(this::Inelastic_Collision,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
 
     # Initialization
     σs = 0.0
@@ -330,12 +330,12 @@ function dcs(this::Inelastic_Leptons,L::Int64,Ei::Float64,Ef::Float64,type::Stri
 end
 
 """
-    tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
+    tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
-Gives the total cross-section for inelastic lepton interaction. 
+Gives the total cross-section for inelastic collision interaction. 
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `this::Inelastic_Collision` : inelastic collision structure. 
 - `Ei::Float64` : incoming particle energy.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `particle::Particle` : incoming particle.
@@ -345,7 +345,7 @@ Gives the total cross-section for inelastic lepton interaction.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
+function tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
     # Close collisions
     if is_electron(particle)
@@ -359,12 +359,12 @@ function tcs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,
 end
 
 """
-    acs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
+    acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
-Gives the absorption cross-section for inelastic lepton interaction. 
+Gives the absorption cross-section for inelastic collision interaction. 
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `this::Inelastic_Collision` : inelastic collision structure. 
 - `Ei::Float64` : incoming particle energy.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `particle::Particle` : incoming particle.
@@ -375,7 +375,7 @@ Gives the absorption cross-section for inelastic lepton interaction.
 - `σa::Float64` : absorption cross-section.
 
 """
-function acs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64,Ecutoff::Float64)
+function acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64,Ecutoff::Float64)
 
     # Close collisions
     if is_electron(particle)
@@ -390,13 +390,13 @@ function acs(this::Inelastic_Leptons,Ei::Float64,Ec::Float64,particle::Particle,
 end
 
 """
-    sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,
+    sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,
     state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
 
-Gives the stopping power for inelastic lepton interaction.
+Gives the stopping power for inelastic collision interaction.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `this::Inelastic_Collision` : inelastic collision structure. 
 - `Z::Vector{Int64}` : atomic numbers of the elements in the material.
 - `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
 - `ρ::Float64` : material density.
@@ -409,7 +409,7 @@ Gives the stopping power for inelastic lepton interaction.
 - `S::Float64` : stopping power.
 
 """
-function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
+function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
 
     # Compute the total cross-section
     Stot = bethe(Z,ωz,ρ,Ei,particle)
@@ -432,18 +432,18 @@ function sp(this::Inelastic_Leptons,Z::Vector{Int64},ωz::Vector{Float64},ρ::Fl
 end
 
 """
-    mt(this::Inelastic_Leptons)
+    mt(this::Inelastic_Collision)
 
-Gives the momentum transfer for inelastic lepton interaction.
+Gives the momentum transfer for inelastic collision interaction.
 
 # Input Argument(s)
-- `this::Inelastic_Leptons` : inelastic lepton structure. 
+- `this::Inelastic_Collision` : inelastic collision structure. 
 
 # Output Argument(s)
 - `T::Float64` : momentum transfer.
 
 """
-function mt(this::Inelastic_Leptons)
+function mt(this::Inelastic_Collision)
     T = 0.0
     return T
 end

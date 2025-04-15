@@ -12,8 +12,8 @@ for interaction_i in interactions
         if any(is_positron.(particles)) && haskey(interaction_i.interaction_types,(Positron,Photon)) && "P_inel" ∈ interaction_i.interaction_types[(Positron,Photon)]
             is_interaction = false
             for interaction_j in interactions 
-                if typeof(interaction_j) == Inelastic_Leptons
-                    interaction_i.inelastic_lepton_model = interaction_j
+                if typeof(interaction_j) == Inelastic_Collision
+                    interaction_i.inelastic_collision_model = interaction_j
                     is_interaction = true
                     break
                 end
@@ -55,14 +55,14 @@ for interaction_i in interactions
     end
 
     #----
-    # Elastic leptons
+    # Elastic Collision
     #----
-    if typeof(interaction_i) == Elastic_Leptons
+    if typeof(interaction_i) == Elastic_Collision
 
         # Model to use for Kawrakow correction
         if interaction_i.is_kawrakow_correction
             for interaction_j in interactions
-                if typeof(interaction_j) == Inelastic_Leptons
+                if typeof(interaction_j) == Inelastic_Collision
                     interaction_i.is_subshell_inelastic = interaction_j.is_subshells_dependant
                     break
                 end

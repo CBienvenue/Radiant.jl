@@ -1,7 +1,7 @@
 """
-    Elastic_Leptons
+    Elastic_Collision
 
-Structure used to define parameters for production of multigroup elastic cross-sections for leptons.
+Structure used to define parameters for production of multigroup elastic collision cross-sections.
 
 # Mandatory field(s)
 - N/A
@@ -12,7 +12,7 @@ Structure used to define parameters for production of multigroup elastic cross-s
     - `(Positron,Positron) => ["S"]` : elastic interaction of positrons.
 
 """
-mutable struct Elastic_Leptons <: Interaction
+mutable struct Elastic_Collision <: Interaction
 
     # Variable(s)
     name::String
@@ -33,9 +33,9 @@ mutable struct Elastic_Leptons <: Interaction
     scattering_model::String
 
     # Constructor(s)
-    function Elastic_Leptons()
+    function Elastic_Collision()
         this = new()
-        this.name = "elastic_leptons"
+        this.name = "elastic_collision"
         this.interaction_types = Dict((Electron,Electron) => ["S"],(Positron,Positron) => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
@@ -57,12 +57,12 @@ end
 
 # Method(s)
 """
-    set_interaction_types(this::Elastic_Leptons,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
+    set_interaction_types(this::Elastic_Collision,interaction_types::Dict{Tuple{DataType,DataType},Vector{String}})
 
-To define the interaction types for Elastic_Leptons processes.
+To define the interaction types for Elastic_Collision processes.
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic leptons structure.
+- `this::Elastic_Collision` : elastic collisions structure.
 - `interaction_types::Dict{Tuple{DataType,DataType},Vector{String}}` : Dictionary of the interaction processes types, of the form (incident particle,outgoing particle) => associated list of interaction type, which can be:
     - `(Electron,Electron) => ["S"]` : elastic interaction of electrons.
     - `(Positron,Positron) => ["S"]` : elastic interaction of positrons.
@@ -72,21 +72,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Elastic_Leptons()
-julia> elastic_leptons.set_interaction_types( Dict((Positron,Positron) => ["S"]) ) # Elastic only for positrons
+julia> elastic_collisions = Elastic_Collision()
+julia> elastic_collisions.set_interaction_types( Dict((Positron,Positron) => ["S"]) ) # Elastic only for positrons
 ```
 """
-function set_interaction_types(this::Elastic_Leptons,interaction_types)
+function set_interaction_types(this::Elastic_Collision,interaction_types)
     this.interaction_types = interaction_types
 end
 
 """
-    set_model(this::Elastic_Leptons,model::String,is_KC::Bool=true)
+    set_model(this::Elastic_Collision,model::String,is_KC::Bool=true)
 
 To define the elastic scattering model.
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic leptons structure.
+- `this::Elastic_Collision` : elastic collisions structure.
 - `model::String` : model of elastic scattering:
     - `rutherford` : screened Rutherford cross-sections.
     - `boschini` : screened Mott cross-sections.
@@ -98,11 +98,11 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Elastic_Leptons()
-julia> elastic_leptons.set_model("rutherford")
+julia> elastic_collisions = Elastic_Collision()
+julia> elastic_collisions.set_model("rutherford")
 ```
 """
-function set_model(this::Elastic_Leptons,model::String,is_KC::Bool=false,is_SC::Bool=false)
+function set_model(this::Elastic_Collision,model::String,is_KC::Bool=false,is_SC::Bool=false)
     if lowercase(model) ∉ ["rutherford","boschini"] error("Unkown elastic model: $model.") end
     this.model = lowercase(model)
     this.is_kawrakow_correction = is_KC
@@ -110,12 +110,12 @@ function set_model(this::Elastic_Leptons,model::String,is_KC::Bool=false,is_SC::
 end
 
 """
-    set_transport_correction(this::Elastic_Leptons,is_ETC::Bool)
+    set_transport_correction(this::Elastic_Collision,is_ETC::Bool)
 
 Enable or not extended transport correcton.
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic leptons structure.
+- `this::Elastic_Collision` : elastic collisions structure.
 - `is_ETC::Bool` : Enable (true) or not (false) extended transport correcton.
 
 # Output Argument(s)
@@ -123,21 +123,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Elastic_Leptons()
-julia> elastic_leptons.is_ETC(false)
+julia> elastic_collisions = Elastic_Collision()
+julia> elastic_collisions.is_ETC(false)
 ```
 """
-function set_transport_correction(this::Elastic_Leptons,is_ETC::Bool)
+function set_transport_correction(this::Elastic_Collision,is_ETC::Bool)
     this.is_ETC = is_ETC
 end
 
 """
-    set_solver(this::Elastic_Leptons,solver::String)
+    set_solver(this::Elastic_Collision,solver::String)
 
 Dictate how the cross-sections is distributed to the Boltzmann and the Fokker-Planck operators.
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic leptons structure.
+- `this::Elastic_Collision` : elastic collisions structure.
 - `solver::String` :  model of elastic scattering:
     - `BTE` : the cross-sections are made to be used with the Boltzmann operator.
     - `FP` : the cross-sections are made to be used with the Fokker-Planck operator.
@@ -147,11 +147,11 @@ N/A
 
 # Examples
 ```jldoctest
-julia> elastic_leptons = Elastic_Leptons()
-julia> elastic_leptons.is_AFP(false)
+julia> elastic_collisions = Elastic_Collision()
+julia> elastic_collisions.is_AFP(false)
 ```
 """
-function set_solver(this::Elastic_Leptons,solver::String)
+function set_solver(this::Elastic_Collision,solver::String)
     if uppercase(solver) ∉ ["BTE","FP","BFP"] error("Unkown elastic model: $model.") end
     if uppercase(solver) ∈ ["FP","BFP"] this.is_AFP = true else this.is_AFP = false end
     this.solver = uppercase(solver)
@@ -159,13 +159,13 @@ function set_solver(this::Elastic_Leptons,solver::String)
 end
 
 """
-    in_distribution(this::Elastic_Leptons)
+    in_distribution(this::Elastic_Collision)
 
-Describe the energy discretization method for the incoming particle in the elastic lepton
+Describe the energy discretization method for the incoming particle in the elastic collision
 interaction.
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic lepton structure.
+- `this::Elastic_Collision` : elastic collision structure.
 
 # Output Argument(s)
 - `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
@@ -173,7 +173,7 @@ interaction.
 - `quadrature::String` : type of quadrature.
 
 """
-function in_distribution(this::Elastic_Leptons)
+function in_distribution(this::Elastic_Collision)
     is_dirac = false
     N = 8
     quadrature = "gauss-legendre"
@@ -181,13 +181,13 @@ function in_distribution(this::Elastic_Leptons)
 end
 
 """
-    out_distribution(this::Elastic_Leptons)
+    out_distribution(this::Elastic_Collision)
 
-Describe the energy discretization method for the outgoing particle in the elastic lepton
+Describe the energy discretization method for the outgoing particle in the elastic collision
 interaction.
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic lepton structure.
+- `this::Elastic_Collision` : elastic collision structure.
 
 # Output Argument(s)
 - `is_dirac::Bool` : boolean describing if a Dirac distribution is used.
@@ -195,7 +195,7 @@ interaction.
 - `quadrature::String` : type of quadrature.
 
 """
-function out_distribution(this::Elastic_Leptons)
+function out_distribution(this::Elastic_Collision)
     is_dirac = true
     N = 1
     quadrature = "dirac"
@@ -203,13 +203,13 @@ function out_distribution(this::Elastic_Leptons)
 end
 
 """
-    bounds(this::Elastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
+    bounds(this::Elastic_Collision,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
 
-Gives the integration energy bounds for the outgoing particle for elastic lepton
+Gives the integration energy bounds for the outgoing particle for elastic collision
 interaction. 
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic lepton structure.
+- `this::Elastic_Collision` : elastic collision structure.
 - `Ef⁻::Float64` : upper bound.
 - `Ef⁺::Float64` : lower bound.
 - `gi::Int64` : group of the incoming particle.
@@ -221,20 +221,20 @@ interaction.
 - `isSkip::Bool` : define if the integration is skipped or not.
 
 """
-function bounds(this::Elastic_Leptons,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
+function bounds(this::Elastic_Collision,Ef⁻::Float64,Ef⁺::Float64,gi::Int64,gf::Int64)
     if (gf != gi) isSkip = true else isSkip = false end # Elastic scattering only
     return Ef⁻,Ef⁺,isSkip
 end
 
 """
-    dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Particle,
+    dcs(this::Elastic_Collision,L::Int64,Ei::Float64,Z::Int64,particle::Particle,
     Ecutoff::Float64,iz::Int64)
 
-Gives the Legendre moments of the scattering cross-sections for elastic lepton
+Gives the Legendre moments of the scattering cross-sections for elastic collision
 interaction. 
 
 # Input Argument(s)
-- `this::Annihilation` : elastic lepton structure.
+- `this::Annihilation` : elastic collision structure.
 - `L::Int64` : Legendre truncation order.
 - `Ei::Float64` : incoming particle energy.
 - `Z::Int64` : atomic number.
@@ -246,18 +246,18 @@ interaction.
 - `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs(this::Elastic_Leptons,L::Int64,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
+function dcs(this::Elastic_Collision,L::Int64,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
     σℓ = mott(Z,Ei,particle,L,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)
     return σℓ
 end
 
 """
-    tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
+    tcs(this::Elastic_Collision,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64,iz::Int64)
 
-Gives the total cross-section for elastic lepton interaction. 
+Gives the total cross-section for elastic collision interaction. 
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic lepton structure.
+- `this::Elastic_Collision` : elastic collision structure.
 - `Ei::Float64` : incoming particle energy.
 - `Z::Int64` : atomic number.
 - `particle::Particle` : incoming particle.
@@ -268,23 +268,23 @@ Gives the total cross-section for elastic lepton interaction.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs(this::Elastic_Leptons,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
+function tcs(this::Elastic_Collision,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
     σt = mott(Z,Ei,particle,0,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)[1]
     return σt
 end
 
 """
-    acs(this::Elastic_Leptons)
+    acs(this::Elastic_Collision)
 
-Gives the absorption cross-section for elastic lepton interaction. 
+Gives the absorption cross-section for elastic collision interaction. 
 
 # Input Argument(s)
-- `this::Elastic_Leptons` : elastic lepton structure.
+- `this::Elastic_Collision` : elastic collision structure.
 
 # Output Argument(s)
 - `σt::Float64` : absorption cross-section.
 
 """
-function acs(this::Elastic_Leptons)
+function acs(this::Elastic_Collision)
     return 0
 end

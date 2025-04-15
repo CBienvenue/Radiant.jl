@@ -93,8 +93,8 @@ module Radiant
     radiant_src["structures/"] = [
         "Particle.jl",
         "Interaction.jl",
-        "Elastic_Leptons.jl",
-        "Inelastic_Leptons.jl",
+        "Elastic_Collision.jl",
+        "Inelastic_Collision.jl",
         "Bremsstrahlung.jl",
         "Compton.jl",
         "Pair_Production.jl",
@@ -146,7 +146,7 @@ module Radiant
     # Export objects
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
-    export Elastic_Leptons,Inelastic_Leptons,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
+    export Elastic_Collision,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
     export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit
 
 end

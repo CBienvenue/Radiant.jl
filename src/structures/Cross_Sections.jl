@@ -345,7 +345,7 @@ N/A
 ```jldoctest
 julia> cs = Cross_Sections()
 julia> cs.set_particles([electron,photon,positron])
-julia> cs.set_number_of_groups([80,20,80]) # 80 groups with leptons, 20 with photons
+julia> cs.set_number_of_groups([80,20,80]) # 80 groups with electrons and positrons, 20 with photons
 ```
 """
 function set_number_of_groups(this::Cross_Sections,number_of_groups::Union{Vector{Int64},Int64})
@@ -372,7 +372,7 @@ N/A
 ```jldoctest
 julia> cs = Cross_Sections()
 julia> cs.set_particles([electron,photon,positron])
-julia> cs.set_group_structure(["log","linear","log"]) # 80 groups with leptons, 20 with photons
+julia> cs.set_group_structure(["log","linear","log"]) # 80 groups with electrons and positrons, 20 with photons
 ```
 """
 function set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String})
@@ -414,7 +414,7 @@ N/A
 ```jldoctest
 julia> cs = Cross_Sections()
 julia> cs.set_particles([electron])
-julia> cs.set_interactions([Elastic_Leptons(),Inelastic_Leptons(),Bremsstrahlung(), Auger()])
+julia> cs.set_interactions([Elastic_Collision(),Inelastic_Collision(),Bremsstrahlung(), Auger()])
 ```
 """
 function set_interactions(this::Cross_Sections,interactions::Union{Vector{<:Interaction},<:Interaction})

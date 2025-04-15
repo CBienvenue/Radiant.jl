@@ -28,7 +28,7 @@ mutable struct Annihilation <: Interaction
     is_elastic::Bool
     is_subshells_dependant::Bool
     scattering_model::String
-    inelastic_lepton_model::Inelastic_Leptons
+    inelastic_collision_model::Inelastic_Collision
     bremsstrahlung_model::Bremsstrahlung
     pair_production_model::Pair_Production
 
@@ -45,7 +45,7 @@ mutable struct Annihilation <: Interaction
         this.is_elastic = false
         this.is_subshells_dependant = false
         this.scattering_model = "BTE"
-        this.inelastic_lepton_model = Inelastic_Leptons()
+        this.inelastic_collision_model = Inelastic_Collision()
         this.bremsstrahlung_model = Bremsstrahlung()
         this.pair_production_model = Pair_Production()
         return this
@@ -209,7 +209,7 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z:
     # Annihilation of positrons scattered under the cutoff from inelastic collisionnal interaction
     #----
     elseif type == "P_inel"
-        σa = this.inelastic_lepton_model.acs(Ei,Ec,Positron(),Z,Ein[end])
+        σa = this.inelastic_collision_model.acs(Ei,Ec,Positron(),Z,Ein[end])
         σℓ[1] += 2 * σa
 
     #----

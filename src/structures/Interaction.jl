@@ -202,9 +202,9 @@ function in_distribution_dispatch(interaction::Interaction)
         return in_distribution(interaction)
     elseif itype == Compton
         return in_distribution(interaction)
-    elseif itype == Elastic_Leptons
+    elseif itype == Elastic_Collision
         return in_distribution(interaction)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return in_distribution(interaction)
     elseif itype == Pair_Production
         return in_distribution(interaction)
@@ -242,9 +242,9 @@ function out_distribution_dispatch(interaction::Interaction,type::String)
         return out_distribution(interaction)
     elseif itype == Compton
         return out_distribution(interaction)
-    elseif itype == Elastic_Leptons
+    elseif itype == Elastic_Collision
         return out_distribution(interaction)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return out_distribution(interaction)
     elseif itype == Pair_Production
         return out_distribution(interaction)
@@ -291,9 +291,9 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec)
     elseif itype == Compton
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
-    elseif itype == Elastic_Leptons
+    elseif itype == Elastic_Collision
         return bounds(interaction,Ef⁻,Ef⁺,gi,gf)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec,Ui,particle)
     elseif itype == Pair_Production
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
@@ -349,9 +349,9 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
         return dcs(interaction,L,Ei,Ef,Z,incoming_particle,type,iz)
     elseif itype == Compton
         return dcs(interaction,L,Ei,Ef,type,Z,iz,δi,scattered_particle)
-    elseif itype == Elastic_Leptons
+    elseif itype == Elastic_Collision
         return dcs(interaction,L,Ei,Z,incoming_particle,Ein[end])
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return dcs(interaction,L,Ei,Ef,type,incoming_particle,Ui,Zi,Ti)
     elseif itype == Pair_Production
         return dcs(interaction,L,Ei,Ef,Z,type,iz,particles)
@@ -395,9 +395,9 @@ function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,
         return tcs(interaction,Ei,Z,Ec,particle,Eout)
     elseif itype == Compton
         return tcs(interaction,Ei,Z,Eout)
-    elseif itype == Elastic_Leptons
+    elseif itype == Elastic_Collision
         return tcs(interaction,Ei,Z,particle,Ecutoff)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return tcs(interaction,Ei,Ec,particle,Z)
     elseif itype == Pair_Production
         return tcs(interaction,Ei,Z,Eout)
@@ -439,9 +439,9 @@ function acs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,
         return acs(interaction,Ei,Z,Ec,particle,Ecutoff)
     elseif itype == Compton
         return acs(interaction,Ei,Z,Ecutoff)
-    elseif itype == Elastic_Leptons
+    elseif itype == Elastic_Collision
         return acs(interaction)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return acs(interaction,Ei,Ec,particle,Z,Ecutoff)
     elseif itype == Pair_Production
         return acs(interaction,Ei,Z,Eout)
@@ -480,7 +480,7 @@ function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return sp(interaction,Z,ωz,ρ,Ei,Ec,Eout,particle)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,particle)
     else
         error("Unknown interaction.")
@@ -503,7 +503,7 @@ function mt_dispatch(interaction::Interaction)
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return mt(interaction)
-    elseif itype == Inelastic_Leptons
+    elseif itype == Inelastic_Collision
         return mt(interaction)
     else
         error("Unknown interaction.")
