@@ -28,6 +28,7 @@ mutable struct Inelastic_Collision <: Interaction
     is_subshells_dependant::Bool
     is_shell_correction::Bool
     is_focusing_møller::Bool
+    is_hydrogenic_distribution_term::Bool
     density_correction::String
     scattering_model::String
 
@@ -43,7 +44,8 @@ mutable struct Inelastic_Collision <: Interaction
         this.is_AFP = true
         this.is_AFP_decomposition = false
         this.is_elastic = false
-        this.is_focusing_møller = true
+        this.is_focusing_møller = false
+        this.is_hydrogenic_distribution_term = false
         this.set_is_subshells_dependant(true)
         this.set_is_shell_correction(true)
         this.set_scattering_model("BFP")
@@ -315,7 +317,7 @@ function dcs(this::Inelastic_Collision,L::Int64,Ei::Float64,Ef::Float64,type::St
     # Close collisions
     if W ≥ 0
         if is_electron(particle)
-            σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller)
+            σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
         elseif is_positron(particle)
             σs += bhabha(Zi,Ei,W,Ui)
         else
@@ -351,7 +353,7 @@ function tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
 
     # Close collisions
     if is_electron(particle)
-        σt = integrate_moller(Z,Ei,0,Ei-Ec,Ei,this.is_focusing_møller)
+        σt = integrate_moller(Z,Ei,0,Ei-Ec,Ei,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
         σt = integrate_bhabha(Z,Ei,0,Ei-Ec,Ei)
     else
@@ -381,7 +383,7 @@ function acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
 
     # Close collisions
     if is_electron(particle)
-        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei,is_focusing_møller)
+        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
         σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei)
     else
@@ -421,7 +423,7 @@ function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::
     Nz = length(Z)
     for i in range(1,Nz)
         if is_electron(particle)
-            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,Ei)
+            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,Ei,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
         elseif is_positron(particle)
             Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_bhabha(Z[i],Ei,1,Ei-Ec,Ei)
         end
