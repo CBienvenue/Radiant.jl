@@ -8,6 +8,8 @@ Gives the Møller differential cross-sections.
 - `Ei::Float64` : incoming particle energy.
 - `W::Float64` : energy lost by the incoming electron.
 - `Ui::Float64` : binding energy of the electron(s).
+- `Ti::Vector{Float64}`: mean kinetic energy per subshell.
+- `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 
 # Output Argument(s)
 - `σs::Float64` : Møller differential cross-sections.
@@ -21,22 +23,24 @@ Gives the Møller differential cross-sections.
   electron transport used in Monte Carlo codes.
 
 """
-function moller(Zi::Real,Ei::Float64,W::Float64,Ui::Float64=0.0)
+function moller(Zi::Real,Ei::Float64,W::Float64,Ui::Float64=0.0,Ti::Float64=0.0,is_focusing_møller::Bool=false)
 
     # Varibles
     rₑ = 2.81794092E-13       # (in cm)
     β² = Ei*(Ei+2)/(Ei+1)^2
+    if (is_focusing_møller) P = moller_focusing_term(Ei,Ui,Ti) else P = 1 end
     
     # Møller formula
     F = 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui))
-    σs = 2*π*rₑ^2/β² * Zi * F
+    σs = 2*π*rₑ^2/β² * Zi * P * F
 
     return σs
 end
 
 
 """
-    integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=1e-5,Wmax::Float64=Ei)
+    integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=1e-5,Wmax::Float64=Ei,
+    is_focusing_møller::Bool=false)
 
 Gives the integration of the Møller differential cross-sections multiplied by Wⁿ.
 
@@ -46,6 +50,7 @@ Gives the integration of the Møller differential cross-sections multiplied by W
 - `n::Int64` : order of the energy-loss factor.
 - `Wmin::Float64` : minimum energy lost by the incoming electron.
 - `Wmax::Float64` : maximum energy lost by the incoming electron.
+- `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 
 # Output Argument(s)
 - `σn::Float64` : integrated Møller cross-sections.
@@ -59,18 +64,18 @@ Gives the integration of the Møller differential cross-sections multiplied by W
   electron transport used in Monte Carlo codes.
 
 """
-function integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=0.0,Wmax::Float64=Ei/2)
-    Nshells,Zi,Ui,_,_,_ = electron_subshells(Z)
+function integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=0.0,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false)
+    Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z)
     σn = 0
     for δi in range(1,Nshells)
-        σn += Zi[δi] * integrate_moller_per_subshell(Z,Ei,n,Ui[δi],Wmin,Wmax)
+        σn += Zi[δi] * integrate_moller_per_subshell(Ei,n,Ui[δi],Ti[δi],Wmin,Wmax,is_focusing_møller)
     end
     return σn
 end
 
 """
-    integrate_moller_per_subshell(Z::Int64,Ei::Float64,n::Int64,Ui::Float64,
-    Wmin::Float64=1e-5,Wmax::Float64=Ei)
+    integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,
+    Wmin::Float64=Ui,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false)
 
 Gives the integration of the Møller differential cross-sections for an electron with a given
 binding energy, multiplied by Wⁿ.
@@ -80,8 +85,10 @@ binding energy, multiplied by Wⁿ.
 - `Ei::Float64` : incoming particle energy.
 - `n::Int64` : order of the energy-loss factor.
 - `Ui::Float64` : binding energy of the subshell.
+- `Ti::Vector{Float64}`: mean kinetic energy per subshell.
 - `Wmin::Float64` : minimum energy lost by the incoming electron.
 - `Wmax::Float64` : maximum energy lost by the incoming electron.
+- `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 
 # Output Argument(s)
 - `σni::Float64` : integrated Møller cross-sections in a given subshell.
@@ -95,11 +102,12 @@ binding energy, multiplied by Wⁿ.
   electron transport used in Monte Carlo codes.
 
 """
-function integrate_moller_per_subshell(Z::Int64,Ei::Float64,n::Int64,Ui::Float64,Wmin::Float64=Ui,Wmax::Float64=Ei/2)
+function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,Wmin::Float64=Ui,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false)
 
     # Varibles
     rₑ = 2.81794092E-13       # (in cm)
     β² = Ei*(Ei+2)/(Ei+1)^2
+    if (is_focusing_møller) P = moller_focusing_term(Ei,Ui,Ti) else P = 1 end
 
     # Compute the Møller cross-section per subshell
     σni = 0
@@ -116,7 +124,7 @@ function integrate_moller_per_subshell(Z::Int64,Ei::Float64,n::Int64,Ui::Float64
             error("Integral is given only for n=0 or n=1.")
         end
     end
-    σni *= 2*π*rₑ^2/β²
+    σni *= 2*π*rₑ^2/β² * P
     return σni
 end
 
@@ -150,4 +158,27 @@ function angular_moller(Ei::Float64,Ef::Float64,L::Int64)
     Pℓμ = legendre_polynomials(L,μ)
     for ℓ in range(0,L) Wℓ[ℓ+1] += Pℓμ[ℓ+1] end
     return Wℓ
+end
+
+"""
+    angular_moller(Ei::Float64,Ef::Float64,L::Int64)
+
+Gives the Møller focusing term.
+
+# Input Argument(s)
+- `Ei::Float64` : incoming electron energy.
+- `Ui::Vector{Float64}`: binding energy per subshell.
+- `Ti::Vector{Float64}`: mean kinetic energy per subshell.
+
+# Output Argument(s)
+- `P::Float64` : Møller focusing term.
+
+# Reference(s)
+- Seltzer (1988), Cross Sections for Bremsstrahlung Production and Electron-Impact
+  Ionization.
+- Perkins (1989), The Livermore electron impact ionization data base.
+
+"""
+function moller_focusing_term(Ei::Float64,Ui::Float64,Ti::Float64)
+    return Ei/(Ei+Ui+Ti)
 end

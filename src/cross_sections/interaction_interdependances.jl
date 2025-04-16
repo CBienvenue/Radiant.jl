@@ -80,6 +80,20 @@ for interaction_i in interactions
             interaction_i.is_positron = false
         end
     end
-    
+
+    #----
+    # Relaxation
+    #----
+    if typeof(interaction_i) == Relaxation
+        for interaction_j in interactions 
+
+            # Relaxation due to ionization following inelastic collision
+            if typeof(interaction_j) == Inelastic_Collision interaction_i.inelastic_collision_model = interaction_j end
+
+            # Relaxation due to ionization following photoelectric
+            if typeof(interaction_j) == Photoelectric interaction_i.photoelectric_model = interaction_j end
+
+        end
+    end
 end
 end

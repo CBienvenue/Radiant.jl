@@ -16,6 +16,7 @@ Gives the relaxation (fluorescence and Auger electron production) cross-section.
 - `produced_particle::Particle` : particle produced following relaxation cascades.
 - `ηmin::Float64 = 0.001` : minimum probability of the production of specific relaxation 
   particle production following electron cascades.
+- `σ_per_subshell::Float64` : absorption cross-section associated with the subshell.
 
 # Output Argument(s)
 - `σs::Float64` : relaxation cross-sections.
@@ -27,7 +28,7 @@ Gives the relaxation (fluorescence and Auger electron production) cross-section.
   photon-electron-positron cross-sections for the Boltzmann Fokker-Planck equation.
 
 """
-function relaxation(Z::Int64,Ei::Float64,Ecutoff::Float64,Ec::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,incoming_particle::Particle,produced_particle::Particle,ηmin::Float64=0.01)
+function relaxation(Z::Int64,Ecutoff::Float64,Ef⁻::Float64,Ef⁺::Float64,δi::Int64,produced_particle::Particle,σ_per_subshell::Float64,ηmin::Float64=0.01)
 
     #----
     # Compute and save in cache, if not already in cache
@@ -51,28 +52,6 @@ function relaxation(Z::Int64,Ei::Float64,Ecutoff::Float64,Ec::Float64,Ef⁻::Flo
     # Extract data from cache
     #----
     data = cache_radiant[]["relaxation_data"]
-
-    #----
-    # Extract data
-    #----
-    _,Zi,Ui,_,_,_ = electron_subshells(Z)
-    σ_per_subshell = 0
-
-    # Inelastic collisionnal electron scattering
-    if is_electron(incoming_particle)
-        σ_per_subshell += Zi[δi] * integrate_moller_per_subshell(Z,Ei,0,Ui[δi],Ei-Ec,Ei)
-
-    # Inelastic collisionnal positron scattering
-    elseif is_positron(incoming_particle)
-        σ_per_subshell += Zi[δi] * integrate_bhabha_per_subshell(Z,Ei,0,Ui[δi],Ei-Ec,Ei)
-
-    # Photoelectric
-    elseif is_photon(incoming_particle)
-        σ_per_subshell += photoelectric_per_subshell(Z,Ei,δi)
-
-    else
-        error("Unknown incoming particle.")
-    end
 
     #----
     # Fluorescence production cross section

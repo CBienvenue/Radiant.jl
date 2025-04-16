@@ -64,7 +64,7 @@ function integrate_bhabha(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=1e-5,Wmax:
   Nshells,Zi,Ui,_,_,_ = electron_subshells(Z)
   σn = 0
   for δi in range(1,Nshells)
-      σn += Zi[δi] * integrate_moller_per_subshell(Z,Ei,n,Ui[δi],Wmin,Wmax)
+      σn += Zi[δi] * integrate_bhabha_per_subshell(Z,Ei,n,Ui[δi],Wmin,Wmax)
   end
   return σn
 end

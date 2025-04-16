@@ -27,6 +27,7 @@ mutable struct Inelastic_Collision <: Interaction
     is_elastic::Bool
     is_subshells_dependant::Bool
     is_shell_correction::Bool
+    is_focusing_møller::Bool
     density_correction::String
     scattering_model::String
 
@@ -34,7 +35,7 @@ mutable struct Inelastic_Collision <: Interaction
     function Inelastic_Collision()
         this = new()
         this.name = "Inelastic_Collision"
-        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"])
+        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"],(Proton,Proton) => ["S"],(Alpha,Alpha) => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.set_density_correction("fano")
@@ -42,6 +43,7 @@ mutable struct Inelastic_Collision <: Interaction
         this.is_AFP = true
         this.is_AFP_decomposition = false
         this.is_elastic = false
+        this.is_focusing_møller = true
         this.set_is_subshells_dependant(true)
         this.set_is_shell_correction(true)
         this.set_scattering_model("BFP")
@@ -313,7 +315,7 @@ function dcs(this::Inelastic_Collision,L::Int64,Ei::Float64,Ef::Float64,type::St
     # Close collisions
     if W ≥ 0
         if is_electron(particle)
-            σs += moller(Zi,Ei,W,Ui)
+            σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller)
         elseif is_positron(particle)
             σs += bhabha(Zi,Ei,W,Ui)
         else
@@ -349,7 +351,7 @@ function tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
 
     # Close collisions
     if is_electron(particle)
-        σt = integrate_moller(Z,Ei,0,Ei-Ec,Ei)
+        σt = integrate_moller(Z,Ei,0,Ei-Ec,Ei,this.is_focusing_møller)
     elseif is_positron(particle)
         σt = integrate_bhabha(Z,Ei,0,Ei-Ec,Ei)
     else
@@ -379,7 +381,7 @@ function acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
 
     # Close collisions
     if is_electron(particle)
-        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei)
+        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei,is_focusing_møller)
     elseif is_positron(particle)
         σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei)
     else

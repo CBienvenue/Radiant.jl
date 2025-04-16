@@ -94,7 +94,7 @@ for gi in range(1,Ngi)
         end
 
         # Scattering cross sections
-        if type != "A"
+        if type ∈ ["S","P"] && scattering_model != "FP"
             𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
             if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
             for gf in range(1,Ngf)
@@ -104,7 +104,7 @@ for gi in range(1,Ngi)
         end
 
         # Absorption and total cross sections
-        if type ∈ ["S","A"]
+        if type ∈ ["S","A"] && scattering_model != "FP"
             Σtᵢ = 0.0
             for i in range(1,Nz)
                 Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out,ρ) * nuclei_density(Z[i],ρ) * ωz[i]
@@ -116,7 +116,7 @@ for gi in range(1,Ngi)
         end
 
         # Momentum transfer
-        if is_AFP && type == "S"
+        if is_AFP && type == "S" && scattering_model != "BTE"
             T[gi] = 0.0
             for i in range(1,Nz)
                 T[gi] += w[ni]/2 * mt_dispatch(interaction) * nuclei_density(Z[i],ρ) * ωz[i]
@@ -125,14 +125,14 @@ for gi in range(1,Ngi)
         end
 
         # Stopping power
-        if is_CSD && type == "S"
+        if is_CSD && type == "S" && scattering_model != "BTE"
             S[gi] += w[ni]/2 * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out)
             if is_dirac S[gi] ./= ΔEi end
         end
     end
 
     # Stopping power at energy group boundaries
-    if is_CSD && type == "S"
+    if is_CSD && type == "S" && scattering_model != "BTE"
         Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ei⁺,incoming_particle,E_out)
         if (gi == Ngi) Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,0.0,incoming_particle,E_out) end
     end

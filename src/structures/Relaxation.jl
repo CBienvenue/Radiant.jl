@@ -37,6 +37,8 @@ mutable struct Relaxation <: Interaction
     ΔE::Vector{Vector{Vector{Float64}}}
     ηmin::Float64
     scattering_model::String
+    inelastic_collision_model::Union{Inelastic_Collision,Missing}
+    photoelectric_model::Union{Photoelectric,Missing}
 
     # Constructor(s)
     function Relaxation(interaction_types = Dict((Photon,Electron) => ["P"],(Electron,Electron) => ["P"],(Positron,Electron) => ["P"],(Photon,Photon) => ["P"],(Electron,Photon) => ["P"],(Positron,Photon) => ["P"]))
@@ -52,6 +54,8 @@ mutable struct Relaxation <: Interaction
         this.is_subshells_dependant = true
         this.set_minimum_probability(0.001)
         this.scattering_model = "BTE"
+        this.inelastic_collision_model = missing
+        this.photoelectric_model = missing
         return this
     end
 end
@@ -203,11 +207,50 @@ Gives the Legendre moments of the scattering cross-sections for relaxation produ
 """
 function dcs(this::Relaxation,L::Int64,Ei::Float64,Ecutoff::Float64,Ec::Float64,Z::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64,incoming_particle::Particle,produced_particle::Particle)
 
-    # Relaxation cross-section
-    σs = relaxation(Z,Ei,Ecutoff,Ec,Ef⁻,Ef⁺,δi,incoming_particle,produced_particle,this.ηmin)
-
-    # Legendre moments of the cross-section (isotropic)
+    # Initialization
     σℓ = zeros(L+1)
-    σℓ[1] = σs
+    is_relaxation = false
+    if is_positron(incoming_particle) || is_electron(incoming_particle)
+        if ~ismissing(this.inelastic_collision_model) && this.inelastic_collision_model.is_subshells_dependant
+            is_relaxation = true
+        end
+    elseif is_photon(incoming_particle)
+        if ~ismissing(this.photoelectric_model) && this.photoelectric_model.is_subshells_dependant
+            is_relaxation = true
+        end
+    else
+        error("Unknown interaction")
+    end
+
+    if is_relaxation
+
+        # Compute absorption cross-section
+        _,Zi,Ui,Ti,_,_ = electron_subshells(Z)
+        σ_per_subshell = 0
+
+        # Inelastic collisionnal electron scattering
+        if is_electron(incoming_particle)
+            σ_per_subshell += Zi[δi] * integrate_moller_per_subshell(Ei,0,Ui[δi],Ti[δi],Ei-Ec,Ei,this.inelastic_collision_model.is_focusing_møller)
+
+        # Inelastic collisionnal positron scattering
+        elseif is_positron(incoming_particle)
+            σ_per_subshell += Zi[δi] * integrate_bhabha_per_subshell(Z,Ei,0,Ui[δi],Ei-Ec,Ei)
+
+        # Photoelectric
+        elseif is_photon(incoming_particle)
+            σ_per_subshell += photoelectric_per_subshell(Z,Ei,δi)
+
+        else
+            error("Unknown incoming particle.")
+        end
+
+        # Relaxation cross-section
+        σs = relaxation(Z,Ecutoff,Ef⁻,Ef⁺,δi,produced_particle,σ_per_subshell,this.ηmin)
+
+        # Legendre moments of the cross-section (isotropic)
+        σℓ[1] = σs
+
+    end
+
     return σℓ
 end
