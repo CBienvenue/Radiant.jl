@@ -29,6 +29,7 @@ mutable struct Inelastic_Collision <: Interaction
     is_shell_correction::Bool
     is_focusing_møller::Bool
     is_hydrogenic_distribution_term::Bool
+    is_distant_collision::Bool
     density_correction::String
     scattering_model::String
 
@@ -286,49 +287,61 @@ interaction.
 
 # Input Argument(s)
 - `this::Inelastic_Collision` : inelastic collision structure.
+- `Z::Int64` : atomic number.
 - `L::Int64` : Legendre truncation order.
 - `Ei::Float64` : incoming particle energy.
 - `Ef::Float64` : outgoing particle energy.
 - `type::String` : type of interaction.
 - `particle::Particle` : incoming particle.
+- `δi::Int64` : subshell index.
 - `Ui::Float64` : binding energy of the subshell.
 - `Zi::Int64` : number of electrons in the subshell.
 - `Ti::Float64` : mean kinetic energy of electrons in the subshell.
+- `ri::Float64` : average radius per subshell.
 
 # Output Argument(s)
 - `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs(this::Inelastic_Collision,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,Ui::Float64,Zi::Real,Ti::Float64)
+function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64)
 
+    #----
     # Initialization
+    #----
     σs = 0.0
     σℓ = zeros(L+1)
     if type == "S"
-        Ep = Ef
-        W = (Ei-Ui)-Ep
+        E⁺ = Ef
+        E⁻ = Ei-Ui-E⁺
+        W = E⁻+Ui
     elseif type == "P"
-        W = Ef
-        Ep = (Ei-Ui)-W
+        E⁻ = Ef
+        E⁺ = Ei-Ui-E⁻
+        W = E⁻+Ui
     else
         error("Unknown type")
     end
+    if W < 0 return σℓ end
 
+    #----
     # Close collisions
-    if W ≥ 0
-        if is_electron(particle)
-            σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
-        elseif is_positron(particle)
-            σs += bhabha(Zi,Ei,W,Ui)
-        else
-            error("Unknown particle")
-        end
+    #----
+    if is_electron(particle)
+        σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+    elseif is_positron(particle)
+        σs += bhabha(Zi,Ei,W)
+    else
+        error("Unknown particle")
     end
 
+    #----
     # Compute the angular distribution
+    #----
     Wℓ = angular_moller(Ei,Ef,L)
 
+    #----
     # Compute the Legendre moments of the cross-section
+    #----
     for ℓ in range(0,L) σℓ[ℓ+1] += Wℓ[ℓ+1] * σs end
     return σℓ
 end
@@ -344,6 +357,7 @@ Gives the total cross-section for inelastic collision interaction.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `particle::Particle` : incoming particle.
 - `Z::Int64` : atomic number.
+- `Eout::Vector{Float64}` : energy boundaries associated with outgoing particles.
 
 # Output Argument(s)
 - `σt::Float64` : total cross-section.
@@ -351,14 +365,22 @@ Gives the total cross-section for inelastic collision interaction.
 """
 function tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64)
 
+    #----
+    # Initialization
+    #----
+    σt = 0
+
+    #----
     # Close collisions
+    #----
     if is_electron(particle)
-        σt = integrate_moller(Z,Ei,0,Ei-Ec,Ei,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+        σt += integrate_moller(Z,Ei,0,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
-        σt = integrate_bhabha(Z,Ei,0,Ei-Ec,Ei)
+        σt += integrate_bhabha(Z,Ei,0,Ei-Ec)
     else
         error("Unknown particle")
     end
+
     return σt
 end
 
@@ -381,11 +403,13 @@ Gives the absorption cross-section for inelastic collision interaction.
 """
 function acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particle,Z::Int64,Ecutoff::Float64)
 
+    #----
     # Close collisions
+    #----
     if is_electron(particle)
-        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
-        σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff),Ei)
+        σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff))
     else
         error("Unknown particle")
     end
@@ -408,6 +432,7 @@ Gives the stopping power for inelastic collision interaction.
 - `Ei::Float64` : incoming particle energy.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `particle::Particle` : incoming particle.
+- `Eout::Vector{Float64}` : energy boundaries associated with outgoing particles.
 
 # Output Argument(s)
 - `S::Float64` : stopping power.
@@ -422,10 +447,12 @@ function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::
     Sc = 0
     Nz = length(Z)
     for i in range(1,Nz)
+
+        # Close collision
         if is_electron(particle)
-            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,Ei,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
         elseif is_positron(particle)
-            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_bhabha(Z[i],Ei,1,Ei-Ec,Ei)
+            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_bhabha(Z[i],Ei,1,Ei-Ec)
         end
     end
 

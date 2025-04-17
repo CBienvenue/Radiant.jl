@@ -107,7 +107,7 @@ for gi in range(1,Ngi)
         if type ∈ ["S","A"] && scattering_model != "FP"
             Σtᵢ = 0.0
             for i in range(1,Nz)
-                Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out,ρ) * nuclei_density(Z[i],ρ) * ωz[i]
+                Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out) * nuclei_density(Z[i],ρ) * ωz[i]
             end
             if is_dirac Σtᵢ /= ΔEi end
             Σt[gi] += Σtᵢ

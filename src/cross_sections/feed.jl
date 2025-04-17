@@ -59,7 +59,7 @@ Nz = length(Z)
 for i in range(1,Nz)
 
     # Loop over subshells
-    Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z[i],~is_subshells)
+    Nshells,Zi,Ui,Ti,ri,_ = electron_subshells(Z[i],~is_subshells)
     for gf in range(1,Ng), δi in range(1,Nshells)
         
         # Final energy group
@@ -77,7 +77,7 @@ for i in range(1,Nz)
             if (is_elastic) Ef = Ei else Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2 end
 
             # Compute Legendre angular flux moments
-            Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Z,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],Ec,incoming_particle,ρ) * nuclei_density(Z[i],ρ) * ωz[i]
+            Σsᵢ = ΔEf .* w[n]/2 .* dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Ef⁻,Ef⁺,δi,Ui[δi],Zi[δi],Ti[δi],ri[δi],Ec,incoming_particle) * nuclei_density(Z[i],ρ) * ωz[i]
             if is_dirac Σsᵢ /= ΔEf  end
             𝓕i .+= Σsᵢ
             𝓕iₑ += Σsᵢ[1] * (Ef+ΔQ)

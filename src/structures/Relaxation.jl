@@ -230,11 +230,11 @@ function dcs(this::Relaxation,L::Int64,Ei::Float64,Ecutoff::Float64,Ec::Float64,
 
         # Inelastic collisionnal electron scattering
         if is_electron(incoming_particle)
-            σ_per_subshell += Zi[δi] * integrate_moller_per_subshell(Ei,0,Ui[δi],Ti[δi],Ei-Ec,Ei,this.inelastic_collision_model.is_focusing_møller,this.inelastic_collision_model.is_hydrogenic_distribution_term)
+            σ_per_subshell += Zi[δi] * integrate_moller_per_subshell(Ei,0,Ui[δi],Ti[δi],Ei-Ec,this.inelastic_collision_model.is_focusing_møller,this.inelastic_collision_model.is_hydrogenic_distribution_term)
 
         # Inelastic collisionnal positron scattering
         elseif is_positron(incoming_particle)
-            σ_per_subshell += Zi[δi] * integrate_bhabha_per_subshell(Z,Ei,0,Ui[δi],Ei-Ec,Ei)
+            σ_per_subshell += Zi[δi] * integrate_bhabha_per_subshell(Z,Ei,0,Ui[δi],Ei-Ec)
 
         # Photoelectric
         elseif is_photon(incoming_particle)

@@ -327,13 +327,13 @@ Gives the Legendre moments of the scattering cross-sections.
 - `iz::Int64` : index of the element in the material.
 - `particles::Vector{Particle}` : list of particles.
 - `Ein::Vector{Float64}` : energy boundaries associated with the incoming particle.
-- `vec_Z::Vector{Int64}` : atomic numbers of the elements in the material.
 - `Ef⁻::Float64` : upper bound of the outgoing particle group.
 - `Ef⁺::Float64` : lower bound of the outgoing particle group.
 - `δi::Int64` : subshell index.
 - `Ui::Float64` : binding energy of the electron on the subshell.
 - `Zi::Real` : mean number of electron on the subshell.
 - `Ti::Float64` : mean kinetic energy of the electron on the subshell.
+- `ri::Float64` : average radius per subshell.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `incoming_particle::Particle` : incoming particle.
 
@@ -341,7 +341,7 @@ Gives the Legendre moments of the scattering cross-sections.
 - `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},vec_Z::Vector{Int64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,Ec::Float64,incoming_particle::Particle,ρ::Float64)
+function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,Ec::Float64,incoming_particle::Particle)
     itype = typeof(interaction)
     if itype == Annihilation
         return dcs(interaction,L,Ei,Ef,type,Z,Ein,Ec)
@@ -352,7 +352,7 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
     elseif itype == Elastic_Collision
         return dcs(interaction,L,Ei,Z,incoming_particle,Ein[end])
     elseif itype == Inelastic_Collision
-        return dcs(interaction,L,Ei,Ef,type,incoming_particle,Ui,Zi,Ti)
+        return dcs(interaction,Z,L,Ei,Ef,type,incoming_particle,δi,Ui,Zi,Ti,ri)
     elseif itype == Pair_Production
         return dcs(interaction,L,Ei,Ef,Z,type,iz,particles)
     elseif itype == Photoelectric
@@ -387,7 +387,7 @@ Gives the total cross-section.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},ρ::Float64)
+function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64})
     itype = typeof(interaction)
     if itype == Annihilation
         return tcs(interaction,Ei,Z)

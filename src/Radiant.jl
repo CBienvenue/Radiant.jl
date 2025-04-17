@@ -136,7 +136,8 @@ module Radiant
         "one_space.jl",
         "cache.jl",
         "find_package_root.jl",
-        "python_method_notation.jl"
+        "python_method_notation.jl",
+        "bessel.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end

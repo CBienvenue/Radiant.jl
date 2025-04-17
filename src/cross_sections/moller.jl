@@ -35,12 +35,10 @@ function moller(Zi::Real,Ei::Float64,W::Float64,Ui::Float64=0.0,Ti::Float64=0.0,
     if (is_hydrogenic_distribution_term) G = moller_hydrogenic_distribution_term(Ei,W,Ui,Ti) else G = 0 end
     
     # Møller formula
-    F = 1/(W+Ui)^2 + 1/(Ei-W)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/((Ei-W)*(W+Ui)) + G
+    F = 1/W^2 + 1/(Ei-W+Ui)^2 + 1/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * 1/(W*(Ei-W+Ui)) + G
     σs = 2*π*rₑ^2/β² * Zi * P * F
-
     return σs
 end
-
 
 """
     integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=1e-5,Wmax::Float64=Ei,
@@ -52,8 +50,7 @@ Gives the integration of the Møller differential cross-sections multiplied by W
 - `Zi::Real` : number of electron(s).
 - `Ei::Float64` : incoming particle energy.
 - `n::Int64` : order of the energy-loss factor.
-- `Wmin::Float64` : minimum energy lost by the incoming electron.
-- `Wmax::Float64` : maximum energy lost by the incoming electron.
+- `E⁻min::Float64` : minimum energy of the knock-on electron.
 - `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 - `is_hydrogenic_distribution_term::Bool`: boolean to enable or not the hydrogenic
   distribution term.
@@ -70,11 +67,11 @@ Gives the integration of the Møller differential cross-sections multiplied by W
   electron transport used in Monte Carlo codes.
 
 """
-function integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=0.0,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
+function integrate_moller(Z::Int64,Ei::Float64,n::Int64,E⁻min::Float64=0.0,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
     Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z)
     σn = 0
     for δi in range(1,Nshells)
-        σn += Zi[δi] * integrate_moller_per_subshell(Ei,n,Ui[δi],Ti[δi],Wmin,Wmax,is_focusing_møller,is_hydrogenic_distribution_term)
+        σn += Zi[δi] * integrate_moller_per_subshell(Ei,n,Ui[δi],Ti[δi],E⁻min,is_focusing_møller,is_hydrogenic_distribution_term)
     end
     return σn
 end
@@ -84,7 +81,7 @@ end
     Wmin::Float64=Ui,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false)
 
 Gives the integration of the Møller differential cross-sections for an electron with a given
-binding energy, multiplied by Wⁿ.
+binding energy, multiplied by (W+Ui)ⁿ.
 
 # Input Argument(s)
 - `Zi::Real` : number of electron(s).
@@ -92,8 +89,7 @@ binding energy, multiplied by Wⁿ.
 - `n::Int64` : order of the energy-loss factor.
 - `Ui::Float64` : binding energy of the subshell.
 - `Ti::Vector{Float64}`: mean kinetic energy per subshell.
-- `Wmin::Float64` : minimum energy lost by the incoming electron.
-- `Wmax::Float64` : maximum energy lost by the incoming electron.
+- `E⁻min::Float64` : minimum energy of the knock-on electron.
 - `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 - `is_hydrogenic_distribution_term::Bool`: boolean to enable or not the hydrogenic
   distribution term.
@@ -110,7 +106,7 @@ binding energy, multiplied by Wⁿ.
   electron transport used in Monte Carlo codes.
 
 """
-function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,Wmin::Float64=Ui,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
+function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,E⁻min::Float64=0.0,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
 
     # Varibles
     rₑ = 2.81794092E-13       # (in cm)
@@ -119,15 +115,15 @@ function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::
 
     # Compute the Møller cross-section per subshell
     σni = 0
-    W⁺ = min((Ei-Ui)/2,Wmax)
-    W⁻ = max(Ui,Wmin)
+    W⁺ = (Ei+Ui)/2
+    W⁻ = E⁻min+Ui
     if W⁺ > W⁻
-        if (is_hydrogenic_distribution_term) G = integrate_moller_hydrogenic_distribution_term(n,Ei,Ui,Ti,W⁻,W⁺) else G = 0 end
+        if (is_hydrogenic_distribution_term) G = integrate_moller_hydrogenic_distribution_term(n,Ei,Ui,Ti,E⁻min) else G = 0 end
         if n == 0
-            J₀(W) = -1/(W+Ui) + 1/(Ei-W) + W/(Ei+1)^2 - (2*Ei+1)/(Ei+1)^2 * (log(W+Ui)-log(Ei-W))/(Ei+Ui)
+            J₀(W) = -1/W + 1/(Ei-W+Ui) +  W/(Ei+1)^2 + (2*Ei+1)/((Ei+1)^2*(Ei+Ui))*(log(Ei-W+Ui)-log(W))
             σni += (J₀(W⁺) - J₀(W⁻)) + G
         elseif n == 1
-            J₁(W) = log(W+Ui) + log(Ei-W) + (Ei+Ui)/(Ei-W) + W*(W+2*Ui)/(2*(Ei+1)^2) + (2*Ei+1)/(Ei+1)^2 * log(Ei-W)
+            J₁(W) = log(W) + log(Ei-W+Ui) + (Ei+Ui)/(Ei-W+Ui) + W^2/(2*(Ei+1)^2) + (2*Ei+1)/(Ei+1)^2 * log(Ei-W+Ui)
             σni += (J₁(W⁺) - J₁(W⁻)) + G
         else
             error("Integral is given only for n=0 or n=1.")
@@ -215,27 +211,29 @@ electron velocities.
 
 """
 function moller_hydrogenic_distribution_term(Ei::Float64,W::Float64,Ui::Float64,Ti::Float64)
-	y = W/Ti
-	Gi = 8*Ti/(3*π) * (1/(W+Ui)^3 + 1/(Ei-W)^3) * (atan(sqrt(y)) + sqrt(y)*(y-1)/(y+1)^2)
+	y = (W-Ui)/Ti
+	Gi = 8*Ti/(3*π) * (1/W^3 + 1/(Ei+Ui-W)^3) * (atan(sqrt(y)) + sqrt(y)*(y-1)/(y+1)^2)
 	return Gi
 end
 
 
 """
-    integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,Ti::Float64,Wmin::Float64=0.0,Wmax::Float64=(Ei-Ui)/2)
+    integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,
+    Ti::Float64,E⁻min::Float64=0.0)
 
-Gives the integrated Møller term accounting for the isotropic hydrogenic distribution of orbital
-electron velocities, multiplied by Wⁿ.
+Gives the integrated Møller term accounting for the isotropic hydrogenic distribution of 
+orbital electron velocities, multiplied by Wⁿ.
 
 # Input Argument(s)
 - `Ei::Float64` : incoming electron energy.
 - `W::Float64` : energy lost by the incoming electron.
-- `Ui::Vector{Float64}`: binding energy per subshell.
-- `Ti::Vector{Float64}`: mean kinetic energy per subshell.
+- `Ui::Float64`: binding energy per subshell.
+- `Ti::Float64`: mean kinetic energy per subshell.
+- `E⁻min::Float64` : minimum energy of the knock-on electron.
 
 # Output Argument(s)
-- `Gi::Float64` : integrated Møller term accounting for the isotropic hydrogenic distribution of orbital
-  electron velocities.
+- `Gi::Float64` : integrated Møller term accounting for the isotropic hydrogenic
+  distribution of orbital electron velocities.
 
 # Reference(s)
 - Seltzer (1988), Cross Sections for Bremsstrahlung Production and Electron-Impact
@@ -243,33 +241,32 @@ electron velocities, multiplied by Wⁿ.
 - Perkins (1989), The Livermore electron impact ionization data base.
 
 """
-function integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,Ti::Float64,Wmin::Float64=0.0,Wmax::Float64=(Ei-Ui)/2)
+function integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,Ti::Float64,E⁻min::Float64=0.0)
 	Gi = 0
-	W⁺ = min((Ei-Ui)/2,Wmax)
-    W⁻ = max(Ui,Wmin)
+	W⁺ = (Ei+Ui)/2
+    W⁻ = E⁻min+Ui
     if W⁺ > W⁻
 		if n == 0
             if abs(Ui-Ti) ≤ 1e-7
-                G₀_hydrogen(W) = (((-5*Ui^2+6*W*Ui+3*W^2)*atan(sqrt(W/Ui))+5*sqrt(W/Ui)*(Ui+3/5*W)*Ui)/(W+Ui)^2/Ui^2/16)+(-(Ei*Ui)^(-1/2)*(3*(Ei+Ui/3)*Ui*(Ei-W)^2*atanh(sqrt(W/Ui)*Ui*(Ei*Ui)^(-1/2))+(-4*Ei*(Ui/2+Ei-W/2)*(W+Ui)*atan(sqrt(W/Ui))+Ui*sqrt(W/Ui)*(Ei-W)*(Ui+Ei))*sqrt(Ei*Ui))/(Ei-W)^2/(Ui+Ei)^2/Ei/4)+(-(Ei*Ui)^(-1/2)*(3*(Ei+Ui/3)*Ui*(Ei-W)^2*atanh(sqrt(W/Ui)*Ui*(Ei*Ui)^(-1/2))+(-4*Ei*(Ui/2+Ei-W/2)*(W+Ui)*atan(sqrt(W/Ui))+Ui*sqrt(W/Ui)*(Ei-W)*(Ui+Ei))*sqrt(Ei*Ui))/(Ei-W)^2/(Ui+Ei)^2/Ei/4)+(3/4*((W+Ui)*(Ei-W)^2*(Ei^3-11*Ui*Ei^2+13/3*Ei*Ui^2+Ui^3/3)*atanh(sqrt(W/Ui)*Ui*(Ui*Ei)^(-1/2))+13/3*sqrt(Ui*Ei)*(-16/13*Ei*(W+Ui)*(Ei-W)^2*(-2*Ui+Ei)*atan(sqrt(W/Ui))+(Ui+Ei)*((Ui+5/13*W)*Ei^3+(-12/13*Ui^2-31/13*W*Ui-3/13*W^2)*Ei^2-Ui*(Ui^2-11*W*Ui-20*W^2)*Ei/13-Ui^2*W*(W+Ui)/13)*sqrt(W/Ui)))*(Ui*Ei)^(-1/2)*Ui/(Ui+Ei)^4/(W+Ui)/(Ei-W)^2/Ei)
-                Gi = G₀_hydrogen(Wmax) - G₀_hydrogen(Wmin)
+                G₀_hydrogen(W) = ((3*sqrt((W-Ui)/Ui)*W*Ui+2*sqrt((W-Ui)/Ui)*Ui^2+3*atan(sqrt((W-Ui)/Ui))*W^2-8*atan(sqrt((W-Ui)/Ui))*Ui^2)/W^2/Ui^2/16)+((-3/4*Ui*(Ei+Ui/3)*(Ei-W+Ui)^2*atanh(sqrt((W-Ui)/Ui)*Ui*(Ei*Ui)^(-1/2))+(Ei*W*(Ei-W/2+Ui)*atan(sqrt((W-Ui)/Ui))-sqrt((W-Ui)/Ui)*Ui*(Ui+Ei)*(Ei-W+Ui)/4)*sqrt(Ei*Ui))*(Ei*Ui)^(-1/2)/(Ei-W+Ui)^2/(Ui+Ei)^2/Ei)+((-3*atan(sqrt((W-Ui)/Ui))*W^4-3*Ui*sqrt((W-Ui)/Ui)*(W^3+2/3*W^2*Ui+40/3*W*Ui^2-16*Ui^3))/W^4/Ui^2/96)+(3/4*Ui*((Ei-W+Ui)^2*(Ei^3-11*Ui*Ei^2+13/3*Ui^2*Ei+Ui^3/3)*W*atanh(sqrt((W-Ui)/Ui)*Ui*(Ui*Ei)^(-1/2))+5/3*sqrt(Ui*Ei)*(-16/5*Ei*W*(-2*Ui+Ei)*(Ei-W+Ui)^2*atan(sqrt((W-Ui)/Ui))+sqrt((W-Ui)/Ui)*(Ei+Ui)*((W+8/5*Ui)*Ei^3+(-3/5*W^2-5*Ui*W+16/5*Ui^2)*Ei^2+(4*W^2*Ui-29/5*W*Ui^2+8/5*Ui^3)*Ei-W*Ui^2*(W-Ui)/5)))*(Ui*Ei)^(-1/2)/(Ei+Ui)^4/(Ei-W+Ui)^2/Ei/W)
+                Gi = G₀_hydrogen(W⁺) - G₀_hydrogen(W⁻)
             else
-			    G₀(W) = ((Ti*(W+Ui)^2*(-3*Ui+Ti)*atan(sqrt(W/Ti)*Ti*(Ti*Ui)^(-1/2))+sqrt(Ti*Ui)*(-2*Ui*(W+Ti)*(Ti-2*Ui-W)*atan(sqrt(W/Ti))+Ti*sqrt(W/Ti)*(W+Ui)*(Ti-Ui)))*(Ti*Ui)^(-1/2)/(W+Ui)^2/(Ti-Ui)^2/Ui/4)+(-(Ei*Ti)^(-1/2)*(3*Ti*(Ei+Ti/3)*(Ei-W)^2*atanh(sqrt(W/Ti)*Ti*(Ei*Ti)^(-1/2))+(-4*(Ti/2+Ei-W/2)*(W+Ti)*Ei*atan(sqrt(W/Ti))+Ti*sqrt(W/Ti)*(Ei-W)*(Ti+Ei))*sqrt(Ei*Ti))/(Ei-W)^2/(Ti+Ei)^2/Ei/4)+(-Ti*(Ti*Ui)^(-1/2)*((W+Ui)^2*(W+Ti)*(Ti^3-13*Ui*Ti^2-33*Ti*Ui^2-3*Ui^3)*atan(sqrt(W/Ti)*Ti*(Ti*Ui)^(-1/2))-(-32*Ui*(Ti+Ui/2)*(W+Ui)^2*(W+Ti)*atan(sqrt(W/Ti))+((-13*Ti-5*W)*Ui^3+(-12*Ti^2-31*W*Ti-3*W^2)*Ui^2+Ti*(Ti^2-11*W*Ti-20*W^2)*Ui-Ti^2*W*(W+Ti))*sqrt(W/Ti)*(Ti-Ui))*sqrt(Ti*Ui))/(Ti-Ui)^4/(W+Ui)^2/Ui/(W+Ti)/4)+(3/4*Ti*((Ei^3-11*Ti*Ei^2+13/3*Ei*Ti^2+Ti^3/3)*(W+Ti)*(Ei-W)^2*atanh(sqrt(W/Ti)*Ti*(Ti*Ei)^(-1/2))+13/3*(-16/13*Ei*(W+Ti)*(Ei-W)^2*(-2*Ti+Ei)*atan(sqrt(W/Ti))+sqrt(W/Ti)*(Ti+Ei)*((Ti+5/13*W)*Ei^3+(-12/13*Ti^2-31/13*W*Ti-3/13*W^2)*Ei^2-Ti*(Ti^2-11*W*Ti-20*W^2)*Ei/13-Ti^2*W*(W+Ti)/13))*sqrt(Ti*Ei))*(Ti*Ei)^(-1/2)/(Ti+Ei)^4/(Ei-W)^2/Ei/(W+Ti))
-			    Gi = G₀(Wmax) - G₀(Wmin)
+                G₀(W) = (-(Ti*Ui)^(-1/2)*(-Ti*W^2*(-3*Ui+Ti)*atan(sqrt((W-Ui)/Ti)*Ti*(Ti*Ui)^(-1/2))/2+(Ui*(W-Ui+Ti)*(Ti-Ui-W)*atan(sqrt((W-Ui)/Ti))-Ti*sqrt((W-Ui)/Ti)*W*(Ti-Ui)/2)*sqrt(Ti*Ui))/W^2/(Ti-Ui)^2/Ui/2)+(-(3*(Ei-W+Ui)^2*Ti*(Ei+Ti/3)*atanh(sqrt((W-Ui)/Ti)*Ti*(Ei*Ti)^(-1/2))+(-4*(Ti/2+Ei-W/2+Ui/2)*(W-Ui+Ti)*Ei*atan(sqrt((W-Ui)/Ti))+Ti*sqrt((W-Ui)/Ti)*(Ei-W+Ui)*(Ti+Ei))*sqrt(Ei*Ti))*(Ei*Ti)^(-1/2)/(Ei-W+Ui)^2/(Ti+Ei)^2/Ei/4)+((Ui*Ti)^(-1/2)*(-W^2*(Ti^3-13*Ti^2*Ui-33*Ti*Ui^2-3*Ui^3)*(W-Ui+Ti)*atan(sqrt(-(-W+Ui)/Ti)*Ti*(Ui*Ti)^(-1/2))/2+(-16*W^2*(Ti+Ui/2)*(W-Ui+Ti)*Ui*atan(sqrt(-(-W+Ui)/Ti))+(-Ui+Ti)*(Ui^4+(-Ti+W/2)*Ui^3+(-Ti^2+9/2*W*Ti-3/2*W^2)*Ui^2+Ti*(Ti^2-9/2*W*Ti-10*W^2)*Ui-Ti^2*W*(W+Ti)/2)*sqrt(-(-W+Ui)/Ti))*sqrt(Ui*Ti))*Ti/(-Ui+Ti)^4/W^2/Ui/(W-Ui+Ti)/2)+(3/4*((Ei-W+Ui)^2*(W-Ui+Ti)*(Ei^3-11*Ti*Ei^2+13/3*Ei*Ti^2+Ti^3/3)*atanh(sqrt(-(-W+Ui)/Ti)*Ti*(Ti*Ei)^(-1/2))+13/3*(-16/13*Ei*(W-Ui+Ti)*(Ei-W+Ui)^2*(-2*Ti+Ei)*atan(sqrt(-(-W+Ui)/Ti))+((Ti-5/13*Ui+5/13*W)*Ei^3+(-12/13*Ti^2+(31/13*Ui-31/13*W)*Ti-3/13*(-W+Ui)^2)*Ei^2-(Ti^2+(11*Ui-11*W)*Ti-20*(-W+Ui)^2)*Ti*Ei/13+Ti^2*(-W+Ui)*(W-Ui+Ti)/13)*(Ti+Ei)*sqrt(-(-W+Ui)/Ti))*sqrt(Ti*Ei))*Ti*(Ti*Ei)^(-1/2)/(Ti+Ei)^4/(Ei-W+Ui)^2/Ei/(W-Ui+Ti))
+                Gi = G₀(W⁺) - G₀(W⁻)
             end
 		elseif n == 1
             if abs(Ui-Ti) ≤ 1e-7
-                G₁_hydrogen(W) = (((-3*Ui^2-6*W*Ui+5*W^2)*atan(sqrt(W/Ui))+3*(Ui+5/3*W)*sqrt(W/Ui)*Ui)/(W+Ui)^2/Ui/16)+(-(Ei*Ui)^(-1/2)*(-Ui*(Ei-W)^2*(3*Ui+Ei)*atanh(sqrt(W/Ui)*Ui*(Ei*Ui)^(-1/2))+sqrt(Ei*Ui)*(2*((Ei-2*W)*Ui-Ei*W)*(W+Ui)*atan(sqrt(W/Ui))+Ui*sqrt(W/Ui)*(Ei-W)*(Ui+Ei)))/(Ei-W)^2/(Ui+Ei)^2/4)+((3*(W+Ui)^4*atan(sqrt(W/Ui))-3*sqrt(W/Ui)*(Ui^3+11/3*Ui^2*W+53/3*W^2*Ui-W^3)*Ui)/(W+Ui)^4/Ui/96)+(-((W+Ui)*(Ei-W)^2*(Ei^3+13*Ei^2*Ui-33*Ei*Ui^2+3*Ui^3)*atanh(sqrt(W/Ui)*Ui*(Ui*Ei)^(-1/2))-sqrt(Ui*Ei)*(32*(W+Ui)*(Ei-Ui/2)*Ui*(Ei-W)^2*atan(sqrt(W/Ui))+((3*Ei-5*W)*Ui^3+(-20*Ei^2+31*Ei*W-13*W^2)*Ui^2+Ei*(Ei^2-11*Ei*W+12*W^2)*Ui+Ei^2*W*(Ei+W))*sqrt(W/Ui)*(Ui+Ei)))*(Ui*Ei)^(-1/2)*Ui/(Ui+Ei)^4/(W+Ui)/(Ei-W)^2/4)
-                Gi = G₁_hydrogen(Wmax) - G₁_hydrogen(Wmin)
+                G₁_hydrogen(W) = (((W-2*Ui)*atan(sqrt((W-Ui)/Ui))+sqrt((W-Ui)/Ui)*Ui)/W/Ui/2)+(-(-Ui*(Ei-Ui)*(Ei-W+Ui)^2*atanh(sqrt((W-Ui)/Ui)*Ui*(Ei*Ui)^(-1/2))+(-2*Ei*atan(sqrt((W-Ui)/Ui))*W^2+Ui*sqrt((W-Ui)/Ui)*(Ei+Ui)*(Ei-W+Ui))*sqrt(Ei*Ui))*(Ei*Ui)^(-1/2)/(Ei-W+Ui)^2/(Ei+Ui)/Ei/4)+(-2/3*Ui*sqrt((W-Ui)/Ui)*(W-Ui)/W^3)+(-Ui*((Ei-Ui)*(Ei^2+10*Ui*Ei+Ui^2)*(Ei-W+Ui)^2*atanh(sqrt((W-Ui)/Ui)*Ui*(Ui*Ei)^(-1/2))-sqrt(Ui*Ei)*(16*Ui*Ei*(Ei-W+Ui)^2*atan(sqrt((W-Ui)/Ui))+(Ei^3+(W-9*Ui)*Ei^2+(8*W*Ui-9*Ui^2)*Ei-Ui^2*(W-Ui))*sqrt((W-Ui)/Ui)*(Ei+Ui)))*(Ui*Ei)^(-1/2)/(Ei+Ui)^3/(Ei-W+Ui)^2/Ei/4)
+                Gi = G₁_hydrogen(W⁺) - G₁_hydrogen(W⁻)
             else
-                G₁(W) = (-(-3*Ti*(Ti-Ui/3)*(W+Ui)^2*atan(sqrt(W/Ti)*Ti*(Ui*Ti)^(-1/2))+sqrt(Ui*Ti)*(2*((Ui+2*W)*Ti-W*Ui)*(W+Ti)*atan(sqrt(W/Ti))+Ti*sqrt(W/Ti)*(W+Ui)*(Ti-Ui)))*(Ui*Ti)^(-1/2)/(W+Ui)^2/(Ti-Ui)^2/4)+(-(-Ti*(Ei-W)^2*(3*Ti+Ei)*atanh(sqrt(W/Ti)*Ti*(Ei*Ti)^(-1/2))+(2*(W+Ti)*((Ei-2*W)*Ti-Ei*W)*atan(sqrt(W/Ti))+Ti*sqrt(W/Ti)*(Ei-W)*(Ti+Ei))*sqrt(Ei*Ti))*(Ei*Ti)^(-1/2)/(Ei-W)^2/(Ti+Ei)^2/4)+(-3/4*Ti*((Ti^3+11*Ui*Ti^2+13/3*Ui^2*Ti-Ui^3/3)*(W+Ui)^2*(W+Ti)*atan(sqrt(W/Ti)*Ti*(Ui*Ti)^(-1/2))-(16/3*Ti*(W+Ui)^2*(W+Ti)*(Ti+2*Ui)*atan(sqrt(W/Ti))+sqrt(W/Ti)*((Ui+5/3*W)*Ti^3+(20/3*Ui^2+31/3*W*Ui+13/3*W^2)*Ti^2+Ui*(Ui^2+11*W*Ui+12*W^2)*Ti/3+Ui^2*W*(-W+Ui)/3)*(Ti-Ui))*sqrt(Ui*Ti))*(Ui*Ti)^(-1/2)/(Ti-Ui)^4/(W+Ti)/(W+Ui)^2
-                )+(-(Ei*Ti)^(-1/2)*Ti*((W+Ti)*(Ei-W)^2*(Ei^3+13*Ei^2*Ti-33*Ei*Ti^2+3*Ti^3)*atanh(sqrt(W/Ti)*Ti*(Ei*Ti)^(-1/2))-sqrt(Ei*Ti)*(32*(W+Ti)*(Ei-W)^2*Ti*(Ei-Ti/2)*atan(sqrt(W/Ti))+sqrt(W/Ti)*((3*Ei-5*W)*Ti^3+(-20*Ei^2+31*Ei*W-13*W^2)*Ti^2+Ei*(Ei^2-11*Ei*W+12*W^2)*Ti+Ei^2*W*(Ei+W))*(Ti+Ei)))/(Ti+Ei)^4/(W+Ti)/(Ei-W)^2/4)
-                Gi = G₁(Wmax) - G₁(Wmin)
+                G₁(W) = (-(Ui*Ti)^(-1/2)*(-Ti*atan(sqrt((W-Ui)/Ti)*Ti*(Ui*Ti)^(-1/2))*W+atan(sqrt((W-Ui)/Ti))*(W-Ui+Ti)*sqrt(Ui*Ti))/W/(Ti-Ui))+(-(-Ti*(Ei^2+(3*Ti-3*Ui)*Ei-Ui*Ti)*(Ei-W+Ui)^2*atanh(sqrt((W-Ui)/Ti)*Ti*(Ei*Ti)^(-1/2))+sqrt(Ei*Ti)*(2*Ei*(W-Ui+Ti)*((Ti-Ui-W)*Ei+(Ui-2*W)*Ti-Ui*(-W+Ui))*atan(sqrt((W-Ui)/Ti))+Ti*sqrt((W-Ui)/Ti)*(Ei+Ui)*(Ei-W+Ui)*(Ti+Ei)))*(Ei*Ti)^(-1/2)/(Ei-W+Ui)^2/(Ti+Ei)^2/Ei/4)+(Ti*(Ui*Ti)^(-1/2)*(-W*(Ti^2+6*Ui*Ti+Ui^2)*(W-Ui+Ti)*atan(sqrt((W-Ui)/Ti)*Ti*(Ui*Ti)^(-1/2))+(4*W*(Ti+Ui)*(W-Ui+Ti)*atan(sqrt((W-Ui)/Ti))+sqrt((W-Ui)/Ti)*(Ti^2+3*Ti*W-(-W+Ui)*Ui)*(-Ui+Ti))*sqrt(Ui*Ti))/(-Ui+Ti)^3/W/(W-Ui+Ti))+(-((W-Ui+Ti)*(Ei-W+Ui)^2*(Ei^4+(13*Ti-3*Ui)*Ei^3-33*Ti*(-Ui+Ti)*Ei^2+(3*Ti^3-13*Ti^2*Ui)*Ei-Ti^3*Ui)*atanh(sqrt(-(-W+Ui)/Ti)*Ti*(Ti*Ei)^(-1/2))-sqrt(Ti*Ei)*(32*(W-Ui+Ti)*(Ei-W+Ui)^2*Ei*((Ti-Ui/2)*Ei-Ti*(Ti-2*Ui)/2)*atan(sqrt(-(-W+Ui)/Ti))+sqrt(-(-W+Ui)/Ti)*(Ti+Ei)*((W-Ui+Ti)*Ei^4+(-20*Ti^2+(24*Ui-11*W)*Ti-4*Ui^2+3*Ui*W+W^2)*Ei^3+(3*Ti^3+(-43*Ui+31*W)*Ti^2+(43*Ui^2-55*Ui*W+12*W^2)*Ti-3*Ui*(-W+Ui)^2)*Ei^2+4*((Ui-5/4*W)*Ti^2-6*(-W+Ui)*(Ui-13/24*W)*Ti+5*Ui*(-W+Ui)^2)*Ti*Ei+Ti^2*Ui*(-W+Ui)*(W-Ui+Ti))))*(Ti*Ei)^(-1/2)*Ti/(Ti+Ei)^4/(Ei-W+Ui)^2/Ei/(W-Ui+Ti)/4)
+                Gi = G₁(W⁺) - G₁(W⁻)
             end
 		else
 			error("Integral is given only for n=0 or n=1.")
 		end
 		Gi *= 8*Ti/(3*π)
 	end
-	if isinf(Gi) || isnan(Gi) error([Gi,n,Ti,Ui]) end
+	if isinf(Gi) || isnan(Gi) error("Infinite or NaN values calculating Gi.") end
 	return Gi
 end
