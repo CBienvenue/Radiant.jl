@@ -37,7 +37,7 @@ mutable struct Inelastic_Collision <: Interaction
     function Inelastic_Collision()
         this = new()
         this.name = "Inelastic_Collision"
-        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"],(Proton,Proton) => ["S"],(Alpha,Alpha) => ["S"])
+        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"],(Proton,Proton) => ["S"],(Proton,Electron) => ["P"],(Alpha,Alpha) => ["S"],(Alpha,Electron) => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.set_density_correction("fano")
@@ -249,32 +249,47 @@ function bounds(this::Inelastic_Collision,Ef⁻::Float64,Ef⁺::Float64,Ei::Floa
         if type == "S"
             Ef⁻ = min(Ef⁻,Ec,Ei-Ui)
             Ef⁺ = max(Ef⁺,(Ei-Ui)/2)
-            if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
         # Knock-on electron
         elseif type == "P"
             Ef⁻ = min(Ef⁻,(Ei-Ui)/2)
             Ef⁺ = max(Ef⁺,0.0)
-            if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
         else
-            error("Unknown type of method for Møller scattering.")
+            error("Unknown type.")
         end
     elseif is_positron(particle)
-        # Scattered positron
+        # Scattered positron/proton/alpha
         if type == "S"
             Ef⁻ = min(Ef⁻,Ec,Ei-Ui)
             Ef⁺ = max(Ef⁺,0.0)
-            if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
         # Knock-on electron
         elseif type == "P"
             Ef⁻ = min(Ef⁻,Ei-Ui)
             Ef⁺ = max(Ef⁺,0.0)
-            if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
         else
-            error("Unknown type of method for Bhabha scattering.")
+            error("Unknown type.")
+        end
+    elseif is_proton(particle) || is_alpha(particle)
+        mₑ = 0.51099895069
+        ratio_mass = get_mass(particle)/mₑ
+        γ = (Ei + ratio_mass)/ratio_mass
+        β² = (γ^2-1)/γ^2
+        R = 1/(1+(1/ratio_mass)^2+2*γ/ratio_mass)
+        W_ridge = 2*β²*γ^2*R
+        # Scattered heavy particle
+        if type == "S"
+            Ef⁻ = min(Ef⁻,Ec,Ei-Ui)
+            Ef⁺ = max(Ef⁺,0.0,Ei-W_ridge)
+        # Knock-on electron
+        elseif type == "P"
+            Ef⁻ = min(Ef⁻,Ei-Ui,W_ridge-Ui)
+            Ef⁺ = max(Ef⁺,0.0)
+        else
+            error("Unknown type.")
         end
     else
         error("Unknown particle")
     end
+    if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     return Ef⁻,Ef⁺,isSkip
 end
 
@@ -330,6 +345,8 @@ function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64
         σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
         σs += bhabha(Zi,Ei,W)
+    elseif is_proton(particle) || is_alpha(particle)
+        σs += inelastic_collision_heavy_particle(Zi,Ei,W,particle)
     else
         error("Unknown particle")
     end
@@ -377,6 +394,8 @@ function tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
         σt += integrate_moller(Z,Ei,0,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
         σt += integrate_bhabha(Z,Ei,0,Ei-Ec)
+    elseif is_proton(particle) || is_alpha(particle)
+        σt += integrate_inelastic_collision_heavy_particle(Z,Ei,0,particle,Ei-Ec)
     else
         error("Unknown particle")
     end
@@ -453,6 +472,8 @@ function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::
             Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
         elseif is_positron(particle)
             Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_bhabha(Z[i],Ei,1,Ei-Ec)
+        elseif is_proton(particle) || is_alpha(particle)
+            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_inelastic_collision_heavy_particle(Z[i],Ei,1,particle,Ei-Ec)
         end
     end
 

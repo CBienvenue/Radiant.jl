@@ -54,7 +54,9 @@ module Radiant
         "baro.jl",
         "heitler.jl",
         "relaxation.jl",
-        "interaction_interdependances.jl"
+        "interaction_interdependances.jl",
+        "inelastic_collision_heavy_particle.jl",
+        "soft_catastrophic_cutoff.jl"
     ]
     radiant_src["particle_transport/"] = [
         "geometry.jl",

@@ -83,15 +83,7 @@ for gi in range(1,Ngi)
         Ei = (u[ni]*ΔEi + (Ei⁻+Ei⁺))/2
 
         # Boundary between catastrophic and soft interactions
-        if scattering_model == "BFP"
-            Ec = Ei*(Ei⁺-Ei²⁺)/(Ei⁻-Ei⁺) - (Ei⁺^2-Ei⁻*Ei²⁺)/(Ei⁻-Ei⁺)
-        elseif scattering_model == "FP"
-            Ec = 0.0
-        elseif scattering_model == "BTE"
-            Ec = Ei
-        else
-            error("Unknown scattering model $scattering_model.")
-        end
+        Ec = soft_catastrophic_cutoff(Ei,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
 
         # Scattering cross sections
         if type ∈ ["S","P"] && scattering_model != "FP"
@@ -133,8 +125,12 @@ for gi in range(1,Ngi)
 
     # Stopping power at energy group boundaries
     if is_CSD && type == "S" && scattering_model != "BTE"
-        Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ei⁺,incoming_particle,E_out)
-        if (gi == Ngi) Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,0.0,incoming_particle,E_out) end
+        Ec = soft_catastrophic_cutoff(Ei⁻,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
+        Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ec,incoming_particle,E_out)
+        if (gi == Ngi)
+            Ec = soft_catastrophic_cutoff(Ei⁺,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
+            Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,Ec,incoming_particle,E_out)
+        end
     end
 
     # Energy deposition cross sections
