@@ -22,7 +22,7 @@ Nshells,Zi,Ui,_,_,_ = electron_subshells(Z)
 # Find parameter a
 f(a) = sum(Zi.*log.(sqrt.((a.*Ui).^2 + 2/3*Zi./Z.*Ωp^2))) - Z*log(I)
 dfda(a) = sum(Zi.*Ui.^2 .*a./(Ui.^2 .*a.^2 .+ 2/3 .* Zi./Z.*Ωp^2))
-a = newton_bissection(f,dfda,0,100,1e-4,2000)
+a = newton_bisection(f,dfda,0,100,1e-4,2000)
 
 # Compute the resonance energies
 Wi = zeros(Nshells)

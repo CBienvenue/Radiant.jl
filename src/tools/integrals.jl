@@ -158,7 +158,6 @@ Compute the integral I = ∫(1/(tⁿzᵐ√z))dx, where z = a + bx and t = α + 
 - Gradshteyn (2014) : Table of integrals, series, and products.
 - Zwillinger (2003) : Standard mathematical tables and formulae.
 
-
 """
 function 𝒢₄(n::Int64,m::Int64,a::Real,b::Real,α::Real,β::Real,x::Real)
 
@@ -208,7 +207,6 @@ Compute the integral I = ∫(xⁿ/√R)dx, where R = a + bx + cx², evaluated at
 
 # Reference(s)
 - Gradshteyn (2014) : Table of integrals, series, and products.
-
 
 """
 function 𝒢₅(n::Int64,a::Real,b::Real,c::Real,x::Real)
@@ -269,4 +267,64 @@ function 𝒢₆(j₁::Int64,j₂::Int64,j₃::Int64)
     𝒲 /= 2^J
     
     return 𝒲
+end
+
+"""
+    𝒢₇(n::Int64,a::Real,x::Real)
+
+Compute the integral I = ∫(xⁿ exp{ax})dx evaluated at x.
+
+# Input Argument(s)
+- `x::Real`: evaluation point.
+- `n::Int64`: exponent.
+- `a::Real`: coefficient.
+
+# Output Argument(s)
+- `vFloat64`: integral evaluated at x.
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+
+"""
+function 𝒢₇(n::Int64,a::Real,x::Real)
+    if n == 0 # Gradshteyn - Sect. 2.311
+        return exp(a*x)/a
+    elseif n ≥ 0 # Gradshteyn - Sect. 2.321-1
+        return x^n*exp(a*x)/a - n/a * 𝒢₇(n-1,a,x)
+    else
+        error("Integral for n stricly positive only.")
+    end
+end
+
+"""
+    𝒢₈(n::Int64,a::Real,b::Real,c::Real,x::Real)
+
+Compute the integral I = ∫(xⁿ√R)dx, where R = a + bx + cx², evaluated at x.
+
+# Input Argument(s)
+- `x::Real`: evaluation point.
+- `n::Int64`: exponent.
+- `a::Real`: coefficient.
+- `b::Real`: coefficient.
+- `c::Real`: coefficient.
+
+# Output Argument(s)
+- `v::Vector{Float64}`: integral evaluated at x up to order n.
+
+# Reference(s)
+- Gradshteyn (2014) : Table of integrals, series, and products.
+
+"""
+function 𝒢₈(n::Int64,a::Real,b::Real,c::Real,x::Real)
+    R = a + b*x + c*x^2
+    Δ = 4*a*c-b^2
+    if (Δ == 0 && a == 0) || n < 0
+        error("Negative index.")
+    elseif n == 0 # Gradshteyn - Sect. 2.262 (1)
+        return (2*c*x+b)/(4*c)*sqrt(R) + Δ/(8*c)*𝒢₅(0,a,b,c,x)
+    elseif n == 1 # Gradshteyn - Sect. 2.262 (2)
+        return sqrt(R^3)/(3*c) - (2*c*x+b)*b/(8*c^2)*sqrt(R) - b*Δ/(16*c^2)*𝒢₅(0,a,b,c,x)
+    elseif n ≥ 2 # Gradshteyn - Sect. 2.260
+        return x^(n-1)*sqrt(R^3)/((n+2)*c) - (2*n+1)*b/(2*(n+2)*c)*𝒢₈(n-1,a,b,c,x) - (n-1)*a/((n+2)*c)*𝒢₈(n-2,a,b,c,x)
+    end
 end

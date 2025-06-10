@@ -29,7 +29,7 @@ elseif type == "log"
     dfdx(x) = -(1+(Ng-1)/Ng*(Ec/x)^(1/Ng))
     x⁻ = 2*E
     x⁺ = Ec
-    Emax = newton_bissection(f,dfdx,x⁻,x⁺,1e-7)
+    Emax = newton_bisection(f,dfdx,x⁻,x⁺,1e-7)
     Eᵇ = reverse(10 .^collect(range(log10(Ec),log10(Emax),Ng+1)))
 
 else

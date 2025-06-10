@@ -134,12 +134,11 @@ module Radiant
         "integrals.jl",
         "spline.jl",
         "voronoi.jl",
-        "newton_bissection.jl",
+        "newton_bisection.jl",
         "one_space.jl",
         "cache.jl",
         "find_package_root.jl",
-        "python_method_notation.jl",
-        "bessel.jl"
+        "python_method_notation.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end

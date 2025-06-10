@@ -28,6 +28,8 @@ if geo_type != "cartesian" error("Transport of particles in",geo_type," is unava
 Ns = geometry.get_number_of_voxels()
 Δs = geometry.get_voxels_width()
 mat = geometry.get_material_per_voxel()
+#s = geometry.get_voxels_position()
+#sb = geometry.get_voxels_boundaries()
 
 #----
 # Preparation of angular discretisation
@@ -133,6 +135,18 @@ surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
 
 #----
+# First collision source
+#----
+#=
+is_FCS = false
+if is_FCS
+    𝚽ℓ_uncollided,Q_FCS = first_collision_source(Ndims,Ns[1],P,𝒪[1],Nd,Ng,Ω[1],surface_sources,Σtot,Δs[1],s[1],sb[1],mat,pℓ,Nm[5],Σs,w)
+    surface_sources = Array{Union{Array{Float64},Float64}}(undef,Ng,Nd,2*Ndims)
+    surface_sources .= 0.0
+end
+=#
+
+#----
 # Flux calculations
 #----
 
@@ -165,6 +179,7 @@ while ~(is_outer_convergence)
 
         # Fixed volumic sources
         Qℓout .+= volume_sources[ig,:,:,:,:,:]
+        #if is_FCS Qℓout .+= Q_FCS[ig,:,:,:,:,:] end
 
         # Calculation of the group flux
         if isCSD
@@ -211,6 +226,8 @@ while ~(is_outer_convergence)
     end
     
 end
+
+#if is_FCS 𝚽ℓ .+= 𝚽ℓ_uncollided end # Collided + uncollided
 
 # Save flux
 flux = Flux_Per_Particle(part)

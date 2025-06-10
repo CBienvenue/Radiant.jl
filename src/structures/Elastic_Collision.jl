@@ -36,7 +36,7 @@ mutable struct Elastic_Collision <: Interaction
     function Elastic_Collision()
         this = new()
         this.name = "elastic_collision"
-        this.interaction_types = Dict((Electron,Electron) => ["S"],(Positron,Positron) => ["S"])
+        this.interaction_types = Dict((Electron,Electron) => ["S"],(Positron,Positron) => ["S"],(Proton,Proton) => ["S"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.is_CSD = false
@@ -247,7 +247,13 @@ interaction.
 
 """
 function dcs(this::Elastic_Collision,L::Int64,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
-    σℓ = mott(Z,Ei,particle,L,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)
+    if is_electron(particle) || is_positron(particle)
+        σℓ = mott(Z,Ei,particle,L,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)
+    elseif is_proton(particle)
+        σℓ = galyuzov_kosov(Z,Ei,L)
+    else
+        error("Unknown particle.")
+    end
     return σℓ
 end
 
@@ -269,7 +275,13 @@ Gives the total cross-section for elastic collision interaction.
 
 """
 function tcs(this::Elastic_Collision,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
-    σt = mott(Z,Ei,particle,0,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)[1]
+    if is_electron(particle) || is_positron(particle)
+        σt = mott(Z,Ei,particle,0,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)[1]
+    elseif is_proton(particle)
+        σt = galyuzov_kosov(Z,Ei,0)[1]
+    else
+        error("Unknown particle.")
+    end
     return σt
 end
 

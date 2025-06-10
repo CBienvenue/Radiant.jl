@@ -23,66 +23,50 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     if geo.type == "cartesian" && geo.dimension == 1
 
     # Extracting data
-
-    Nrx           = geo.number_of_regions["x"]
-    xB            = geo.region_boundaries["x"]
-    xVoxels       = geo.voxels_per_region["x"]
-    idMat         = geo.material_per_region
-
+    Nrx = geo.number_of_regions["x"]
+    xrb = geo.region_boundaries["x"]
+    Nrx_voxels = geo.voxels_per_region["x"]
+    idr = geo.material_per_region
     Nmat = length(cs.materials)
-    IDS = Vector{Int64}()
-    for n in range(1,Nmat)
-        push!(IDS,cs.materials[n].get_id())
+    id_mat = [mat.get_id() for mat in cs.materials]
+
+    # Compute positions and widths along x-axis
+    Nx = sum(Nrx_voxels)
+    xb = zeros(Nx+1)
+    Δx = zeros(Nx)
+    x = zeros(Nx)
+    ix = 0
+    xp = xrb[1]
+    for ir in range(1,Nrx)
+        Δxi = (xrb[ir+1]-xrb[ir])/Nrx_voxels[ir]
+        for iv in range(1,Nrx_voxels[ir])
+            xp += Δxi
+            ix += 1
+            xb[ix+1] = xp
+            x[ix] = xp-Δxi/2
+            Δx[ix] = Δxi
+        end
     end
 
-    # Calculations of the volume and material array
+    # Compute volumes
+    vol = Δx
 
-    nVoxels = sum(xVoxels)
-    vol=zeros(nVoxels)
-    mat=zeros(Int64,nVoxels,1,1)
-
-    i=1
-    while i <= Nrx
-        if i==1
-            rx = range(1,xVoxels[i])
-        else
-            rx = range(sum(xVoxels[1:i-1])+1,sum(xVoxels[1:i-1])+xVoxels[i])
-        end
-        for ix in rx
-            vol[ix] = (xB[i+1]-xB[i])/xVoxels[i]
-            index = findfirst(x->x==idMat[i].get_id(),IDS)
-            if isnothing(index) error("No cross section information for material ",idMat[i].get_id(),".") end
+    # Set material matrix
+    mat=zeros(Int64,Nx,1,1)
+    ix = 0
+    for ir in range(1,Nrx)
+        for iv in range(1,Nrx_voxels[ir])
+            ix += 1
+            index = findfirst(x->x==idr[ir].get_id(),id_mat)
+            if isnothing(index) error("No cross section information for material $(idr[ir].get_id()).") end
             mat[ix] = index
-        end
-        i += 1
-    end
-
-    # Calculations of the x-coordinates of each voxels
-
-    k=1
-    xp = zeros(Int64,nVoxels)
-    x = zeros(nVoxels)
-
-    for i in range(1,Nrx)
-        for j in range(1,xVoxels[i])
-            xp[k]=i
-            k=k+1
-        end
-    end
-
-    for ix in range(1,nVoxels)
-        stepx = (xB[xp[ix]+1]-xB[xp[ix]])/xVoxels[xp[ix]]
-        if xp[ix] == 1
-            x[ix] = xB[xp[ix]] + 0.5 * stepx + (ix-1) * stepx
-        else
-            x[ix] = xB[xp[ix]] + 0.5 * stepx + (ix-sum(xVoxels[1:xp[ix]-1])-1) * stepx
         end
     end
 
     # Save data
-
-    geo.voxels_width["x"] = vol
+    geo.voxels_width["x"] = Δx
     geo.voxels_position["x"] = x
+    geo.voxels_boundaries["x"] = xb
     geo.material_per_voxel = mat
     geo.volume_per_voxel = vol
 
@@ -93,142 +77,77 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     elseif geo.type == "cartesian" && geo.dimension == 2
 
     # Extracting data
-
-    Nrx           = geo.number_of_regions["x"]
-    xB            = geo.region_boundaries["x"]
-    xVoxels       = geo.voxels_per_region["x"]
-    Nry           = geo.number_of_regions["y"]
-    yB            = geo.region_boundaries["y"]
-    yVoxels       = geo.voxels_per_region["y"]
-    idMat         = geo.material_per_region
-
+    Nrx = geo.number_of_regions["x"]
+    Nry = geo.number_of_regions["y"]
+    xrb = geo.region_boundaries["x"]
+    yrb = geo.region_boundaries["y"]
+    Nrx_voxels = geo.voxels_per_region["x"]
+    Nry_voxels = geo.voxels_per_region["y"]
+    idr = geo.material_per_region
     Nmat = length(cs.materials)
-    IDS = Vector{Int64}()
-    for n in range(1,Nmat)
-        push!(IDS,cs.materials[n].get_id())
-    end
+    id_mat = [mat.get_id() for mat in cs.materials]
 
-    # Calculations of the volume and material array
-
-    nVoxels = [sum(xVoxels),sum(yVoxels)]
-    vol = zeros(nVoxels[1],nVoxels[2])
-    mat = zeros(Int64,nVoxels[1],nVoxels[2],1)
-    Δx = zeros(nVoxels[1])
-    Δy = zeros(nVoxels[2])
-
-    # Voxels x-width
-    i=1
-    while i <= Nrx
-        if i==1
-            rx = range(1,xVoxels[i])
-        else
-            rx = range(sum(xVoxels[1:i-1])+1,sum(xVoxels[1:i-1])+xVoxels[i])
-        end
-        for ix in rx
-            Δx[ix] = (xB[i+1]-xB[i])/xVoxels[i]
-        end
-        i += 1
-    end
-
-    # Voxels y-width
-    j=1
-    while j <= Nry
-        if j==1
-            ry = range(1,yVoxels[j])
-        else
-            ry = range(sum(yVoxels[1:j-1])+1,sum(yVoxels[1:j-1])+yVoxels[j])
-        end
-        for iy in ry
-            Δy[iy] = (yB[j+1]-yB[j])/yVoxels[j]
-        end
-        j += 1
-    end
-
-    # Volumes
-    for ix in range(1,nVoxels[1])
-        for iy in range(1,nVoxels[2])
-            vol[ix,iy] = Δx[ix] * Δy[iy]
+    # Compute positions and widths along x-axis
+    Nx = sum(Nrx_voxels)
+    xb = zeros(Nx+1)
+    Δx = zeros(Nx)
+    x = zeros(Nx)
+    irx = zeros(Int64,Nx)
+    ix = 0
+    xp = xrb[1]
+    for ir in range(1,Nrx)
+        Δxi = (xrb[ir+1]-xrb[ir])/Nrx_voxels[ir]
+        for iv in range(1,Nrx_voxels[ir])
+            xp += Δxi
+            ix += 1
+            xb[ix+1] = xp
+            x[ix] = xp-Δxi/2
+            Δx[ix] = Δxi
+            irx[ix] = ir
         end
     end
 
-    # Material matrix
-    i=1
-    j=1
-    while i <= Nrx
-        if i==1
-            rx = range(1,xVoxels[i])
-        else
-            rx = range(sum(xVoxels[1:i-1])+1,sum(xVoxels[1:i-1])+xVoxels[i])
-        end
-        while j <= Nry
-            if j==1
-                ry = range(1,yVoxels[j])
-            else
-                ry = range(sum(yVoxels[1:j-1])+1,sum(yVoxels[1:j-1])+yVoxels[j])
-            end
-            for ix in rx
-                for iy in ry
-                    index = findfirst(x->x==idMat[i,j].get_id(),IDS)
-                    if isnothing(index) error("No cross section information for material ",idMat[i,j].get_id(),".") end
-                    mat[ix,iy] = index
-                end
-            end
-            j += 1
-        end
-        j = 1
-        i += 1
-    end
-
-    # Calculations of the x-coordinates of each voxels
-
-    k=1
-    xp = zeros(Int64,nVoxels[1])
-    x = zeros(nVoxels[1])
-
-    for i in range(1,Nrx)
-        for j in range(1,xVoxels[i])
-            xp[k]=i
-            k=k+1
+    # Compute positions and widths along y-axis
+    Ny = sum(Nry_voxels)
+    yb = zeros(Ny+1)
+    Δy = zeros(Ny)
+    y = zeros(Ny)
+    iry = zeros(Int64,Ny)
+    iy = 0
+    yp = yrb[1]
+    for ir in range(1,Nry)
+        Δyi = (yrb[ir+1]-yrb[ir])/Nry_voxels[ir]
+        for iv in range(1,Nry_voxels[ir])
+            yp += Δyi
+            iy += 1
+            yb[iy+1] = yp
+            y[iy] = yp-Δyi/2
+            Δy[iy] = Δyi
+            iry[iy] = ir
         end
     end
 
-    for ix in range(1,nVoxels[1])
-        stepx = (xB[xp[ix]+1]-xB[xp[ix]])/xVoxels[xp[ix]]
-        if xp[ix] == 1
-            x[ix] = xB[xp[ix]] + 0.5 * stepx + (ix-1) * stepx
-        else
-            x[ix] = xB[xp[ix]] + 0.5 * stepx + (ix-sum(xVoxels[1:xp[ix]-1])-1) * stepx
-        end
+    # Compute volumes
+    vol = zeros(Nx,Ny)
+    for ix in range(1,Nx), iy in range(1,Ny)
+        vol[ix,iy] = Δx[ix] * Δy[iy]
     end
 
-    # Calculations of the y-coordinates of each voxels
-
-    k=1
-    yp = zeros(Int64,nVoxels[2])
-    y = zeros(nVoxels[2])
-
-    for i in range(1,Nry)
-        for j in range(1,yVoxels[i])
-            yp[k]=i
-            k=k+1
-        end
-    end
-
-    for iy in range(1,nVoxels[2])
-        stepy = (yB[yp[iy]+1]-yB[yp[iy]])/yVoxels[yp[iy]]
-        if yp[iy] == 1
-            y[iy] = yB[yp[iy]] + 0.5 * stepy + (iy-1) * stepy
-        else
-            y[iy] = yB[yp[iy]] + 0.5 * stepy + (iy-sum(yVoxels[1:yp[iy]-1])-1) * stepy
-        end
+    # Set material matrix
+    mat=zeros(Int64,Nx,Ny,1)
+    for ix in range(1,Nx), iy in range(1,Ny)
+        index = findfirst(x->x==idr[irx[ix],iry[iy]].get_id(),id_mat)
+        if isnothing(index) error("No cross section information for material $(idr[irx[ix],iry[iy]].get_id()).") end
+        mat[ix,iy] = index
     end
 
     # Save data
-
     geo.voxels_width["x"] = Δx
     geo.voxels_width["y"] = Δy
     geo.voxels_position["x"] = x
     geo.voxels_position["y"] = y
+    geo.voxels_boundaries["x"] = xb
+    geo.voxels_boundaries["y"] = yb
     geo.material_per_voxel = mat
     geo.volume_per_voxel = vol
 
@@ -239,205 +158,108 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     elseif geo.type == "cartesian" && geo.dimension == 3
 
     # Extracting data
-
-    Nrx           = geo.number_of_regions["x"]
-    xB            = geo.region_boundaries["x"]
-    xVoxels       = geo.voxels_per_region["x"]
-    Nry           = geo.number_of_regions["y"]
-    yB            = geo.region_boundaries["y"]
-    yVoxels       = geo.voxels_per_region["y"]
-    Nrz           = geo.number_of_regions["z"]
-    zB            = geo.region_boundaries["z"]
-    zVoxels       = geo.voxels_per_region["z"]
-    idMat         = geo.material_per_region
-
+    Nrx = geo.number_of_regions["x"]
+    Nry = geo.number_of_regions["y"]
+    Nrz = geo.number_of_regions["z"]
+    xrb = geo.region_boundaries["x"]
+    yrb = geo.region_boundaries["y"]
+    zrb = geo.region_boundaries["z"]
+    Nrx_voxels = geo.voxels_per_region["x"]
+    Nry_voxels = geo.voxels_per_region["y"]
+    Nrz_voxels = geo.voxels_per_region["z"]
+    idr = geo.material_per_region
     Nmat = length(cs.materials)
-    IDS = Vector{Int64}()
-    for n in range(1,Nmat)
-        push!(IDS,cs.materials[n].get_id())
-    end
+    id_mat = [mat.get_id() for mat in cs.materials]
 
-    # Calculations of the volume and material array
-
-    nVoxels = [sum(xVoxels),sum(yVoxels),sum(zVoxels)]
-    vol = zeros(nVoxels[1],nVoxels[2],nVoxels[3])
-    mat = zeros(Int64,nVoxels[1],nVoxels[2],nVoxels[3])
-    Δx = zeros(nVoxels[1])
-    Δy = zeros(nVoxels[2])
-    Δz = zeros(nVoxels[3])
-
-    # Voxels x-width
-    i=1
-    while i <= Nrx
-        if i==1
-            rx = range(1,xVoxels[i])
-        else
-            rx = range(sum(xVoxels[1:i-1])+1,sum(xVoxels[1:i-1])+xVoxels[i])
-        end
-        for ix in rx
-            Δx[ix] = (xB[i+1]-xB[i])/xVoxels[i]
-        end
-        i += 1
-    end
-
-    # Voxels y-width
-    j=1
-    while j <= Nry
-        if j==1
-            ry = range(1,yVoxels[j])
-        else
-            ry = range(sum(yVoxels[1:j-1])+1,sum(yVoxels[1:j-1])+yVoxels[j])
-        end
-        for iy in ry
-            Δy[iy] = (yB[j+1]-yB[j])/yVoxels[j]
-        end
-        j += 1
-    end
-
-    # Voxels z-width
-    k=1
-    while k <= Nrz
-        if k==1
-            rz = range(1,zVoxels[k])
-        else
-            rz = range(sum(zVoxels[1:k-1])+1,sum(zVoxels[1:k-1])+zVoxels[k])
-        end
-        for iz in rz
-            Δz[iz] = (yB[k+1]-yB[k])/zVoxels[k]
-        end
-        k += 1
-    end
-
-    # Volumes
-    for ix in range(1,nVoxels[1])
-        for iy in range(1,nVoxels[2])
-            for iz in range(1,nVoxels[3])
-                vol[ix,iy,iz] = Δx[ix] * Δy[iy] * Δz[iz]
-            end
+    # Compute positions and widths along x-axis
+    Nx = sum(Nrx_voxels)
+    xb = zeros(Nx+1)
+    Δx = zeros(Nx)
+    x = zeros(Nx)
+    irx = zeros(Int64,Nx)
+    ix = 0
+    xp = xrb[1]
+    for ir in range(1,Nrx)
+        Δxi = (xrb[ir+1]-xrb[ir])/Nrx_voxels[ir]
+        for iv in range(1,Nrx_voxels[ir])
+            xp += Δxi
+            ix += 1
+            xb[ix+1] = xp
+            x[ix] = xp-Δxi/2
+            Δx[ix] = Δxi
+            irx[ix] = ir
         end
     end
 
-    # Material matrix
-    i=1
-    j=1
-    k=1
-    while i <= Nrx
-        if i==1
-            rx = range(1,xVoxels[i])
-        else
-            rx = range(sum(xVoxels[1:i-1])+1,sum(xVoxels[1:i-1])+xVoxels[i])
-        end
-        while j <= Nry
-            if j==1
-                ry = range(1,yVoxels[j])
-            else
-                ry = range(sum(yVoxels[1:j-1])+1,sum(yVoxels[1:j-1])+yVoxels[j])
-            end
-            while k <= Nrz
-                if k==1
-                    rz = range(1,zVoxels[k])
-                else
-                    rz = range(sum(zVoxels[1:k-1])+1,sum(zVoxels[1:k-1])+zVoxels[k])
-                end
-                for ix in rx
-                    for iy in ry
-                        for iz in rz
-                            index = findfirst(x->x==idMat[i,j,k].get_id(),IDS)
-                            if isnothing(index) error("No cross section information for material ",idMat[i,j,k].get_id(),".") end
-                            mat[ix,iy,iz] = index
-                        end
-                    end
-                end
-                k += 1
-            end
-            k = 1
-            j += 1
-        end
-        j = 1
-        i += 1
-    end
-
-    # Calculations of the x-coordinates of each voxels
-
-    k=1
-    xp = zeros(Int64,nVoxels[1])
-    x = zeros(nVoxels[1])
-
-    for i in range(1,Nrx)
-        for j in range(1,xVoxels[i])
-            xp[k]=i
-            k=k+1
+    # Compute positions and widths along y-axis
+    Ny = sum(Nry_voxels)
+    yb = zeros(Ny+1)
+    Δy = zeros(Ny)
+    y = zeros(Ny)
+    iry = zeros(Int64,Ny)
+    iy = 0
+    yp = yrb[1]
+    for ir in range(1,Nry)
+        Δyi = (yrb[ir+1]-yrb[ir])/Nry_voxels[ir]
+        for iv in range(1,Nry_voxels[ir])
+            yp += Δyi
+            iy += 1
+            yb[iy+1] = yp
+            y[iy] = yp-Δyi/2
+            Δy[iy] = Δyi
+            iry[iy] = ir
         end
     end
 
-    for ix in range(1,nVoxels[1])
-        stepx = (xB[xp[ix]+1]-xB[xp[ix]])/xVoxels[xp[ix]]
-        if xp[ix] == 1
-            x[ix] = xB[xp[ix]] + 0.5 * stepx + (ix-1) * stepx
-        else
-            x[ix] = xB[xp[ix]] + 0.5 * stepx + (ix-sum(xVoxels[1:xp[ix]-1])-1) * stepx
+    # Compute positions and widths along z-axis
+    Nz = sum(Nrz_voxels)
+    zb = zeros(Nz+1)
+    Δz = zeros(Nz)
+    z = zeros(Nz)
+    irz = zeros(Int64,Nz)
+    iz = 0
+    zp = zrb[1]
+    for ir in range(1,Nrz)
+        Δzi = (zrb[ir+1]-zrb[ir])/Nrz_voxels[ir]
+        for iv in range(1,Nrz_voxels[ir])
+            zp += Δzi
+            iz += 1
+            zb[iz+1] = zp
+            z[iz] = zp-Δzi/2
+            Δz[iz] = Δzi
+            irz[iz] = ir
         end
     end
 
-    # Calculations of the y-coordinates of each voxels
-
-    k=1
-    yp = zeros(Int64,nVoxels[2])
-    y = zeros(nVoxels[2])
-
-    for i in range(1,Nry)
-        for j in range(1,yVoxels[i])
-            yp[k]=i
-            k=k+1
-        end
+    # Compute volumes
+    vol = zeros(Nx,Ny,Nz)
+    for ix in range(1,Nx), iy in range(1,Ny), iz in range(1,Nz)
+        vol[ix,iy,iz] = Δx[ix] * Δy[iy] * Δz[iz]
     end
 
-    for iy in range(1,nVoxels[2])
-        stepy = (yB[yp[iy]+1]-yB[yp[iy]])/yVoxels[yp[iy]]
-        if yp[iy] == 1
-            y[iy] = yB[yp[iy]] + 0.5 * stepy + (iy-1) * stepy
-        else
-            y[iy] = yB[yp[iy]] + 0.5 * stepy + (iy-sum(yVoxels[1:yp[iy]-1])-1) * stepy
-        end
-    end
-
-    # Calculations of the z-coordinates of each voxels
-
-    k=1
-    zp = zeros(Int64,nVoxels[3])
-    z = zeros(nVoxels[3])
-
-    for i in range(1,Nrz)
-        for j in range(1,zVoxels[i])
-            zp[k]=i
-            k=k+1
-        end
-    end
-
-    for iz in range(1,nVoxels[3])
-        stepz = (zB[zp[iz]+1]-zB[zp[iz]])/zVoxels[zp[iz]]
-        if zp[iz] == 1
-            z[iz] = zB[zp[iz]] + 0.5 * stepz + (iz-1) * stepz
-        else
-            z[iz] = zB[zp[iz]] + 0.5 * stepz + (iz-sum(zVoxels[1:zp[iz]-1])-1) * stepz
-        end
+    # Set material matrix
+    mat=zeros(Int64,Nx,Ny,Nz)
+    for ix in range(1,Nx), iy in range(1,Ny), iz in range(1,Nz)
+        index = findfirst(x->x==idr[irx[ix],iry[iy],irz[iz]].get_id(),id_mat)
+        if isnothing(index) error("No cross section information for material $(idr[irx[ix],iry[iy],irz[iz]].get_id()).") end
+        mat[ix,iy,iz] = index
     end
 
     # Save data
-
     geo.voxels_width["x"] = Δx
     geo.voxels_width["y"] = Δy
     geo.voxels_width["z"] = Δz
     geo.voxels_position["x"] = x
     geo.voxels_position["y"] = y
     geo.voxels_position["z"] = z
+    geo.voxels_boundaries["x"] = xb
+    geo.voxels_boundaries["y"] = yb
+    geo.voxels_boundaries["z"] = zb
     geo.material_per_voxel = mat
     geo.volume_per_voxel = vol
 
     else
         error("Undefined type of geometry.")
     end
-
     return geo
-
 end

@@ -30,6 +30,7 @@ mutable struct Geometry
     number_of_voxels            ::Dict{String,Int64}
     voxels_width                ::Dict{String,Vector{Float64}}
     voxels_position             ::Dict{String,Vector{Float64}}
+    voxels_boundaries           ::Dict{String,Vector{Float64}}
     material_per_voxel          ::Union{Missing,Array{Int64}}
     volume_per_voxel            ::Union{Missing,Array{Float64}}
     region_boundaries           ::Dict{String,Vector{Float64}}
@@ -53,6 +54,7 @@ mutable struct Geometry
         this.number_of_voxels = Dict{String,Int64}()
         this.voxels_width = Dict{String,Vector{Float64}}()
         this.voxels_position = Dict{String,Vector{Float64}}()
+        this.voxels_boundaries = Dict{String,Vector{Float64}}()
         this.material_per_voxel = missing
         this.volume_per_voxel = missing
 
@@ -485,4 +487,69 @@ function get_voxels_position(this::Geometry,axis::String)
     if ismissing(this.voxels_position) error("Unable to get voxel positions. Missing data.") end
     if axis ∉ this.get_axis() error("Unknown axis.") end
     return this.voxels_position[axis]
+end
+
+"""
+    get_voxels_position(this::Geometry)
+
+Get the voxel position along each axis.
+
+# Input Argument(s)
+- `this::Geometry` : geometry.
+
+# Output Argument(s)
+- `voxels_position::Vector{Vector{Float64}}` : voxels position along each axis.
+
+"""
+function get_voxels_position(this::Geometry)
+    N = this.get_dimension()
+    axis = this.get_axis()
+    s = Vector{Vector{Float64}}(undef,3)
+    for n in range(1,N)
+        if ~haskey(this.voxels_width,axis[n]) error("Unable to get the number of voxels along the ",axis[n],"-axis.") end
+        s[n] = this.voxels_width[axis[n]]
+    end
+    return s
+end
+
+"""
+    get_voxels_boundaries(this::Geometry,axis::String)
+
+Get the voxel boundaries along a specified axis.
+
+# Input Argument(s)
+- `this::Geometry` : geometry.
+- `axis::String` : axis.
+
+# Output Argument(s)
+- `voxels_boundaries::Vector{Float64}` : voxel boundaries along the axis.
+
+"""
+function get_voxels_boundaries(this::Geometry,axis::String)
+    if ismissing(this.voxels_boundaries) error("Unable to get voxel positions. Missing data.") end
+    if axis ∉ this.get_axis() error("Unknown axis.") end
+    return this.voxels_boundaries[axis]
+end
+
+"""
+    get_voxels_boundaries(this::Geometry)
+
+Get the voxel boundaries along each axis.
+
+# Input Argument(s)
+- `this::Geometry` : geometry.
+
+# Output Argument(s)
+- `voxels_boundaries::Vector{Vector{Float64}}` : voxels boundaries along each axis.
+
+"""
+function get_voxels_boundaries(this::Geometry)
+    N = this.get_dimension()
+    axis = this.get_axis()
+    sb = Vector{Vector{Float64}}(undef,3)
+    for n in range(1,N)
+        if ~haskey(this.voxels_width,axis[n]) error("Unable to get the number of voxels along the ",axis[n],"-axis.") end
+        sb[n] = this.voxels_width[axis[n]]
+    end
+    return sb
 end

@@ -40,7 +40,7 @@ else
     # Newton/bissection method to compute x-values
     f(x) = 1/3 - sum(wn.*(μn0.+x.*μn⁻).^2)
     dfdx(x) = - sum(2 .*wn.*μn⁻.*(μn0.+x.*μn⁻))
-    x = newton_bissection(f,dfdx,1,-1)
+    x = newton_bisection(f,dfdx,1,-1)
 
     # Compute μ-values
     μn = zeros(div(N,2))
@@ -70,7 +70,7 @@ else
         end
         return f
     end
-    A = newton_bissection(g,dgdA,1/2,2)
+    A = newton_bisection(g,dgdA,1/2,2)
 end
 
 # Compute the values for all octants
