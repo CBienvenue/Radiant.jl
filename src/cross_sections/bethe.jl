@@ -27,7 +27,7 @@ and heavy ions (proton, muon, alpha particle).
   particles from the corrected Bethe formula.
 
 """
-function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
+function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid";is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
 
     #----
     # Set the minimum energy cutoff over which the corrected Bethe formula is valid. 
@@ -93,7 +93,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         δF = 0
         if is_density_correction
-            δF = fermi_density_effect(Z,ωz,ρ,Ei,"solid","fano",ratio_mass)
+            δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,density_correction,ratio_mass)
         end
 
         #----

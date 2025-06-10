@@ -460,7 +460,7 @@ Gives the stopping power for inelastic collision interaction.
 function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
 
     # Compute the total cross-section
-    Stot = bethe(Z,ωz,ρ,Ei,particle)
+    Stot = bethe(Z,ωz,ρ,Ei,particle,this.density_correction,state_of_matter)
     
     # Compute the catastrophic Møller- or Bhabha- derived stopping power
     Sc = 0
