@@ -16,7 +16,7 @@ Generate the group structure for multigroup calculations.
 N/A
 
 """
-function energy_group_structure(Ng::Int64,E::Number,Ec::Number,type::String)
+function energy_group_structure(Ng::Int64,E::Number,Ec::Number,type::String,custom_energy_boundaries::Union{Vector{Real},Nothing}=nothing)
 
 if type == "linear"
 
@@ -31,6 +31,13 @@ elseif type == "log"
     x⁺ = Ec
     Emax = newton_bisection(f,dfdx,x⁻,x⁺,1e-7)
     Eᵇ = reverse(10 .^collect(range(log10(Ec),log10(Emax),Ng+1)))
+
+elseif type == "custom"
+
+    if isnothing(custom_energy_boundaries) error("Custom energy boundary vector is empty.") end
+    if Ng+1 != length(custom_energy_boundaries) error("The length of custom energy boundary vector is not coherent with the number of energy groups.") end
+    if ~all(custom_energy_boundaries[i] > custom_energy_boundaries[i+1] for i in 1:length(custom_energy_boundaries)-1) error("The custom energy boundaries should be strictly decreasing.") end
+    Eᵇ = custom_energy_boundaries
 
 else
     error("Unknown group structure.")

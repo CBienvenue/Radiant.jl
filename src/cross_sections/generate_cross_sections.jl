@@ -22,7 +22,7 @@ Ng = cross_sections.get_number_of_groups()
 E₁ = cross_sections.get_energy()
 Ec = cross_sections.get_cutoff()
 L = cross_sections.get_legendre_order()
-group_structure = cross_sections.get_group_structure()
+group_structure,custom_energy_boundaries = cross_sections.get_group_structure()
 Nmat = cross_sections.get_number_of_materials()
 Npart = cross_sections.get_number_of_particles()
 materials = cross_sections.get_materials()
@@ -44,7 +44,7 @@ end
 #----
 Eᵇ = Vector{Vector{Float64}}(undef,Npart)
 for n in range(1,Npart)
-    Eᵇ[n] = energy_group_structure(Ng[n],E₁,Ec,group_structure[n])
+    Eᵇ[n] = energy_group_structure(Ng[n],E₁,Ec,group_structure[n],custom_energy_boundaries[n])
 end
 
 #----

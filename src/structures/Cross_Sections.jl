@@ -47,6 +47,7 @@ mutable struct Cross_Sections
     is_build                  ::Bool
     custom_absorption         ::Vector{Real}
     custom_scattering         ::Vector{Real}
+    custom_energy_boundaries  ::Vector{Union{Vector{Real},Nothing}}
 
     # Constructor(s)
     function Cross_Sections()
@@ -68,6 +69,7 @@ mutable struct Cross_Sections
         this.is_build = false
         this.multigroup_cross_sections = missing
         this.energy_boundaries = missing
+        this.custom_energy_boundaries = Vector{Union{Vector{Real},Nothing}}()
 
         return this
     end
@@ -281,6 +283,8 @@ function set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Pa
     if length(particles) == 0 error("At least one particle should be provided.") end
     this.particles = particles
     this.number_of_particles += length(particles)
+    if ~ismissing(this.group_structure) this.group_structure = fill(this.group_structure[1],this.number_of_particles) end
+    if length(this.custom_energy_boundaries) != 0 this.custom_energy_boundaries = fill(this.custom_energy_boundaries[1],this.number_of_particles) end
 end
 
 """
@@ -372,13 +376,41 @@ N/A
 ```jldoctest
 julia> cs = Cross_Sections()
 julia> cs.set_particles([electron,photon,positron])
-julia> cs.set_group_structure(["log","linear","log"]) # 80 groups with electrons and positrons, 20 with photons
+julia> cs.set_number_of_groups([3,20,3]) # 3 groups with electrons and positrons, 20 with photon
+julia> cs.set_group_structure(["log","linear","log"]) # log with electrons and positrons, linear with photon
+julia> cs.set_group_structure(["custom","linear","custom"],[[0.2,0.4,0.6],nothing,[0.2,0.4,0.6]]) # custom with electrons and positrons, linear with photon
 ```
 """
-function set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String})
-    if typeof(group_structure) == String group_structure = [group_structure] end 
-    for g in group_structure if g ∉ ["linear","log"] error("The group structure are either linearly or logarithmically spaced.") end end
-    this.group_structure = group_structure
+function set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String},custom_energy_boundaries::Union{Nothing,Vector{T},Vector{Union{Vector{T},Nothing}}}=nothing) where T <: Real
+
+    # Initialization
+    if typeof(group_structure) == String group_structure = [group_structure] end
+    if custom_energy_boundaries isa Vector{T} where T<:Real custom_energy_boundaries = [custom_energy_boundaries] end
+    if ~isnothing(custom_energy_boundaries) && length(custom_energy_boundaries) != length(group_structure) error("The custom energy boundaries vector should have the same size as the group structure one.") end 
+
+    # Validation of custom energy boundaries
+    ig = 1
+    custom_energy_boundaries_vector = Vector{Union{Vector{Real},Nothing}}()
+    for g in group_structure 
+        if g ∉ ["linear","log","custom"] error("The group structure are either linearly or logarithmically spaced.") end
+        if g == "custom" 
+            if isnothing(custom_energy_boundaries) error("No custom energy boundaries has been defined.") end
+            if isnothing(custom_energy_boundaries[ig]) error("No custom energy boundaries given with custom group structure.") end 
+            if ~all(custom_energy_boundaries[ig][i] > custom_energy_boundaries[ig][i+1] for i in 1:length(custom_energy_boundaries[ig])-1) error("The custom energy boundaries should be strictly decreasing.") end
+            push!(custom_energy_boundaries_vector,custom_energy_boundaries[ig])
+        else
+            if ~isnothing(custom_energy_boundaries) && ~isnothing(custom_energy_boundaries[ig]) error("Custom energy boundaries has been defined while other energy structure has been defined.") end
+            push!(custom_energy_boundaries_vector,nothing)
+        end
+        ig += 1
+    end
+    if length(group_structure) == 1 && this.number_of_particles != 0
+        this.group_structure = fill(group_structure[1],this.number_of_particles)
+        this.custom_energy_boundaries = fill(custom_energy_boundaries_vector[1],this.number_of_particles)
+    else
+        this.group_structure = group_structure
+        this.custom_energy_boundaries = custom_energy_boundaries_vector
+    end
 end
 
 """
@@ -964,7 +996,7 @@ Get the type of group structure.
 
 """
 function get_group_structure(this::Cross_Sections)
-    return this.group_structure
+    return this.group_structure, this.custom_energy_boundaries
 end
 
 """
