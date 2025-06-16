@@ -87,7 +87,7 @@ Ng_out = cross_sections.get_number_of_groups(particle_out)
 if isCSD 𝚽cutoff = flux.get_flux_cutoff() else 𝚽cutoff = zeros(P_in,Nm_in,Ns[1],Ns[2],Ns[3]) end
 
 # Compute the scattered particle source
-Qℓ_in = zeros(Ng_in,P_in,Nm_in,Ns[1],Ns[2],Ns[3])
+Qℓ_in = zeros(Ng_out,P_in,Nm_in,Ns[1],Ns[2],Ns[3])
 Qℓ_out = zeros(Ng_out,P_out,Nm_out,Ns[1],Ns[2],Ns[3])
 particle_source(Qℓ_in,𝚽ℓ,Σs,mat,P_in,pℓ_in,Nm_in,Ns,Ng_in,Ng_out)
 

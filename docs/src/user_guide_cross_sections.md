@@ -7,17 +7,14 @@ A cross-sections library in Radiant is represented by the `Radiant.Cross_Section
 Radiant provides robust capabilities to produce accurate cross-sections for coupled or uncoupled transport of photons, electrons, and positrons. These cross-sections are derived from physics models and tabulated data. To generate them, several mandatory fields need to be specified:
 
 ```julia
-cs = Cross_Sections()                    # Instantiate the cross-sections library
-cs.set_source("physics-models")          # Specify cross-sections generation from physics models
-cs.set_materials(material_list)          # Define the list of materials
-cs.set_particles(particles_list)         # Define the list of particles
-cs.set_energy(10.0)                      # Set the midpoint energy of the highest energy group
-cs.set_cutoff(0.001)                     # Set the cutoff energy
-cs.set_number_of_groups(10)              # Set the number of energy groups
-cs.set_group_structure("log")            # Define the energy group structure
-cs.set_interactions(interactions_list)   # Define the list of physics interactions
-cs.set_legendre_order(7)                 # Specify the Legendre moments order for scattering cross-sections
-cs.build()                               # Compute and build the transfer matrix for transport calculations
+cs = Cross_Sections()                       # Instantiate the cross-sections library
+cs.set_source("physics-models")             # Specify cross-sections generation from physics models
+cs.set_materials(material_list)             # Define the list of materials
+cs.set_particles(particles_list)            # Define the list of particles
+cs.set_group_structure("log",10,10.0,0.001) # Define the energy group structure (type, number of groups, midpoint energy of the highest energy group and cutoff energy). Specified that way, it defines the default discretization that applies for all particles.
+cs.set_interactions(interactions_list)      # Define the list of physics interactions
+cs.set_legendre_order(7)                    # Specify the Legendre moments order for scattering cross-sections
+cs.build()                                  # Compute and build the transfer matrix for transport calculations
 ```
 
 where
@@ -32,13 +29,27 @@ particles_list = [electron, photon]
 interactions_list = [Inelastic_Leptons(),Elastic_Leptons(),Compton()]
 ```
 
+**Custom Group Definitions:**
+Radiant supports custom group confifgurations. It is sufficient then to directly gives the energy boundary vector, as follow:
+
+```julia
+cs.set_group_structure([0.1,0.5,1.0]) # or, equivalently cs.set_group_structure([1.0,0.5,0.1])
+```
+
 **Particle-Specific Group Definitions:**
 Radiant supports particle-specific group configurations. The number of energy groups and the energy group structure can differ for each particle. For instance, if three particles are defined, their group settings might be configured as follows:
 
 ```julia
-cs.set_number_of_groups([10,30])                  # Set the number of groups
-cs.set_group_structure("log","linear")            # Set the group structure
+cs.set_group_structure(electron,"linear",10,10.0,0.1)
 ```
+
+or 
+
+```julia
+cs.set_group_structure(electron,[0.1,0.5,1.0])
+```
+
+where `electron` is a `Radiant.Electron` object. This definition overwrite the default discretization if defined, which will be applied to all particles without explicit definition of group structure.
 
 ## 4.2 Generate Custom Cross-Sections
 

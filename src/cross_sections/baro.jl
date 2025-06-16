@@ -123,7 +123,7 @@ function baro_correction_factor(Z::Int64,Ei::Float64)
             end
 
             # Compute total cross-section
-            Eout = energy_group_structure(80,Ei_exp,2,"log")
+            Eout = log_energy_group_structure(80,Ei_exp,2)
             Ngf = length(Eout)-1
             Np = 8
             u,w = quadrature(Np,"gauss-legendre")

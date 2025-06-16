@@ -36,10 +36,10 @@ mutable struct Cross_Sections
     materials                 ::Vector{Material}
     number_of_particles       ::Int64
     particles                 ::Vector{Particle}
-    energy                    ::Union{Missing,Float64}
-    cutoff                    ::Union{Missing,Float64}
+    energy                    ::Union{Missing,Vector{Float64}}
+    cutoff                    ::Union{Missing,Vector{Float64}}
     number_of_groups          ::Union{Missing,Vector{Int64}}
-    group_structure           ::Union{Missing,Vector{String},String}
+    group_structure           ::Union{Missing,Dict{Any,Vector{Float64}}}
     interactions              ::Union{Missing,Vector{Interaction}}
     legendre_order            ::Union{Missing,Int64}
     energy_boundaries         ::Union{Missing,Vector{Vector{Float64}}}
@@ -47,7 +47,6 @@ mutable struct Cross_Sections
     is_build                  ::Bool
     custom_absorption         ::Vector{Real}
     custom_scattering         ::Vector{Real}
-    custom_energy_boundaries  ::Vector{Union{Vector{Real},Nothing}}
 
     # Constructor(s)
     function Cross_Sections()
@@ -61,15 +60,13 @@ mutable struct Cross_Sections
         this.materials = Vector{Material}()
         this.particles = Vector{String}()
         this.energy = missing
-        this.cutoff = 0.001
+        this.cutoff = missing
         this.number_of_groups = missing
         this.group_structure = missing
         this.interactions = missing
         this.legendre_order = missing
         this.is_build = false
         this.multigroup_cross_sections = missing
-        this.energy_boundaries = missing
-        this.custom_energy_boundaries = Vector{Union{Vector{Real},Nothing}}()
 
         return this
     end
@@ -93,22 +90,9 @@ function is_ready_to_build(this::Cross_Sections)
     if lowercase(this.source) == "fmac-m"
         if ismissing(this.file) error("Cannot build multigroup cross-sections data. The FMAC-M file name and its directory are not specified.") end
     elseif lowercase(this.source) == "physics-models"
-        if ismissing(this.energy) error("Cannot build multigroup cross-sections data. The midpoint energy of the highest energy group is not specified.") end
-        if ismissing(this.cutoff) error("Cannot build multigroup cross-sections data. The cutoff energy (lower bound of the lowest energy group) is not specified.") end
-        if ismissing(this.number_of_groups) error("Cannot build multigroup cross-sections data. The number of energy group is not specified.") end
         if ismissing(this.group_structure) error("Cannot build multigroup cross-sections data. The multigroup structure is not specified.") end
         if ismissing(this.interactions) error("Cannot build multigroup cross-sections data. The type of interaction(s) between particle(s) and the material are not specified.") end
         if ismissing(this.legendre_order) error("Cannot build multigroup cross-sections data. The order for the Legendre expansion of differential scattering cross-sections is not specified.") end
-        if length(this.number_of_groups) == 1
-            this.number_of_groups = fill(this.number_of_groups[1],this.number_of_particles)
-        elseif length(this.number_of_groups) != this.number_of_particles
-            error("The number of groups information do not fit the number of particles.")
-        end
-        if length(this.group_structure) == 1
-            this.group_structure = fill(this.group_structure[1],this.number_of_particles)
-        elseif length(this.group_structure) != this.number_of_particles
-            error("The number of groups structure information do not fit the number of particles.")
-        end
     elseif lowercase(this.source) == "custom"
         ###
     else
@@ -283,18 +267,16 @@ function set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Pa
     if length(particles) == 0 error("At least one particle should be provided.") end
     this.particles = particles
     this.number_of_particles += length(particles)
-    if ~ismissing(this.group_structure) this.group_structure = fill(this.group_structure[1],this.number_of_particles) end
-    if length(this.custom_energy_boundaries) != 0 this.custom_energy_boundaries = fill(this.custom_energy_boundaries[1],this.number_of_particles) end
 end
 
 """
-    set_energy(this::Cross_Sections,energy::Real)
+    set_group_structure(this::Cross_Sections,group_structure::Vector{Real})
 
-To set the midpoint energy of the highest energy group.
+To set the energy group discretization structure (default).
 
 # Input Argument(s)
 - `this::Cross_Sections` : cross-sections library.
-- `energy::Real` : midpoint energy of the highest energy group.
+- `group_structure::Vector{Real}` : energy group boundaries.
 
 # Output Argument(s)
 N/A
@@ -302,114 +284,146 @@ N/A
 # Examples
 ```jldoctest
 julia> cs = Cross_Sections()
-julia> cs.set_energy(3.0)
+julia> cs.set_group_structure([1.0,0.5,0.1]) # 2 energy groups, cutoff of 0.1
+julia> cs.set_group_structure([0.1,0.5,1.0]) # Equivalent
 ```
 """
-function set_energy(this::Cross_Sections,energy::Real)
-    if energy < 0 error("The midpoint of the highest energy group has to be positive.") end
-    this.energy = energy
-end
+function set_group_structure(this::Cross_Sections,group_structure::Vector{T}) where T <: Real
 
-"""
-    set_cutoff(this::Cross_Sections,cutoff::Real)
-
-To set the cutoff energy (lower bound of the lowest energy group).
-
-# Input Argument(s)
-- `this::Cross_Sections` : cross-sections library.
-- `cutoff::Real` : cutoff energy (lower bound of the lowest energy group)
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> cs = Cross_Sections()
-julia> cs.set_cutoff(0.05)
-```
-"""
-function set_cutoff(this::Cross_Sections,cutoff::Real)
-    if cutoff < 0 error("The cutoff energy (lower bound of the lowest energy group) has to be positive.") end
-    this.cutoff = cutoff
-end
-
-"""
-    set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int64})
-
-To set the number of energy groups per particle.
-
-# Input Argument(s)
-- `this::Cross_Sections` : cross-sections library.
-- `number_of_groups::Vector{Int64}` : number of energy groups per particle in order with the particle list.
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> cs = Cross_Sections()
-julia> cs.set_particles([electron,photon,positron])
-julia> cs.set_number_of_groups([80,20,80]) # 80 groups with electrons and positrons, 20 with photons
-```
-"""
-function set_number_of_groups(this::Cross_Sections,number_of_groups::Union{Vector{Int64},Int64})
-    if (typeof(number_of_groups) == Int64) number_of_groups = [number_of_groups] end
-    for g in number_of_groups if g ≤ 0 error("The number of energy groups should be at least one.") end end
-    this.number_of_groups =  number_of_groups
-end
-
-"""
-    set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String})
-
-To set the type of energy discretization structure per particle.
-
-# Input Argument(s)
-- `this::Cross_Sections` : cross-sections library.
-- `group_structure::Vector{String}` : type of energy discretization structure per particle, where value per particle can take the following value:
-    - `group_structure[i] = "linear"` : linearly spaced discretization.
-    - `group_structure[i] = "log"` : logarithmically spaced discretization.
-
-# Output Argument(s)
-N/A
-
-# Examples
-```jldoctest
-julia> cs = Cross_Sections()
-julia> cs.set_particles([electron,photon,positron])
-julia> cs.set_number_of_groups([3,20,3]) # 3 groups with electrons and positrons, 20 with photon
-julia> cs.set_group_structure(["log","linear","log"]) # log with electrons and positrons, linear with photon
-julia> cs.set_group_structure(["custom","linear","custom"],[[0.2,0.4,0.6],nothing,[0.2,0.4,0.6]]) # custom with electrons and positrons, linear with photon
-```
-"""
-function set_group_structure(this::Cross_Sections,group_structure::Union{Vector{String},String},custom_energy_boundaries::Union{Nothing,Vector{T},Vector{Union{Vector{T},Nothing}}}=nothing) where T <: Real
-
-    # Initialization
-    if typeof(group_structure) == String group_structure = [group_structure] end
-    if custom_energy_boundaries isa Vector{T} where T<:Real custom_energy_boundaries = [custom_energy_boundaries] end
-    if ~isnothing(custom_energy_boundaries) && length(custom_energy_boundaries) != length(group_structure) error("The custom energy boundaries vector should have the same size as the group structure one.") end 
-
-    # Validation of custom energy boundaries
-    ig = 1
-    custom_energy_boundaries_vector = Vector{Union{Vector{Real},Nothing}}()
-    for g in group_structure 
-        if g ∉ ["linear","log","custom"] error("The group structure are either linearly or logarithmically spaced.") end
-        if g == "custom" 
-            if isnothing(custom_energy_boundaries) error("No custom energy boundaries has been defined.") end
-            if isnothing(custom_energy_boundaries[ig]) error("No custom energy boundaries given with custom group structure.") end 
-            if ~all(custom_energy_boundaries[ig][i] > custom_energy_boundaries[ig][i+1] for i in 1:length(custom_energy_boundaries[ig])-1) error("The custom energy boundaries should be strictly decreasing.") end
-            push!(custom_energy_boundaries_vector,custom_energy_boundaries[ig])
-        else
-            if ~isnothing(custom_energy_boundaries) && ~isnothing(custom_energy_boundaries[ig]) error("Custom energy boundaries has been defined while other energy structure has been defined.") end
-            push!(custom_energy_boundaries_vector,nothing)
-        end
-        ig += 1
+    # Validation of input
+    if length(group_structure) < 2 error("There should be at least two boundary energies in the group structure.") end
+    j = 1
+    if ~all(group_structure[i] > group_structure[i+1] for i in 1:length(group_structure)-1)
+        if j > 1 error("The energy boundaries should be either in increasing or decresing order.") end
+        j += 1
+        group_structure = reverse(group_structure)
     end
-    if length(group_structure) == 1 && this.number_of_particles != 0
-        this.group_structure = fill(group_structure[1],this.number_of_particles)
-        this.custom_energy_boundaries = fill(custom_energy_boundaries_vector[1],this.number_of_particles)
+
+    # Save input
+    if ismissing(this.group_structure) this.group_structure = Dict{Any,Vector{Float64}}() end
+    this.group_structure["default"] = group_structure
+    
+end
+
+"""
+    set_group_structure(this::Cross_Sections,particle::Particle,
+    group_structure::Vector{Real})
+
+To set the energy group discretization structure for a given particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `particle::Particle` : particle associated with the discretization (overwrite default).
+- `group_structure::Vector{Real}` : energy group boundaries.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> electron = Electron()
+julia> cs = Cross_Sections()
+julia> cs.set_group_structure(electron,[1.0,0.5,0.1]) # 2 energy groups, cutoff of 0.1
+julia> cs.set_group_structure(electron,[0.1,0.5,1.0]) # Equivalent
+```
+"""
+function set_group_structure(this::Cross_Sections,particle::Particle,group_structure::Vector{T}) where T <: Real
+
+    # Validation of input
+    if length(group_structure) < 2 error("There should be at least two boundary energies in the group structure.") end
+    j = 1
+    if ~all(group_structure[i] > group_structure[i+1] for i in 1:length(group_structure)-1)
+        if j > 1 error("The energy boundaries should be either in increasing or decresing order.") end
+        j += 1
+        group_structure = reverse(group_structure)
+    end
+
+    # Save input
+    if ismissing(this.group_structure) this.group_structure = Dict{Any,Vector{Float64}}() end
+    this.group_structure[particle] = group_structure
+    
+end
+
+"""
+    set_group_structure(this::Cross_Sections,type::String,Ng::Int64,E::Real,Ec::Real)
+
+To set the energy group discretization structure (default).
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `type::String` : type of discretization, which can takes the following values:
+    - `linear` : linear discretization.
+    - `log` : logarithmic discretization.
+- `Ng::Int64` : number of energy groups.
+- `E::Real` : midpoint energy of the highest energy group.
+- `Ec::Real` : cutoff energy. 
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_group_structure("log",10,10.0,0.001)
+```
+"""
+function set_group_structure(this::Cross_Sections,type::String,Ng::Int64,E::Real,Ec::Real)
+
+    # Validation of input
+    if Ng < 1 error("Number of groups should be greater than 1.") end
+    if Ec ≥ E error("Cutoff energy should be lower than the midpoint energy of the highest energy group.") end
+
+    # Save
+    if ismissing(this.group_structure) this.group_structure = Dict{Any,Vector{Float64}}() end
+    if type == "linear"
+        this.group_structure["default"] = linear_energy_group_structure(Ng,E,Ec)
+    elseif type == "log"
+        this.group_structure["default"] = log_energy_group_structure(Ng,E,Ec)
     else
-        this.group_structure = group_structure
-        this.custom_energy_boundaries = custom_energy_boundaries_vector
+        error("Undefined discretization type.")
+    end
+end
+
+"""
+    set_group_structure(this::Cross_Sections,particle::Particle,type::String,Ng::Int64,
+    E::Real,Ec::Real)
+
+To set the energy group discretization structure for a given particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.'
+- `particle::Particle` : particle associated with the discretization (overwrite default).
+- `type::String` : type of discretization, which can takes the following values:
+    - `linear` : linear discretization.
+    - `log` : logarithmic discretization.
+- `Ng::Int64` : number of energy groups.
+- `E::Real` : midpoint energy of the highest energy group.
+- `Ec::Real` : cutoff energy. 
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> electron = Electron()
+julia> cs = Cross_Sections()
+julia> cs.set_group_structure(electron,"log",10,10.0,0.001)
+```
+"""
+function set_group_structure(this::Cross_Sections,particle::Particle,type::String,Ng::Int64,E::Real,Ec::Real)
+
+    # Validation of input
+    if Ng < 1 error("Number of groups should be greater than 1.") end
+    if Ec ≥ E error("Cutoff energy should be lower than the midpoint energy of the highest energy group.") end
+
+    # Save
+    if ismissing(this.group_structure) this.group_structure = Dict{Any,Vector{Float64}}() end
+    if type == "linear"
+        this.group_structure[particle] = linear_energy_group_structure(Ng,E,Ec)
+    elseif type == "log"
+        this.group_structure[particle] = log_energy_group_structure(Ng,E,Ec)
+    else
+        error("Undefined discretization type.")
     end
 end
 
@@ -996,7 +1010,7 @@ Get the type of group structure.
 
 """
 function get_group_structure(this::Cross_Sections)
-    return this.group_structure, this.custom_energy_boundaries
+    return this.group_structure
 end
 
 """

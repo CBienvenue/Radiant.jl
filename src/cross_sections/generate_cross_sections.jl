@@ -18,11 +18,8 @@ function generate_cross_sections(cross_sections::Cross_Sections)
 #----
 # Initialization
 #----
-Ng = cross_sections.get_number_of_groups()
-E₁ = cross_sections.get_energy()
-Ec = cross_sections.get_cutoff()
 L = cross_sections.get_legendre_order()
-group_structure,custom_energy_boundaries = cross_sections.get_group_structure()
+group_structure = cross_sections.get_group_structure()
 Nmat = cross_sections.get_number_of_materials()
 Npart = cross_sections.get_number_of_particles()
 materials = cross_sections.get_materials()
@@ -42,9 +39,21 @@ end
 #----
 # Generate the group structure
 #----
+E₁ = Vector{Float64}(undef,Npart)
+Ec = Vector{Float64}(undef,Npart)
+Ng = Vector{Int64}(undef,Npart)
 Eᵇ = Vector{Vector{Float64}}(undef,Npart)
 for n in range(1,Npart)
-    Eᵇ[n] = energy_group_structure(Ng[n],E₁,Ec,group_structure[n],custom_energy_boundaries[n])
+    if haskey(group_structure,particles[n])
+        Eᵇ[n] = group_structure[particles[n]]
+    elseif haskey(group_structure,"default")
+        Eᵇ[n] = group_structure["default"]
+    else
+        error("Group structure is not defined for $(particles[n].type).")
+    end
+    E₁[n] = (Eᵇ[n][1]+Eᵇ[n][2])/2
+    Ec[n] = Eᵇ[n][end]
+    Ng[n] = length(Eᵇ[n]) - 1
 end
 
 #----
@@ -86,7 +95,6 @@ end
 cross_sections.set_energy(E₁)
 cross_sections.set_cutoff(Ec)
 cross_sections.set_number_of_groups(Ng)
-cross_sections.set_legendre_order(L)
 cross_sections.set_multigroup_cross_sections(multigroup_cross_sections)
 cross_sections.set_energy_boundaries(Eᵇ)
 
