@@ -37,7 +37,7 @@ mutable struct Inelastic_Collision <: Interaction
     function Inelastic_Collision()
         this = new()
         this.name = "Inelastic_Collision"
-        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"],(Proton,Proton) => ["S"],(Proton,Electron) => ["P"],(Alpha,Alpha) => ["S"],(Alpha,Electron) => ["S"])
+        this.interaction_types = Dict((Positron,Positron) => ["S"],(Positron,Electron) => ["P"],(Electron,Electron) => ["S","P"],(Proton,Proton) => ["S"],(Proton,Electron) => ["P"],(Alpha,Alpha) => ["S"],(Alpha,Electron) => ["P"])
         this.incoming_particle = unique([t[1] for t in collect(keys(this.interaction_types))])
         this.interaction_particles = unique([t[2] for t in collect(keys(this.interaction_types))])
         this.set_density_correction("fano")

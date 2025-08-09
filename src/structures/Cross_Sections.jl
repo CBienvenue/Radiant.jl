@@ -269,6 +269,77 @@ function set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Pa
     this.number_of_particles += length(particles)
 end
 
+
+"""
+    set_energy(this::Cross_Sections,energy::Vector{Float64})
+
+To set the midpoint energy of the highest energy group per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `energy::Vector{Float64}` : midpoint energy of the highest energy group.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_energy([3.0,3.0,3.0])
+```
+"""
+function set_energy(this::Cross_Sections,energy::Vector{Float64})
+    for E in energy if E ≤ 0 error("The midpoint of the highest energy group has to be positive.") end end
+    this.energy = energy
+end
+
+"""
+    set_cutoff(this::Cross_Sections,cutoff::Vector{Float64})
+
+To set the cutoff energy (lower bound of the lowest energy group) per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `cutoff::Vector{Float64}` : cutoff energy (lower bound of the lowest energy group)
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_cutoff([0.05,0.1,0.05])
+```
+"""
+function set_cutoff(this::Cross_Sections,cutoff::Vector{Float64})
+    for Ec in cutoff if Ec ≤ 0 error("The cutoff energy (lower bound of the lowest energy group) has to be positive.") end end
+    this.cutoff = cutoff
+end
+
+"""
+    set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int64})
+
+To set the number of energy groups per particle.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `number_of_groups::Vector{Int64}` : number of energy groups per particle in order with the particle list.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> cs = Cross_Sections()
+julia> cs.set_particles([electron,photon,positron])
+julia> cs.set_number_of_groups([80,20,80]) # 80 groups with electrons and positrons, 20 with photons
+```
+"""
+function set_number_of_groups(this::Cross_Sections,number_of_groups::Vector{Int64})
+    for g in number_of_groups if g ≤ 0 error("The number of energy groups should be at least one.") end end
+    this.number_of_groups =  number_of_groups
+end
+
 """
     set_group_structure(this::Cross_Sections,group_structure::Vector{Real})
 

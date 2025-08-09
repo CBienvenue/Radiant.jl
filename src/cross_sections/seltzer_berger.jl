@@ -25,6 +25,7 @@ function seltzer_berger_cross_section(Z::Int64,Ei::Float64,Eγ::Float64,particle
     #----
     data = fast_load("bremsstrahlung_data_seltzer_berger_1986.jld2")
     E = data["incident_electron_energy"] # (in mₑc²)
+    if Ei < E[1] return 0.0 end
     if ~(E[1] ≤ Ei ≤ E[end]) error("Bremsstrahlung tables from Seltzer and Berger are defined between 1 keV and 10 GeV.") end
     r = data["radiative_energy_fraction"]
     ri = Eγ/Ei
@@ -92,6 +93,7 @@ function seltzer_berger_stopping_power(Z::Int64,Ei::Float64,particle::Particle)
     #----
     data = fast_load("bremsstrahlung_data_seltzer_berger_1986.jld2")
     E = data["incident_electron_energy"] # (in mₑc²)
+    if Ei < E[1] return 0.0 end
     if ~(E[1] ≤ Ei ≤ E[end]) error("Bremsstrahlung tables from Seltzer and Berger are defined between 1 keV and 10 GeV.") end
     if ~haskey(data["scaled_stopping_powers"],Z) error("Undefined scaled Bremsstrahlung cross-sections for Z = $Z") end
     ϕ = data["scaled_stopping_powers"][Z]

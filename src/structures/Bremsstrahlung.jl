@@ -200,9 +200,6 @@ function bounds(this::Bremsstrahlung,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,t
     elseif type == "P" 
         Ef⁻ = min(Ef⁻,Ei)
         if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
-    elseif type == "Pₐ"
-        Ef⁻ = min(Ef⁻,Ei-Ec)
-        if (Ef⁻-Ef⁺ < 0) isSkip = true else isSkip = false end
     else
         error("Unknown type of method for Bremsstrahlung scattering.")
     end
