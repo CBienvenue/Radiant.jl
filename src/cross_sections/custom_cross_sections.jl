@@ -37,7 +37,7 @@ function custom_cross_sections(cross_sections::Cross_Sections)
         multigroup_cross_sections[i,n] = mcs
     end
 
-    cross_sections.set_number_of_groups(1)
+    cross_sections.set_number_of_groups([1])
     cross_sections.set_multigroup_cross_sections(multigroup_cross_sections)
 
 end
