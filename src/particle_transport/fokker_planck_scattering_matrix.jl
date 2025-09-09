@@ -1,7 +1,7 @@
 """
     FP_scattering_matrix(N::Int64,Ω::Union{Vector{Vector{Float64}},Vector{Float64}},
     w::Vector{Float64},Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},
-    pℓ::Vector{Int64},P::Int64)
+    pl::Vector{Int64},P::Int64)
 
 Calculate the Fokker-Planck scattering matrix.
 
@@ -13,7 +13,7 @@ Calculate the Fokker-Planck scattering matrix.
 - `method::String`: discretisation method for the angular Fokker-Planck term.
 - `Mn::Array{Float64}`: moment-to-discrete matrix.
 - `Dn::Array{Float64}`: discrete-to-moment matrix.
-- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `pl::Vector{Int64}`: legendre order associated with each interpolation basis. 
 - `P::Int64`: number of angular interpolation basis.
 - `Qdims::Int64`: quadrature dimension.
 
@@ -26,14 +26,14 @@ Calculate the Fokker-Planck scattering matrix.
   Fokker-Planck Equation.
 
 """
-function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},P::Int64,Qdims::Int64)
+function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pl::Vector{Int64},P::Int64,Qdims::Int64)
 
 if method == "finite-difference"
     ℳ, λ₀ = fokker_planck_finite_difference(N,quadrature_type,Ndims,Nd,Mn,Dn,Qdims)
 elseif method == "differential-quadrature"
     ℳ, λ₀ = fokker_planck_differential_quadrature(N,quadrature_type,Ndims,Qdims)
 elseif method == "galerkin"
-    ℳ, λ₀ = fokker_planck_galerkin(Nd,Mn,Dn,pℓ,P)
+    ℳ, λ₀ = fokker_planck_galerkin(Nd,Mn,Dn,pl,P)
 else
     error("Unknown method to treat the Fokker-Planck term.")
 end

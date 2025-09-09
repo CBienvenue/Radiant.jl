@@ -154,15 +154,15 @@ Gives the Legendre moments of the Møller angular distribution.
 function angular_moller(Ei::Float64,Ef::Float64,L::Int64)
 
     # Initialization
-    Wℓ = zeros(L+1)
+    Wl = zeros(L+1)
 
     # Compute the direction cosine
     μ = sqrt((Ef*(Ei+2))/(Ei*(Ef+2)))
 
     # Compute the Legendre moments angular distribution
-    Pℓμ = legendre_polynomials(L,μ)
-    for ℓ in range(0,L) Wℓ[ℓ+1] += Pℓμ[ℓ+1] end
-    return Wℓ
+    Plμ = legendre_polynomials_up_to_L(L,μ)
+    for l in range(0,L) Wl[l+1] += Plμ[l+1] end
+    return Wl
 end
 
 """

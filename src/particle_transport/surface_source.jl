@@ -1,12 +1,10 @@
 """
-    surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Particle,
-    source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,
-    discrete_ordinates::Discrete_Ordinates)
+    surface_source(particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,
+    geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
 Prepare the volume source produced by fixed sources for transport calculations.
 
 # Input Argument(s)
-- `Q`: source density.
 - `particle::Particle`: particule type.
 - `source::Volume_Source`: volume source information.
 - `cross_sections::Cross_Sections`: cross-sections information.
@@ -14,14 +12,14 @@ Prepare the volume source produced by fixed sources for transport calculations.
 - `discrete_ordinates::Discrete_Ordinates`: discrete_ordinates information.
 
 # Output Argument(s)
-- `Q`: source density.
+- `Q`: boundary sources.
 - `norm`: normalization factor.
 
 # Reference(s)
 N/A
 
 """
-function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+function surface_source(particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
 
     #----
     # Initialization
@@ -29,305 +27,295 @@ function surface_source(Q::Array{Union{Array{Float64},Float64}},particle::Partic
     if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
     index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
-    if particle != discrete_ordinates.particle error(string("No methods available for ",get_type(particle)," particle.")) end
     Ndims = geometry.get_dimension()
     geometry_type = geometry.get_type()
+    norm = 0.0
+
+    L = source.get_legendre_order()
     quadrature_type = discrete_ordinates.get_quadrature_type()
     N = discrete_ordinates.get_quadrature_order() 
     Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
-    norm = 0.0
+    SN_type = discrete_ordinates.get_angular_boltzmann()
+    surface = source.location
 
-    if geometry_type == "cartesian"
+    # Angular basis
+    Ω,w = quadrature(N,quadrature_type,Qdims)
+    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+    Np,Mn,Dn,n⁺_to_n,n_to_n⁺,pl,pm = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,surface)
+    Lmax = maximum(pl)
 
     #----
     # Cartesian 1D geometry
     #----
-    if Ndims == 1
+    if geometry_type == "cartesian" 
+        if Ndims == 1
 
-    # Extract quadrature
-    Ω,w = quadrature(N,quadrature_type,Qdims)
-    if typeof(Ω) != Vector{Float64} μ = Ω[1] else μ = Ω end
-    Nd = length(μ)
+            #----
+            # Shifted Legendre polynomials
+            #----
+            if Qdims == 1
 
-    # Extract source informations
-    energy_groups = zeros(Ng)
-    for ig in range(1,Ng)
-        if ig == source.energy_group energy_groups[ig] = 1 end
-    end
-    intensity = source.intensity
-    if source.location == "X-"
-        p = 1
-    elseif source.location == "X+"
-        p = 2
-    end
-    Ω = source.direction
+                # Extract source informations
+                intensity = source.intensity
+                Ωs = source.direction
+                μs = Ωs[1]
 
-    # Compute the weighting factors
-    n_source = 0
-    for n in range(1,Nd) 
-        if maximum(abs(Ω[1] - μ[n])) < eps()
-            n_source = n
-            break
-        end
-    end
-    Wn = zeros(Nd)
-    if n_source == 0
-        for n in range(1,Nd) 
-            Wn[n] = (1/abs(μ[n]-Ω[1])^3) 
-        end
-        Wn_max = maximum(Wn)
-        for n in range(1,Nd)
-            if Wn[n]/Wn_max < 0.1 Wn[n] = 0.0 end
-        end
-        Wn = Wn./sum(w .* Wn)
-    else
-        Wn[n_source] = 1/w[n_source]
-    end
-    
-    # Compute the source
-    norm = intensity
-    for ig in range(1,Ng)
-        if energy_groups[ig] == 1 
-            for n in range(1,Nd)
-                Q[ig,n,p] += intensity * Wn[n]
-            end
-        end
-    end
+                # Matrix Initialization
+                Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,2)
+                for ig in range(1,Ng), p in range(1,Np), i in range(1,2)
+                    Q[ig,p,i] = 0.0
+                end
 
-    #----
-    # Cartesian 2D geometry
-    #----
-    elseif Ndims == 2
-
-    Ω,w = quadrature(N,quadrature_type,Qdims)
-    μ = Ω[1]; η = Ω[2]
-    Nd = length(w)
-
-    # Extract source informations
-    energy_groups = zeros(Ng)
-    for ig in range(1,Ng)
-        if ig == source.energy_group energy_groups[ig] = 1 end
-    end
-    intensity = source.intensity
-    if source.location == "X-"
-        p = 1
-    elseif source.location == "X+"
-        p = 2
-    elseif source.location == "Y-"
-        p = 3
-    elseif source.location == "Y+"
-        p = 4
-    end
-    Ω₀ = source.direction
-
-    # Compute the weighting factors
-    n_source = 0
-    for n in range(1,Nd) 
-        if maximum([abs(Ω[1][n] - Ω₀[1]),abs(Ω[2][n] - Ω₀[2]),abs(Ω[3][n] - Ω₀[3])]) < eps()
-            n_source = n
-            break
-        end
-    end
-    Wn = zeros(Nd)
-    if n_source == 0
-        for n in range(1,Nd) 
-            Wn[n] = 1/(abs(Ω[1][n]-Ω₀[1])^3 + abs(Ω[2][n]-Ω₀[2])^3 + abs(Ω[3][n]-Ω₀[3])^3)
-        end
-        Wn_max = maximum(Wn)
-        for n in range(1,Nd)
-            if Wn[n]/Wn_max < 0.1 Wn[n] = 0.0 end
-        end
-        Wn = Wn./sum(w .* Wn)
-    else
-        Wn[n_source] = 1/w[n_source]
-    end
-
-    # Compute the source
-    norm = 0
-    if source.location == "X-" || source.location == "X+"
-        y = geometry.voxels_position["y"]
-        Δy = geometry.voxels_width["y"]
-        Ny = geometry.number_of_voxels["y"]
-        ymin = source.boundaries["y"][1]
-        ymax = source.boundaries["y"][2]
-        for ig in range(1,Ng)
-            if energy_groups[ig] != 1 continue end 
-            for n in range(1,Nd)
-                if abs(Wn[n]) < eps() continue end
-                if Q[ig,n,p] == 0 Q[ig,n,p] = zeros(Ny) end
-                xsource = zeros(Ny)
-                for iy in range(1,Ny)
-                    if ymin <= y[iy] && ymax >= y[iy]
-                        xsource[iy] += intensity * Wn[n] * Δy[iy]
-                        norm = norm + intensity * Δy[iy]
+                # Calculation of the source moments
+                norm = intensity
+                Pls = half_range_legendre_polynomials_up_to_L(Lmax,abs(μs))
+                for ig in range(1,Ng), p in range(1,Np)
+                    if ig == source.energy_group
+                        l = pl[p]
+                        if surface == "X-"
+                            if (μs > 0) Q[ig,p,1] = intensity * Pls[l+1] end
+                        elseif surface == "X+"
+                            if (μs < 0) Q[ig,p,2] = intensity * Pls[l+1] end
+                        end
                     end
                 end
-                Q[ig,n,p] += xsource
-            end
-        end
-    elseif source.location == "Y-" || source.location == "Y+"
-        x = geometry.voxels_position["x"]
-        Δx = geometry.voxels_width["x"]
-        Nx = geometry.number_of_voxels["x"]
-        xmin = source.boundaries["x"][1]
-        xmax = source.boundaries["x"][2]
-        for ig in range(1,Ng)
-            if energy_groups[ig] != 1 continue end 
-            for n in range(1,Nd)
-                if abs(Wn[n]) < eps() continue end
-                if Q[ig,n,p] == 0 Q[ig,n,p] = zeros(Nx) end
-                ysource = zeros(Nx)
-                for ix in range(1,Nx)
-                    if xmin <= x[ix] && xmax >= x[ix]
-                        ysource[ix] += intensity * Wn[n] * Δx[ix]
-                        norm = norm + intensity * Δx[ix]
+
+            #----
+            # Half-range spherical harmonics
+            #----
+            else
+
+                # Extract source informations
+                intensity = source.intensity
+                Ωs = source.direction
+                μs = Ωs[1]
+                ϕs = atan(Ωs[3],Ωs[2])
+
+                # Matrix Initialization
+                Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,2)
+                for ig in range(1,Ng), i in range(1,2), p in range(1,Np)
+                    Q[ig,p,i] = 0.0
+                end
+
+                # Calculation of the source moments
+                norm = intensity
+                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μs,ϕs)
+                for ig in range(1,Ng)
+                    if ~(ig == source.energy_group) continue end
+                    for p in range(1,Np)
+                        l = pl[p]
+                        m = pm[p]
+                        if surface == "X-"
+                            if (μs > 0) Q[ig,p,1] = intensity * ψlms[l+1][l+m+1] end
+                        elseif surface == "X+"
+                            if (μs < 0) Q[ig,p,2] = intensity * ψlms[l+1][l+m+1] end
+                        end
                     end
                 end
-                Q[ig,nm[n],p] += ysource
             end
-        end
-    end
 
-    #----
-    # Cartesian 3D geometry
-    #----
-    elseif Ndims == 3
+        elseif Ndims == 2
 
-    Ω,w = quadrature(N,quadrature_type,Qdims)
-    μ = Ω[1]; η = Ω[2]; ξ = Ω[3]
-    Nd = length(w)
+            # Geometry information
+            x = geometry.voxels_position["x"]
+            Δx = geometry.voxels_width["x"]
+            Nx = geometry.number_of_voxels["x"]
+            y = geometry.voxels_position["y"]
+            Δy = geometry.voxels_width["y"]
+            Ny = geometry.number_of_voxels["y"]
+            if surface ∈ ["X-","X+"]
+                ymin = source.boundaries["y"][1]
+                ymax = source.boundaries["y"][2]
+            elseif surface ∈ ["Y-","Y+"]
+                xmin = source.boundaries["x"][1]
+                xmax = source.boundaries["x"][2]
+            end
 
-    # Extract source informations
-    energy_groups = zeros(Ng)
-    for ig in range(1,Ng)
-        if ig == source.energy_group energy_groups[ig] = 1 end
-    end
-    intensity = source.intensity
-    if source.location == "X-"
-        p = 1
-    elseif source.location == "X+"
-        p = 2
-    elseif source.location == "Y-"
-        p = 3
-    elseif source.location == "Y+"
-        p = 4
-    elseif source.location == "Z-"
-        p = 5
-    elseif source.location == "Z+"
-        p = 6
-    end
-    Ω₀ = source.direction
+            # Extract source informations
+            intensity = source.intensity
+            Ωs = source.direction
+            μs = Ωs[1]
+            ηs = Ωs[2]
+            ξs = Ωs[3]
 
-    # Compute the weighting factors
-    n_source = 0
-    for n in range(1,Nd) 
-        if maximum([abs(Ω[1][n] - Ω₀[1]),abs(Ω[2][n] - Ω₀[2]),abs(Ω[3][n] - Ω₀[3])]) < eps()
-            n_source = n
-            break
+            # Matrix Initialization
+            Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,4)
+            for ig in range(1,Ng), p in range(1,Np)
+                for i in range(1,2)
+                    Q[ig,p,i] = zeros(Ny)
+                end
+                for i in range(3,4)
+                    Q[ig,p,i] = zeros(Nx)
+                end
+            end
+
+            # Calculation of the source moments
+            norm = 0.0
+            if surface == "X-"
+                μ⁺ = μs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "X+"
+                μ⁺ = -μs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "Y-"
+                μ⁺ = ηs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "Y+"
+                μ⁺ = -ηs
+                ϕ⁺ = atan(ξs,ηs)
+            end
+            ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ⁺,ϕ⁺)
+            for ig in range(1,Ng)
+                if ~(ig == source.energy_group) continue end
+                for p in range(1,Np)
+                    l = pl[p]
+                    m = pm[p]
+                    if surface ∈ ["X-","X+"]
+                        for iy in range(1,Ny)
+                            if y[iy] < ymin || y[iy] > ymax continue end
+                            if surface == "X-" && μs > 0
+                                Q[ig,p,1][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
+                            elseif surface == "X+" && μs < 0
+                                Q[ig,p,2][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
+                            end
+                            norm += intensity * Δy[iy]
+                        end
+                    end
+                    if surface ∈ ["Y-","Y+"]
+                        for ix in range(1,Nx)
+                            if x[ix] < xmin || x[ix] > xmax continue end
+                            if surface == "Y-" && ηs > 0
+                                Q[ig,p,3][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
+                            elseif surface == "Y+" && ηs < 0
+                                Q[ig,p,4][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
+                            end
+                            norm += intensity * Δx[ix]
+                        end
+                    end
+                end
+            end
+
+        elseif Ndims == 3
+            
+            # Geometry information
+            x = geometry.voxels_position["x"]
+            Δx = geometry.voxels_width["x"]
+            Nx = geometry.number_of_voxels["x"]
+            y = geometry.voxels_position["y"]
+            Δy = geometry.voxels_width["y"]
+            Ny = geometry.number_of_voxels["y"]
+            z = geometry.voxels_position["z"]
+            Δz = geometry.voxels_width["z"]
+            Nz = geometry.number_of_voxels["z"]
+            if surface ∈ ["X-","X+"]
+                ymin = source.boundaries["y"][1]
+                ymax = source.boundaries["y"][2]
+                zmin = source.boundaries["z"][1]
+                zmax = source.boundaries["z"][2]
+            elseif surface ∈ ["Y-","Y+"]
+                xmin = source.boundaries["x"][1]
+                xmax = source.boundaries["x"][2]
+                zmin = source.boundaries["z"][1]
+                zmax = source.boundaries["z"][2]
+            elseif surface ∈ ["Z-","Z+"]
+                xmin = source.boundaries["x"][1]
+                xmax = source.boundaries["x"][2]
+                ymin = source.boundaries["y"][1]
+                ymax = source.boundaries["y"][2]
+            end
+
+            # Extract source informations
+            intensity = source.intensity
+            Ωs = source.direction
+            μs = Ωs[1]
+            ηs = Ωs[2]
+            ξs = Ωs[3]
+
+            # Matrix Initialization
+            Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,6)
+            for ig in range(1,Ng), p in range(1,Np)
+                for i in range(1,2)
+                    Q[ig,p,i] = zeros(Ny,Nz)
+                end
+                for i in range(3,4)
+                    Q[ig,p,i] = zeros(Nx,Nz)
+                end
+                for i in range(5,6)
+                    Q[ig,p,i] = zeros(Nx,Ny)
+                end
+            end
+
+            # Calculation of the source moments
+            norm = 0.0
+            if surface == "X-"
+                μ⁺ = μs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "X+"
+                μ⁺ = -μs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "Y-"
+                μ⁺ = ηs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "Y+"
+                μ⁺ = -ηs
+                ϕ⁺ = atan(ξs,ηs)
+            elseif surface == "Z-"
+                μ⁺ = ξs
+                ϕ⁺ = atan(ηs,μs)
+            elseif surface == "Z+"
+                μ⁺ = -ξs
+                ϕ⁺ = atan(ηs,μs)
+            end
+            ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ⁺,ϕ⁺)
+            for ig in range(1,Ng)
+                if ~(ig == source.energy_group) continue end
+                for p in range(1,Np)
+                    l = pl[p]
+                    m = pm[p]
+                    if surface ∈ ["X-","X+"]
+                        for iy in range(1,Ny), iz in range(1,Nz)
+                            if y[iy] < ymin || y[iy] > ymax continue end
+                            if z[iz] < zmin || z[iz] > zmax continue end
+                            if surface == "X-" && μs > 0
+                                Q[ig,p,1][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
+                            elseif surface == "X+" && μs < 0
+                                Q[ig,p,2][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
+                            end
+                            norm += intensity * Δy[iy] * Δz[iz]
+                        end
+                    end
+                    if surface ∈ ["Y-","Y+"]
+                        for ix in range(1,Nx), iz in range(1,Nz)
+                            if x[ix] < xmin || x[ix] > xmax continue end
+                            if z[iz] < zmin || z[iz] > zmax continue end
+                            if surface == "Y-" && ηs > 0
+                                Q[ig,p,3][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
+                            elseif surface == "Y+" && ηs < 0
+                                Q[ig,p,4][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
+                            end
+                            norm += intensity * Δx[ix] * Δz[iz]
+                        end
+                    end
+                    if surface ∈ ["Z-","Z+"]
+                        for ix in range(1,Nx), iy in range(1,Ny)
+                            if x[ix] < xmin || x[ix] > xmax continue end
+                            if y[iy] < ymin || y[iy] > ymax continue end
+                            if surface == "Z-" && ξs > 0
+                                Q[ig,p,5][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
+                            elseif surface == "Z+" && ξs < 0
+                                Q[ig,p,6][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
+                            end
+                            norm += intensity * Δx[ix] * Δy[iy]
+                        end
+                    end
+                end
+            end
+
+        else
+            error("Cartesian geometries are available only in 1D, 2D and 3D geometries.")
         end
-    end
-    Wn = zeros(Nd)
-    if n_source == 0
-        for n in range(1,Nd) 
-            Wn[n] = 1/(abs(Ω[1][n]-Ω₀[1])^3 + abs(Ω[2][n]-Ω₀[2])^3 + abs(Ω[3][n]-Ω₀[3])^3)
-        end
-        Wn_max = maximum(Wn)
-        for n in range(1,Nd)
-            if Wn[n]/Wn_max < 0.1 Wn[n] = 0.0 end
-        end
-        Wn = Wn./sum(w .* Wn)
     else
-        Wn[n_source] = 1/w[n_source]
+        error("Surface sources are only available in Cartesian geometries.")
     end
-
-    # Compute the source
-    norm = 0
-    if source.location == "X-" || source.location == "X+"
-        y = geometry.voxels_position["y"]
-        Δy = geometry.voxels_width["y"]
-        Ny = geometry.number_of_voxels["y"]
-        ymin = source.boundaries["y"][1]
-        ymax = source.boundaries["y"][2]
-        z = geometry.voxels_position["z"]
-        Δz = geometry.voxels_width["z"]
-        Nz = geometry.number_of_voxels["z"]
-        zmin = source.boundaries["z"][1]
-        zmax = source.boundaries["z"][2]
-        for ig in range(1,Ng)
-            if energy_groups[ig] != 1 continue end 
-            for n in range(1,Nd)
-                if abs(Wn[n]) < eps() continue end
-                if Q[ig,n,p] == 0 Q[ig,n,p] = zeros(Ny,Nz) end
-                xsource = zeros(Ny,Nz)
-                for iy in range(1,Ny), iz in range(1,Nz)
-                    if ymin <= y[iy] && ymax >= y[iy] && zmin <= z[iz] && zmax >= z[iz]
-                        xsource[iy,iz] += intensity * Wn[n] * Δy[iy] * Δz[iz]
-                        norm = norm + intensity * Δy[iy] * Δz[iz]
-                    end
-                end
-                Q[ig,n,p] += xsource
-            end
-        end
-    elseif source.location == "Y-" || source.location == "Y+"
-        x = geometry.voxels_position["x"]
-        Δx = geometry.voxels_width["x"]
-        Nx = geometry.number_of_voxels["x"]
-        xmin = source.boundaries["x"][1]
-        xmax = source.boundaries["x"][2]
-        z = geometry.voxels_position["z"]
-        Δz = geometry.voxels_width["z"]
-        Nz = geometry.number_of_voxels["z"]
-        zmin = source.boundaries["z"][1]
-        zmax = source.boundaries["z"][2]
-        for ig in range(1,Ng)
-            if energy_groups[ig] != 1 continue end 
-            for n in range(1,Nd)
-                if abs(Wn[n]) < eps() continue end
-                if Q[ig,n,p] == 0 Q[ig,n,p] = zeros(Nx,Nz) end
-                ysource = zeros(Nx,Nz)
-                for ix in range(1,Nx), iz in range(1,Nz)
-                    if xmin <= x[ix] && xmax >= x[ix] && zmin <= z[iz] && zmax >= z[iz]
-                        ysource[ix,iz] += intensity * Wn[n] * Δx[ix] * Δz[iz]
-                        norm = norm + intensity * Δx[ix] * Δz[iz]
-                    end
-                end
-                Q[ig,n,p] += ysource
-            end
-        end
-    elseif source.location == "Z-" || source.location == "Z+"
-        x = geometry.voxels_position["x"]
-        Δx = geometry.voxels_width["x"]
-        Nx = geometry.number_of_voxels["x"]
-        xmin = source.boundaries["x"][1]
-        xmax = source.boundaries["x"][2]
-        y = geometry.voxels_position["y"]
-        Δy = geometry.voxels_width["y"]
-        Ny = geometry.number_of_voxels["y"]
-        ymin = source.boundaries["y"][1]
-        ymax = source.boundaries["y"][2]
-        for ig in range(1,Ng)
-            if energy_groups[ig] != 1 continue end 
-            for n in range(1,Nd)
-                if abs(Wn[n]) < eps() continue end
-                if Q[ig,n,p] == 0 Q[ig,n,p] = zeros(Nx,Ny) end
-                zsource = zeros(Nx,Ny)
-                for ix in range(1,Nx), iy in range(1,Ny)
-                    if xmin <= x[ix] && xmax >= x[ix] && ymin <= y[iy] && ymax >= y[iy]
-                        zsource[ix,iy] += intensity * Wn[n] * Δx[ix] * Δy[iy]
-                        norm = norm + intensity * Δx[ix] * Δy[iy]
-                    end
-                end
-                Q[ig,n,p] += zsource
-            end
-        end
-    end
-    else
-    error("Cartesian geometries are available only in 1D, 2D and 3D geometries.")
-    end
-    else
-    error("Surface sources are only available in Cartesian geometries.")
-    end
-    
-    return Q,norm
-
+    return Q, norm
 end

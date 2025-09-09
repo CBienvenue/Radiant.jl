@@ -198,7 +198,7 @@ Gives the Legendre moments of the scattering cross-sections for Compton interact
 - `particle::Particle` : outgoing particle.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int64,iz::Int64,δi::Int64,particle::Particle)
@@ -208,7 +208,7 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int6
         #----
         # Initialization
         #----
-        σℓ = zeros(L+1)
+        σl = zeros(L+1)
 
         #----
         # Scattered photon
@@ -223,10 +223,10 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int6
             end
 
             # Compute the Legendre moments of the flux
-            Wℓ = angular_klein_nishina(Ei,Ef,L,particle)
+            Wl = angular_klein_nishina(Ei,Ef,L,particle)
 
             # Compute the Legendre moments of the cross-section
-            for ℓ in range(0,L) σℓ[ℓ+1] = σs * Wℓ[ℓ+1] end
+            for l in range(0,L) σl[l+1] = σs * Wl[l+1] end
 
         #----
         # Produced electron
@@ -241,10 +241,10 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int6
             end
 
             # Compute the Legendre moments of the flux
-            Wℓ = angular_klein_nishina(Ei,Ef,L,particle)
+            Wl = angular_klein_nishina(Ei,Ef,L,particle)
 
             # Compute the Legendre moments of the cross-section
-            for ℓ in range(0,L) σℓ[ℓ+1] = σs * Wℓ[ℓ+1] end
+            for l in range(0,L) σl[l+1] = σs * Wl[l+1] end
 
         else
             error("Unknown interaction.")
@@ -256,7 +256,7 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int6
         # Scattered photon
         #----
         if type == "S"
-            σℓ = impulse_approximation(Z,L,δi,Ei,Ef)
+            σl = impulse_approximation(Z,L,δi,Ei,Ef)
 
         #----
         # Produced electron
@@ -264,14 +264,14 @@ function dcs(this::Compton,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int6
         elseif type == "P"
             _,_,Ui,_,_,_ = electron_subshells(Z)
             Eγ = (Ei-Ui[δi])-Ef
-            σℓ = impulse_approximation(Z,L,δi,Ei,Eγ)
+            σl = impulse_approximation(Z,L,δi,Ei,Eγ)
         else
             error("Unknown interaction.")
         end
     else
         error("Unknown Compton model.")
     end
-    return σℓ
+    return σl
 end
 
 """

@@ -1,6 +1,6 @@
 """
     angular_fokker_planck_decomposition(interaction::Interaction,L::Int64,Σt::Float64,
-    Σsℓ::Vector{Float64},α::Float64)
+    Σsl::Vector{Float64},α::Float64)
 
 Decompose the elastic cross-sections between soft and catastrophic, such as the
 catastrophic part is dealt with the Boltzmann operator and the soft part, with the angular
@@ -10,7 +10,7 @@ Fokker-Planck operator.
 - `interaction::Interaction` : type of interaction.
 - `L::Int64` : Legendre truncation order.
 - `Σt::Float64` : total cross-section.
-- `Σsℓ::Vector{Float64}` : Legendre moments of the scattering cross-section.
+- `Σsl::Vector{Float64}` : Legendre moments of the scattering cross-section.
 - `α::Float64` : momentum transfer.
 - `scattering_model::String` : scattering_model type.
 - `is_AFP_decomposition::Bool` : boolean indicating if angular Fokker-Planck decomposition
@@ -18,7 +18,7 @@ Fokker-Planck operator.
 
 # Output Argument(s)
 - `Σt::Float64` : total cross-section.
-- `Σsℓ::Vector{Float64}` : Legendre moments of the scattering cross-section.
+- `Σsl::Vector{Float64}` : Legendre moments of the scattering cross-section.
 - `α::Float64` : momentum transfer.
 
 # Reference(s)
@@ -26,34 +26,34 @@ Fokker-Planck operator.
   Techniques.
 
 """
-function angular_fokker_planck_decomposition(interaction::Interaction,L::Int64,Σt::Float64,Σsℓ::Vector{Float64},T::Float64)
+function angular_fokker_planck_decomposition(interaction::Interaction,L::Int64,Σt::Float64,Σsl::Vector{Float64},T::Float64)
 
 # Find the last non-zero Legendre moment
-ℓmax = L
-for ℓ in range(L,1,step=-1)
-    ℓmax = ℓ
+lmax = L
+for l in range(L,1,step=-1)
+    lmax = l
     is_momentum_transfer_ok = true
-    for l in range(0,ℓ-1)
-        if Σsℓ[l+1] - Σsℓ[ℓ+1] - (Σsℓ[ℓ]-Σsℓ[ℓ+1])/(2*ℓ)*(ℓ*(ℓ+1)-l*(l+1)) < 0
+    for li in range(0,l-1)
+        if Σsl[li+1] - Σsl[l+1] - (Σsl[l]-Σsl[l+1])/(2*l)*(l*(l+1)-li*(li+1)) < 0
             is_momentum_transfer_ok = false
             break
         end
     end
-    if Σsℓ[ℓ+1] != 0.0 && is_momentum_transfer_ok
-        Σsℓ[ℓ+2:end] .= 0
+    if Σsl[l+1] != 0.0 && is_momentum_transfer_ok
+        Σsl[l+2:end] .= 0
         break 
     end
 end
 
 # Momentum transfer, total cross-sections and elastic scattering cross-sections modification
-if ℓmax > 1 && interaction.is_AFP_decomposition
-    Tt = (Σsℓ[ℓmax]-Σsℓ[ℓmax+1])/(2*ℓmax)
+if lmax > 1 && interaction.is_AFP_decomposition
+    Tt = (Σsl[lmax]-Σsl[lmax+1])/(2*lmax)
     T += Tt
-    Σt -= Tt*ℓmax*(ℓmax+1) + Σsℓ[ℓmax+1]
-    for ℓ in range(0,ℓmax)
-        Σsℓ[ℓ+1] -= Tt*(ℓmax*(ℓmax+1)-ℓ*(ℓ+1)) + Σsℓ[ℓmax+1]
+    Σt -= Tt*lmax*(lmax+1) + Σsl[lmax+1]
+    for l in range(0,lmax)
+        Σsl[l+1] -= Tt*(lmax*(lmax+1)-l*(l+1)) + Σsl[lmax+1]
     end 
 end
 
-return Σt, Σsℓ, T
+return Σt, Σsl, T
 end

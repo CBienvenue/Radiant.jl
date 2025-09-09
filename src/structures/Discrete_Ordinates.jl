@@ -46,7 +46,7 @@ mutable struct Discrete_Ordinates
         this.quadrature_type = missing
         this.quadrature_order = missing
         this.quadrature_dimension = 0
-        this.legendre_order = 1000
+        this.legendre_order = 64
         this.angular_fokker_planck = "finite-difference"
         this.angular_boltzmann = "galerkin-d"
         this.convergence_criterion = 1e-7 

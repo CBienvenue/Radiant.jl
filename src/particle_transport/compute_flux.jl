@@ -44,8 +44,9 @@ Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
 # Compute quadrature weights and abscissae
 Ω,w = quadrature(N,quadrature_type,Ndims,Qdims)
 if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
-P,Mn,Dn,pℓ,pm = angular_polynomial_basis(Ndims,Ω,w,L,N,SN_type,Qdims)
 Nd = length(w)
+Np,Mn,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,SN_type,Qdims)
+Np_surf,Mn_surf,Dn_surf,n⁺_to_n,n_to_n⁺,pl_surf,pm_surf = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,Ndims,geo_type)
 
 #----
 # Preparation of cross sections
@@ -100,7 +101,7 @@ if solver ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = discrete_ordinates.get_angular_fokker_planck()
-    ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pℓ,P,Qdims)
+    ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
     Σtot .+= T .* λ₀
 end
 
@@ -116,9 +117,9 @@ end
 is_EM = false
 if is_EM
     q = part.get_charge()
-    ℳ_EM = electromagnetic_scattering_matrix(𝓔,𝓑,q,Ω,w,Ndims,Mn,Dn,pℓ,pm,P,Ng,Eb,ΔE,Qdims)
+    ℳ_EM = electromagnetic_scattering_matrix(𝓔,𝓑,q,Ω,w,Ndims,Mn,Dn,pl,pm,Np,Ng,Eb,ΔE,Qdims)
 else
-    ℳ_EM = zeros(Ng,P,P);
+    ℳ_EM = zeros(Ng,Np,Np);
 end
 
 #----
@@ -133,6 +134,7 @@ end
 
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
+Np_surf = min(Np_surf,length(surface_sources[1,:,1]))
 
 #----
 # Flux calculations
@@ -142,8 +144,8 @@ volume_sources = source.get_volume_sources()
 I_max = discrete_ordinates.get_maximum_iteration()
 
 # Initialization flux
-𝚽ℓ = zeros(Ng,P,Nm[5],Ns[1],Ns[2],Ns[3])
-if isCSD 𝚽cutoff = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3]) end
+𝚽l = zeros(Ng,Np,Nm[5],Ns[1],Ns[2],Ns[3])
+if isCSD 𝚽cutoff = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3]) end
 
 # All-group iteration
 i_out = 1
@@ -151,7 +153,7 @@ is_outer_convergence = false
 ϵ_out = Inf
 is_outer_iteration = false
 Ntot = 0
-if is_outer_iteration 𝚽ℓ⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
+if is_outer_iteration 𝚽l⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 
 while ~(is_outer_convergence)
 
@@ -162,11 +164,11 @@ while ~(is_outer_convergence)
     for ig in range(1,Ng)
 
         # Calculation of the Legendre components of the source (out-scattering)
-        Qℓout = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
-        if solver ∉ [4,5] Qℓout = scattering_source(Qℓout,𝚽ℓ,Σs[:,:,ig,:],mat,P,pℓ,Nm[5],Ns,Ng,ig) end
+        Qlout = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
+        if solver ∉ [4,5] Qlout = scattering_source(Qlout,𝚽l,Σs[:,:,ig,:],mat,Np,pl,Nm[5],Ns,Ng,ig) end
 
         # Fixed volumic sources
-        Qℓout .+= volume_sources[ig,:,:,:,:,:]
+        Qlout .+= volume_sources[ig,:,:,:,:,:]
 
         # Calculation of the group flux
         if isCSD
@@ -191,20 +193,19 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽ℓ[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽ℓ[ig,:,:,:,:,:],Qℓout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,P,pℓ,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
-        
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲)
     end
 
     # Verification of convergence in all energy groups
     if is_outer_iteration
-        ϵ_out = maximum(vec(abs.(𝚽ℓ[:,1,1,:,:,:] .- 𝚽ℓ⁻)))/maximum(vec(abs.(𝚽ℓ[:,1,1,:,:,:])))
-        𝚽ℓ⁻ = 𝚽ℓ[:,1,1,:,:,:]
+        ϵ_out = maximum(vec(abs.(𝚽l[:,1,1,:,:,:] .- 𝚽l⁻)))/maximum(vec(abs.(𝚽l[:,1,1,:,:,:])))
+        𝚽l⁻ = 𝚽l[:,1,1,:,:,:]
     end
     if (ϵ_out < ϵ_max || i_out >= I_max) || ~is_outer_iteration
         is_outer_convergence = true
         # Calculate the flux at the cutoff energy
         if isCSD
-            for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,P)
+            for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
                 𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
             end
         end
@@ -216,7 +217,7 @@ end
 
 # Save flux
 flux = Flux_Per_Particle(part)
-flux.add_flux(𝚽ℓ)
+flux.add_flux(𝚽l)
 if isCSD flux.add_flux_cutoff(𝚽cutoff) end
 
 return flux

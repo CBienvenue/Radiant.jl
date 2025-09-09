@@ -11,7 +11,7 @@ functions of Poškus.
 - `L::Int64` : Legendre truncation order.
 
 # Output Argument(s)
-- `Wℓ::Vector{Wℓ}` : Legendre moments of the Poškus angular distribution.
+- `Wl::Vector{Wl}` : Legendre moments of the Poškus angular distribution.
 
 # Reference(s)
 - Poškus (2019), Shape functions and singly differential cross sections of bremsstrahlung
@@ -25,18 +25,18 @@ function poskus(Z::Int64,Ei::Float64,Eγ::Float64,L::Int64)
     #----
     # Compute and save in cache, if not already in cache
     #----
-    if ~haskey(cache_radiant[],"Cℓk") || length(cache_radiant[]["Cℓk"][:,1]) < L+1 
-    Cℓk = zeros(L+1,div(L,2)+1)
-    for ℓ in range(0,L), k in range(0,div(L,2))
-        Cℓk[ℓ+1,k+1] = (-1)^k * exp( sum(log.(1:2*ℓ-2*k)) - sum(log.(1:k)) - sum(log.(1:ℓ-k)) - sum(log.(1:ℓ-2*k)) )
+    if ~haskey(cache_radiant[],"Clk") || length(cache_radiant[]["Clk"][:,1]) < L+1 
+    Clk = zeros(L+1,div(L,2)+1)
+    for l in range(0,L), k in range(0,div(L,2))
+        Clk[l+1,k+1] = (-1)^k * exp( sum(log.(1:2*l-2*k)) - sum(log.(1:k)) - sum(log.(1:l-k)) - sum(log.(1:l-2*k)) )
     end
-    cache_radiant[]["Cℓk"] = Cℓk
+    cache_radiant[]["Clk"] = Clk
     end
 
     #----
     # Extract data from cache
     #----
-    Cℓk = cache_radiant[]["Cℓk"]
+    Clk = cache_radiant[]["Clk"]
     data = fast_load("bremsstrahlung_photons_distribution_poskus_2019.jld2")
     A = data["A"]; B = data["B"]; C = data["C"]
     E = data["E"]; r = data["r"]
@@ -88,27 +88,27 @@ function poskus(Z::Int64,Ei::Float64,Eγ::Float64,L::Int64)
         𝒢a[i+1] = 𝒢₃(i,-2,1,-C,0,1,1)-𝒢₃(i,-2,1,-C,0,1,-1)
         𝒢b[i+1] = 𝒢₃(i,-4,1,-C,0,1,1)-𝒢₃(i,-4,1,-C,0,1,-1)
     end
-    Wℓ = zeros(L+1)
-    for ℓ in range(0,L)
-        for k in range(0,div(ℓ,2))
-            Wℓk = 0.0
-            Wℓk += (A+B)*𝒢a[ℓ-2*k+1]
+    Wl = zeros(L+1)
+    for l in range(0,L)
+        for k in range(0,div(l,2))
+            Wlk = 0.0
+            Wlk += (A+B)*𝒢a[l-2*k+1]
             for i in range(0,2)
-                Wℓk += αi[i+1] * 𝒢b[ℓ-2*k+i+1]
+                Wlk += αi[i+1] * 𝒢b[l-2*k+i+1]
             end
-            Wℓ[ℓ+1] += Cℓk[ℓ+1,k+1] * Wℓk
+            Wl[l+1] += Clk[l+1,k+1] * Wlk
         end
-        Wℓ[ℓ+1] *= 3/(4*(2*A+B)) * (1-C^2)/(2^ℓ)
+        Wl[l+1] *= 3/(4*(2*A+B)) * (1-C^2)/(2^l)
     end
 
     #----
     # Correction to deal with high-order Legendre moments
     #----
-    for ℓ in range(1,L)
-        if abs(Wℓ[1]) < abs(Wℓ[ℓ+1])
-            Wℓ[ℓ+1:end] .= 0.0
+    for l in range(1,L)
+        if abs(Wl[1]) < abs(Wl[l+1])
+            Wl[l+1:end] .= 0.0
             break
         end
     end
-    return Wℓ
+    return Wl
 end

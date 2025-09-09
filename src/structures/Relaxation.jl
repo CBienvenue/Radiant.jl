@@ -202,13 +202,13 @@ Gives the Legendre moments of the scattering cross-sections for relaxation produ
 - `produced_particle::Particle` : produced particle.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Relaxation,L::Int64,Ei::Float64,Ecutoff::Float64,Ec::Float64,Z::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64,incoming_particle::Particle,produced_particle::Particle)
 
     # Initialization
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
     is_relaxation = false
     if is_positron(incoming_particle) || is_electron(incoming_particle)
         if ~ismissing(this.inelastic_collision_model) && this.inelastic_collision_model.is_subshells_dependant
@@ -248,9 +248,9 @@ function dcs(this::Relaxation,L::Int64,Ei::Float64,Ecutoff::Float64,Ec::Float64,
         σs = relaxation(Z,Ecutoff,Ef⁻,Ef⁺,δi,produced_particle,σ_per_subshell,this.ηmin)
 
         # Legendre moments of the cross-section (isotropic)
-        σℓ[1] = σs
+        σl[1] = σs
 
     end
 
-    return σℓ
+    return σl
 end

@@ -1,19 +1,21 @@
 """
-    compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},
+    compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},
     Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,
     Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},
-    Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},
-    Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,
-    ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,
-    solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},
-    S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},
-    𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
+    Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},
+    Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,
+    n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,
+    C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,
+    sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,
+    E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},
+    S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,
+    is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 Solve the one-speed transport equation for a given particle.  
 
 # Input Argument(s)
-- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
-- `Qℓout::Array{Float64}`: Legendre components of the out-of-group in-cell source.
+- `𝚽l::Array{Float64}`: Legendre components of the in-cell flux.
+- `Qlout::Array{Float64}`: Legendre components of the out-of-group in-cell source.
 - `Σt::Vector{Float64}`: total cross-sections.
 - `Σs::Array{Float64}`: Legendre moments of the scattering differential cross-sections.
 - `mat::Array{Int64,3}`: material identifier per voxel.
@@ -25,8 +27,12 @@ Solve the one-speed transport equation for a given particle.
 - `Ω::Union{Vector{Vector{Float64}},Vector{Float64}}`: director cosines.
 - `Mn::Array{Float64,2}`: moment-to-discrete matrix.
 - `Dn::Array{Float64,2}`: discrete-to-moment matrix.
-- `P::Int64`: number of angular interpolation basis.
-- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `Np::Int64`: number of angular interpolation basis.
+- `Mn_surf::Vector{Array{Float64}}`: moment-to-discrete matrix for each geometry surface.
+- `Dn_surf::Vector{Array{Float64}}`: discrete-to-moment matrix for each geometry surface.
+- `Np_surf::Int64`: number of angular interpolation basis for each geometry surface.
+- `n_to_n⁺::Vector{Vector{Int64}}`: mapping from full-range to half-range indices.
+- `pl::Vector{Int64}`: legendre order associated with each interpolation basis. 
 - `𝒪::Vector{Int64}`: spatial and/or energy closure relation order.
 - `Nm::Vector{Int64}`: number of spatial and/or energy moments.
 - `isFC::Bool`: boolean indicating if the high-order incoming moments are fully coupled.
@@ -56,7 +62,7 @@ Solve the one-speed transport equation for a given particle.
 - `𝒲::Array{Float64}` : weighting constants.
 
 # Output Argument(s)
-- `𝚽ℓ::Array{Float64}`: Legendre components of the in-cell flux.
+- `𝚽l::Array{Float64}`: Legendre components of the in-cell flux.
 - `𝚽E12::Array{Float64}`: outgoing flux along the energy axis.
 - `ρ_in::Float64`: estimated spectral radius.
 - `Ntot::Int64` : accumulator for the total number of in-group iterations.
@@ -65,7 +71,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽ℓ::Array{Float64},Qℓout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},P::Int64,pℓ::Vector{Int64},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
+function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,N::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64})
 
 # Flux Initialization
 𝚽E12_temp = Array{Float64}(undef)
@@ -73,7 +79,7 @@ if isCSD
     𝚽E12_temp = zeros(N,Nm[4],Ns[1],Ns[2],Ns[3])
 end
 N⁻ = 2
-𝚽ℓ⁻ = zeros(N⁻,P,Nm[5],Ns[1],Ns[2],Ns[3])
+𝚽l⁻ = zeros(N⁻,Np,Nm[5],Ns[1],Ns[2],Ns[3])
 
 # Source iteration loop until convergence
 i_in = 1
@@ -83,24 +89,24 @@ isInnerConv=false
 while ~(isInnerConv)
 
     # Calculation of the Legendre components of the source (in-scattering)
-    Qℓ = copy(Qℓout)
-    if solver ∉ [4,5,6] Qℓ = scattering_source(Qℓ,𝚽ℓ,Σs,mat,P,pℓ,Nm[5],Ns) end
+    Ql = copy(Qlout)
+    if solver ∉ [4,5,6] Ql = scattering_source(Ql,𝚽l,Σs,mat,Np,pl,Nm[5],Ns) end
 
     # Finite element treatment of the angular Fokker-Planck term
-    if solver ∈ [2,4] Qℓ = fokker_planck_source(P,Nm[5],T,𝚽ℓ,Qℓ,Ns,mat,ℳ) end
+    if solver ∈ [2,4] Ql = fokker_planck_source(Np,Nm[5],T,𝚽l,Ql,Ns,mat,ℳ) end
 
     # Electromagnetic source
     if is_EM
         for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[5])
-            for n in range(1,P), m in range(1,P)
-                Qℓ[n,is,ix,iy,iz] += ℳ_EM[n,m] * 𝚽ℓ[m,is,ix,iy,iz]
+            for n in range(1,Np), m in range(1,Np)
+                Ql[n,is,ix,iy,iz] += ℳ_EM[n,m] * 𝚽l[m,is,ix,iy,iz]
             end
         end
     end
 
     # If there is no source
-    if ~any(x->x!=0,sources) && ~any(x->x!=0,Qℓ) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
-        𝚽ℓ = zeros(P,Nm[5],Ns[1],Ns[2],Ns[3])
+    if ~any(x->x!=0,sources) && ~any(x->x!=0,Ql) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
+        𝚽l = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
         ϵ_in = 0.0; i_in = 1
         println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
         break
@@ -109,18 +115,89 @@ while ~(isInnerConv)
     #----
     # Loop over all discrete ordinates
     #----
-    #println(string(i_in," ",ϵ_in))
-    𝚽ℓ .= 0
+    𝚽l .= 0
     for n in range(1,N)
         if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end
         if ndims == 1
-            𝚽ℓ[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽ℓ[:,:,:,1,1],Qℓ[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
+            nx⁻ = n_to_n⁺[1][n]
+            nx⁺ = n_to_n⁺[2][n]
+            if nx⁻ != 0
+                Mnx⁻ = Mn_surf[1][nx⁻,:]
+                Dnx⁻ = Dn_surf[1][:,nx⁻]
+            elseif nx⁺ != 0
+                Mnx⁻ = Mn_surf[2][nx⁺,:]
+                Dnx⁻ = Dn_surf[2][:,nx⁺]
+            else
+                Mnx⁻ = zeros(Np)
+                Dnx⁻ = zeros(Np)
+            end
+            𝚽l[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽l[:,:,:,1,1],Ql[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
         elseif ndims == 2
-            𝚽ℓ[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽ℓ[:,:,:,:,1],Qℓ[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
+            nx⁻ = n_to_n⁺[1][n]
+            nx⁺ = n_to_n⁺[2][n]
+            ny⁻ = n_to_n⁺[3][n]
+            ny⁺ = n_to_n⁺[4][n]
+            if nx⁻ != 0
+                Mnx⁻ = Mn_surf[1][nx⁻,:]
+                Dnx⁻ = Dn_surf[1][:,nx⁻]
+            elseif nx⁺ != 0
+                Mnx⁻ = Mn_surf[2][nx⁺,:]
+                Dnx⁻ = Dn_surf[2][:,nx⁺]
+            else
+                Mnx⁻ = zeros(Np)
+                Dnx⁻ = zeros(Np)
+            end
+            if ny⁻ != 0
+                Mny⁻ = Mn_surf[3][ny⁻,:]
+                Dny⁻ = Dn_surf[3][:,ny⁻]
+            elseif ny⁺ != 0
+                Mny⁻ = Mn_surf[4][ny⁺,:]
+                Dny⁻ = Dn_surf[4][:,ny⁺]
+            else
+                Mny⁻ = zeros(Np)
+                Dny⁻ = zeros(Np)
+            end
+            𝚽l[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽l[:,:,:,:,1],Ql[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
         elseif ndims == 3
-            𝚽ℓ,𝚽E12ⁿ = compute_sweep_3D(𝚽ℓ,Qℓ,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],P,𝒪,Nm,C,ω,sources[n,:],isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
+            nx⁻ = n_to_n⁺[1][n]
+            nx⁺ = n_to_n⁺[2][n]
+            ny⁻ = n_to_n⁺[3][n]
+            ny⁺ = n_to_n⁺[4][n]
+            nz⁻ = n_to_n⁺[5][n]
+            nz⁺ = n_to_n⁺[6][n]
+            if nx⁻ != 0
+                Mnx⁻ = Mn_surf[1][nx⁻,:]
+                Dnx⁻ = Dn_surf[1][:,nx⁻]
+            elseif nx⁺ != 0
+                Mnx⁻ = Mn_surf[2][nx⁺,:]
+                Dnx⁻ = Dn_surf[2][:,nx⁺]
+            else
+                Mnx⁻ = zeros(Np)
+                Dnx⁻ = zeros(Np)
+            end
+            if ny⁻ != 0
+                Mny⁻ = Mn_surf[3][ny⁻,:]
+                Dny⁻ = Dn_surf[3][:,ny⁻]
+            elseif ny⁺ != 0
+                Mny⁻ = Mn_surf[4][ny⁺,:]
+                Dny⁻ = Dn_surf[4][:,ny⁺]
+            else
+                Mny⁻ = zeros(Np)
+                Dny⁻ = zeros(Np)
+            end
+            if nz⁻ != 0
+                Mnz⁻ = Mn_surf[5][nz⁻,:]
+                Dnz⁻ = Dn_surf[5][:,nz⁻]
+            elseif nz⁺ != 0
+                Mnz⁻ = Mn_surf[6][nz⁺,:]
+                Dnz⁻ = Dn_surf[6][:,nz⁺]
+            else
+                Mnz⁻ = zeros(Np)
+                Dnz⁻ = zeros(Np)
+            end
+            𝚽l,𝚽E12ⁿ = compute_sweep_3D(𝚽l,Ql,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Mnz⁻,Dnz⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
         else
-            error("Error in computeOneSpeed.jl: Dimension is not 1, 2 or 3.")
+            error("Dimension is not 1, 2 or 3.")
         end
         if isCSD 𝚽E12_temp[n,:,:,:,:] = 𝚽E12ⁿ end
     end
@@ -129,13 +206,13 @@ while ~(isInnerConv)
     # Verification of convergence of the one-group flux
     #----  
     ϵ_in = 0.0
-    if (solver ∉ [5,6]) ϵ_in = maximum(vec(abs.((𝚽ℓ[1,1,:,:,:] .- 𝚽ℓ⁻[1,1,1,:,:,:])./max.(abs.(𝚽ℓ[1,1,:,:,:]),1e-16)))) end
+    if (solver ∉ [5,6]) ϵ_in = maximum(vec(abs.((𝚽l[1,1,:,:,:] .- 𝚽l⁻[1,1,1,:,:,:])./max.(abs.(𝚽l[1,1,:,:,:]),1e-16)))) end
     if (ϵ_in < ϵ_max) || i_in >= I_max
 
         # Convergence or maximum iterations reach
         isInnerConv = true
         Ntot += i_in
-        if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽ℓ[1,1,:,:,:]) .- vec(𝚽ℓ⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽ℓ⁻[1,1,1,:,:,:]) .- vec(𝚽ℓ⁻[2,1,1,:,:,:]) ).^2)) end
+        if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽l[1,1,:,:,:]) .- vec(𝚽l⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽l⁻[1,1,1,:,:,:]) .- vec(𝚽l⁻[2,1,1,:,:,:]) ).^2)) end
         if ~(i_in >= I_max)
             println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
         else
@@ -146,13 +223,13 @@ while ~(isInnerConv)
 
         # Livolant acceleration
         if 𝒜 == "livolant" && mod(i_in,3) == 0
-            𝚽ℓ⁺ = livolant(𝚽ℓ,𝚽ℓ⁻[1,:,:,:,:,:],𝚽ℓ⁻[2,:,:,:,:,:])
-            𝚽ℓ⁻[2,:,:,:,:,:] = 𝚽ℓ⁻[1,:,:,:,:,:]
-            𝚽ℓ⁻[1,:,:,:,:,:] = 𝚽ℓ
-            𝚽ℓ .= 𝚽ℓ⁺
+            𝚽l⁺ = livolant(𝚽l,𝚽l⁻[1,:,:,:,:,:],𝚽l⁻[2,:,:,:,:,:])
+            𝚽l⁻[2,:,:,:,:,:] = 𝚽l⁻[1,:,:,:,:,:]
+            𝚽l⁻[1,:,:,:,:,:] = 𝚽l
+            𝚽l .= 𝚽l⁺
         else
-            𝚽ℓ⁻[2,:,:,:,:,:] = 𝚽ℓ⁻[1,:,:,:,:,:]
-            𝚽ℓ⁻[1,:,:,:,:,:] = 𝚽ℓ
+            𝚽l⁻[2,:,:,:,:,:] = 𝚽l⁻[1,:,:,:,:,:]
+            𝚽l⁻[1,:,:,:,:,:] = 𝚽l
         end
         
         # Save flux solution and go to next iteration
@@ -162,7 +239,7 @@ while ~(isInnerConv)
 
 end
 
-return 𝚽ℓ,𝚽E12_temp,ρ_in,Ntot
+return 𝚽l,𝚽E12_temp,ρ_in,Ntot
 
 end
 

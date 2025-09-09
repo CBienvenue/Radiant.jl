@@ -1,7 +1,7 @@
 """
     electromagnetic_scattering_matrix(𝓔::Vector{Float64},𝓑::Vector{Float64},q::Real,
     Ω::Vector{Vector{Float64}},w::Vector{Float64},Ndims::Int64,Mn::Array{Float64},
-    Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,
+    Dn::Array{Float64},pl::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,
     Eb::Vector{Float64},ΔE::Vector{Float64},Qdims::Int64)
 
 Compute the scattering matrix corresponding to the Lorentz force by external
@@ -16,7 +16,7 @@ electromagnetic fields.
 - `Ndims::Int64` : dimension of the geometry.
 - `Mn::Array{Float64}` : moment-to-discrete matrix.
 - `Dn::Array{Float64}` : discrete-to-moment matrix.
-- `pℓ::Vector{Int64}` : legendre order associated with each of the spherical harmonics in
+- `pl::Vector{Int64}` : legendre order associated with each of the spherical harmonics in
   the interpolation basis.
 - `pm::Vector{Int64}` : spherical harmonics order associated with each of the spherical
   harmonics in the interpolation basis.
@@ -36,7 +36,7 @@ electromagnetic fields.
   transport equation in the presence of external magnetic fields.
 
 """
-function electromagnetic_scattering_matrix(𝓔::Vector{Float64},𝓑::Vector{Float64},q::Real,Ω::Vector{Vector{Float64}},w::Vector{Float64},Ndims::Int64,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,Eb::Vector{Float64},ΔE::Vector{Float64},Qdims::Int64)
+function electromagnetic_scattering_matrix(𝓔::Vector{Float64},𝓑::Vector{Float64},q::Real,Ω::Vector{Vector{Float64}},w::Vector{Float64},Ndims::Int64,Mn::Array{Float64},Dn::Array{Float64},pl::Vector{Int64},pm::Vector{Int64},P::Int64,Ng::Int64,Eb::Vector{Float64},ΔE::Vector{Float64},Qdims::Int64)
 
 c = 1 # Speed of light (to set)
 # case $μ = ±1$ to deal with
@@ -67,43 +67,43 @@ for n in range(1,Nd)
 
     # Derivative in μ
     for p in range(1,P)
-        ℓ = pℓ[p]; m = pm[p]
-        Cℓm = sqrt((2-(m == 0)) * exp( sum(log.(1:ℓ-abs(m))) - sum(log.(1:ℓ+abs(m))) ))
+        l = pl[p]; m = pm[p]
+        Clm = sqrt((2-(m == 0)) * exp( sum(log.(1:l-abs(m))) - sum(log.(1:l+abs(m))) ))
         if (m ≥ 0) 𝓣m = cos(m*ϕ) else 𝓣m = sin(abs(m)*ϕ) end
         if abs(μ[n]) != 1
-            if ℓ > 0
-                if ℓ > abs(m)
-                    Pℓm = ferrer_associated_legendre(ℓ,abs(m),μ[n])
-                    Pℓ⁻m = ferrer_associated_legendre(ℓ-1,abs(m),μ[n])
-                    M[n,p] += ((ℓ+abs(m))*Pℓ⁻m-ℓ*μ[n]*Pℓm)/(1-μ[n]^2) * Cℓm * 𝓣m * (2*ℓ+1)/(4*π) * q*c* (𝓑[3]*η[n]-𝓑[2]*ξ[n])
-                elseif ℓ == m
-                    Pℓℓ = ferrer_associated_legendre(ℓ,ℓ,μ[n])
-                    M[n,p] += -ℓ*μ[n]*Pℓℓ/(1-μ[n]^2) * Cℓm * 𝓣m * (2*ℓ+1)/(4*π) * q*c* (𝓑[3]*η[n]-𝓑[2]*ξ[n])
+            if l > 0
+                if l > abs(m)
+                    Plm = ferrer_associated_legendre(l,abs(m),μ[n])
+                    Pl⁻m = ferrer_associated_legendre(l-1,abs(m),μ[n])
+                    M[n,p] += ((l+abs(m))*Pl⁻m-l*μ[n]*Plm)/(1-μ[n]^2) * Clm * 𝓣m * (2*l+1)/(4*π) * q*c* (𝓑[3]*η[n]-𝓑[2]*ξ[n])
+                elseif l == m
+                    Pll = ferrer_associated_legendre(l,l,μ[n])
+                    M[n,p] += -l*μ[n]*Pll/(1-μ[n]^2) * Clm * 𝓣m * (2*l+1)/(4*π) * q*c* (𝓑[3]*η[n]-𝓑[2]*ξ[n])
                 end
             end
         else
             if abs(m) == 1
-                M[n,p] += -ℓ*(ℓ+1)/2*(μ[n])^ℓ * Cℓm * 𝓣m * (2*ℓ+1)/(4*π) * q*c* (𝓑[3]*cos(ϕ)-𝓑[2]*sin(ϕ))
+                M[n,p] += -l*(l+1)/2*(μ[n])^l * Clm * 𝓣m * (2*l+1)/(4*π) * q*c* (𝓑[3]*cos(ϕ)-𝓑[2]*sin(ϕ))
             end
         end
     end
 
     # Derivative in ϕ
     for p in range(1,P)
-        ℓ = pℓ[p]; m = pm[p]
-        Cℓm = sqrt((2-(m == 0)) * exp( sum(log.(1:ℓ-abs(m))) - sum(log.(1:ℓ+abs(m))) ))
-        Pℓm = ferrer_associated_legendre(ℓ,abs(m),μ[n])
+        l = pl[p]; m = pm[p]
+        Clm = sqrt((2-(m == 0)) * exp( sum(log.(1:l-abs(m))) - sum(log.(1:l+abs(m))) ))
+        Plm = ferrer_associated_legendre(l,abs(m),μ[n])
         if abs(μ[n]) != 1
             if m ≥ 0
-                M[n,p] += Pℓm * Cℓm * -m*sin(m*ϕ) * (2*ℓ+1)/(4*π) * q*c/(1-μ[n]^2) * (𝓑[2]*μ[n]*η[n]+𝓑[3]*μ[n]*ξ[n]-𝓑[1]*(1-μ[n]^2))
+                M[n,p] += Plm * Clm * -m*sin(m*ϕ) * (2*l+1)/(4*π) * q*c/(1-μ[n]^2) * (𝓑[2]*μ[n]*η[n]+𝓑[3]*μ[n]*ξ[n]-𝓑[1]*(1-μ[n]^2))
             else
-                M[n,p] += Pℓm * Cℓm * abs(m)*cos(abs(m)*ϕ) * (2*ℓ+1)/(4*π) * q*c/(1-μ[n]^2) * (𝓑[2]*μ[n]*η[n]+𝓑[3]*μ[n]*ξ[n]-𝓑[1]*(1-μ[n]^2))
+                M[n,p] += Plm * Clm * abs(m)*cos(abs(m)*ϕ) * (2*l+1)/(4*π) * q*c/(1-μ[n]^2) * (𝓑[2]*μ[n]*η[n]+𝓑[3]*μ[n]*ξ[n]-𝓑[1]*(1-μ[n]^2))
             end
         else
             if m == 1
-                M[n,p] += ℓ*(ℓ+1)/2*(μ[n])^(ℓ+1) * Cℓm * -m*sin(m*ϕ) * (2*ℓ+1)/(4*π) * q*c * (𝓑[2]*cos(ϕ)+𝓑[3]*sin(ϕ))
+                M[n,p] += l*(l+1)/2*(μ[n])^(l+1) * Clm * -m*sin(m*ϕ) * (2*l+1)/(4*π) * q*c * (𝓑[2]*cos(ϕ)+𝓑[3]*sin(ϕ))
             elseif m == -1
-                M[n,p] += ℓ*(ℓ+1)/2*(μ[n])^(ℓ+1) * Cℓm * abs(m)*cos(abs(m)*ϕ) * (2*ℓ+1)/(4*π) * q*c * (𝓑[2]*cos(ϕ)+𝓑[3]*sin(ϕ))
+                M[n,p] += l*(l+1)/2*(μ[n])^(l+1) * Clm * abs(m)*cos(abs(m)*ϕ) * (2*l+1)/(4*π) * q*c * (𝓑[2]*cos(ϕ)+𝓑[3]*sin(ϕ))
             end
         end
     end

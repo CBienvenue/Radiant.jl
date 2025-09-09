@@ -23,6 +23,8 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 - Morel et al. (2007) : A Discretization Scheme for the Three-Dimensional Angular
   Fokker-Planck Operator.
+- Bienvenue et al. (2025), A Flexible, Moment-Preserving, and Monotone Discretization of the
+  Multidimensional Angular Fokker–Planck Operator.
 
 """
 function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)

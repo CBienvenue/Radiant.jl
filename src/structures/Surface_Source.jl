@@ -26,8 +26,9 @@ mutable struct Surface_Source
     location                   ::Union{Missing,String}
     boundaries                 ::Dict{String,Vector{Float64}}
     is_build                   ::Bool
-    surface_sources            ::Union{Missing,Array{Union{Array{Float64},Float64}}}
+    surface_sources            ::Union{Missing,Vector{Array{Float64}}}
     normalization_factor       ::Float64
+    legendre_order             ::Int64
 
     # Constructor(s)
     function Surface_Source()
@@ -44,6 +45,7 @@ mutable struct Surface_Source
         this.is_build = false
         this.normalization_factor = 0.0
         this.surface_sources = missing
+        this.legendre_order = 64
 
         return this
     end
@@ -197,6 +199,29 @@ function set_boundaries(this::Surface_Source,axis::String,boundaries::Vector{Flo
 end
 
 """
+    set_legendre_order(this::Surface_Source,legendre_order::Int64)
+
+To define the Legendre order of the polynomial expansion of the boundary flux.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+- `legendre_order::Int64` : legendre order.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ss = Surface_Source()
+julia> ss.set_legendre_order(3)
+```
+"""
+function set_legendre_order(this::Surface_Source,legendre_order::Int64)
+    if legendre_order < 0 error("Legendre order should be 0 or greater.") end
+    this.legendre_order = legendre_order
+end
+
+"""
     get_particle(this::Surface_Source)
 
 Get the source particle.
@@ -226,4 +251,20 @@ Get the source normalization factor.
 """
 function get_normalization_factor(this::Surface_Source)
     return this.normalization_factor
+end
+
+"""
+    get_legendre_order(this::Surface_Source)
+
+To get the Legendre order of the polynomial expansion of the boundary flux.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+
+# Output Argument(s)
+- `legendre_order::Int64` : legendre order.
+
+"""
+function get_legendre_order(this::Surface_Source)
+    return this.legendre_order
 end

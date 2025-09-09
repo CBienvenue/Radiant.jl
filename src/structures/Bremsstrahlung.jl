@@ -223,13 +223,13 @@ Gives the Legendre moments of the scattering cross-sections for bremsstrahlung.
 - `iz::Int64` : index of the element in the material.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,particle::Particle,type::String,iz::Int64)
 
     # Inititalisation
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
 
     # Scattered electron
     if type == "S" 
@@ -238,10 +238,10 @@ function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,part
         σs = seltzer_berger_cross_section(Z,Ei,Ei-Ef,particle)
 
         # Compute the angular distribution, μ = 1.0 (Forward peaked)
-        Wℓ = ones(L+1)
+        Wl = ones(L+1)
 
         # Compute the Legendre moments of the cross-section
-        for ℓ in range(0,L) σℓ[ℓ+1] += σs * Wℓ[ℓ+1] end
+        for l in range(0,L) σl[l+1] += σs * Wl[l+1] end
 
     # Produced photons
     elseif type == "P"
@@ -251,20 +251,20 @@ function dcs(this::Bremsstrahlung,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,part
 
         # Compute the angular distribution
         if this.angular_scattering_type == "sommerfield"
-            Wℓ = sommerfield(Ei,L)
+            Wl = sommerfield(Ei,L)
         elseif this.angular_scattering_type == "modified_dipole"
-            Wℓ = poskus(Z,Ei,Ef,L)
+            Wl = poskus(Z,Ei,Ef,L)
         else
             error("Unkown angular distribution.")
         end
 
         # Compute the Legendre moments of the cross-section
-        for ℓ in range(0,L) σℓ[ℓ+1] += σs * Wℓ[ℓ+1] end
+        for l in range(0,L) σl[l+1] += σs * Wl[l+1] end
         
     else
         error("Unknown interaction.")
     end
-    return σℓ
+    return σl
 end
 
 """

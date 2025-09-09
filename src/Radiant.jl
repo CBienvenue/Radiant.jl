@@ -127,6 +127,7 @@ module Radiant
         "lebedev.jl",
         "carlson.jl",
         "legendre_polynomials.jl",
+        "jacobi_polynomials.jl",
         "ferrer_associated_legendre.jl",
         "real_spherical_harmonics.jl",
         "heaviside.jl",
@@ -138,7 +139,8 @@ module Radiant
         "one_space.jl",
         "cache.jl",
         "find_package_root.jl",
-        "python_method_notation.jl"
+        "python_method_notation.jl",
+        "factorial_factor.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end

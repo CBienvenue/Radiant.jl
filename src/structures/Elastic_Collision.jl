@@ -243,16 +243,16 @@ interaction.
 - `iz::Int64` : index of the element in the material.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Elastic_Collision,L::Int64,Ei::Float64,Z::Int64,particle::Particle,Ecutoff::Float64)
     if is_electron(particle) || is_positron(particle)
-        σℓ = mott(Z,Ei,particle,L,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)
+        σl = mott(Z,Ei,particle,L,Ecutoff,this.is_seltzer_correction,this.is_kawrakow_correction,this.is_subshell_inelastic,this.model)
     else
         error("Unknown particle.")
     end
-    return σℓ
+    return σl
 end
 
 """

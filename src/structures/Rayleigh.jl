@@ -127,23 +127,23 @@ Gives the Legendre moments of the scattering cross-sections for Rayleigh.
 - `iz::Int64` : index of the element in the material.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Rayleigh,L::Int64,Ei::Float64,Z::Int64,iz::Int64)
 
     # Initialization
     rₑ = 2.81794092E-13 # (in cm)
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
 
     # Angular quadrature
     μ,w = quadrature(32,"gauss-legendre")
     for n in range(1,32)
         σs = rayleigh(Z,Ei,μ[n])
-        Pℓμ = legendre_polynomials(L,μ[n])
-        for ℓ in range(0,L) σℓ[ℓ+1] += w[n] * σs * Pℓμ[ℓ+1] end
+        Plμ = legendre_polynomials_up_to_L(L,μ[n])
+        for l in range(0,L) σl[l+1] += w[n] * σs * Plμ[l+1] end
     end
-    return σℓ
+    return σl
 end
 
 """

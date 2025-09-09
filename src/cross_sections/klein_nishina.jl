@@ -35,7 +35,7 @@ Gives the Legendre moments of the Klein-Nishina angular distribution.
 - `particle::Particle` : outgoing particle.
 
 # Output Argument(s)
-- `Wℓ::Float64` : Legendre moments of the Klein-Nishina angular distribution.
+- `Wl::Float64` : Legendre moments of the Klein-Nishina angular distribution.
 
 # Reference(s)
 - Lorence et al. (1989), Physics guide to CEPXS: a multigroup coupled electron-photon
@@ -45,20 +45,20 @@ Gives the Legendre moments of the Klein-Nishina angular distribution.
 function angular_klein_nishina(Ei::Float64,Ef::Float64,L::Int64,particle::Particle)
 
     # Initialization
-    Wℓ = zeros(L+1)
-    if Ei < Ef return Wℓ end
+    Wl = zeros(L+1)
+    if Ei < Ef return Wl end
 
     # Compute the direction cosine
     if is_photon(particle)
-        if ~(Ei/(1+2*Ei) ≤ Ef ≤ Ei) return Wℓ end
+        if ~(Ei/(1+2*Ei) ≤ Ef ≤ Ei) return Wl end
         μ = 1 + 1/Ei - 1/Ef
     elseif is_electron(particle)
-        if ~(0 ≤ Ef ≤ 2*Ei^2/(1+2*Ei)) return Wℓ end
+        if ~(0 ≤ Ef ≤ 2*Ei^2/(1+2*Ei)) return Wl end
         μ = (1 + Ei)/Ei * 1/sqrt(2/Ef+1)
     end
 
     # Compute the Legendre moments angular distribution
-    Pℓμ = legendre_polynomials(L,μ)
-    for ℓ in range(0,L) Wℓ[ℓ+1] += Pℓμ[ℓ+1] end
-    return Wℓ
+    Plμ = legendre_polynomials_up_to_L(L,μ)
+    for l in range(0,L) Wl[l+1] += Plμ[l+1] end
+    return Wl
 end
