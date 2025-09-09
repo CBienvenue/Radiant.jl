@@ -65,7 +65,7 @@ for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in rang
     else
         if count(>(1),(ix,iy,iE)) ≥ 2 || count(>(1),(jx,jy,jE)) ≥ 2 continue end
         i = 1 + (iE-1) + (ix-1) + (iy-1)
-        j = 1 + (jE-1) + (jx-1) + (iy-1)
+        j = 1 + (jE-1) + (jx-1) + (jy-1)
         if ix > 1 i += 𝒪E-1 end
         if iy > 1 i += 𝒪E-1 + 𝒪x-1 end
         if jx > 1 j += 𝒪E-1 end
