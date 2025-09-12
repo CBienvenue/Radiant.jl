@@ -90,7 +90,9 @@ module Radiant
         "livolant.jl",
         "energy_deposition.jl",
         "charge_deposition.jl",
-        "flux.jl"
+        "flux.jl",
+        "pn_1D_BTE.jl",
+        "pn_sweep_1D.jl",
     ]
     radiant_src["structures/"] = [
         "Particle.jl",
