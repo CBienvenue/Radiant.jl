@@ -27,7 +27,7 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
   Multidimensional Angular Fokker–Planck Operator.
 
 """
-function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)
+function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Qdims::Int64)
 
 λ₀ = 0.0
 

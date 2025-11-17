@@ -29,7 +29,7 @@ Calculate the Fokker-Planck scattering matrix.
 function fokker_planck_scattering_matrix(N::Int64,Nd::Int64,quadrature_type::String,Ndims::Int64,method::String,Mn::Array{Float64},Dn::Array{Float64},pl::Vector{Int64},P::Int64,Qdims::Int64)
 
 if method == "finite-difference"
-    ℳ, λ₀ = fokker_planck_finite_difference(N,quadrature_type,Ndims,Nd,Mn,Dn,Qdims)
+    ℳ, λ₀ = fokker_planck_finite_difference(N,quadrature_type,Ndims,Qdims)
 elseif method == "differential-quadrature"
     ℳ, λ₀ = fokker_planck_differential_quadrature(N,quadrature_type,Ndims,Qdims)
 elseif method == "galerkin"

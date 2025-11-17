@@ -1,5 +1,5 @@
 """
-    compute_flux(cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates,
+    compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Solver,
     source::Source)
 
 Solve the transport equation for a given particle.  
@@ -7,7 +7,7 @@ Solve the transport equation for a given particle.
 # Input Argument(s)
 - `cross_sections::Cross_Sections` : cross section informations.
 - `geometry::Geometry` : geometry informations.
-- `discrete_ordinates::Discrete_Ordinates` : discrete_ordinates informations.
+- `solver::Solver` : solver informations.
 - `source::Source` : source informations.
 
 # Output Argument(s)
@@ -17,7 +17,7 @@ Solve the transport equation for a given particle.
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates,source::Source)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Solver,source::Source)
 
 #----
 # Geometry data
@@ -28,60 +28,87 @@ if geo_type != "cartesian" error("Transport of particles in",geo_type," is unava
 Ns = geometry.get_number_of_voxels()
 Δs = geometry.get_voxels_width()
 mat = geometry.get_material_per_voxel()
-#s = geometry.get_voxels_position()
-#sb = geometry.get_voxels_boundaries()
 
 #----
 # Preparation of angular discretisation
 #----
 
-L = discrete_ordinates.get_legendre_order()
-N = discrete_ordinates.get_quadrature_order()
-quadrature_type = discrete_ordinates.get_quadrature_type()
-SN_type = discrete_ordinates.get_angular_boltzmann()
-Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
+if solver isa Discrete_Ordinates
 
-# Compute quadrature weights and abscissae
-Ω,w = quadrature(N,quadrature_type,Ndims,Qdims)
-if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
-Nd = length(w)
-Np,Mn,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,SN_type,Qdims)
-Np_surf,Mn_surf,Dn_surf,n⁺_to_n,n_to_n⁺,pl_surf,pm_surf = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,Ndims,geo_type)
+    is_SN = true
+    is_PN = false
 
-Mll = zeros(Np,Np)
-for ip in range(1,Np), jp in range(1,Np)
-    il = ip - 1
-    jl = jp - 1
-    for ik in range(0,div(il,2)), jk in range(0,div(jl,2))
-        for j in range(0,jl-2*jk)
-            Mll[ip,jp] += sqrt(2*jl+1)/2^(il+jl) * (-1)^(ik+jk) * binomial(il,ik) * binomial(jl,jk) * binomial(2*il-2*ik,il) * binomial(2*jl-2*jk,jl) * binomial(jl-2*jk,j) * (-1)^(jl-2*jk-j) * 2^j / (il-2*ik+j+1)
+    L = solver.get_legendre_order()
+    N = solver.get_quadrature_order()
+    quadrature_type = solver.get_quadrature_type()
+    SN_type = solver.get_angular_boltzmann()
+    Qdims = solver.get_quadrature_dimension(Ndims)
+
+    Ω,w = quadrature(N,quadrature_type,Ndims,Qdims)
+    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+    Nd = length(w)
+    Np,Mn,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,SN_type,Qdims)
+    Np_surf,Mn_surf,Dn_surf,n⁺_to_n,n_to_n⁺,pl_surf,pm_surf = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,Ndims,geo_type)
+    Mll = zeros(0,0)
+
+elseif solver isa Spherical_Harmonics
+
+    is_SN = false
+    is_PN = true
+
+    Nd = 0
+    Ω = Vector{Vector{Float64}}()
+    Mn = zeros(Float64,0,0)
+    Dn = zeros(Float64,0,0)
+    Mn_surf = Vector{Array{Float64}}()
+    Dn_surf = Vector{Array{Float64}}()
+    n_to_n⁺ = Vector{Vector{Int64}}()
+    L = solver.get_legendre_order()
+    if Ndims == 1
+        Np = L+1
+        pl = collect(0:L)
+        Mll = zeros(Np,Np)
+        for ip in range(1,Np), jp in range(1,Np)
+            il = ip - 1
+            jl = jp - 1
+            for ik in range(0,div(il,2)), jk in range(0,div(jl,2))
+                for j in range(0,jl-2*jk)
+                    Mll[ip,jp] += sqrt(2*jl+1)/2^(il+jl) * (-1)^(ik+jk) * binomial(il,ik) * binomial(jl,jk) * binomial(2*il-2*ik,il) * binomial(2*jl-2*jk,jl) * binomial(jl-2*jk,j) * (-1)^(jl-2*jk-j) * 2^j / (il-2*ik+j+1)
+                end
+            end
         end
+    else
+        error("Spherical Harmonics method is only available in 1D.")
     end
+    Np_surf = Inf
+
+else
+    error("No methods available for $(get_type(solver.particle)) particle.")
 end
 
 #----
 # Preparation of cross sections
 #----
 
-part = discrete_ordinates.get_particle()
-solver,isCSD = discrete_ordinates.get_solver_type()
+part = solver.get_particle()
+solver_type,is_CSD = solver.get_solver_type()
 Nmat = cross_sections.get_number_of_materials()
 Ng = cross_sections.get_number_of_groups(part)
-if isCSD
+if is_CSD
     ΔE = cross_sections.get_energy_width(part)
     E = cross_sections.get_energies(part)
     Eb = cross_sections.get_energy_boundaries(part)
 end
 
-isFC = discrete_ordinates.get_is_full_coupling()
-schemes,𝒪,Nm = discrete_ordinates.get_schemes(geometry,isFC)
-ω,𝒞,is_adaptive,𝒲 = scheme_weights(𝒪,schemes,Ndims,isCSD)
+isFC = solver.get_is_full_coupling()
+schemes,𝒪,Nm = solver.get_schemes(geometry,isFC)
+ω,𝒞,is_adaptive,𝒲 = scheme_weights(𝒪,schemes,Ndims,is_CSD)
 
 println(">>>Particle: $(get_type(part)) <<<")
 
 # Total cross sections
 Σtot = zeros(Ng,Nmat)
-if solver ∈ [4,5] 
+if solver_type ∈ [4,5] 
     Σtot = cross_sections.get_absorption(part)
 else
     Σtot = cross_sections.get_total(part)
@@ -89,12 +116,12 @@ end
 
 # Scattering cross sections
 Σs = zeros(Nmat,Ng,Ng,L+1)
-if solver ∉ [4,5]
+if solver_type ∉ [4,5]
     Σs = cross_sections.get_scattering(part,part,L)
 end
 
 # Stopping powers
-if isCSD
+if is_CSD
     S⁻ = zeros(Ng,Nmat); S⁺ = zeros(Ng,Nmat)
     Sb = cross_sections.get_boundary_stopping_powers(part)
     for n in range(1,Nmat)
@@ -108,16 +135,16 @@ if isCSD
 end
 
 # Momentum transfer
-if solver ∈ [2,4]
+if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
-    fokker_planck_type = discrete_ordinates.get_angular_fokker_planck()
+    fokker_planck_type = solver.get_angular_fokker_planck()
     ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
     Σtot .+= T .* λ₀
 end
 
 # Elastic-free approximation
-if solver == 6
+if solver_type == 6
     for n in range(1,Nmat), ig in range(1,Ng)
         Σtot[ig,n] -= Σs[n,ig,ig,1]
     end
@@ -134,10 +161,10 @@ else
 end
 
 #----
-# Acceleration discrete_ordinates
+# Acceleration solver
 #----
 
-𝒜 = discrete_ordinates.get_acceleration()
+𝒜 = solver.get_acceleration()
 
 #----
 # Fixed sources
@@ -145,18 +172,18 @@ end
 
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
-Np_surf = min(Np_surf,length(surface_sources[1,:,1]))
+Np_surf = Int64(min(Np_surf,length(surface_sources[1,:,1])))
 
 #----
 # Flux calculations
 #----
 
-ϵ_max = discrete_ordinates.get_convergence_criterion()
-I_max = discrete_ordinates.get_maximum_iteration()
+ϵ_max = solver.get_convergence_criterion()
+I_max = solver.get_maximum_iteration()
 
 # Initialization flux
 𝚽l = zeros(Ng,Np,Nm[5],Ns[1],Ns[2],Ns[3])
-if isCSD 𝚽cutoff = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3]) end
+if is_CSD 𝚽cutoff = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3]) end
 
 # All-group iteration
 i_out = 1
@@ -169,27 +196,27 @@ if is_outer_iteration 𝚽l⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 while ~(is_outer_convergence)
 
     ρ_in = -ones(Ng) # In-group spectral radius
-    isCSD ? 𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3]) : 𝚽E12 = Array{Float64}(undef)
+    is_CSD ? 𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3]) : 𝚽E12 = Array{Float64}(undef)
 
     # Loop over energy group
     for ig in range(1,Ng)
 
         # Calculation of the Legendre components of the source (out-scattering)
         Qlout = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-        if solver ∉ [4,5] Qlout = scattering_source(Qlout,𝚽l,Σs[:,:,ig,:],mat,Np,pl,Nm[5],Ns,Ng,ig) end
+        if solver_type ∉ [4,5] Qlout = scattering_source(Qlout,𝚽l,Σs[:,:,ig,:],mat,Np,pl,Nm[5],Ns,Ng,ig) end
 
         # Fixed volumic sources
         Qlout .+= volume_sources[ig,:,:,:,:,:]
 
         # Calculation of the group flux
-        if isCSD
+        if is_CSD
             if (ig != 1) 𝚽E12 = 𝚽E12 .* ΔE[ig]/ΔE[ig-1] end
             Eg = E[ig]
             ΔEg = ΔE[ig]
             Sg⁻ = S⁻[ig,:]/ΔEg
             Sg⁺ = S⁺[ig,:]/ΔEg
             Sg = S[ig,:,:]/ΔEg
-            if solver ∈ [2,4]
+            if solver_type ∈ [2,4]
                 Tg = T[ig,:]
             else
                 Tg = Vector{Float64}()
@@ -204,7 +231,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,isCSD,solver,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN)
     end
 
     # Verification of convergence in all energy groups
@@ -215,7 +242,7 @@ while ~(is_outer_convergence)
     if (ϵ_out < ϵ_max || i_out >= I_max) || ~is_outer_iteration
         is_outer_convergence = true
         # Calculate the flux at the cutoff energy
-        if isCSD
+        if is_CSD
             for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
                 𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
             end
@@ -229,7 +256,7 @@ end
 # Save flux
 flux = Flux_Per_Particle(part)
 flux.add_flux(𝚽l)
-if isCSD flux.add_flux_cutoff(𝚽cutoff) end
+if is_CSD flux.add_flux_cutoff(𝚽cutoff) end
 
 return flux
 

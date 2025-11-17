@@ -14,25 +14,25 @@ mutable struct Source
     normalization_factor       ::Float64
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
-    discrete_ordinates         ::Discrete_Ordinates
+    solver         ::Solver
 
     # Constructor(s)
-    function Source(particle::Particle,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    function Source(particle::Particle,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
         this = new()
         this.name = missing
         this.particle = particle
         this.normalization_factor = 0
         this.cross_sections = cross_sections
         this.geometry = geometry
-        this.discrete_ordinates = discrete_ordinates
-        initalize_sources(this,cross_sections,geometry,discrete_ordinates)
+        this.solver = solver
+        initalize_sources(this,cross_sections,geometry,solver)
         return this
     end
 end
 
 # Method(s)
 """
-    initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
 
 Initialize volume and boundary sources.
 
@@ -40,13 +40,13 @@ Initialize volume and boundary sources.
 - `this::Source` : source structure.
 - `cross_sections::Cross_Sections` : cross-sections library.
 - `geometry::Geometry` : geometry.
-- `discrete_ordinates::Discrete_Ordinates` : discrete ordinates solver.
+- `solver::Solver` : discrete ordinates solver.
 
 # Output Argument(s)
 N/A
 
 """
-function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
 
     # Data extraction and validation
     particle = this.particle
@@ -55,19 +55,25 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
     Ng = cross_sections.number_of_groups[index]
     Nx = geometry.number_of_voxels["x"]
     Ndims = geometry.dimension
-    Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
     if Ndims ≥ 2 Ny = geometry.number_of_voxels["y"] else Ny = 1 end
     if Ndims ≥ 3 Nz = geometry.number_of_voxels["z"] else Nz = 1 end
+    _,_,Nm = solver.get_schemes(geometry,solver.get_is_full_coupling())
 
-    # Angular quadrature
-    Ω,w = quadrature(discrete_ordinates.quadrature_order,discrete_ordinates.quadrature_type,Qdims)
-    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
-
-    # Extract the number of angular polynomial basis
-    P,_,_,_ = angular_polynomial_basis(Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.get_angular_boltzmann(),Qdims)
-
-    # Extract the number of energy-space basis
-    _,_,Nm = discrete_ordinates.get_schemes(geometry,discrete_ordinates.get_is_full_coupling())
+    # Angular discretization
+    if solver isa Discrete_Ordinates
+        Qdims = solver.get_quadrature_dimension(Ndims)
+        Ω,w = quadrature(solver.quadrature_order,solver.quadrature_type,Qdims)
+        if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+        P,_,_,_ = angular_polynomial_basis(Ω,w,solver.get_legendre_order(),solver.get_angular_boltzmann(),Qdims)
+    elseif solver isa Spherical_Harmonics
+        if Ndims == 1
+            P = solver.get_legendre_order()+1
+        else
+            error("Spherical harmonics solver is only available in 1D.")
+        end
+    else
+        error("No methods available for $(get_type(particle)) particle.")
+    end
 
     # Initialize sources
     L = 0 
@@ -147,11 +153,11 @@ function add_source(this::Source,surface_sources::Surface_Source)
     Nx = this.geometry.number_of_voxels["x"]
     if Ndims ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
     if Ndims ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
-    if get_id(particle) != get_id(this.discrete_ordinates.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
+    if get_id(particle) != get_id(this.solver.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
 
     # Compute and format the surface source for transport solver
     Q_old = this.surface_sources
-    Q_new,norm = surface_source(particle,surface_sources,this.cross_sections,this.geometry,this.discrete_ordinates)
+    Q_new,norm = surface_source(particle,surface_sources,this.cross_sections,this.geometry,this.solver)
 
     # Add it to the source object
     dims_new = size(Q_new)

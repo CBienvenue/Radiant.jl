@@ -73,15 +73,15 @@ module Radiant
         "transport.jl",
         "compute_flux.jl",
         "compute_one_speed.jl",
-        "compute_sweep_1D.jl",
-        "compute_sweep_2D.jl",
-        "compute_sweep_3D.jl",
-        "flux_1D_BTE.jl",
-        "flux_1D_BFP.jl",
-        "flux_2D_BTE.jl",
-        "flux_2D_BFP.jl",
-        "flux_3D_BTE.jl",
-        "flux_3D_BFP.jl",
+        "sn_sweep_1D.jl",
+        "sn_sweep_2D.jl",
+        "sn_sweep_3D.jl",
+        "sn_1D_bte.jl",
+        "sn_1D_bfp.jl",
+        "sn_2D_bte.jl",
+        "sn_2D_bfp.jl",
+        "sn_3D_bte.jl",
+        "sn_3D_bfp.jl",
         "adaptive.jl",
         "scheme_weights.jl",
         "map_moments.jl",
@@ -91,7 +91,7 @@ module Radiant
         "energy_deposition.jl",
         "charge_deposition.jl",
         "flux.jl",
-        "pn_1D_BTE.jl",
+        "pn_1D_bte.jl",
         "pn_sweep_1D.jl",
     ]
     radiant_src["structures/"] = [
@@ -111,6 +111,7 @@ module Radiant
         "Cross_Sections.jl",
         "Geometry.jl",
         "Discrete_Ordinates.jl",
+        "Spherical_Harmonics.jl",
         "Solvers.jl",
         "Surface_Source.jl",
         "Volume_Source.jl",
@@ -153,6 +154,6 @@ module Radiant
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
     export Elastic_Collision,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
-    export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit
+    export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,Spherical_Harmonics
 
 end

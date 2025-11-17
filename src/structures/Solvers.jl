@@ -1,3 +1,4 @@
+const Solver = Union{Discrete_Ordinates, Spherical_Harmonics}
 """
     Solvers
 
@@ -17,7 +18,7 @@ mutable struct Solvers
     number_of_particles                ::Int64
     particles                          ::Vector{Particle}
     methods_names                      ::Vector{String}
-    methods_list                       ::Vector{Discrete_Ordinates}
+    methods_list                       ::Vector{Solver}
     maximum_number_of_generations      ::Int64
     convergence_criterion              ::Real
     convergence_type                   ::String
@@ -30,7 +31,7 @@ mutable struct Solvers
         this.number_of_particles = 0
         this.particles = Vector{Particle}()
         this.methods_names = Vector{String}()
-        this.methods_list = Vector{Discrete_Ordinates}()
+        this.methods_list = Vector{Solver}()
         this.maximum_number_of_generations = 10
         this.convergence_criterion = 1e-7
         this.convergence_type = "flux"
@@ -41,13 +42,13 @@ end
 
 # Method(s)
 """
-    add_solver(this::Solvers,method::Discrete_Ordinates)
+    add_solver(this::Solvers,method::Solver)
 
 To add a particle and is associated methods to the Solvers structure.
 
 # Input Argument(s)
 - `this::Solvers` : collection of discretization method.
-- `method::Discrete_Ordinates` : discretization method.
+- `method::Solver` : discretization method.
 
 # Output Argument(s)
 N/A
@@ -60,7 +61,7 @@ julia> ms = Solvers()
 julia> ms.add_solver(m)
 ```
 """
-function add_solver(this::Solvers,method::Discrete_Ordinates)
+function add_solver(this::Solvers,method::Solver)
     this.number_of_particles += 1
     push!(this.particles,method.particle)
     push!(this.methods_list,method)
@@ -149,7 +150,7 @@ Get the method associated with a particle.
 - `particle::Particle` : particle.
 
 # Output Argument(s)
-- `method::Discrete_Ordinates` : method associated with the particle.
+- `method::Solver` : method associated with the particle.
 
 """
 function get_method(this::Solvers,particle::Particle)

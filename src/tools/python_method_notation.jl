@@ -15,7 +15,8 @@ RadiantObject = Union{
     Flux_Per_Particle,
     Flux,
     Interaction,
-    Particle
+    Particle,
+    Spherical_Harmonics
 }
 
 """

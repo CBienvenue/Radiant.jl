@@ -1,6 +1,6 @@
 """
     surface_source(particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,
-    geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    geometry::Geometry,solver::Solver)
 
 Prepare the volume source produced by fixed sources for transport calculations.
 
@@ -9,7 +9,7 @@ Prepare the volume source produced by fixed sources for transport calculations.
 - `source::Volume_Source`: volume source information.
 - `cross_sections::Cross_Sections`: cross-sections information.
 - `geometry::Geometry`: geometry information.
-- `discrete_ordinates::Discrete_Ordinates`: discrete_ordinates information.
+- `solver::Solver`: solver information.
 
 # Output Argument(s)
 - `Q`: boundary sources.
@@ -19,7 +19,7 @@ Prepare the volume source produced by fixed sources for transport calculations.
 N/A
 
 """
-function surface_source(particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+function surface_source(particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
 
     #----
     # Initialization
@@ -32,17 +32,35 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     norm = 0.0
 
     L = source.get_legendre_order()
-    quadrature_type = discrete_ordinates.get_quadrature_type()
-    N = discrete_ordinates.get_quadrature_order() 
-    Qdims = discrete_ordinates.get_quadrature_dimension(Ndims)
-    SN_type = discrete_ordinates.get_angular_boltzmann()
     surface = source.location
 
-    # Angular basis
-    Ω,w = quadrature(N,quadrature_type,Qdims)
-    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
-    Np,Mn,Dn,n⁺_to_n,n_to_n⁺,pl,pm = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,surface)
-    Lmax = maximum(pl)
+    if solver isa Discrete_Ordinates
+
+        quadrature_type = solver.get_quadrature_type()
+        N = solver.get_quadrature_order() 
+        Qdims = solver.get_quadrature_dimension(Ndims)
+        SN_type = solver.get_angular_boltzmann()
+
+        # Angular basis
+        Ω,w = quadrature(N,quadrature_type,Qdims)
+        if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+        Np,_,_,_,_,pl,pm = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,surface)
+        Lmax = maximum(pl)
+
+    elseif solver isa Spherical_Harmonics
+
+        Qdims = Ndims
+        if Ndims == 1
+            Np = L+1
+            pl = collect(0:L)
+        else
+            error("Spherical Harmonics method is only available in 1D.")
+        end
+        Lmax = maximum(pl)
+
+    else
+        error("Surface sources are only available with Discrete Ordinates and Spherical Harmonics methods.")
+    end
 
     #----
     # Cartesian 1D geometry

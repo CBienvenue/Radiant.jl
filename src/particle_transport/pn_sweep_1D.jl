@@ -9,13 +9,13 @@ function pn_sweep_1D(sx::Int64,𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt:
     if sx > 0
         x_sweep = 1:Nx
         # Surface X-
-        for p in range(1,Np_surf)
+        for p in range(1,min(Np_surf,Np))
             𝚽x12[p] += sources[p,1]
         end
     elseif sx < 0
         x_sweep = Nx:-1:1
         # Surface X+
-        for p in range(1,Np_surf)
+        for p in range(1,min(Np_surf,Np))
             𝚽x12[p] += sources[p,2]
         end
     end
