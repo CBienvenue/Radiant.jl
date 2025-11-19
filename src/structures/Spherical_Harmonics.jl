@@ -10,6 +10,7 @@ mutable struct Spherical_Harmonics
     scheme_order               ::Dict{String,Int64}
     acceleration               ::String
     isFC                       ::Bool
+    polynomial_basis           ::Union{Missing,String}
 
     # Constructor(s)
     function Spherical_Harmonics()
@@ -23,6 +24,7 @@ mutable struct Spherical_Harmonics
         this.scheme_order = Dict{String,Int64}()
         this.acceleration = "none"
         this.isFC = true
+        this.polynomial_basis = missing
         return this
     end
 end
@@ -62,6 +64,11 @@ end
 function set_acceleration(this::Spherical_Harmonics,acceleration::String)
     if lowercase(acceleration) ∉ ["none","livolant"] error("Unkown acceleration method.") end
     this.acceleration = acceleration
+end
+
+function set_polynomial_basis(this::Spherical_Harmonics,basis::String)
+    if lowercase(basis) ∉ ["legendre","spherical-harmonics"] error("Unknown polynomial basis.") end
+    this.polynomial_basis = lowercase(basis)
 end
 
 function get_is_full_coupling(this::Spherical_Harmonics)
@@ -142,3 +149,15 @@ function get_maximum_iteration(this::Spherical_Harmonics)
     return this.maximum_iteration
 end
 
+function get_polynomial_basis(this::Spherical_Harmonics,Ndims::Int64)
+    if ismissing(this.polynomial_basis)
+        if Ndims == 1
+            this.polynomial_basis = "legendre"
+        else
+            this.polynomial_basis = "spherical-harmonics"
+        end
+        return this.polynomial_basis
+    else
+        return this.polynomial_basis
+    end
+end

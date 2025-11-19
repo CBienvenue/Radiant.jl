@@ -32,11 +32,11 @@ mat = geometry.get_material_per_voxel()
 #----
 # Preparation of angular discretisation
 #----
-
 if solver isa Discrete_Ordinates
 
     is_SN = true
     is_PN = false
+    is_SPH = false
 
     L = solver.get_legendre_order()
     N = solver.get_quadrature_order()
@@ -64,24 +64,66 @@ elseif solver isa Spherical_Harmonics
     Dn_surf = Vector{Array{Float64}}()
     n_to_n⁺ = Vector{Vector{Int64}}()
     L = solver.get_legendre_order()
+    polynomial_basis = solver.get_polynomial_basis(Ndims)
     if Ndims == 1
-        Np = L+1
-        pl = collect(0:L)
-        Mll = zeros(Np,Np)
-        for ip in range(1,Np), jp in range(1,Np)
-            il = ip - 1
-            jl = jp - 1
-            for ik in range(0,div(il,2)), jk in range(0,div(jl,2))
-                for j in range(0,jl-2*jk)
-                    Mll[ip,jp] += sqrt(2*jl+1)/2^(il+jl) * (-1)^(ik+jk) * binomial(il,ik) * binomial(jl,jk) * binomial(2*il-2*ik,il) * binomial(2*jl-2*jk,jl) * binomial(jl-2*jk,j) * (-1)^(jl-2*jk-j) * 2^j / (il-2*ik+j+1)
+        if polynomial_basis == "legendre"
+            is_SPH = false
+            Np = L+1
+            pl = collect(0:L)
+            pm = zeros(Int64,Np)
+            Mll = zeros(Np,Np)
+            for ip in range(1,Np), jp in range(1,Np)
+                il = ip - 1
+                jl = jp - 1
+                for ik in range(0,div(il,2)), jk in range(0,div(jl,2))
+                    for j in range(0,jl-2*jk)
+                        Mll[ip,jp] += sqrt(2*jl+1)/2^(il+jl) * (-1)^(ik+jk) * binomial(il,ik) * binomial(jl,jk) * binomial(2*il-2*ik,il) * binomial(2*jl-2*jk,jl) * binomial(jl-2*jk,j) * (-1)^(jl-2*jk-j) * 2^j / (il-2*ik+j+1)
+                    end
                 end
             end
+        elseif polynomial_basis == "spherical-harmonics"
+            is_SPH = true
+            Np = (L+1)^2
+            pl = zeros(Int64,Np)
+            pm = zeros(Int64,Np)
+            p = 1
+            for l in range(0,L), m in range(-l,l)
+                pl[p] = l
+                pm[p] = m
+                p += 1
+            end
+            Mll = zeros(Np,Np)
+            for ip in range(1,Np), jp in range(1,Np)
+                il = pl[ip]
+                jl = pl[jp]
+                im = pm[ip]
+                jm = pm[jp]
+                if im == jm
+                    C = π * (1+(im==0)) * sqrt((2-(im==0))*factorial_factor([il-abs(im)],[il+abs(im)])) * sqrt((2-(jm==0))/(2*π) * (2*jl+1)*factorial_factor([jl-abs(jm)],[jl+abs(jm)]))
+                    C2 = 1/(2^(abs(im))) * factorial_factor([1],[il-abs(im),jl-abs(im)])
+                    for ik in range(0,il-abs(im)), jk in range(0,jl-abs(im))
+                        C3 = (-1)^(ik+jk) * binomial(il-abs(im),ik) * binomial(jl-abs(im),jk) * factorial_factor([il+abs(im)+ik,jl+abs(im)+jk],[abs(im)+ik,abs(im)+jk])/2^(ik)
+                        if iseven(abs(im))
+                            for i in range(0,abs(im)+ik+jk), j in range(0,div(abs(im),2))
+                                C4 = (-1)^i * binomial(abs(im)+ik+jk,i) * binomial(div(abs(im),2),j)
+                                Mll[ip,jp] += C * C2 * C3 * C4 / (i + j + div(abs(im),2) + 1)
+                            end
+                        else
+                            for i in range(0,abs(im)+ik+jk), j in range(0,div(abs(im)-1,2))
+                                C4 = (-1)^i * binomial(abs(im)+ik+jk,i) * binomial(div(abs(im)-1,2),j)
+                                Mll[ip,jp] += C * C2 * C3 * C4 * (𝒢₈(i + j + div(abs(im)-1,2),0,1,1,1) - 𝒢₈(i + j + div(abs(im)-1,2),0,1,1,0))
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            error("Unknown polynomial basis.")
         end
     else
         error("Spherical Harmonics method is only available in 1D.")
     end
     Np_surf = Inf
-
 else
     error("No methods available for $(get_type(solver.particle)) particle.")
 end
@@ -231,7 +273,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH)
     end
 
     # Verification of convergence in all energy groups

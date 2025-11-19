@@ -71,7 +71,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},Mll::Array{Float64,2},is_SN::Bool,is_PN::Bool)
+function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},pm::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},Mll::Array{Float64,2},is_SN::Bool,is_PN::Bool,is_SPH::Bool)
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
@@ -121,18 +121,16 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                 Q⁺ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
                 Q⁻ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
                 for ix in range(1,Ns[1]), is in range(1,Nm[5]), p in range(1,Np),q in range(1,Np)
-                    Q⁺[p,is,ix,1,1] += (2*(q-1)+1)/2 * Ql[q,is,ix,1,1] * Mll[q,p]
-                    Q⁻[p,is,ix,1,1] += (2*(q-1)+1)/2 * (-1)^(q-1) * Ql[q,is,ix,1,1] * Mll[q,p]
+                    if is_SPH factor = (2*pl[q]+1)/(4*π) else factor = (2*pl[q]+1)/2 end
+                    Q⁺[p,is,ix,1,1] += factor * Ql[q,is,ix,1,1] * Mll[q,p]
+                    Q⁻[p,is,ix,1,1] += factor * (-1)^pl[q] * Ql[q,is,ix,1,1] * Mll[q,p]
                 end
-
                 𝚽⁺ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
                 𝚽⁻ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-
-                𝚽⁺ = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,C,ω,sources)
-                𝚽⁻ = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,C,ω,sources)
-
+                𝚽⁺ = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,C,ω,sources,is_SPH,pl,pm)
+                𝚽⁻ = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,C,ω,sources,is_SPH,pl,pm)
                 for ix in range(1,Ns[1]), is in range(1,Nm[5]), p in range(1,Np), q in range(1,Np)
-                    𝚽l[q,is,ix,1,1] += Mll[q,p] * (𝚽⁺[p,is,ix,1,1] + (-1)^(q-1)*𝚽⁻[p,is,ix,1,1])
+                    𝚽l[p,is,ix,1,1] += Mll[p,q] * (𝚽⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽⁻[q,is,ix,1,1])
                 end
             end
         elseif is_SN

@@ -67,7 +67,14 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
         P,_,_,_ = angular_polynomial_basis(Ω,w,solver.get_legendre_order(),solver.get_angular_boltzmann(),Qdims)
     elseif solver isa Spherical_Harmonics
         if Ndims == 1
-            P = solver.get_legendre_order()+1
+            polynomial_basis = solver.get_polynomial_basis(Ndims)
+            if polynomial_basis == "legendre"
+                P = solver.get_legendre_order()+1
+            elseif polynomial_basis == "spherical-harmonics"
+                P = (solver.get_legendre_order()+1)^2
+            else
+                error("Unknown polynomial basis.")
+            end
         else
             error("Spherical harmonics solver is only available in 1D.")
         end
