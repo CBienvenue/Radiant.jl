@@ -76,7 +76,13 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
     if isCSD
-        𝚽E12_temp = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
+        if is_SN
+            𝚽E12_temp = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
+        elseif is_PN
+            𝚽E12_temp = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
+        else
+            error("Unknown angular discretization method.")
+        end
     end
     N⁻ = 2
     𝚽l⁻ = zeros(N⁻,Np,Nm[5],Ns[1],Ns[2],Ns[3])
@@ -117,21 +123,41 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
         #----
         𝚽l .= 0
         if is_PN
+            𝚽⁺ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
+            𝚽⁻ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
+            Q⁺ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
+            Q⁻ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
+            𝚽E12⁺ = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
+            𝚽E12⁻ = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
+            𝚽E12_temp .= 0
             if ndims == 1
-                Q⁺ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-                Q⁻ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-                for ix in range(1,Ns[1]), is in range(1,Nm[5]), p in range(1,Np),q in range(1,Np)
+                for ix in range(1,Ns[1]), p in range(1,Np),q in range(1,Np)
                     if is_SPH factor = (2*pl[q]+1)/(4*π) else factor = (2*pl[q]+1)/2 end
-                    Q⁺[p,is,ix,1,1] += factor * Ql[q,is,ix,1,1] * Mll[q,p]
-                    Q⁻[p,is,ix,1,1] += factor * (-1)^pl[q] * Ql[q,is,ix,1,1] * Mll[q,p]
+                    for is in range(1,Nm[5])
+                        Q⁺[p,is,ix,1,1] += factor * Ql[q,is,ix,1,1] * Mll[q,p]
+                        Q⁻[p,is,ix,1,1] += factor * (-1)^pl[q] * Ql[q,is,ix,1,1] * Mll[q,p]
+                    end
+                    if isCSD
+                        for is in range(1,Nm[4])
+                            𝚽E12⁺[p,is,ix,1,1] += factor * 𝚽E12[q,is,ix,1,1] * Mll[q,p]
+                            𝚽E12⁻[p,is,ix,1,1] += factor * (-1)^pl[q] * 𝚽E12[q,is,ix,1,1] * Mll[q,p]
+                        end
+                    end
                 end
-                𝚽⁺ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-                𝚽⁻ = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-                𝚽⁺ = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,C,ω,sources,is_SPH,pl,pm)
-                𝚽⁻ = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,C,ω,sources,is_SPH,pl,pm)
-                for ix in range(1,Ns[1]), is in range(1,Nm[5]), p in range(1,Np), q in range(1,Np)
-                    𝚽l[p,is,ix,1,1] += Mll[p,q] * (𝚽⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽⁻[q,is,ix,1,1])
+                𝚽⁺[:,:,:,1,1],𝚽E12⁺[:,:,:,1,1] = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,Nm,C,ω,sources,is_SPH,pl,pm,S⁻,S⁺,S,𝚽E12⁺[:,:,:,1,1],𝒲,isFC,isCSD)
+                𝚽⁻[:,:,:,1,1],𝚽E12⁻[:,:,:,1,1] = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Np,Np_surf,𝒪,Nm,C,ω,sources,is_SPH,pl,pm,S⁻,S⁺,S,𝚽E12⁻[:,:,:,1,1],𝒲,isFC,isCSD)
+                for ix in range(1,Ns[1]), p in range(1,Np), q in range(1,Np)
+                    for is in range(1,Nm[5])
+                        𝚽l[p,is,ix,1,1] += Mll[p,q] * (𝚽⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽⁻[q,is,ix,1,1])
+                    end
+                    if isCSD
+                        for is in range(1,Nm[4])
+                            𝚽E12_temp[p,is,ix,1,1] += Mll[p,q] * (𝚽E12⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽E12⁻[q,is,ix,1,1])
+                        end
+                    end
                 end
+            else
+                error("Multidimensional PN method not implemented yet.")
             end
         elseif is_SN
             for n in range(1,Nd)

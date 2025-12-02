@@ -180,9 +180,13 @@ end
 if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
-    fokker_planck_type = solver.get_angular_fokker_planck()
-    ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
-    Σtot .+= T .* λ₀
+    if is_SN
+        fokker_planck_type = solver.get_angular_fokker_planck()
+        ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
+        Σtot .+= T .* λ₀
+    elseif is_PN
+        error("Fokker-Planck approximation not implemented yet for PN method.")
+    end
 end
 
 # Elastic-free approximation
@@ -238,7 +242,15 @@ if is_outer_iteration 𝚽l⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
 while ~(is_outer_convergence)
 
     ρ_in = -ones(Ng) # In-group spectral radius
-    is_CSD ? 𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3]) : 𝚽E12 = Array{Float64}(undef)
+    if is_CSD
+        if is_SN
+            𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
+        else
+            𝚽E12 = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
+        end
+    else
+        𝚽E12 = Array{Float64}(undef)
+    end
 
     # Loop over energy group
     for ig in range(1,Ng)
@@ -285,8 +297,16 @@ while ~(is_outer_convergence)
         is_outer_convergence = true
         # Calculate the flux at the cutoff energy
         if is_CSD
-            for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
-                𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
+            if is_SN
+                for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
+                    𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
+                end
+            elseif is_PN
+                for p in range(1,Np), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4])
+                    𝚽cutoff[p,is,ix,iy,iz] = 𝚽E12[p,is,ix,iy,iz]
+                end 
+            else
+                error("Unknown angular method.")
             end
         end
     else

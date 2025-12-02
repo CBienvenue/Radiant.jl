@@ -16,7 +16,11 @@ for ix in range(1,𝒪x), jx in range(1,𝒪x), ip in range(1,Np), jp in range(1
     im = pm[ip]
     jl = pl[jp]
     jm = pm[jp]
+
+    # Collision term
     if (ip == jp) && (ix == jx) 𝒮[i,j] += Σt end
+
+    # Streaming term - x
     if is_SPH
         if il == jl && im == jm
             𝒮[i,j] += C[ix]*sx/Δx * C[jx] * (g(ix-1,sx)*sx^(jx-1)*ωx[jx+1] - (jx ≤ ix-1)*(1-(-1)^(ix-jx))) * (1/2)
@@ -56,7 +60,7 @@ end
 # Solve the equation system
 𝚽 = 𝒮\Q
 
-# Closure relation
+# Closure relations
 for jp in range(1,Np)
     𝚽x12[jp] = ωx[1] * 𝚽x12[jp]
     for jx in range(1,𝒪x)

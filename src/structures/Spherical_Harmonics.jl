@@ -11,6 +11,7 @@ mutable struct Spherical_Harmonics
     acceleration               ::String
     isFC                       ::Bool
     polynomial_basis           ::Union{Missing,String}
+    angular_fokker_planck      ::Union{Missing,String}
 
     # Constructor(s)
     function Spherical_Harmonics()
@@ -25,6 +26,7 @@ mutable struct Spherical_Harmonics
         this.acceleration = "none"
         this.isFC = true
         this.polynomial_basis = missing
+        this.angular_fokker_planck = "galerkin"
         return this
     end
 end

@@ -92,6 +92,7 @@ module Radiant
         "charge_deposition.jl",
         "flux.jl",
         "pn_1D_bte.jl",
+        "pn_1D_bfp.jl",
         "pn_sweep_1D.jl",
     ]
     radiant_src["structures/"] = [

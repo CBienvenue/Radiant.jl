@@ -1,10 +1,10 @@
 """
-    legendre_polynomials(L::Int64,x::Float64)
+    legendre_polynomials(l::Int64,x::Float64)
 
-Calculate the Legendre polynomials Pl(x) values for l=0,L.
+Calculate the Legendre polynomials Pl(x).
 
 # Input Argument(s)
-- `L::Int64`: truncation order.
+- `l::Int64`: Legendre order.
 - `x::Float64`: evaluation points.
 
 # Output Argument(s)
@@ -14,10 +14,10 @@ Calculate the Legendre polynomials Pl(x) values for l=0,L.
 - Weisstein (2023), Legendre Polynomial [MathWorld - A Wolfram Web Resource].
 
 """
-function legendre_polynomials(L::Int64,x::Float64)
+function legendre_polynomials(l::Int64,x::Float64)
 
     # Verification of input paramters
-    if L < 0 error("Legendre order is greater or equal to zero.") end
+    if l < 0 error("Legendre order is greater or equal to zero.") end
     if abs(x) > 1 error("Invalid evaluation point.") end
 
     # Calculations of Legendre polynomials using Bonnet's recursion formula
@@ -28,7 +28,7 @@ function legendre_polynomials(L::Int64,x::Float64)
     else
         p0 = 1.0
         p1 = x
-        for n in 2:L
+        for n in 2:l
             p2 = ((2n-1)*x*p1 - (n-1)*p0)/n
             p0,p1 = p1,p2
         end
