@@ -37,6 +37,14 @@ if solver isa Discrete_Ordinates
     is_SN = true
     is_PN = false
     is_SPH = false
+    PN_model = 0
+    ql = zeros(Int64,0)
+    qa = zeros(Int64,0)
+    qb = zeros(Int64,0)
+    qc = zeros(Int64,0)
+    𝒩⁻ = zeros(Float64,0)
+    𝒩 = zeros(Float64,0)
+    𝒩⁺ = zeros(Float64,0)
 
     L = solver.get_legendre_order()
     N = solver.get_quadrature_order()
@@ -50,6 +58,7 @@ if solver isa Discrete_Ordinates
     Np,Mn,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,SN_type,Qdims)
     Np_surf,Mn_surf,Dn_surf,n⁺_to_n,n_to_n⁺,pl_surf,pm_surf = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,Ndims,geo_type)
     Mll = zeros(0,0)
+    Nq = Np
 
 elseif solver isa Spherical_Harmonics
 
@@ -68,55 +77,32 @@ elseif solver isa Spherical_Harmonics
     if Ndims == 1
         if polynomial_basis == "legendre"
             is_SPH = false
-            Np = L+1
+            PN_model = 1
+            Np,Nq,Mll = half_to_full_range_matrix_legendre(L)
+            qa = zeros(Int64,Nq)
+            qb = zeros(Int64,Nq)
+            qc = zeros(Int64,Nq)
             pl = collect(0:L)
             pm = zeros(Int64,Np)
-            Mll = zeros(Np,Np)
-            for ip in range(1,Np), jp in range(1,Np)
-                il = ip - 1
-                jl = jp - 1
-                for ik in range(0,div(il,2)), jk in range(0,div(jl,2))
-                    for j in range(0,jl-2*jk)
-                        Mll[ip,jp] += sqrt(2*jl+1)/2^(il+jl) * (-1)^(ik+jk) * binomial(il,ik) * binomial(jl,jk) * binomial(2*il-2*ik,il) * binomial(2*jl-2*jk,jl) * binomial(jl-2*jk,j) * (-1)^(jl-2*jk-j) * 2^j / (il-2*ik+j+1)
-                    end
-                end
-            end
+            ql = pl
+            𝒩⁻,𝒩,𝒩⁺ = pn_weights_legendre(L)
         elseif polynomial_basis == "spherical-harmonics"
             is_SPH = true
-            Np = (L+1)^2
-            pl = zeros(Int64,Np)
-            pm = zeros(Int64,Np)
-            p = 1
-            for l in range(0,L), m in range(-l,l)
-                pl[p] = l
-                pm[p] = m
-                p += 1
-            end
-            Mll = zeros(Np,Np)
-            for ip in range(1,Np), jp in range(1,Np)
-                il = pl[ip]
-                jl = pl[jp]
-                im = pm[ip]
-                jm = pm[jp]
-                if im == jm
-                    C = π * (1+(im==0)) * sqrt((2-(im==0))*factorial_factor([il-abs(im)],[il+abs(im)])) * sqrt((2-(jm==0))/(2*π) * (2*jl+1)*factorial_factor([jl-abs(jm)],[jl+abs(jm)]))
-                    C2 = 1/(2^(abs(im))) * factorial_factor([1],[il-abs(im),jl-abs(im)])
-                    for ik in range(0,il-abs(im)), jk in range(0,jl-abs(im))
-                        C3 = (-1)^(ik+jk) * binomial(il-abs(im),ik) * binomial(jl-abs(im),jk) * factorial_factor([il+abs(im)+ik,jl+abs(im)+jk],[abs(im)+ik,abs(im)+jk])/2^(ik)
-                        if iseven(abs(im))
-                            for i in range(0,abs(im)+ik+jk), j in range(0,div(abs(im),2))
-                                C4 = (-1)^i * binomial(abs(im)+ik+jk,i) * binomial(div(abs(im),2),j)
-                                Mll[ip,jp] += C * C2 * C3 * C4 / (i + j + div(abs(im),2) + 1)
-                            end
-                        else
-                            for i in range(0,abs(im)+ik+jk), j in range(0,div(abs(im)-1,2))
-                                C4 = (-1)^i * binomial(abs(im)+ik+jk,i) * binomial(div(abs(im)-1,2),j)
-                                Mll[ip,jp] += C * C2 * C3 * C4 * (𝒢₈(i + j + div(abs(im)-1,2),0,1,1,1) - 𝒢₈(i + j + div(abs(im)-1,2),0,1,1,0))
-                            end
-                        end
-                    end
-                end
-            end
+            PN_model = 2
+            Np,Nq,Mll = half_to_full_range_matrix_spherical_harmonics(L)
+            pl,pm = spherical_harmonics_indices(L)
+            qa = zeros(Int64,Nq)
+            qb = zeros(Int64,Nq)
+            qc = zeros(Int64,Nq)
+            ql = pl
+            𝒩⁻,𝒩,𝒩⁺ = pn_weights_spherical_harmonics(L)
+        elseif polynomial_basis == "cartesian-harmonics"
+            is_SPH = true
+            PN_model = 3
+            Np,Nq,Mll = half_to_full_range_matrix_cartesian_harmonics(L)
+            pl,pm = spherical_harmonics_indices(L)
+            ql,qa,qb,qc = cartesian_harmonics_indices(L)
+            𝒩⁻,𝒩,𝒩⁺ = pn_weights_cartesian_harmonics(L)
         else
             error("Unknown polynomial basis.")
         end
@@ -285,7 +271,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,Nq,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH,PN_model,ql,qa,qb,qc,𝒩⁻,𝒩,𝒩⁺)
     end
 
     # Verification of convergence in all energy groups

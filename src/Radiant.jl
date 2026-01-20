@@ -7,6 +7,7 @@ module Radiant
     using Printf: @sprintf
     using LinearAlgebra
     using JLD2
+    using SpecialFunctions
 
     #----
     # Include files
@@ -94,6 +95,8 @@ module Radiant
         "pn_1D_bte.jl",
         "pn_1D_bfp.jl",
         "pn_sweep_1D.jl",
+        "half_to_full_range_matrix.jl",
+        "pn_weights.jl"
     ]
     radiant_src["structures/"] = [
         "Particle.jl",
@@ -144,7 +147,9 @@ module Radiant
         "cache.jl",
         "find_package_root.jl",
         "python_method_notation.jl",
-        "factorial_factor.jl"
+        "factorial_factor.jl",
+        "double_factorial.jl",
+        "cartesian_harmonics.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end

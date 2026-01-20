@@ -69,7 +69,7 @@ function set_acceleration(this::Spherical_Harmonics,acceleration::String)
 end
 
 function set_polynomial_basis(this::Spherical_Harmonics,basis::String)
-    if lowercase(basis) ∉ ["legendre","spherical-harmonics"] error("Unknown polynomial basis.") end
+    if lowercase(basis) ∉ ["legendre","spherical-harmonics","cartesian-harmonics"] error("Unknown polynomial basis.") end
     this.polynomial_basis = lowercase(basis)
 end
 
