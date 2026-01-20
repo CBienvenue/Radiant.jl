@@ -40,6 +40,7 @@ function flux_1D_BFP(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},�
     
 # Initialization
 sx = sign(μ)
+if (sx == 0.0) sx = 1.0; μ = 1e-12 end
 hx = abs(μ)/Δx
 if isFC Nm = 𝒪x*𝒪E else Nm = 𝒪x+𝒪E-1 end
 𝒮 = zeros(Nm,Nm)

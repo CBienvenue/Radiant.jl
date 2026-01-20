@@ -51,7 +51,7 @@ Compute the flux solution along one direction in 2D geometry.
 N/A
 
 """
-function compute_sweep_2D(𝚽l::Array{Float64,4},Ql::Array{Float64,4},Σt::Vector{Float64},mat::Array{Int64,2},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,Mnx⁻::Vector{Float64},Dnx⁻::Vector{Float64},Mny⁻::Vector{Float64},Dny⁻::Vector{Float64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Matrix{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool)
+function sn_sweep_2D(𝚽l::Array{Float64,4},Ql::Array{Float64,4},Σt::Vector{Float64},mat::Array{Int64,2},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,Mnx⁻::Vector{Float64},Dnx⁻::Vector{Float64},Mny⁻::Vector{Float64},Dny⁻::Vector{Float64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Matrix{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool,𝚽x12⁻,𝚽y12⁻,boundary_conditions,Np_source,pm_surf)
 
     # Initialization
     𝒪x = 𝒪[1]; 𝒪y = 𝒪[2]; 𝒪E = 𝒪[4]
@@ -60,6 +60,8 @@ function compute_sweep_2D(𝚽l::Array{Float64,4},Ql::Array{Float64,4},Σt::Vect
     Nx = Ns[1]; Ny = Ns[2]
     if (μ >= 0) x_sweep = (1:Nx) else x_sweep = (Nx:-1:1) end
     if (η >= 0) y_sweep = (1:Ny) else y_sweep = (Ny:-1:1) end
+    𝚽x12⁺ = zeros(Np_surf,Nm[1],2,Ny)
+    𝚽y12⁺ = zeros(Np_surf,Nm[2],2,Nx)
 
     # Sweep over x-axis
     𝚽x12 = zeros(Nm[1],Ny)
@@ -67,28 +69,64 @@ function compute_sweep_2D(𝚽l::Array{Float64,4},Ql::Array{Float64,4},Σt::Vect
         𝚽y12 = zeros(Nm[2])
         if η ≥ 0
             # Surface Y-
-            for p in range(1,Np_surf)
+            for p in range(1,Np_source)
                 𝚽y12[1] += Mny⁻[p] * sources[p,3][ix]
+            end
+            if boundary_conditions[3] != 0 # Not void
+                for p in range(1,Np_surf), is in range(1,Nm[2])
+                    if boundary_conditions[3] == 1 # Reflective
+                        𝚽y12[is] += Mny⁻[p] * 𝚽y12⁻[p,is,1,ix] * (-1)^pm_surf[3][p]
+                    elseif boundary_conditions[3] == 2 # Periodic
+                        𝚽y12[is] += Mny⁻[p] * 𝚽y12⁻[p,is,2,ix] * (-1)^pm_surf[3][p]
+                    end
+                end
             end
         else
             # Surface Y+
-            for p in range(1,Np_surf)
+            for p in range(1,Np_source)
                 𝚽y12[1] += Mny⁻[p] * sources[p,4][ix]
+            end
+            if boundary_conditions[4] != 0 # Not void
+                for p in range(1,Np_surf), is in range(1,Nm[2])
+                    if boundary_conditions[4] == 1 # Reflective
+                        𝚽y12[is] += Mny⁻[p] * 𝚽y12⁻[p,is,2,ix] * (-1)^pm_surf[4][p]
+                    elseif boundary_conditions[4] == 2 # Periodic
+                        𝚽y12[is] += Mny⁻[p] * 𝚽y12⁻[p,is,1,ix] * (-1)^pm_surf[4][p]
+                    end
+                end
             end
         end
 
         # Sweep over y-axis
         for iy in y_sweep
-            if (ix == 1 &&  μ ≥ 0) || (ix == Nx && μ < 0 )
+            if (ix == 1 && μ ≥ 0) || (ix == Nx && μ < 0 )
                 if μ ≥ 0
                     # Surface X-
-                    for p in range(1,Np_surf)
+                    for p in range(1,Np_source)
                         𝚽x12[1,iy] += Mnx⁻[p] * sources[p,1][iy]
+                    end
+                    if boundary_conditions[1] != 0 # Not void
+                        for p in range(1,Np_surf), is in range(1,Nm[1])
+                            if boundary_conditions[1] == 1 # Reflective
+                                𝚽x12[is,iy] += Mnx⁻[p] * 𝚽x12⁻[p,is,1,iy] * (-1)^pm_surf[1][p]
+                            elseif boundary_conditions[1] == 2 # Periodic
+                                𝚽x12[is,iy] += Mnx⁻[p] * 𝚽x12⁻[p,is,2,iy] * (-1)^pm_surf[1][p]
+                            end
+                        end
                     end
                 else
                     # Surface X+
-                    for p in range(1,Np_surf)
+                    for p in range(1,Np_source)
                         𝚽x12[1,iy] += Mnx⁻[p] * sources[p,2][iy]
+                    end
+                    if boundary_conditions[2] != 0 # Not void
+                        for p in range(1,Np_surf), is in range(1,Nm[1])
+                            if boundary_conditions[2] == 1 # Reflective
+                                𝚽x12[is,iy] += Mnx⁻[p] * 𝚽x12⁻[p,is,2,iy] * (-1)^pm_surf[2][p]
+                            elseif boundary_conditions[2] == 2 # Periodic
+                                𝚽x12[is,iy] += Mnx⁻[p] * 𝚽x12⁻[p,is,1,iy] * (-1)^pm_surf[2][p]
+                            end
+                        end
                     end
                 end
             end
@@ -110,7 +148,37 @@ function compute_sweep_2D(𝚽l::Array{Float64,4},Ql::Array{Float64,4},Σt::Vect
             for is in range(1,Nm[5]), p in range(1,P)
                 𝚽l[p,is,ix,iy] += Dn[p] * 𝚽n[is]
             end
+
+            # Save boundary fluxes along x-axis
+            if (ix == Nx && μ ≥ 0) || (ix == 1 && μ < 0 )
+                for p in range(1,Np_surf)
+                    for is in range(1,Nm[1])
+                        # Surface X+
+                        if μ ≥ 0
+                            𝚽x12⁺[p,is,2,iy] += Dnx⁻[p] * 𝚽x12[is,iy]
+                        # Surface X-
+                        else
+                            𝚽x12⁺[p,is,1,iy] += Dnx⁻[p] * 𝚽x12[is,iy]
+                        end
+                    end
+                end
+            end
+
+            # Save boundary fluxes along y-axis
+            if (iy == Ny && η ≥ 0) || (iy == 1 && η < 0 )
+                for p in range(1,Np_surf)
+                    for is in range(1,Nm[2])
+                        # Surface Y+
+                        if η ≥ 0
+                            𝚽y12⁺[p,is,2,ix] += Dny⁻[p] * 𝚽y12[is]
+                        # Surface Y-
+                        else
+                            𝚽y12⁺[p,is,1,ix] += Dny⁻[p] * 𝚽y12[is]
+                        end
+                    end
+                end
+            end
         end
     end
-    return 𝚽l, 𝚽E12
+    return 𝚽l, 𝚽E12, 𝚽x12⁺, 𝚽y12⁺
 end

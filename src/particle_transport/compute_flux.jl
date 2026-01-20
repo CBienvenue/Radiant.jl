@@ -28,6 +28,7 @@ if geo_type != "cartesian" error("Transport of particles in",geo_type," is unava
 Ns = geometry.get_number_of_voxels()
 Δs = geometry.get_voxels_width()
 mat = geometry.get_material_per_voxel()
+boundary_conditions = geometry.get_boundary_conditions()
 
 #----
 # Preparation of angular discretisation
@@ -204,7 +205,7 @@ end
 
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
-Np_surf = Int64(min(Np_surf,length(surface_sources[1,:,1])))
+Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
 
 #----
 # Flux calculations
@@ -271,7 +272,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,Nq,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH,PN_model,ql,qa,qb,qc,𝒩⁻,𝒩,𝒩⁺)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,Nq,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH,PN_model,ql,qa,qb,qc,𝒩⁻,𝒩,𝒩⁺,boundary_conditions,Np_source,pm_surf)
     end
 
     # Verification of convergence in all energy groups

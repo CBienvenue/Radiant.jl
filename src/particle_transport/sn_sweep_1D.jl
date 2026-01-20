@@ -48,25 +48,44 @@ Compute the flux solution along one direction in 1D geometry.
 N/A
 
 """
-function compute_sweep_1D(𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt::Vector{Float64},mat::Vector{Int64},Nx::Int64,Δx::Vector{Float64},μ::Float64,Mn::Vector{Float64},Dn::Vector{Float64},Np::Int64,Mnx⁻::Vector{Float64},Dnx⁻::Vector{Float64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Matrix{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool)
+function sn_sweep_1D(𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt::Vector{Float64},mat::Vector{Int64},Nx::Int64,Δx::Vector{Float64},μ::Float64,Mn::Vector{Float64},Dn::Vector{Float64},Np::Int64,Mnx⁻::Vector{Float64},Dnx⁻::Vector{Float64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Matrix{Union{Float64, Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool,𝚽x12⁻::Array{Float64,3},boundary_conditions::Vector{Int64},Np_source)
 
     # Initialization
     𝒪x = 𝒪[1]
     𝒪E = 𝒪[4]
     𝚽x12 = zeros(Nm[1])
+    𝚽x12⁺ = zeros(Np_surf,Nm[1],2)
 
-    # Monodirectional boundary sources
+    # Boundary conditions and sources
     if μ ≥ 0
         x_sweep = 1:Nx
         # Surface X-
-        for p in range(1,Np_surf)
+        for p in range(1,Np_source)
             𝚽x12[1] += Mnx⁻[p] * sources[p,1]
         end
-    elseif μ < 0
+        if boundary_conditions[1] != 0 # Not void
+            for p in range(1,Np_surf), is in range(1,Nm[1])
+                if boundary_conditions[1] == 1 # Reflective
+                    𝚽x12[is] += Mnx⁻[p] * 𝚽x12⁻[p,is,1]
+                elseif boundary_conditions[1] == 2 # Periodic
+                    𝚽x12[is] += Mnx⁻[p] * 𝚽x12⁻[p,is,2]
+                end
+            end
+        end
+    else
         x_sweep = Nx:-1:1
         # Surface X+
-        for p in range(1,Np_surf)
+        for p in range(1,Np_source)
             𝚽x12[1] += Mnx⁻[p] * sources[p,2]
+        end
+        if boundary_conditions[2] != 0 # Not void
+            for p in range(1,Np_surf), is in range(1,Nm[1])
+                if boundary_conditions[2] == 1 # Reflective
+                    𝚽x12[is] += Mnx⁻[p] * 𝚽x12⁻[p,is,2]
+                elseif boundary_conditions[2] == 2 # Periodic
+                    𝚽x12[is] += Mnx⁻[p] * 𝚽x12⁻[p,is,1]
+                end
+            end
         end
     end
 
@@ -91,5 +110,19 @@ function compute_sweep_1D(𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt::Vect
         end
         
     end
-    return 𝚽l, 𝚽E12
+
+    # Save boundary fluxes
+    for p in range(1,Np_surf)
+        for is in range(1,Nm[1])
+            # Surface X+
+            if μ ≥ 0
+                𝚽x12⁺[p,is,2] += Dnx⁻[p] * 𝚽x12[is]
+            # Surface X-
+            else
+                𝚽x12⁺[p,is,1] += Dnx⁻[p] * 𝚽x12[is]
+            end
+        end
+    end
+
+    return 𝚽l, 𝚽E12, 𝚽x12⁺
 end

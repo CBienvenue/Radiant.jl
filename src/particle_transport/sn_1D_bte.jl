@@ -28,6 +28,7 @@ function flux_1D_BTE(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},�
 
 # Initialization
 sx = sign(μ)
+if (sx == 0.0) sx = 1.0; μ = 1e-12 end
 hx = abs(μ)/Δx
 𝒮 = zeros(𝒪x,𝒪x)
 Q = zeros(𝒪x)

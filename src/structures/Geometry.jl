@@ -249,6 +249,8 @@ To set the boundary conditions at the specified boundary.
     - `boundary = "z+"` : the upper bound along z-axis
 - `boundary_condition::String` : boundary conditions, which can takes the following value:
     -`boundary = "void"` : void boundary conditions.
+    -`boundary = "reflective"` : reflective boundary conditions.
+    -`boundary = "periodic"` : periodic boundary conditions.
 
 # Output Argument(s)
 N/A
@@ -261,7 +263,7 @@ julia> geo.set_boundary_conditions("x-","void")
 """
 function set_boundary_conditions(this::Geometry,boundary::String,boundary_condition::String)
     if uppercase(boundary) ∉ ["X-","X+","Y-","Y+","Z-","Z+"] error("Unknown boundary.") end
-    if lowercase(boundary_condition) ∉ ["void"] error("Unkown boundary type.") end
+    if lowercase(boundary_condition) ∉ ["void","reflective","periodic"] error("Unkown boundary type.") end
     this.boundary_conditions[uppercase(boundary)] = boundary_condition
 end
 
@@ -552,4 +554,80 @@ function get_voxels_boundaries(this::Geometry)
         sb[n] = this.voxels_width[axis[n]]
     end
     return sb
+end
+
+"""
+    get_boundary_conditions(this::Geometry,boundary::String)
+
+To get the boundary conditions at the specified boundary.
+
+# Input Argument(s)
+- `this::Geometry` : geometry.
+- `boundary::String` : boundary for which the boundary condition is applied, which can takes
+  the following value:
+    - `boundary = "x-"` : the lower bound along x-axis
+    - `boundary = "x+"` : the upper bound along x-axis
+    - `boundary = "y-"` : the lower bound along y-axis
+    - `boundary = "y+"` : the upper bound along y-axis
+    - `boundary = "z-"` : the lower bound along z-axis
+    - `boundary = "z+"` : the upper bound along z-axis
+
+# Output Argument(s)
+- `boundary_condition::String` : boundary condition at the specified boundary.
+
+# Examples
+```jldoctest
+julia> boundary_condition = geo.get_boundary_conditions("x-")
+```
+"""
+function get_boundary_conditions(this::Geometry,boundary::String)
+    if uppercase(boundary) ∉ ["X-","X+","Y-","Y+","Z-","Z+"] error("Unknown boundary.") end
+    return this.boundary_conditions[uppercase(boundary)]
+end
+
+"""
+    get_boundary_conditions(this::Geometry)
+
+To get the boundary conditions.
+
+# Input Argument(s)
+- `this::Geometry` : geometry.
+
+# Output Argument(s)
+- `boundary_conditions::Dict{String,String}` : boundary conditions.
+
+# Examples
+```jldoctest
+julia> boundary_conditions = geo.get_boundary_conditions()
+```
+"""
+function get_boundary_conditions(this::Geometry)
+    if this.type != "cartesian" error("Getting boundary conditions is only available for cartesian geometries.") end
+    if this.dimension == 1
+        boundary_conditions = zeros(Int64,2)
+        boundaries = ["x-","x+"]
+    elseif this.dimension == 2
+        boundary_conditions = zeros(Int64,4)
+        boundaries = ["x-","x+","y-","y+"]
+    elseif this.dimension == 3
+        boundary_conditions = zeros(Int64,6)
+        boundaries = ["x-","x+","y-","y+","z-","z+"]
+    else
+        error("Unknown geometry dimension.")
+    end
+    i = 1
+    for boundary in boundaries
+        boundary_condition = this.get_boundary_conditions(boundary)
+        if boundary_condition == "void"
+            boundary_conditions[i] = 0
+        elseif boundary_condition == "reflective"
+            boundary_conditions[i] = 1
+        elseif boundary_condition == "periodic"
+            boundary_conditions[i] = 2
+        else
+            error("Unknown boundary condition type.")
+        end
+        i += 1
+    end
+    return boundary_conditions
 end

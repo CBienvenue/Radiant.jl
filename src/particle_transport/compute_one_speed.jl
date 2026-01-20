@@ -71,7 +71,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},Mll::Array{Float64,2},is_SN::Bool,is_PN::Bool,is_SPH::Bool,PN_model::Int64,plq,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
+function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},Mll::Array{Float64,2},is_SN::Bool,is_PN::Bool,is_SPH::Bool,PN_model::Int64,plq,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺,boundary_conditions::Vector{Int64},Np_source,pm_surf)
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
@@ -86,6 +86,26 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
     end
     N⁻ = 2
     𝚽l⁻ = zeros(N⁻,Np,Nm[5],Ns[1],Ns[2],Ns[3])
+
+    # Boundary conditions initialization
+    if ndims == 1
+        𝚽x12⁻ = zeros(Np_surf,Nm[1],2)
+        𝚽x12⁺_temp = copy(𝚽x12⁻)
+    elseif ndims == 2
+        𝚽x12⁻ = zeros(Np_surf,Nm[1],2,Ns[2])
+        𝚽y12⁻ = zeros(Np_surf,Nm[2],2,Ns[1])
+        𝚽x12⁺_temp = copy(𝚽x12⁻)
+        𝚽y12⁺_temp = copy(𝚽y12⁻)
+    elseif ndims == 3
+        𝚽x12⁻ = zeros(Np_surf,Nm[1],2,Ns[2],Ns[3])
+        𝚽y12⁻ = zeros(Np_surf,Nm[2],2,Ns[1],Ns[3])
+        𝚽z12⁻ = zeros(Np_surf,Nm[3],2,Ns[1],Ns[2])
+        𝚽x12⁺_temp = copy(𝚽x12⁻)
+        𝚽y12⁺_temp = copy(𝚽y12⁻)
+        𝚽z12⁺_temp = copy(𝚽z12⁻)
+    else
+        error("Dimension is not 1, 2 or 3.")
+    end
 
     # Source iteration loop until convergence
     i_in = 1
@@ -175,7 +195,7 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         Mnx⁻ = zeros(Np)
                         Dnx⁻ = zeros(Np)
                     end
-                    𝚽l[:,:,:,1,1], 𝚽E12ⁿ = compute_sweep_1D(𝚽l[:,:,:,1,1],Ql[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
+                    𝚽l[:,:,:,1,1], 𝚽E12ⁿ,𝚽x12⁺ = sn_sweep_1D(𝚽l[:,:,:,1,1],Ql[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC,𝚽x12⁻,boundary_conditions,Np_source)
                 elseif ndims == 2
                     nx⁻ = n_to_n⁺[1][n]
                     nx⁺ = n_to_n⁺[2][n]
@@ -201,7 +221,7 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         Mny⁻ = zeros(Np)
                         Dny⁻ = zeros(Np)
                     end
-                    𝚽l[:,:,:,:,1],𝚽E12ⁿ = compute_sweep_2D(𝚽l[:,:,:,:,1],Ql[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
+                    𝚽l[:,:,:,:,1],𝚽E12ⁿ,𝚽x12⁺,𝚽y12⁺ = sn_sweep_2D(𝚽l[:,:,:,:,1],Ql[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC,𝚽x12⁻,𝚽y12⁻,boundary_conditions,Np_source,pm_surf)
                 elseif ndims == 3
                     nx⁻ = n_to_n⁺[1][n]
                     nx⁺ = n_to_n⁺[2][n]
@@ -239,12 +259,18 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         Mnz⁻ = zeros(Np)
                         Dnz⁻ = zeros(Np)
                     end
-                    𝚽l,𝚽E12ⁿ = compute_sweep_3D(𝚽l,Ql,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Mnz⁻,Dnz⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC)
+                    𝚽l,𝚽E12ⁿ,𝚽x12⁺,𝚽y12⁺,𝚽z12⁺ = sn_sweep_3D(𝚽l,Ql,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Mnz⁻,Dnz⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC,𝚽x12⁻,𝚽y12⁻,𝚽z12⁻,boundary_conditions,Np_source,pm_surf)
                 else
                     error("Dimension is not 1, 2 or 3.")
                 end
+                𝚽x12⁺_temp += 𝚽x12⁺
+                if ndims >= 2 𝚽y12⁺_temp += 𝚽y12⁺ end
+                if ndims >= 3 𝚽z12⁺_temp += 𝚽z12⁺ end
                 if isCSD 𝚽E12_temp[n,:,:,:,:] = 𝚽E12ⁿ end
             end
+            𝚽x12⁻ = copy(𝚽x12⁺_temp); 𝚽x12⁺_temp .= 0.0
+            if ndims >= 2 𝚽y12⁻ = copy(𝚽y12⁺_temp); 𝚽y12⁺_temp .= 0.0 end
+            if ndims >= 3 𝚽z12⁻ = copy(𝚽z12⁺_temp); 𝚽z12⁺_temp .= 0.0 end
         else
             error("Unknown angular discretization method.")
         end

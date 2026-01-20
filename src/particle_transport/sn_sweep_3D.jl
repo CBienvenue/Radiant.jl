@@ -54,7 +54,7 @@ Compute the flux solution along one direction in 3D geometry.
 N/A
 
 """
-function compute_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,Mnx⁻::Vector{Float64},Dnx⁻::Vector{Float64},Mny⁻::Vector{Float64},Dny⁻::Vector{Float64},Mnz⁻::Vector{Float64},Dnz⁻::Vector{Float64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Matrix{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool)
+function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Float64},mat::Array{Int64,3},Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Float64},Mn::Vector{Float64},Dn::Vector{Float64},P::Int64,Mnx⁻::Vector{Float64},Dnx⁻::Vector{Float64},Mny⁻::Vector{Float64},Dny⁻::Vector{Float64},Mnz⁻::Vector{Float64},Dnz⁻::Vector{Float64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},C::Vector{Float64},ω::Vector{Array{Float64}},sources::Matrix{Union{Float64,Array{Float64}}},isAdapt::Bool,isCSD::Bool,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},𝒲::Array{Float64},isFC::Bool,𝚽x12⁻,𝚽y12⁻,𝚽z12⁻,boundary_conditions,Np_source,pm_surf)
 
     # Initialization
     𝒪x = 𝒪[1]; 𝒪y = 𝒪[2]; 𝒪z = 𝒪[3]; 𝒪E = 𝒪[4]
@@ -64,24 +64,45 @@ function compute_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vect
     if (μ >= 0) x_sweep = (1:Nx) else x_sweep = (Nx:-1:1) end
     if (η >= 0) y_sweep = (1:Ny) else y_sweep = (Ny:-1:1) end
     if (ξ >= 0) z_sweep = (1:Nz) else z_sweep = (Nz:-1:1) end
+    𝚽x12⁺ = zeros(Np_surf,Nm[1],2,Ny,Nz)
+    𝚽y12⁺ = zeros(Np_surf,Nm[2],2,Nx,Nz)
+    𝚽z12⁺ = zeros(Np_surf,Nm[3],2,Nx,Ny)
 
     # Sweeping over x-axis
-    𝚽12x = zeros(Nm[1],Ny,Nz)
+    𝚽x12 = zeros(Nm[1],Ny,Nz)
     for ix in x_sweep
 
         # Sweeping over y-axis
-        𝚽12y = zeros(Nm[2],Nz)
+        𝚽y12 = zeros(Nm[2],Nz)
         for iy in y_sweep
-            𝚽12z = zeros(Nm[3])
+            𝚽z12 = zeros(Nm[3])
             if ξ ≥ 0
                 # Surface Z-
                 for p in range(1,Np_surf)
-                    𝚽12z[1] += Mnz⁻[p] * sources[p,5][ix,iy]  
+                    𝚽z12[1] += Mnz⁻[p] * sources[p,5][ix,iy]  
+                end
+                if boundary_conditions[5] != 0 # Not void
+                    for p in range(1,Np_surf), is in range(1,Nm[3])
+                        if boundary_conditions[5] == 1 # Reflective
+                            𝚽z12[is] += Mnz⁻[p] * 𝚽z12⁻[p,is,1,ix,iy] * (-1)^pm_surf[5][p]
+                        elseif boundary_conditions[5] == 2 # Periodic
+                            𝚽z12[is] += Mnz⁻[p] * 𝚽z12⁻[p,is,2,ix,iy] * (-1)^pm_surf[5][p]
+                        end
+                    end
                 end
             else
                 # Surface Z+
                 for p in range(1,Np_surf)
-                    𝚽12z[1] += Mnz⁻[p] * sources[p,6][ix,iy]  
+                    𝚽z12[1] += Mnz⁻[p] * sources[p,6][ix,iy]  
+                end
+                if boundary_conditions[6] != 0 # Not void
+                    for p in range(1,Np_surf), is in range(1,Nm[3])
+                        if boundary_conditions[6] == 1 # Reflective
+                            𝚽z12[is] += Mnz⁻[p] * 𝚽z12⁻[p,is,2,ix,iy] * (-1)^pm_surf[6][p]
+                        elseif boundary_conditions[6] == 2 # Periodic
+                            𝚽z12[is] += Mnz⁻[p] * 𝚽z12⁻[p,is,1,ix,iy] * (-1)^pm_surf[6][p]
+                        end
+                    end
                 end
             end
 
@@ -91,12 +112,30 @@ function compute_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vect
                     if η ≥ 0
                         # Surface Y-
                         for p in range(1,Np_surf)
-                            𝚽12y[1,iz] += Mny⁻[p] * sources[p,3][ix,iz]  
+                            𝚽y12[1,iz] += Mny⁻[p] * sources[p,3][ix,iz]  
+                        end
+                        if boundary_conditions[3] != 0 # Not void
+                            for p in range(1,Np_surf), is in range(1,Nm[2])
+                                if boundary_conditions[3] == 1 # Reflective
+                                    𝚽y12[is,iz] += Mny⁻[p] * 𝚽y12⁻[p,is,1,ix,iz] * (-1)^pm_surf[3][p]
+                                elseif boundary_conditions[3] == 2 # Periodic
+                                    𝚽y12[is,iz] += Mny⁻[p] * 𝚽y12⁻[p,is,2,ix,iz] * (-1)^pm_surf[3][p]
+                                end
+                            end
                         end
                     else
                         # Surface Y+
                         for p in range(1,Np_surf)
-                            𝚽12y[1,iz] += Mny⁻[p] * sources[p,4][ix,iz]  
+                            𝚽y12[1,iz] += Mny⁻[p] * sources[p,4][ix,iz]  
+                        end
+                        if boundary_conditions[4] != 0 # Not void
+                            for p in range(1,Np_surf), is in range(1,Nm[2])
+                                if boundary_conditions[4] == 1 # Reflective
+                                    𝚽y12[is,iz] += Mny⁻[p] * 𝚽y12⁻[p,is,2,ix,iz] * (-1)^pm_surf[4][p]
+                                elseif boundary_conditions[4] == 2 # Periodic
+                                    𝚽y12[is,iz] += Mny⁻[p] * 𝚽y12⁻[p,is,1,ix,iz] * (-1)^pm_surf[4][p]
+                                end
+                            end
                         end
                     end
                 end
@@ -104,12 +143,30 @@ function compute_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vect
                     if μ ≥ 0
                         # Surface X-
                         for p in range(1,Np_surf)
-                            𝚽12x[1,iy,iz] += Mnx⁻[p] * sources[p,1][iy,iz]  
+                            𝚽x12[1,iy,iz] += Mnx⁻[p] * sources[p,1][iy,iz]  
+                        end
+                        if boundary_conditions[1] != 0 # Not void
+                            for p in range(1,Np_surf), is in range(1,Nm[1])
+                                if boundary_conditions[1] == 1 # Reflective
+                                    𝚽x12[is,iy,iz] += Mnx⁻[p] * 𝚽x12⁻[p,is,1,iy,iz] * (-1)^pm_surf[1][p]
+                                elseif boundary_conditions[1] == 2 # Periodic
+                                    𝚽x12[is,iy,iz] += Mnx⁻[p] * 𝚽x12⁻[p,is,2,iy,iz] * (-1)^pm_surf[1][p]
+                                end
+                            end
                         end
                     else
                         # Surface X+
                         for p in range(1,Np_surf)
-                            𝚽12x[1,iy,iz] += Mnx⁻[p] * sources[p,2][iy,iz]  
+                            𝚽x12[1,iy,iz] += Mnx⁻[p] * sources[p,2][iy,iz]  
+                        end
+                        if boundary_conditions[2] != 0 # Not void
+                            for p in range(1,Np_surf), is in range(1,Nm[1])
+                                if boundary_conditions[2] == 1 # Reflective
+                                    𝚽x12[is,iy,iz] += Mnx⁻[p] * 𝚽x12⁻[p,is,2,iy,iz] * (-1)^pm_surf[2][p]
+                                elseif boundary_conditions[2] == 2 # Periodic
+                                    𝚽x12[is,iy,iz] += Mnx⁻[p] * 𝚽x12⁻[p,is,1,iy,iz] * (-1)^pm_surf[2][p]
+                                end
+                            end
                         end
                     end
                 end
@@ -122,9 +179,9 @@ function compute_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vect
 
                 # Flux calculation
                 if ~isCSD
-                    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt,isFC)
+                    𝚽n,𝚽x12[:,iy,iz],𝚽y12[:,iz],𝚽z12 = flux_3D_BTE(μ,η,ξ,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Qn,𝚽x12[:,iy,iz],𝚽y12[:,iz],𝚽z12,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),isAdapt,isFC)
                 else
-                    𝚽n,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],S⁻[mat[ix,iy,iz]],S⁺[mat[ix,iy,iz]],S[mat[ix,iy,iz],:],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽12x[:,iy,iz],𝚽12y[:,iz],𝚽12z,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),copy(ω[4]),isAdapt,𝒲,isFC)
+                    𝚽n,𝚽x12[:,iy,iz],𝚽y12[:,iz],𝚽z12,𝚽E12[:,ix,iy,iz] = flux_3D_BFP(μ,η,ξ,Σt[mat[ix,iy,iz]],S⁻[mat[ix,iy,iz]],S⁺[mat[ix,iy,iz]],S[mat[ix,iy,iz],:],ΔE,Δx[ix],Δy[iy],Δz[iz],Qn,𝚽x12[:,iy,iz],𝚽y12[:,iz],𝚽z12,𝚽E12[:,ix,iy,iz],𝒪E,𝒪x,𝒪y,𝒪z,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),copy(ω[4]),isAdapt,𝒲,isFC)
                 end
 
                 # Calculation of the Legendre components of the flux
@@ -132,8 +189,52 @@ function compute_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vect
                     𝚽l[p,is,ix,iy,iz] += Dn[p] * 𝚽n[is]
                 end
 
+                # Save boundary fluxes along x-axis
+                if (ix == Nx && μ ≥ 0) || (ix == 1 && μ < 0 )
+                    for p in range(1,Np_surf)
+                        for is in range(1,Nm[1])
+                            # Surface X+
+                            if μ ≥ 0
+                                𝚽x12⁺[p,is,2,iy,iz] += Dnx⁻[p] * 𝚽x12[is,iy,iz]
+                            # Surface X-
+                            else
+                                𝚽x12⁺[p,is,1,iy,iz] += Dnx⁻[p] * 𝚽x12[is,iy,iz]
+                            end
+                        end
+                    end
+                end
+
+                # Save boundary fluxes along y-axis
+                if (iy == Ny && η ≥ 0) || (iy == 1 && η < 0 )
+                    for p in range(1,Np_surf)
+                        for is in range(1,Nm[2])
+                            # Surface Y+
+                            if η ≥ 0
+                                𝚽y12⁺[p,is,2,ix,iz] += Dny⁻[p] * 𝚽y12[is,iz]
+                            # Surface Y-
+                            else
+                                𝚽y12⁺[p,is,1,ix,iz] += Dny⁻[p] * 𝚽y12[is,iz]
+                            end
+                        end
+                    end
+                end
+
+                # Save boundary fluxes along z-axis
+                if (iz == Nz && ξ ≥ 0) || (iz == 1 && ξ < 0 )
+                    for p in range(1,Np_surf)
+                        for is in range(1,Nm[3])
+                            # Surface Z+
+                            if ξ ≥ 0
+                                𝚽z12⁺[p,is,2,ix,iy] += Dnz⁻[p] * 𝚽z12[is]
+                            # Surface Z-
+                            else
+                                𝚽z12⁺[p,is,1,ix,iy] += Dnz⁻[p] * 𝚽z12[is]
+                            end
+                        end
+                    end
+                end
             end
         end
     end
-    return 𝚽l, 𝚽E12
+    return 𝚽l, 𝚽E12, 𝚽x12⁺, 𝚽y12⁺, 𝚽z12⁺
 end
