@@ -73,6 +73,7 @@ elseif solver isa Spherical_Harmonics
     Mn_surf = Vector{Array{Float64}}()
     Dn_surf = Vector{Array{Float64}}()
     n_to_n⁺ = Vector{Vector{Int64}}()
+    pm_surf = Vector{Vector{Int64}}()
     L = solver.get_legendre_order()
     polynomial_basis = solver.get_polynomial_basis(Ndims)
     if Ndims == 1
@@ -110,7 +111,7 @@ elseif solver isa Spherical_Harmonics
     else
         error("Spherical Harmonics method is only available in 1D.")
     end
-    Np_surf = Inf
+    Np_surf = 1000
 else
     error("No methods available for $(get_type(solver.particle)) particle.")
 end

@@ -164,8 +164,8 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         end
                     end
                 end
-                𝚽⁺[:,:,:,1,1],𝚽E12⁺[:,:,:,1,1] = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_surf,𝒪,Nm,C,ω,sources,is_SPH,plq,pm,S⁻,S⁺,S,𝚽E12⁺[:,:,:,1,1],𝒲,isFC,isCSD,PN_model,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
-                𝚽⁻[:,:,:,1,1],𝚽E12⁻[:,:,:,1,1] = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_surf,𝒪,Nm,C,ω,sources,is_SPH,plq,pm,S⁻,S⁺,S,𝚽E12⁻[:,:,:,1,1],𝒲,isFC,isCSD,PN_model,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
+                𝚽⁺[:,:,:,1,1],𝚽E12⁺[:,:,:,1,1] = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,𝒪,Nm,C,ω,sources,is_SPH,plq,pm,S⁻,S⁺,S,𝚽E12⁺[:,:,:,1,1],𝒲,isFC,isCSD,PN_model,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
+                𝚽⁻[:,:,:,1,1],𝚽E12⁻[:,:,:,1,1] = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,𝒪,Nm,C,ω,sources,is_SPH,plq,pm,S⁻,S⁺,S,𝚽E12⁻[:,:,:,1,1],𝒲,isFC,isCSD,PN_model,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
                 for ix in range(1,Ns[1]), p in range(1,Np), q in range(1,Nq)
                     for is in range(1,Nm[5])
                         𝚽l[p,is,ix,1,1] += Mll[p,q] * (𝚽⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽⁻[q,is,ix,1,1])
