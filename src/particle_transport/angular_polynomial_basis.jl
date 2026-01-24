@@ -373,14 +373,14 @@ function surface_angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{
                 pm[li] = m
                 for n⁺ in range(1,Nd⁺)
                     Mn[n⁺,li] = ψlm[n⁺][l+1][m+l+1]
-                    Dn[li,n⁺] = w[n⁺] * ψlm[n⁺][l+1][m+l+1]
+                    Dn[li,n⁺] = w⁺[n⁺] * ψlm[n⁺][l+1][m+l+1]
                 end
                 li += 1
             end
         elseif type == "galerkin-d"
-            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,L,ψlm,w,Qdims,1)
+            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,L,ψlm,w⁺,Qdims,1)
         elseif type == "galerkin-m"
-            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,L,ψlm,w,Qdims,3)
+            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,L,ψlm,w⁺,Qdims,3)
         else
             error("Unknown method.")
         end
