@@ -8,6 +8,8 @@ Calculate the Fokker-Planck scattering matrix using differential quadrature.
 - `quadrature_type::String` : type of quadrature.
 - `Ndims::Int64` : dimension of the geometry.
 - `Qdims::Int64` : dimension of the quadrature.
+- `Mn::Array{Float64}` : moment-to-discrete matrix.
+- `Dn::Array{Float64}` : discrete-to-moment matrix.
 
 # Output Argument(s)
 - `ℳ::Array{Float64}` : Fokker-Planck scattering matrix.
@@ -18,7 +20,7 @@ Calculate the Fokker-Planck scattering matrix using differential quadrature.
   Fokker-Planck Equation.
 
 """
-function fokker_planck_differential_quadrature(N::Int64,quadrature_type::String,Ndims::Int64,Qdims::Int64)
+function fokker_planck_differential_quadrature(N::Int64,quadrature_type::String,Ndims::Int64,Qdims::Int64,Mn::Array{Float64},Dn::Array{Float64})
 
 if Qdims == 1 
 
@@ -59,7 +61,6 @@ if Qdims == 1
 else
     error("Differential quadrature unavailable in multidimensional geometry.")
 end
-
+ℳ = Dn * ℳ * Mn
 return ℳ, λ₀
-
 end

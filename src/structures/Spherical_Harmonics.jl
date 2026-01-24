@@ -77,6 +77,11 @@ function set_is_full_coupling(this::Spherical_Harmonics,isFC::Bool)
     this.isFC = isFC
 end
 
+function set_angular_fokker_planck(this::Spherical_Harmonics,angular_fokker_planck::String)
+    if angular_fokker_planck ∉ ["galerkin"] error("Unkown method to deal with the angular Fokker-Planck term.") end
+    this.angular_fokker_planck = angular_fokker_planck
+end
+
 function get_is_full_coupling(this::Spherical_Harmonics)
     return this.isFC
 end
@@ -166,4 +171,9 @@ function get_polynomial_basis(this::Spherical_Harmonics,Ndims::Int64)
     else
         return this.polynomial_basis
     end
+end
+
+function get_angular_fokker_planck(this::Spherical_Harmonics)
+    if ismissing(this.angular_fokker_planck) error("Unable to get angular Fokker-Planck treatment type. Missing data.") end
+    return this.angular_fokker_planck
 end

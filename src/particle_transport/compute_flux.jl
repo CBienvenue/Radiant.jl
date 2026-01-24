@@ -148,12 +148,13 @@ end
 if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
+    fokker_planck_type = solver.get_angular_fokker_planck()
     if is_SN
-        fokker_planck_type = solver.get_angular_fokker_planck()
         ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
         Σtot .+= T .* λ₀
     elseif is_PN
-        error("Fokker-Planck approximation not implemented yet for PN method.")
+        ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np)
+        Σtot .+= T .* λ₀
     end
 end
 
