@@ -94,7 +94,9 @@ module Radiant
         "flux.jl",
         "pn_1D_bte.jl",
         "pn_1D_bfp.jl",
+        "pn_2D_bte.jl",
         "pn_sweep_1D.jl",
+        "pn_sweep_2D.jl",
         "half_to_full_range_matrix.jl",
         "pn_weights.jl"
     ]
@@ -148,8 +150,7 @@ module Radiant
         "find_package_root.jl",
         "python_method_notation.jl",
         "factorial_factor.jl",
-        "double_factorial.jl",
-        "cartesian_harmonics.jl"
+        "double_factorial.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end

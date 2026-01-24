@@ -137,3 +137,20 @@ function real_half_range_spherical_harmonics_up_to_L(L::Int64,μ::Float64,ϕ::Fl
     end
     return ψlm
 end
+
+function spherical_harmonics_number_basis(L)
+    return (L+1)^2
+end
+
+function spherical_harmonics_indices(L)
+    Np = spherical_harmonics_number_basis(L)
+    pl = zeros(Int64,Np)
+    pm = zeros(Int64,Np)
+    p = 1
+    for l in range(0,L), m in range(-l,l)
+        pl[p] = l
+        pm[p] = m
+        p += 1
+    end
+    return pl, pm
+end

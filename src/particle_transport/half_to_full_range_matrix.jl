@@ -47,31 +47,49 @@ function half_to_full_range_matrix_spherical_harmonics(L)
     return Np,Nq,Mll
 end
 
-function half_to_full_range_matrix_cartesian_harmonics(L)
+function quarter_to_full_range_matrix_spherical_harmonics(L)
     Np = spherical_harmonics_number_basis(L)
-    Nq = cartesian_harmonics_number_basis(L)
+    Nq = Np
     pl,pm = spherical_harmonics_indices(L)
-    ql,qa,qb,qc = cartesian_harmonics_indices(L)
     Mll = zeros(Np,Nq)
-    for ip in range(1,Np), jp in range(1,Nq)
-        il = pl[ip]
-        im = pm[ip]
-        jl = ql[jp]
-        ja = qa[jp]
-        jb = qb[jp]
-        jc = qc[jp]
-        for i in range(0,div(ja,2)), j in range(0,div(jb,2)), k in range(0,div(jc,2)), r in range(0,div(il-abs(im),2)), t in range(0,abs(im))
-            Clm = sqrt((2-(im==0))*factorial_factor([il-abs(im)],[il+abs(im)]))
-            α = (-1)^r * factorial_factor([2*il-2*r],[r,il-r,il-abs(im)-2*r])/2^il * binomial(abs(im),t)
-            if im ≥ 0
-                α *= cos(0.5*π*t)
+    N = 32
+    x,w = gauss_legendre(N)
+    for p in range(1,Np), q in range(1,Nq)
+        lp = pl[p]
+        lq = pl[q]
+        mp = pm[p]
+        mq = pm[q]
+        Cp = sqrt((2-(mp==0)) * factorial_factor([lp-abs(mp)],[lp+abs(mp)]))
+        Cq = (-1)^abs(mq) * sqrt((2-(mq==0))/π * (2*lq+1) * factorial_factor([lq-abs(mq)],[lq+abs(mq)]))
+        azimutal_integral = 0.0
+        for n in range(1,N)
+            if mp ≥ 0
+                τp = cos(0.5*π*x[n]*mp)
             else
-                α *= sin(0.5*π*t)
+                τp = sin(-0.5*π*x[n]*mp)
             end
-            Clabc = cartesian_harmonics_normalization(jl,ja,jb,jc)
-            β = (-1)^(i+j+k) * double_factorial(2*jl-2*(i+j+k)-1)/double_factorial(2*jl-1)/2^(i+j+k) * factorial_factor([ja,jb,jc],[i,j,k,ja-2*i,jb-2*j,jc-2*k])
-            Mll[ip,jp] += Clm * Clabc * α * β * cartesian_harmonics_I(ja-2*i,il-abs(im)-2*r,jb-2*j+abs(im)-t,jc-2*k+t)
+            if mq ≥ 0
+                τq = cos(π*x[n]*mq)
+            else
+                τq = sin(-π*x[n]*mq)
+            end
+            azimutal_integral += 0.5 * π * w[n] * τp * τq
         end
+        cosine_integral = 0.0
+        for n in range(1,N)
+            fp = 0.0
+            for kp in range(0,lp-abs(mp))
+                fp += binomial(lp-abs(mp),kp) * factorial_factor([lp+abs(mp)+kp],[abs(mp)+kp]) * (((x[n]+1)/2-1)/2)^(kp)
+            end
+            fp *= factorial_factor([lp,lp+abs(mp)],[lp-abs(mp),lp+abs(mp),lp],[(2,-abs(mp))]) * (1-((x[n]+1)/2)^2)^(abs(mp)/2)
+            fq = 0.0
+            for kq in range(0,lq-abs(mq))
+                fq += binomial(lq-abs(mq),kq) * factorial_factor([lq+abs(mq)+kq],[abs(mq)+kq]) * ((x[n]-1)/2)^(kq)
+            end
+            fq *= factorial_factor([lq,lq+abs(mq)],[lq-abs(mq),lq+abs(mq),lq],[(2,-abs(mq))]) * (1-x[n]^2)^(abs(mq)/2)
+            cosine_integral += w[n] * 0.5 * fp * fq
+        end
+        Mll[p,q] = Cp * Cq * azimutal_integral * cosine_integral
     end
     return Np,Nq,Mll
 end

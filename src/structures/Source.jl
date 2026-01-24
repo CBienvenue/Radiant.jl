@@ -66,16 +66,12 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
         if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
         P,_,_,_ = angular_polynomial_basis(Ω,w,solver.get_legendre_order(),solver.get_angular_boltzmann(),Qdims)
     elseif solver isa Spherical_Harmonics
-        if Ndims == 1
-            polynomial_basis = solver.get_polynomial_basis(Ndims)
-            L = solver.get_legendre_order()
-            if polynomial_basis == "legendre"
-                P = L+1
-            else
-                P = (L+1)^2
-            end
+        polynomial_basis = solver.get_polynomial_basis(Ndims)
+        L = solver.get_legendre_order()
+        if polynomial_basis == "legendre"
+            P = L+1
         else
-            error("Spherical harmonics solver is only available in 1D.")
+            P = (L+1)^2
         end
     else
         error("No methods available for $(get_type(particle)) particle.")

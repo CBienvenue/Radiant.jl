@@ -38,15 +38,7 @@ if solver isa Discrete_Ordinates
     is_SN = true
     is_PN = false
     is_SPH = false
-    PN_model = 0
-    ql = zeros(Int64,0)
-    qa = zeros(Int64,0)
-    qb = zeros(Int64,0)
-    qc = zeros(Int64,0)
-    𝒩⁻ = zeros(Float64,0)
-    𝒩 = zeros(Float64,0)
-    𝒩⁺ = zeros(Float64,0)
-
+    𝒩 = zeros(Float64,0,0)
     L = solver.get_legendre_order()
     N = solver.get_quadrature_order()
     quadrature_type = solver.get_quadrature_type()
@@ -79,39 +71,27 @@ elseif solver isa Spherical_Harmonics
     if Ndims == 1
         if polynomial_basis == "legendre"
             is_SPH = false
-            PN_model = 1
             Np,Nq,Mll = half_to_full_range_matrix_legendre(L)
-            qa = zeros(Int64,Nq)
-            qb = zeros(Int64,Nq)
-            qc = zeros(Int64,Nq)
             pl = collect(0:L)
             pm = zeros(Int64,Np)
-            ql = pl
-            𝒩⁻,𝒩,𝒩⁺ = pn_weights_legendre(L)
+            𝒩 = pn_weights_legendre_1D(L)
         elseif polynomial_basis == "spherical-harmonics"
             is_SPH = true
-            PN_model = 2
             Np,Nq,Mll = half_to_full_range_matrix_spherical_harmonics(L)
             pl,pm = spherical_harmonics_indices(L)
-            qa = zeros(Int64,Nq)
-            qb = zeros(Int64,Nq)
-            qc = zeros(Int64,Nq)
-            ql = pl
-            𝒩⁻,𝒩,𝒩⁺ = pn_weights_spherical_harmonics(L)
-        elseif polynomial_basis == "cartesian-harmonics"
-            is_SPH = true
-            PN_model = 3
-            Np,Nq,Mll = half_to_full_range_matrix_cartesian_harmonics(L)
-            pl,pm = spherical_harmonics_indices(L)
-            ql,qa,qb,qc = cartesian_harmonics_indices(L)
-            𝒩⁻,𝒩,𝒩⁺ = pn_weights_cartesian_harmonics(L)
+            𝒩 = pn_weights_spherical_harmonics_1D(L)
         else
             error("Unknown polynomial basis.")
         end
+    elseif Ndims == 2
+        is_SPH = true
+        Np,Nq,Mll = quarter_to_full_range_matrix_spherical_harmonics(L)
+        pl,pm = spherical_harmonics_indices(L)
+        𝒩 = pn_weights_spherical_harmonics_2D(L)
     else
-        error("Spherical Harmonics method is only available in 1D.")
+        error("Spherical Harmonics method is only available in 1D and 2D.")
     end
-    Np_surf = 1000
+    Np_surf = Np
 else
     error("No methods available for $(get_type(solver.particle)) particle.")
 end
@@ -273,7 +253,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,Nq,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH,PN_model,ql,qa,qb,qc,𝒩⁻,𝒩,𝒩⁺,boundary_conditions,Np_source,pm_surf)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,Nq,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH,𝒩,boundary_conditions,Np_source)
     end
 
     # Verification of convergence in all energy groups

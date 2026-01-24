@@ -71,7 +71,7 @@ Solve the one-speed transport equation for a given particle.
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 
 """
-function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},Mll::Array{Float64,2},is_SN::Bool,is_PN::Bool,is_SPH::Bool,PN_model::Int64,plq,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺,boundary_conditions::Vector{Int64},Np_source,pm_surf)
+function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,E::Float64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},Mll::Array{Float64,2},is_SN::Bool,is_PN::Bool,is_SPH::Bool,𝒩,boundary_conditions::Vector{Int64},Np_source)
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
@@ -88,23 +88,47 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
     𝚽l⁻ = zeros(N⁻,Np,Nm[5],Ns[1],Ns[2],Ns[3])
 
     # Boundary conditions initialization
-    if ndims == 1
-        𝚽x12⁻ = zeros(Np_surf,Nm[1],2)
-        𝚽x12⁺_temp = copy(𝚽x12⁻)
-    elseif ndims == 2
-        𝚽x12⁻ = zeros(Np_surf,Nm[1],2,Ns[2])
-        𝚽y12⁻ = zeros(Np_surf,Nm[2],2,Ns[1])
-        𝚽x12⁺_temp = copy(𝚽x12⁻)
-        𝚽y12⁺_temp = copy(𝚽y12⁻)
-    elseif ndims == 3
-        𝚽x12⁻ = zeros(Np_surf,Nm[1],2,Ns[2],Ns[3])
-        𝚽y12⁻ = zeros(Np_surf,Nm[2],2,Ns[1],Ns[3])
-        𝚽z12⁻ = zeros(Np_surf,Nm[3],2,Ns[1],Ns[2])
-        𝚽x12⁺_temp = copy(𝚽x12⁻)
-        𝚽y12⁺_temp = copy(𝚽y12⁻)
-        𝚽z12⁺_temp = copy(𝚽z12⁻)
+    if is_SN
+        if ndims == 1
+            𝚽x12_in = zeros(Np_surf,Nm[1],2)
+            𝚽x12_out = copy(𝚽x12_in)
+            𝚽x12_temp = copy(𝚽x12_in)
+        elseif ndims == 2
+            𝚽x12_in = zeros(Np_surf,Nm[1],2,Ns[2])
+            𝚽y12_in = zeros(Np_surf,Nm[2],2,Ns[1])
+            𝚽x12_out = copy(𝚽x12_in)
+            𝚽y12_out = copy(𝚽y12_in)
+            𝚽x12_temp = copy(𝚽x12_in)
+            𝚽y12_temp = copy(𝚽y12_in)
+        elseif ndims == 3
+            𝚽x12_in = zeros(Np_surf,Nm[1],2,Ns[2],Ns[3])
+            𝚽y12_in = zeros(Np_surf,Nm[2],2,Ns[1],Ns[3])
+            𝚽z12_in = zeros(Np_surf,Nm[3],2,Ns[1],Ns[2])
+            𝚽x12_out = copy(𝚽x12_in)
+            𝚽y12_out = copy(𝚽y12_in)
+            𝚽z12_out = copy(𝚽z12_in)
+            𝚽x12_temp = copy(𝚽x12_in)
+            𝚽y12_temp = copy(𝚽y12_in)
+            𝚽z12_temp = copy(𝚽z12_in)
+        else
+            error("Dimension is not 1, 2 or 3.")
+        end
     else
-        error("Dimension is not 1, 2 or 3.")
+        if ndims == 1
+            𝚽x12⁺ = zeros(Nq,Nm[1],2)
+            𝚽x12⁻ = zeros(Nq,Nm[1],2)
+        elseif ndims == 2
+            𝚽x12⁺⁺ = zeros(Nq,Nm[1],2,Ns[2])
+            𝚽x12⁺⁻ = zeros(Nq,Nm[1],2,Ns[2])
+            𝚽x12⁻⁺ = zeros(Nq,Nm[1],2,Ns[2])
+            𝚽x12⁻⁻ = zeros(Nq,Nm[1],2,Ns[2])
+            𝚽y12⁺⁺ = zeros(Nq,Nm[2],2,Ns[1])
+            𝚽y12⁺⁻ = zeros(Nq,Nm[2],2,Ns[1])
+            𝚽y12⁻⁺ = zeros(Nq,Nm[2],2,Ns[1])
+            𝚽y12⁻⁻ = zeros(Nq,Nm[2],2,Ns[1])
+        else
+            error("PN solver is only implemented in 1D.")
+        end
     end
 
     # Source iteration loop until convergence
@@ -143,36 +167,80 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
         #----
         𝚽l .= 0
         if is_PN
-            𝚽⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3])
-            𝚽⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3])
-            Q⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3])
-            Q⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3])
-            𝚽E12⁺ = zeros(Nq,Nm[4],Ns[1],Ns[2],Ns[3])
-            𝚽E12⁻ = zeros(Nq,Nm[4],Ns[1],Ns[2],Ns[3])
             𝚽E12_temp .= 0
             if ndims == 1
-                for ix in range(1,Ns[1]), p in range(1,Np), q in range(1,Nq)
+                𝚽⁺ = zeros(Nq,Nm[5],Ns[1])
+                𝚽⁻ = zeros(Nq,Nm[5],Ns[1])
+                Q⁺ = zeros(Nq,Nm[5],Ns[1])
+                Q⁻ = zeros(Nq,Nm[5],Ns[1])
+                𝚽E12⁺ = zeros(Nq,Nm[4],Ns[1])
+                𝚽E12⁻ = zeros(Nq,Nm[4],Ns[1])
+                for p in range(1,Np), q in range(1,Nq)
                     if is_SPH factor = (2*pl[p]+1)/(4*π) else factor = (2*pl[p]+1)/2 end
-                    for is in range(1,Nm[5])
-                        Q⁺[q,is,ix,1,1] += factor * Ql[p,is,ix,1,1] * Mll[p,q]
-                        Q⁻[q,is,ix,1,1] += factor * (-1)^pl[p] * Ql[p,is,ix,1,1] * Mll[p,q]
+                    for is in range(1,Nm[5]), ix in range(1,Ns[1])
+                        Q⁺[q,is,ix] += factor * Ql[p,is,ix,1,1] * Mll[p,q]
+                        Q⁻[q,is,ix] += factor * (-1)^pl[p] * Ql[p,is,ix,1,1] * Mll[p,q]
                     end
                     if isCSD
-                        for is in range(1,Nm[4])
-                            𝚽E12⁺[q,is,ix,1,1] += factor * 𝚽E12[p,is,ix,1,1] * Mll[p,q]
-                            𝚽E12⁻[q,is,ix,1,1] += factor * (-1)^pl[p] * 𝚽E12[p,is,ix,1,1] * Mll[p,q]
+                        for is in range(1,Nm[4]), ix in range(1,Ns[1])
+                            𝚽E12⁺[q,is,ix] += factor * 𝚽E12[p,is,ix,1,1] * Mll[p,q]
+                            𝚽E12⁻[q,is,ix] += factor * (-1)^pl[p] * 𝚽E12[p,is,ix,1,1] * Mll[p,q]
                         end
                     end
                 end
-                𝚽⁺[:,:,:,1,1],𝚽E12⁺[:,:,:,1,1] = pn_sweep_1D(1,𝚽⁺[:,:,:,1,1],Q⁺[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,𝒪,Nm,C,ω,sources,is_SPH,plq,pm,S⁻,S⁺,S,𝚽E12⁺[:,:,:,1,1],𝒲,isFC,isCSD,PN_model,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
-                𝚽⁻[:,:,:,1,1],𝚽E12⁻[:,:,:,1,1] = pn_sweep_1D(-1,𝚽⁻[:,:,:,1,1],Q⁻[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,𝒪,Nm,C,ω,sources,is_SPH,plq,pm,S⁻,S⁺,S,𝚽E12⁻[:,:,:,1,1],𝒲,isFC,isCSD,PN_model,pa,pb,pc,𝒩⁻,𝒩,𝒩⁺)
-                for ix in range(1,Ns[1]), p in range(1,Np), q in range(1,Nq)
+                𝚽⁺,𝚽E12⁺,𝚽x12⁺ = pn_sweep_1D(1,𝚽⁺,Q⁺,Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,Np_surf,𝒪,Nm,C,ω,sources,S⁻,S⁺,S,𝚽E12⁺,𝒲,isFC,isCSD,𝒩[1],𝚽x12⁺,𝚽x12⁻,boundary_conditions)
+                𝚽⁻,𝚽E12⁻,𝚽x12⁻ = pn_sweep_1D(-1,𝚽⁻,Q⁻,Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,Np_surf,𝒪,Nm,C,ω,sources,S⁻,S⁺,S,𝚽E12⁻,𝒲,isFC,isCSD,𝒩[1],𝚽x12⁺,𝚽x12⁻,boundary_conditions)
+                for p in range(1,Np), q in range(1,Nq)
+                    for is in range(1,Nm[5]), ix in range(1,Ns[1])
+                        𝚽l[p,is,ix,1,1] += Mll[p,q] * (𝚽⁺[q,is,ix] + (-1)^pl[p]*𝚽⁻[q,is,ix])
+                    end
+                    if isCSD
+                        for is in range(1,Nm[4]), ix in range(1,Ns[1])
+                            𝚽E12_temp[p,is,ix,1,1] += Mll[p,q] * (𝚽E12⁺[q,is,ix] + (-1)^pl[p]*𝚽E12⁻[q,is,ix])
+                        end
+                    end
+                end
+            elseif ndims == 2
+                𝚽⁺⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽⁺⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽⁻⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽⁻⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                Q⁺⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                Q⁺⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                Q⁻⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                Q⁻⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽E12⁺⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽E12⁺⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽E12⁻⁺ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                𝚽E12⁻⁻ = zeros(Nq,Nm[5],Ns[1],Ns[2])
+                for ix in range(1,Ns[1]), iy in range(1,Ns[2]), p in range(1,Np), q in range(1,Nq)
+                    factor = (2*pl[p]+1)/(4*π)
                     for is in range(1,Nm[5])
-                        𝚽l[p,is,ix,1,1] += Mll[p,q] * (𝚽⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽⁻[q,is,ix,1,1])
+                        Q⁺⁺[q,is,ix,iy] += factor * Ql[p,is,ix,iy,1] * Mll[p,q]
+                        Q⁺⁻[q,is,ix,iy] += factor * (-1)^pm[p] * Ql[p,is,ix,iy,1] * Mll[p,q]
+                        Q⁻⁺[q,is,ix,iy] += factor * (-1)^pl[p] * Ql[p,is,ix,iy,1] * Mll[p,q]
+                        Q⁻⁻[q,is,ix,iy] += factor * (-1)^(pl[p]+pm[p]) * Ql[p,is,ix,iy,1] * Mll[p,q]
                     end
                     if isCSD
                         for is in range(1,Nm[4])
-                            𝚽E12_temp[p,is,ix,1,1] += Mll[p,q] * (𝚽E12⁺[q,is,ix,1,1] + (-1)^pl[p]*𝚽E12⁻[q,is,ix,1,1])
+                            𝚽E12⁺⁺[q,is,ix,iy] += factor * 𝚽E12[p,is,ix,iy,1] * Mll[p,q]
+                            𝚽E12⁺⁻[q,is,ix,iy] += factor * (-1)^pm[p] * 𝚽E12[p,is,ix,iy,1] * Mll[p,q]
+                            𝚽E12⁻⁺[q,is,ix,iy] += factor * (-1)^pl[p] * 𝚽E12[p,is,ix,iy,1] * Mll[p,q]
+                            𝚽E12⁻⁻[q,is,ix,iy] += factor * (-1)^(pl[p]+pm[p]) * 𝚽E12[p,is,ix,iy,1] * Mll[p,q]
+                        end
+                    end
+                end
+                𝚽⁺⁺,𝚽E12⁺⁺,𝚽x12⁺⁺,𝚽y12⁺⁺ = pn_sweep_2D(1,1,𝚽⁺⁺,Q⁺⁺,Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],Nq,Np_source,𝒪,Nm,C,ω,sources,S⁻,S⁺,S,𝚽E12⁺⁺,𝒲,isFC,isCSD,𝒩[1],𝒩[2],𝚽x12⁺⁺,𝚽x12⁻⁺,𝚽y12⁺⁺,𝚽y12⁺⁻,boundary_conditions)
+                𝚽⁺⁻,𝚽E12⁺⁻,𝚽x12⁺⁻,𝚽y12⁺⁻ = pn_sweep_2D(1,-1,𝚽⁺⁻,Q⁺⁻,Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],Nq,Np_source,𝒪,Nm,C,ω,sources,S⁻,S⁺,S,𝚽E12⁺⁻,𝒲,isFC,isCSD,𝒩[1],𝒩[2],𝚽x12⁺⁻,𝚽x12⁻⁻,𝚽y12⁺⁻,𝚽y12⁺⁺,boundary_conditions)
+                𝚽⁻⁺,𝚽E12⁻⁺,𝚽x12⁻⁺,𝚽y12⁻⁺ = pn_sweep_2D(-1,1,𝚽⁻⁺,Q⁻⁺,Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],Nq,Np_source,𝒪,Nm,C,ω,sources,S⁻,S⁺,S,𝚽E12⁻⁺,𝒲,isFC,isCSD,𝒩[1],𝒩[2],𝚽x12⁻⁺,𝚽x12⁺⁺,𝚽y12⁻⁺,𝚽y12⁻⁻,boundary_conditions)
+                𝚽⁻⁻,𝚽E12⁻⁻,𝚽x12⁻⁻,𝚽y12⁻⁻ = pn_sweep_2D(-1,-1,𝚽⁻⁻,Q⁻⁻,Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],Nq,Np_source,𝒪,Nm,C,ω,sources,S⁻,S⁺,S,𝚽E12⁻⁻,𝒲,isFC,isCSD,𝒩[1],𝒩[2],𝚽x12⁻⁻,𝚽x12⁺⁻,𝚽y12⁻⁻,𝚽y12⁻⁺,boundary_conditions)
+                for ix in range(1,Ns[1]), iy in range(1,Ns[2]), p in range(1,Np), q in range(1,Nq)
+                    for is in range(1,Nm[5])
+                        𝚽l[p,is,ix,iy,1] += Mll[p,q] * (𝚽⁺⁺[q,is,ix,iy] + (-1)^pm[p] * 𝚽⁺⁻[q,is,ix,iy] + (-1)^pl[p] * 𝚽⁻⁺[q,is,ix,iy] + (-1)^(pl[p]+pm[p]) * 𝚽⁻⁻[q,is,ix,iy])
+                    end
+                    if isCSD
+                        for is in range(1,Nm[4])
+                            𝚽E12_temp[p,is,ix,iy,1] += Mll[p,q] * (𝚽E12⁺⁺[q,is,ix,iy] + (-1)^pm[p] * 𝚽E12⁺⁻[q,is,ix,iy] + (-1)^pl[p] * 𝚽E12⁻⁺[q,is,ix,iy] + (-1)^(pl[p]+pm[p]) * 𝚽E12⁻⁻[q,is,ix,iy])
                         end
                     end
                 end
@@ -181,7 +249,7 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
             end
         elseif is_SN
             for n in range(1,Nd)
-                if isCSD 𝚽E12ⁿ = 𝚽E12[n,:,:,:,:] else 𝚽E12ⁿ = Array{Float64}(undef) end
+                if isCSD 𝚽E12_out = 𝚽E12[n,:,:,:,:] else 𝚽E12_out = Array{Float64}(undef) end
                 if ndims == 1
                     nx⁻ = n_to_n⁺[1][n]
                     nx⁺ = n_to_n⁺[2][n]
@@ -195,7 +263,7 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         Mnx⁻ = zeros(Np)
                         Dnx⁻ = zeros(Np)
                     end
-                    𝚽l[:,:,:,1,1], 𝚽E12ⁿ,𝚽x12⁺ = sn_sweep_1D(𝚽l[:,:,:,1,1],Ql[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC,𝚽x12⁻,boundary_conditions,Np_source)
+                    𝚽l[:,:,:,1,1], 𝚽E12_out,𝚽x12_out = sn_sweep_1D(𝚽l[:,:,:,1,1],Ql[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12_out,S⁻,S⁺,S,𝒲,isFC,𝚽x12_in,boundary_conditions,Np_source)
                 elseif ndims == 2
                     nx⁻ = n_to_n⁺[1][n]
                     nx⁺ = n_to_n⁺[2][n]
@@ -221,7 +289,7 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         Mny⁻ = zeros(Np)
                         Dny⁻ = zeros(Np)
                     end
-                    𝚽l[:,:,:,:,1],𝚽E12ⁿ,𝚽x12⁺,𝚽y12⁺ = sn_sweep_2D(𝚽l[:,:,:,:,1],Ql[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC,𝚽x12⁻,𝚽y12⁻,boundary_conditions,Np_source,pm_surf)
+                    𝚽l[:,:,:,:,1],𝚽E12_out,𝚽x12_out,𝚽y12_out = sn_sweep_2D(𝚽l[:,:,:,:,1],Ql[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12_out,S⁻,S⁺,S,𝒲,isFC,𝚽x12_in,𝚽y12_in,boundary_conditions,Np_source)
                 elseif ndims == 3
                     nx⁻ = n_to_n⁺[1][n]
                     nx⁺ = n_to_n⁺[2][n]
@@ -259,18 +327,18 @@ function compute_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
                         Mnz⁻ = zeros(Np)
                         Dnz⁻ = zeros(Np)
                     end
-                    𝚽l,𝚽E12ⁿ,𝚽x12⁺,𝚽y12⁺,𝚽z12⁺ = sn_sweep_3D(𝚽l,Ql,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Mnz⁻,Dnz⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12ⁿ,S⁻,S⁺,S,𝒲,isFC,𝚽x12⁻,𝚽y12⁻,𝚽z12⁻,boundary_conditions,Np_source,pm_surf)
+                    𝚽l,𝚽E12_out,𝚽x12_out,𝚽y12_out,𝚽z12_out = sn_sweep_3D(𝚽l,Ql,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Mnz⁻,Dnz⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12_out,S⁻,S⁺,S,𝒲,isFC,𝚽x12_in,𝚽y12_in,𝚽z12_in,boundary_conditions,Np_source)
                 else
                     error("Dimension is not 1, 2 or 3.")
                 end
-                𝚽x12⁺_temp += 𝚽x12⁺
-                if ndims >= 2 𝚽y12⁺_temp += 𝚽y12⁺ end
-                if ndims >= 3 𝚽z12⁺_temp += 𝚽z12⁺ end
-                if isCSD 𝚽E12_temp[n,:,:,:,:] = 𝚽E12ⁿ end
+                𝚽x12_temp += 𝚽x12_out
+                if ndims >= 2 𝚽y12_temp += 𝚽y12_out end
+                if ndims >= 3 𝚽z12_temp += 𝚽z12_out end
+                if isCSD 𝚽E12_temp[n,:,:,:,:] = 𝚽E12_out end
             end
-            𝚽x12⁻ = copy(𝚽x12⁺_temp); 𝚽x12⁺_temp .= 0.0
-            if ndims >= 2 𝚽y12⁻ = copy(𝚽y12⁺_temp); 𝚽y12⁺_temp .= 0.0 end
-            if ndims >= 3 𝚽z12⁻ = copy(𝚽z12⁺_temp); 𝚽z12⁺_temp .= 0.0 end
+            𝚽x12_in = copy(𝚽x12_temp); 𝚽x12_temp .= 0.0
+            if ndims >= 2 𝚽y12_in = copy(𝚽y12_temp); 𝚽y12_temp .= 0.0 end
+            if ndims >= 3 𝚽z12_in = copy(𝚽z12_temp); 𝚽z12_temp .= 0.0 end
         else
             error("Unknown angular discretization method.")
         end

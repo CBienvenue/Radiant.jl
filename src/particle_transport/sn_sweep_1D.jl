@@ -112,15 +112,11 @@ function sn_sweep_1D(𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt::Vector{Fl
     end
 
     # Save boundary fluxes
-    for p in range(1,Np_surf)
-        for is in range(1,Nm[1])
-            # Surface X+
-            if μ ≥ 0
-                𝚽x12⁺[p,is,2] += Dnx⁻[p] * 𝚽x12[is]
-            # Surface X-
-            else
-                𝚽x12⁺[p,is,1] += Dnx⁻[p] * 𝚽x12[is]
-            end
+    for p in range(1,Np_surf), is in range(1,Nm[1])
+        if μ ≥ 0 # Surface X+
+            𝚽x12⁺[p,is,2] += Dnx⁻[p] * 𝚽x12[is]
+        else # Surface X-
+            𝚽x12⁺[p,is,1] += Dnx⁻[p] * 𝚽x12[is]
         end
     end
 
