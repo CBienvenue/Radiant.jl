@@ -65,5 +65,5 @@ end
 
 function is_water(Z::Vector{Int64},ωz::Vector{Float64})
     # Check if Z contain H and O and if weight fraction correspond
-    return any(x -> x == 1, Z) && any(x -> x == 8, Z) && (abs(ωz[Z .== 1][1] - 0.1111) < 0.01 && abs(ωz[Z .== 8][1] - 0.8889) < 0.01)
+    return any(x -> x == 1, Z) && any(x -> x == 8, Z) && (abs(ωz[Z .== 1][1] - 0.1119) < 0.01 && abs(ωz[Z .== 8][1] - 0.8881) < 0.01)
 end
