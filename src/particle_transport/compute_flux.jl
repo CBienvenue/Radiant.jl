@@ -88,8 +88,13 @@ elseif solver isa Spherical_Harmonics
         Np,Nq,Mll = quarter_to_full_range_matrix_spherical_harmonics(L)
         pl,pm = spherical_harmonics_indices(L)
         𝒩 = pn_weights_spherical_harmonics_2D(L)
+    elseif Ndims == 3
+        is_SPH = true
+        Np,Nq,Mll = octant_to_full_range_matrix_spherical_harmonics(L)
+        pl,pm = spherical_harmonics_indices(L)
+        𝒩 = pn_weights_spherical_harmonics_3D(L)
     else
-        error("Spherical Harmonics method is only available in 1D and 2D.")
+        error("Spherical Harmonics method is only available in 1D, 2D and 3D.")
     end
     Np_surf = Np
 else

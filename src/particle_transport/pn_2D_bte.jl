@@ -11,9 +11,9 @@ function jxy(jx,jy)
     if isFC 
         return 𝒪x*(jy-1)+jx 
     else  
-        idx = 1 + (jy-1) + (jx-1)
-        if jy > 1 idx += 𝒪x-1 end
-        return idx
+        j = 1 + (jy-1) + (jx-1)
+        if jy > 1 j += 𝒪x-1 end
+        return j
     end
 end
 function jxyp(jx,jy,jp)

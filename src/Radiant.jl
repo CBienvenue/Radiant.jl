@@ -95,9 +95,11 @@ module Radiant
         "pn_1D_bte.jl",
         "pn_1D_bfp.jl",
         "pn_2D_bte.jl",
+        "pn_3D_bte.jl",
         "pn_sweep_1D.jl",
         "pn_sweep_2D.jl",
-        "half_to_full_range_matrix.jl",
+        "pn_sweep_3D.jl",
+        "restricted_to_full_domain_matrix.jl",
         "pn_weights.jl"
     ]
     radiant_src["structures/"] = [
