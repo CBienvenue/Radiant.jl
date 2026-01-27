@@ -142,10 +142,10 @@ for jx in range(1,𝒪x), jy in range(1,𝒪y), jz in range(1,𝒪z)
     end
     if (jx == 1) 𝚽x12[jxm] = ωx[1,jy,jz] * 𝚽x12[jxm] end
     if (jy == 1) 𝚽y12[jym] = ωy[1,jx,jz] * 𝚽y12[jym] end
-    if (jz == 1) 𝚽z12[jzm] = ωz[1,jx,jy] * 𝚽y12[jzm] end
+    if (jz == 1) 𝚽z12[jzm] = ωz[1,jx,jy] * 𝚽z12[jzm] end
     𝚽x12[jxm] += C[jx] * sx^(jx-1) * ωx[jx+1,jy,jz] * 𝚽n[j]
     𝚽y12[jym] += C[jy] * sy^(jy-1) * ωy[jy+1,jx,jz] * 𝚽n[j]
-    𝚽y12[jzm] += C[jz] * sz^(jz-1) * ωz[jz+1,jx,jy] * 𝚽n[j]
+    𝚽z12[jzm] += C[jz] * sz^(jz-1) * ωz[jz+1,jx,jy] * 𝚽n[j]
 end
 
 # Returning solutions

@@ -78,7 +78,7 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
             𝚽z12 = zeros(Nm[3])
             if ξ ≥ 0
                 # Surface Z-
-                for p in range(1,Np_surf)
+                for p in range(1,Np_source)
                     𝚽z12[1] += Mnz⁻[p] * sources[p,5][ix,iy]  
                 end
                 if boundary_conditions[5] != 0 # Not void
@@ -92,7 +92,7 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
                 end
             else
                 # Surface Z+
-                for p in range(1,Np_surf)
+                for p in range(1,Np_source)
                     𝚽z12[1] += Mnz⁻[p] * sources[p,6][ix,iy]  
                 end
                 if boundary_conditions[6] != 0 # Not void
@@ -108,10 +108,10 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
 
             # Sweeping over z-axis
             for iz in z_sweep
-                if (iy == 1 &&  η ≥ 0) || (iy == Ny && η < 0 )
+                if (iy == 1 && η ≥ 0) || (iy == Ny && η < 0 )
                     if η ≥ 0
                         # Surface Y-
-                        for p in range(1,Np_surf)
+                        for p in range(1,Np_source)
                             𝚽y12[1,iz] += Mny⁻[p] * sources[p,3][ix,iz]  
                         end
                         if boundary_conditions[3] != 0 # Not void
@@ -125,7 +125,7 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
                         end
                     else
                         # Surface Y+
-                        for p in range(1,Np_surf)
+                        for p in range(1,Np_source)
                             𝚽y12[1,iz] += Mny⁻[p] * sources[p,4][ix,iz]  
                         end
                         if boundary_conditions[4] != 0 # Not void
@@ -142,7 +142,7 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
                 if (ix == 1 && μ ≥ 0) || (ix == Nx && μ < 0 )
                     if μ ≥ 0
                         # Surface X-
-                        for p in range(1,Np_surf)
+                        for p in range(1,Np_source)
                             𝚽x12[1,iy,iz] += Mnx⁻[p] * sources[p,1][iy,iz]  
                         end
                         if boundary_conditions[1] != 0 # Not void
@@ -156,7 +156,7 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
                         end
                     else
                         # Surface X+
-                        for p in range(1,Np_surf)
+                        for p in range(1,Np_source)
                             𝚽x12[1,iy,iz] += Mnx⁻[p] * sources[p,2][iy,iz]  
                         end
                         if boundary_conditions[2] != 0 # Not void
