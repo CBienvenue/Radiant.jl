@@ -1,9 +1,8 @@
 function half_to_full_range_matrix_legendre(L)
     Np = L+1
-    Nq = Np
     pl = collect(0:L)
-    Mll = zeros(Np,Nq)
-    for ip in range(1,Np), jp in range(1,Nq)
+    Mll = zeros(Np,Np)
+    for ip in range(1,Np), jp in range(1,Np)
         il = pl[ip]
         jl = pl[jp]
         for ik in range(0,div(il,2)), jk in range(0,div(jl,2))
@@ -12,15 +11,14 @@ function half_to_full_range_matrix_legendre(L)
             end
         end
     end
-    return Np,Nq,Mll
+    return Np,Mll
 end
 
 function half_to_full_range_matrix_spherical_harmonics(L)
     Np = spherical_harmonics_number_basis(L)
-    Nq = Np
     pl,pm = spherical_harmonics_indices(L)
-    Mll = zeros(Np,Nq)
-    for ip in range(1,Np), jp in range(1,Nq)
+    Mll = zeros(Np,Np)
+    for ip in range(1,Np), jp in range(1,Np)
         il = pl[ip]
         jl = pl[jp]
         im = pm[ip]
@@ -44,17 +42,16 @@ function half_to_full_range_matrix_spherical_harmonics(L)
             end
         end
     end
-    return Np,Nq,Mll
+    return Np,Mll
 end
 
 function quarter_to_full_range_matrix_spherical_harmonics(L)
     Np = spherical_harmonics_number_basis(L)
-    Nq = Np
     pl,pm = spherical_harmonics_indices(L)
-    Mll = zeros(Np,Nq)
+    Mll = zeros(Np,Np)
     N = 32
     x,w = gauss_legendre(N)
-    for p in range(1,Np), q in range(1,Nq)
+    for p in range(1,Np), q in range(1,Np)
         lp = pl[p]
         lq = pl[q]
         mp = pm[p]
@@ -91,17 +88,16 @@ function quarter_to_full_range_matrix_spherical_harmonics(L)
         end
         Mll[p,q] = Cp * Cq * azimutal_integral * cosine_integral
     end
-    return Np,Nq,Mll
+    return Np,Mll
 end
 
 function octant_to_full_range_matrix_spherical_harmonics(L)
     Np = spherical_harmonics_number_basis(L)
-    Nq = Np
     pl,pm = spherical_harmonics_indices(L)
-    Mll = zeros(Np,Nq,2)
+    Mll = zeros(Np,Np,2)
     N = 32
     x,w = gauss_legendre(N)
-    for p in range(1,Np), q in range(1,Nq)
+    for p in range(1,Np), q in range(1,Np)
         lp = pl[p]
         lq = pl[q]
         mp = pm[p]
@@ -140,5 +136,5 @@ function octant_to_full_range_matrix_spherical_harmonics(L)
         Mll[p,q,1] = Cp * Cq * azimutal_integral[1] * cosine_integral
         Mll[p,q,2] = Cp * Cq * azimutal_integral[2] * cosine_integral
     end
-    return Np,Nq,Mll
+    return Np,Mll
 end

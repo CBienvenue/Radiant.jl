@@ -1,13 +1,13 @@
 """
-    compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Solver,
-    source::Source)
+    compute_flux(cross_sections::Cross_Sections,geometry::Geometry,
+    solver::Discrete_Ordinates,source::Source)
 
-Solve the transport equation for a given particle.  
+Solve the transport equation using the discrete ordinates (SN) method for a given particle.  
 
 # Input Argument(s)
 - `cross_sections::Cross_Sections` : cross section informations.
 - `geometry::Geometry` : geometry informations.
-- `solver::Solver` : solver informations.
+- `solver::Discrete_Ordinates` : Discrete ordinates informations.
 - `source::Source` : source informations.
 
 # Output Argument(s)
@@ -17,7 +17,7 @@ Solve the transport equation for a given particle.
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Solver,source::Source)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Discrete_Ordinates,source::Source)
 
 #----
 # Geometry data
@@ -33,78 +33,21 @@ boundary_conditions = geometry.get_boundary_conditions()
 #----
 # Preparation of angular discretisation
 #----
-if solver isa Discrete_Ordinates
+L = solver.get_legendre_order()
+N = solver.get_quadrature_order()
+quadrature_type = solver.get_quadrature_type()
+SN_type = solver.get_angular_boltzmann()
+Qdims = solver.get_quadrature_dimension(Ndims)
 
-    is_SN = true
-    is_PN = false
-    is_SPH = false
-    𝒩 = zeros(Float64,0,0)
-    L = solver.get_legendre_order()
-    N = solver.get_quadrature_order()
-    quadrature_type = solver.get_quadrature_type()
-    SN_type = solver.get_angular_boltzmann()
-    Qdims = solver.get_quadrature_dimension(Ndims)
-
-    Ω,w = quadrature(N,quadrature_type,Ndims,Qdims)
-    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
-    Nd = length(w)
-    Np,Mn,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,SN_type,Qdims)
-    Np_surf,Mn_surf,Dn_surf,n⁺_to_n,n_to_n⁺,pl_surf,pm_surf = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,Ndims,geo_type)
-    Mll = zeros(0,0)
-    Nq = Np
-
-elseif solver isa Spherical_Harmonics
-
-    is_SN = false
-    is_PN = true
-
-    Nd = 0
-    Ω = Vector{Vector{Float64}}()
-    Mn = zeros(Float64,0,0)
-    Dn = zeros(Float64,0,0)
-    Mn_surf = Vector{Array{Float64}}()
-    Dn_surf = Vector{Array{Float64}}()
-    n_to_n⁺ = Vector{Vector{Int64}}()
-    pm_surf = Vector{Vector{Int64}}()
-    L = solver.get_legendre_order()
-    polynomial_basis = solver.get_polynomial_basis(Ndims)
-    if Ndims == 1
-        if polynomial_basis == "legendre"
-            is_SPH = false
-            Np,Nq,Mll = half_to_full_range_matrix_legendre(L)
-            pl = collect(0:L)
-            pm = zeros(Int64,Np)
-            𝒩 = pn_weights_legendre_1D(L)
-        elseif polynomial_basis == "spherical-harmonics"
-            is_SPH = true
-            Np,Nq,Mll = half_to_full_range_matrix_spherical_harmonics(L)
-            pl,pm = spherical_harmonics_indices(L)
-            𝒩 = pn_weights_spherical_harmonics_1D(L)
-        else
-            error("Unknown polynomial basis.")
-        end
-    elseif Ndims == 2
-        is_SPH = true
-        Np,Nq,Mll = quarter_to_full_range_matrix_spherical_harmonics(L)
-        pl,pm = spherical_harmonics_indices(L)
-        𝒩 = pn_weights_spherical_harmonics_2D(L)
-    elseif Ndims == 3
-        is_SPH = true
-        Np,Nq,Mll = octant_to_full_range_matrix_spherical_harmonics(L)
-        pl,pm = spherical_harmonics_indices(L)
-        𝒩 = pn_weights_spherical_harmonics_3D(L)
-    else
-        error("Spherical Harmonics method is only available in 1D, 2D and 3D.")
-    end
-    Np_surf = Np
-else
-    error("No methods available for $(get_type(solver.particle)) particle.")
-end
+Ω,w = quadrature(N,quadrature_type,Ndims,Qdims)
+if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+Nd = length(w)
+Np,Mn,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,SN_type,Qdims)
+Np_surf,Mn_surf,Dn_surf,n⁺_to_n,n_to_n⁺,pl_surf,pm_surf = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,Ndims,geo_type)
 
 #----
 # Preparation of cross sections
 #----
-
 part = solver.get_particle()
 solver_type,is_CSD = solver.get_solver_type()
 Nmat = cross_sections.get_number_of_materials()
@@ -114,7 +57,6 @@ if is_CSD
     E = cross_sections.get_energies(part)
     Eb = cross_sections.get_energy_boundaries(part)
 end
-
 isFC = solver.get_is_full_coupling()
 schemes,𝒪,Nm = solver.get_schemes(geometry,isFC)
 ω,𝒞,is_adaptive,𝒲 = scheme_weights(𝒪,schemes,Ndims,is_CSD)
@@ -154,13 +96,8 @@ if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = solver.get_angular_fokker_planck()
-    if is_SN
-        ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
-        Σtot .+= T .* λ₀
-    elseif is_PN
-        ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np)
-        Σtot .+= T .* λ₀
-    end
+    ℳ,λ₀ = fokker_planck_scattering_matrix(N,Nd,quadrature_type,Ndims,fokker_planck_type,Mn,Dn,pl,Np,Qdims)
+    Σtot .+= T .* λ₀
 end
 
 # Elastic-free approximation
@@ -217,11 +154,7 @@ while ~(is_outer_convergence)
 
     ρ_in = -ones(Ng) # In-group spectral radius
     if is_CSD
-        if is_SN
-            𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
-        else
-            𝚽E12 = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
-        end
+        𝚽E12 = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
     else
         𝚽E12 = Array{Float64}(undef)
     end
@@ -259,7 +192,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = compute_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,Nq,pl,pm,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,Eg,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,Mll,is_SN,is_PN,is_SPH,𝒩,boundary_conditions,Np_source)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = sn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,boundary_conditions,Np_source)
     end
 
     # Verification of convergence in all energy groups
@@ -271,16 +204,8 @@ while ~(is_outer_convergence)
         is_outer_convergence = true
         # Calculate the flux at the cutoff energy
         if is_CSD
-            if is_SN
-                for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
-                    𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
-                end
-            elseif is_PN
-                for p in range(1,Np), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4])
-                    𝚽cutoff[p,is,ix,iy,iz] = 𝚽E12[p,is,ix,iy,iz]
-                end 
-            else
-                error("Unknown angular method.")
+            for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
+                𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
             end
         end
     else
