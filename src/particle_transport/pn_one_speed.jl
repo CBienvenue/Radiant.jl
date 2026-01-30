@@ -292,7 +292,7 @@ function pn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
         # Verification of convergence of the one-group flux
         #----  
         ϵ_in = 0.0
-        if (solver ∉ [5,6]) ϵ_in = maximum(vec(abs.((𝚽l[1,1,:,:,:] .- 𝚽l⁻[1,1,1,:,:,:])./max.(abs.(𝚽l[1,1,:,:,:]),1e-16)))) end
+        if (solver ∉ [5,6]) ϵ_in = norm(𝚽l .- 𝚽l⁻[1,:,:,:,:,:]) / max(norm(𝚽l), 1e-16) end
         if (ϵ_in < ϵ_max) || i_in >= I_max
 
             # Convergence or maximum iterations reach

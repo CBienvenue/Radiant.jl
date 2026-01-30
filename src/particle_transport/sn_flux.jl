@@ -148,7 +148,7 @@ is_outer_convergence = false
 ϵ_out = Inf
 is_outer_iteration = false
 Ntot = 0
-if is_outer_iteration 𝚽l⁻ = zeros(Ng,Ns[1],Ns[2],Ns[3]) end
+if is_outer_iteration 𝚽l⁻ = zeros(Ng,Np,Nm[5],Ns[1],Ns[2],Ns[3]) end
 
 while ~(is_outer_convergence)
 
@@ -197,8 +197,8 @@ while ~(is_outer_convergence)
 
     # Verification of convergence in all energy groups
     if is_outer_iteration
-        ϵ_out = maximum(vec(abs.(𝚽l[:,1,1,:,:,:] .- 𝚽l⁻)))/maximum(vec(abs.(𝚽l[:,1,1,:,:,:])))
-        𝚽l⁻ = 𝚽l[:,1,1,:,:,:]
+        ϵ_out = norm(𝚽l .- 𝚽l⁻) / max(norm(𝚽l), 1e-16)
+        𝚽l⁻ = 𝚽l
     end
     if (ϵ_out < ϵ_max || i_out >= I_max) || ~is_outer_iteration
         is_outer_convergence = true
