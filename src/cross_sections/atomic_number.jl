@@ -22,6 +22,14 @@ function atomic_number(id::String)
     end
 end
 
+function atomic_symbol(Z::Int64)
+    if haskey(atom_number_dict, Z)
+        return uppercasefirst(atom_number_dict[Z])
+    else
+        error("Unknown atomic number Z=$Z.")
+    end
+end
+
 # Dictionary mapping element symbol to its atomic number
 const atom_symbol_dict = Dict(
     "h" => 1,  "he" => 2, "li" => 3, "be" => 4, "b" => 5,  "c" => 6,  "n" => 7,  "o" => 8,  "f" => 9,  "ne" => 10,
@@ -35,3 +43,4 @@ const atom_symbol_dict = Dict(
     "tl" => 81, "pb" => 82,"bi" => 83,"po" => 84,"at" => 85,"rn" => 86,"fr" => 87,"ra" => 88,"ac" => 89,"th" => 90,
     "pa" => 91, "u" => 92, "np" => 93,"pu" => 94,"am" => 95,"cm" => 96,"bk" => 97,"cf" => 98,"es" => 99,"fm" => 100
 )
+const atom_number_dict = Dict(v => k for (k, v) in atom_symbol_dict)
