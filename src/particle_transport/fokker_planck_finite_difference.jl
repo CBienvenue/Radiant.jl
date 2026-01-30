@@ -180,9 +180,9 @@ elseif Qdims == 2
         end
     end
 
-    diag_ℳ = abs.(diag(ℳ))
+    diag_ℳ = abs.(diag(ℳ_n))
     λ₀ = maximum(diag_ℳ)
-    ℳ[diagind(ℳ)] .+= λ₀
+    ℳ_n[diagind(ℳ_n)] .+= λ₀
 
 elseif Qdims == 3
 
@@ -274,9 +274,9 @@ elseif Qdims == 3
         end
     end
 
-    diag_ℳ = abs.(diag(ℳ))
+    diag_ℳ = abs.(diag(ℳ_n))
     λ₀ = maximum(diag_ℳ)
-    ℳ[diagind(ℳ)] .+= λ₀
+    ℳ_n[diagind(ℳ_n)] .+= λ₀
 
 end
 ℳ_p = Dn * ℳ_n * Mn
