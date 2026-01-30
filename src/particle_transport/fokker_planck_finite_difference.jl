@@ -180,11 +180,9 @@ elseif Qdims == 2
         end
     end
 
-    diag_ℳ_n = [abs(ℳ_n[i,i]) for i in range(1,Nd)]
-    λ₀ = maximum(diag_ℳ_n)
-    for i in range(1,Nd)
-        ℳ_n[i,i] += λ₀
-    end
+    diag_ℳ = abs.(diag(ℳ_n))
+    λ₀ = maximum(diag_ℳ)
+    ℳ_n[diagind(ℳ_n)] .+= λ₀
 
 elseif Qdims == 3
 
@@ -276,11 +274,9 @@ elseif Qdims == 3
         end
     end
 
-    diag_ℳ_n = [abs(ℳ_n[i,i]) for i in range(1,Nd)]
-    λ₀ = maximum(diag_ℳ_n)
-    for i in range(1,Nd)
-        ℳ_n[i,i] += λ₀
-    end
+    diag_ℳ = abs.(diag(ℳ_n))
+    λ₀ = maximum(diag_ℳ)
+    ℳ_n[diagind(ℳ_n)] .+= λ₀
 
 end
 ℳ_p = Dn * ℳ_n * Mn
