@@ -43,9 +43,9 @@ function pn_sweep_1D(sx::Int64,𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt:
     for ix in x_sweep
         # Flux calculation
         if ~is_CSD
-            𝚽l[:,:,ix],𝚽x12[:,1] = pn_1D_BTE(sx,Σt[mat[ix]],Δx[ix],Ql[:,:,ix],𝚽x12[:,1],𝒪x,Np,C,copy(ω[1]),𝒩x)
+            𝚽l[:,:,ix],𝚽x12[:,1] = pn_1D_BTE(sx,Σt[mat[ix]],Δx[ix],Ql[:,:,ix],𝚽x12[:,1],𝒪x,Np,C,ω[1],𝒩x)
         else
-            𝚽l[:,:,ix],𝚽x12,𝚽E12[:,:,ix] = pn_1D_BFP(sx,Σt[mat[ix]],Δx[ix],Ql[:,:,ix],𝚽x12,S⁻[mat[ix]],S⁺[mat[ix]],S[mat[ix],:],𝚽E12[:,:,ix],𝒪E,𝒪x,Np,C,copy(ω[1]),copy(ω[2]),𝒲,isFC,𝒩x)
+            𝚽l[:,:,ix],𝚽x12,𝚽E12[:,:,ix] = pn_1D_BFP(sx,Σt[mat[ix]],Δx[ix],Ql[:,:,ix],𝚽x12,S⁻[mat[ix]],S⁺[mat[ix]],S[mat[ix],:],𝚽E12[:,:,ix],𝒪E,𝒪x,Np,C,ω[1],ω[2],𝒲,isFC,𝒩x)
         end
     end
 

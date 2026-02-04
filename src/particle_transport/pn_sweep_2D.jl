@@ -83,7 +83,7 @@ function pn_sweep_2D(sx::Int64,sy::Int64,𝚽l::Array{Float64,4},Ql::Array{Float
 
             # Flux calculation
             if ~is_CSD
-                𝚽l[:,:,ix,iy],𝚽x12[:,:,iy],𝚽y12 = pn_2D_BTE(sx,sy,Σt[mat[ix,iy]],Δx[ix],Δy[iy],Ql[:,:,ix,iy],𝚽x12[:,:,iy],𝚽y12,𝒪x,𝒪y,Np,C,copy(ω[1]),copy(ω[2]),𝒩x,𝒩y,isFC)
+                𝚽l[:,:,ix,iy],𝚽x12[:,:,iy],𝚽y12 = pn_2D_BTE(sx,sy,Σt[mat[ix,iy]],Δx[ix],Δy[iy],Ql[:,:,ix,iy],𝚽x12[:,:,iy],𝚽y12,𝒪x,𝒪y,Np,C,ω[1],ω[2],𝒩x,𝒩y,isFC)
             else
                 error("CSD method is not yet implemented for PN in 2D.")
             end

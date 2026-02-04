@@ -124,7 +124,7 @@ function pn_sweep_3D(sx::Int64,sy::Int64,sz::Int64,𝚽l::Array{Float64,5},Ql::A
 
                 # Flux calculation
                 if ~is_CSD
-                    𝚽l[:,:,ix,iy,iz],𝚽x12[:,:,iy,iz],𝚽y12[:,:,iz],𝚽z12 = pn_3D_BTE(sx,sy,sz,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Ql[:,:,ix,iy,iz],𝚽x12[:,:,iy,iz],𝚽y12[:,:,iz],𝚽z12,𝒪x,𝒪y,𝒪z,Np,C,copy(ω[1]),copy(ω[2]),copy(ω[3]),𝒩x,𝒩y,𝒩z,isFC)
+                    𝚽l[:,:,ix,iy,iz],𝚽x12[:,:,iy,iz],𝚽y12[:,:,iz],𝚽z12 = pn_3D_BTE(sx,sy,sz,Σt[mat[ix,iy,iz]],Δx[ix],Δy[iy],Δz[iz],Ql[:,:,ix,iy,iz],𝚽x12[:,:,iy,iz],𝚽y12[:,:,iz],𝚽z12,𝒪x,𝒪y,𝒪z,Np,C,ω[1],ω[2],ω[3],𝒩x,𝒩y,𝒩z,isFC)
                 else
                     error("CSD method is not yet implemented for PN in 3D.")
                 end
