@@ -167,4 +167,21 @@ module Radiant
     export Elastic_Collision,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
     export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,Spherical_Harmonics
 
+    #----
+    # Execution of Radiant script files
+    #----
+    export @radiant_input
+    macro radiant_input()
+        return quote
+            if abspath(PROGRAM_FILE) == @__FILE__
+                using Radiant
+                Radiant.run_script(@__FILE__)
+                exit()
+            end
+        end
+    end
+    function run_script(script::AbstractString)
+        isfile(script) || error("Input script not found: $script")
+        include(script)
+    end
 end
