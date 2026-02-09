@@ -102,7 +102,18 @@ module Radiant
         "pn_sweep_2D.jl",
         "pn_sweep_3D.jl",
         "restricted_to_full_domain_matrix.jl",
-        "pn_weights.jl"
+        "pn_weights.jl",
+        "gn_flux.jl",
+        "gn_one_speed.jl",
+        "gn_sweep_1D.jl",
+        "gn_sweep_2D.jl",
+        "gn_sweep_3D.jl",
+        "gn_1D_bte.jl",
+        "gn_1D_bfp.jl",
+        "gn_2D_bte.jl",
+        "gn_2D_bfp.jl",
+        "gn_3D_bte.jl",
+        "gn_3D_bfp.jl"
     ]
     radiant_src["structures/"] = [
         "Particle.jl",
@@ -122,6 +133,7 @@ module Radiant
         "Geometry.jl",
         "Discrete_Ordinates.jl",
         "Spherical_Harmonics.jl",
+        "Galerkin.jl",
         "Solvers.jl",
         "Surface_Source.jl",
         "Volume_Source.jl",
@@ -165,7 +177,7 @@ module Radiant
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
     export Elastic_Collision,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
-    export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,Spherical_Harmonics
+    export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,Spherical_Harmonics,Galerkin
 
     #----
     # Execution of Radiant script files

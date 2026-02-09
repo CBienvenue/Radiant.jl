@@ -1,4 +1,4 @@
-const Solver = Union{Discrete_Ordinates, Spherical_Harmonics}
+const Solver = Union{Discrete_Ordinates, Spherical_Harmonics, Galerkin}
 """
     Solvers
 

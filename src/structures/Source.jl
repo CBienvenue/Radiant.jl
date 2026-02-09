@@ -73,6 +73,14 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
         else
             P = (L+1)^2
         end
+    elseif solver isa Galerkin
+        polynomial_basis = solver.get_polynomial_basis(Ndims)
+        Lp,Lq = solver.get_legendre_order()
+        if polynomial_basis == "legendre"
+            error("Not available yet for Galerkin with Legendre basis.")
+        else
+            P = (Lp+1)^2
+        end
     else
         error("No methods available for $(get_type(particle)) particle.")
     end

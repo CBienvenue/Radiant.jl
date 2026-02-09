@@ -31,11 +31,11 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     geometry_type = geometry.get_type()
     norm = 0.0
 
-    L = source.get_legendre_order()
     surface = source.location
 
     if solver isa Discrete_Ordinates
 
+        L = min(source.get_legendre_order(),solver.get_legendre_order())
         quadrature_type = solver.get_quadrature_type()
         N = solver.get_quadrature_order() 
         Qdims = solver.get_quadrature_dimension(Ndims)
@@ -49,15 +49,33 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
     elseif solver isa Spherical_Harmonics
 
+        L = min(source.get_legendre_order(),solver.get_legendre_order())
+        polynomial_basis = solver.get_polynomial_basis(Ndims)
         Qdims = Ndims
-        if Ndims == 1
-            Np = L+1
+        if polynomial_basis == "legendre"
+            Np,_ = half_to_full_range_matrix_legendre(L)
             pl = collect(0:L)
+            pm = zeros(Int64,Np)
+        elseif polynomial_basis == "spherical-harmonics"
+            if Ndims == 1 Qdims = 2 end
+            Np,_ = half_to_full_range_matrix_spherical_harmonics(L)
+            pl,pm = spherical_harmonics_indices(L)
+            error()
         else
-            error("Spherical Harmonics method is only available in 1D.")
+            error("Unknown polynomial basis.")
         end
         Lmax = maximum(pl)
-
+    elseif solver isa Galerkin
+        L = min(source.get_legendre_order(),solver.get_legendre_order()[1])
+        polynomial_basis = solver.get_polynomial_basis(Ndims)
+        if polynomial_basis == "legendre"
+            error()
+        else
+            Qdims = 3
+            Np,_ = half_to_full_range_matrix_spherical_harmonics(L)
+            pl,pm = spherical_harmonics_indices(L)
+            Lmax = maximum(pl)
+        end
     else
         error("Surface sources are only available with Discrete Ordinates and Spherical Harmonics methods.")
     end
@@ -117,7 +135,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
                 # Calculation of the source moments
                 norm = intensity
-                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μs,ϕs)
+                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
                 for ig in range(1,Ng)
                     if ~(ig == source.energy_group) continue end
                     for p in range(1,Np)
@@ -177,10 +195,10 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 ϕ⁺ = atan(ξs,ηs)
             elseif surface == "Y-"
                 μ⁺ = ηs
-                ϕ⁺ = atan(ξs,ηs)
+                ϕ⁺ = atan(μs,ξs)
             elseif surface == "Y+"
                 μ⁺ = -ηs
-                ϕ⁺ = atan(ξs,ηs)
+                ϕ⁺ = atan(μs,ξs)
             end
             ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ⁺,ϕ⁺)
             for ig in range(1,Ng)
@@ -273,10 +291,10 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 ϕ⁺ = atan(ξs,ηs)
             elseif surface == "Y-"
                 μ⁺ = ηs
-                ϕ⁺ = atan(ξs,ηs)
+                ϕ⁺ = atan(μs,ξs)
             elseif surface == "Y+"
                 μ⁺ = -ηs
-                ϕ⁺ = atan(ξs,ηs)
+                ϕ⁺ = atan(μs,ξs)
             elseif surface == "Z-"
                 μ⁺ = ξs
                 ϕ⁺ = atan(ηs,μs)

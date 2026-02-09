@@ -16,7 +16,8 @@ RadiantObject = Union{
     Flux,
     Interaction,
     Particle,
-    Spherical_Harmonics
+    Spherical_Harmonics,
+    Galerkin
 }
 
 """
