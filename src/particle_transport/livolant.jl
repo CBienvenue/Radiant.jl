@@ -17,17 +17,24 @@ Estimate the solution using estimate from Livolant acceleration method.
 """
 function livolant(𝚽₂::Array{Float64},𝚽₁::Array{Float64},𝚽₀::Array{Float64})
 
-# Errors vectors
-e₀ = vec(𝚽₁) - vec(𝚽₀)
-e₁ = vec(𝚽₂) -  vec(𝚽₁)
-Δe = e₁-e₀
-
-# Acceleration factor
-μj = -sum(e₀.*Δe)/(sum(Δe.^2))
+# Compute acceleration factor
+sum_eΔe = 0.0
+sum_Δe2 = 0.0
+for i in eachindex(𝚽₂, 𝚽₁, 𝚽₀)
+    e₀ = 𝚽₁[i] - 𝚽₀[i]
+    e₁ = 𝚽₂[i] - 𝚽₁[i]
+    Δe = e₁ - e₀
+    sum_eΔe += e₀ * Δe
+    sum_Δe2 += Δe * Δe
+end
+μj = -sum_eΔe / sum_Δe2
 if μj ≤ 0 μj = 1 end
 
-# Compute the next iterations
-𝚽 = reshape(μj * 𝚽₂ + (1-μj) * 𝚽₁,size(𝚽₂))
+# Compute the next iteration
+𝚽 = similar(𝚽₂)
+for i in eachindex(𝚽₂, 𝚽₁)
+    𝚽[i] = μj * 𝚽₂[i] + (1-μj) * 𝚽₁[i]
+end
 
 return 𝚽
 
