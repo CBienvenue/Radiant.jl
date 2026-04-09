@@ -107,6 +107,7 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     end
 
     # Source iteration loop until convergence
+    Ql = similar(Qlout)
     i_in = 1
     ϵ_in = 0.0
     ρ_in = NaN
@@ -114,7 +115,7 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     while ~(isInnerConv)
 
         # Calculation of the Legendre components of the source (in-scattering)
-        Ql = copy(Qlout)
+        Ql .= Qlout
         if solver ∉ [4,5,6] Ql = scattering_source(Ql,𝚽l,Σs,mat,Np,pl,Nm[5],Ns) end
 
         # Finite element treatment of the angular Fokker-Planck term
@@ -131,7 +132,7 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
 
         # If there is no source
         if ~any(x->x!=0,sources) && ~any(x->x!=0,Ql) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
-            𝚽l = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
+            𝚽l .= 0
             ϵ_in = 0.0; i_in = 1
             println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , Nd = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
             break
@@ -224,14 +225,14 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             else
                 error("Dimension is not 1, 2 or 3.")
             end
-            𝚽x12_temp += 𝚽x12_out
-            if ndims >= 2 𝚽y12_temp += 𝚽y12_out end
-            if ndims >= 3 𝚽z12_temp += 𝚽z12_out end
+            𝚽x12_temp .+= 𝚽x12_out
+            if ndims >= 2 𝚽y12_temp .+= 𝚽y12_out end
+            if ndims >= 3 𝚽z12_temp .+= 𝚽z12_out end
             if isCSD 𝚽E12_temp[n,:,:,:,:] = 𝚽E12_out end
         end
-        𝚽x12_in = copy(𝚽x12_temp); 𝚽x12_temp .= 0.0
-        if ndims >= 2 𝚽y12_in = copy(𝚽y12_temp); 𝚽y12_temp .= 0.0 end
-        if ndims >= 3 𝚽z12_in = copy(𝚽z12_temp); 𝚽z12_temp .= 0.0 end
+        𝚽x12_in .= 𝚽x12_temp; 𝚽x12_temp .= 0.0
+        if ndims >= 2 𝚽y12_in .= 𝚽y12_temp; 𝚽y12_temp .= 0.0 end
+        if ndims >= 3 𝚽z12_in .= 𝚽z12_temp; 𝚽z12_temp .= 0.0 end
         
         #----
         # Verification of convergence of the one-group flux
@@ -255,12 +256,12 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             # Livolant acceleration
             if 𝒜 == "livolant" && mod(i_in,3) == 0
                 𝚽l⁺ = livolant(𝚽l,𝚽l⁻[1,:,:,:,:,:],𝚽l⁻[2,:,:,:,:,:])
-                𝚽l⁻[2,:,:,:,:,:] = 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] = 𝚽l
+                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
+                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
                 𝚽l .= 𝚽l⁺
             else
-                𝚽l⁻[2,:,:,:,:,:] = 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] = 𝚽l
+                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
+                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
             end
             
             # Save flux solution and go to next iteration
