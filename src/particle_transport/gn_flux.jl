@@ -34,7 +34,8 @@ boundary_conditions = geometry.get_boundary_conditions()
 #----
 # Preparation of angular discretisation
 #----
-L,L_elem = solver.get_legendre_order()
+L = solver.get_legendre_order()
+L_elem = solver.get_legendre_order_local()
 Nv = solver.get_subdivision()
 polynomial_basis = solver.get_polynomial_basis(Ndims)
 if polynomial_basis == "legendre"
@@ -48,7 +49,6 @@ elseif polynomial_basis == "spherical-harmonics"
 else
     error("Unknown polynomial basis.")
 end
-Np_surf = Np
 
 #----
 # Preparation of cross sections
@@ -124,11 +124,21 @@ end
 # Fixed sources
 #----
 
+L_surf = 15
+Np_surf = spherical_harmonics_number_basis(L_surf)
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
 Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
-L_surf = Int64(max(L,sqrt(Np_source)-1))
-Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L,L_surf,Nv,Ndims)
+Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L_surf,L_elem,Nv,Ndims)
+
+#----
+# Boundary conditions
+#----
+if any(x->x == 1,boundary_conditions) # If reflective, construct the reflection matrices
+    Rpq = pos_to_neg_half_range_matrix_spherical_harmonics(L_surf,Ndims)
+else
+    Rpq = Array{Float64}(undef,0,0,0)
+end
 
 #----
 # Flux calculations
@@ -191,7 +201,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq)
     end
 
     # Verification of convergence in all energy groups

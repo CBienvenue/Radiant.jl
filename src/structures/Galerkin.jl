@@ -4,7 +4,7 @@ mutable struct Galerkin
     particle                   ::Union{Missing,Particle}
     solver_type                ::Union{Missing,String}
     legendre_order             ::Union{Missing,Int64}
-    legendre_order_per_element ::Union{Missing,Int64}
+    legendre_order_local ::Union{Missing,Int64}
     convergence_criterion      ::Float64
     maximum_iteration          ::Int64
     scheme_type                ::Dict{String,String}
@@ -21,7 +21,7 @@ mutable struct Galerkin
         this.particle = missing
         this.solver_type = missing
         this.legendre_order = 16
-        this.legendre_order_per_element = 0
+        this.legendre_order_local = 0
         this.convergence_criterion = 1e-7 
         this.maximum_iteration = 300
         this.scheme_type = Dict{String,String}()
@@ -44,10 +44,10 @@ function set_solver_type(this::Galerkin,solver_type::String)
     this.solver_type = uppercase(solver_type)
 end
 
-function set_legendre_order(this::Galerkin,legendre_order::Int64,legendre_order_per_element::Int64)
-    if legendre_order < 0 || legendre_order_per_element < 0 error("Legendre order should be at least 0.") end
+function set_legendre_order(this::Galerkin,legendre_order::Int64,legendre_order_local::Int64)
+    if legendre_order < 0 || legendre_order_local < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
-    this.legendre_order_per_element = legendre_order_per_element
+    this.legendre_order_local = legendre_order_local
 end
 
 function set_convergence_criterion(this::Galerkin,convergence_criterion::Float64)
@@ -149,8 +149,13 @@ function get_solver_type(this::Galerkin)
 end
 
 function get_legendre_order(this::Galerkin)
-    if ismissing(this.legendre_order) || ismissing(this.legendre_order_per_element) error("Unable to get Legendre order. Missing data.") end
-    return this.legendre_order,this.legendre_order_per_element
+    if ismissing(this.legendre_order) error("Unable to get Legendre order. Missing data.") end
+    return this.legendre_order
+end
+
+function get_legendre_order_local(this::Galerkin)
+    if ismissing(this.legendre_order) || ismissing(this.legendre_order_local) error("Unable to get Legendre order. Missing data.") end
+    return this.legendre_order_local
 end
 
 function get_particle(this::Galerkin)

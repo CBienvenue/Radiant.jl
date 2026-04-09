@@ -113,7 +113,8 @@ module Radiant
         "gn_2D_bte.jl",
         "gn_2D_bfp.jl",
         "gn_3D_bte.jl",
-        "gn_3D_bfp.jl"
+        "gn_3D_bfp.jl",
+        "gn_weights.jl"
     ]
     radiant_src["structures/"] = [
         "Particle.jl",

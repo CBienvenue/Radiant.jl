@@ -66,7 +66,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
         end
         Lmax = maximum(pl)
     elseif solver isa Galerkin
-        L = min(source.get_legendre_order(),solver.get_legendre_order()[1])
+        L = min(source.get_legendre_order(),solver.get_legendre_order())
         polynomial_basis = solver.get_polynomial_basis(Ndims)
         if polynomial_basis == "legendre"
             error()
@@ -125,7 +125,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 intensity = source.intensity
                 Ωs = source.direction
                 μs = Ωs[1]
-                ϕs = atan(Ωs[3],Ωs[2])
+                ηs = Ωs[2]
+                ξs = Ωs[3]
+                ϕs = atan(ξs,ηs)
 
                 # Matrix Initialization
                 Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,2)
@@ -135,7 +137,12 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
                 # Calculation of the source moments
                 norm = intensity
-                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                if solver isa Discrete_Ordinates
+                    ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                else
+                    b = cartesian_boundary_index(surface)
+                    ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
+                end
                 for ig in range(1,Ng)
                     if ~(ig == source.energy_group) continue end
                     for p in range(1,Np)
@@ -173,6 +180,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
             μs = Ωs[1]
             ηs = Ωs[2]
             ξs = Ωs[3]
+            ϕs = atan(ξs,ηs)
 
             # Matrix Initialization
             Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,4)
@@ -187,20 +195,12 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
             # Calculation of the source moments
             norm = 0.0
-            if surface == "X-"
-                μ⁺ = μs
-                ϕ⁺ = atan(ξs,ηs)
-            elseif surface == "X+"
-                μ⁺ = -μs
-                ϕ⁺ = atan(ξs,ηs)
-            elseif surface == "Y-"
-                μ⁺ = ηs
-                ϕ⁺ = atan(μs,ξs)
-            elseif surface == "Y+"
-                μ⁺ = -ηs
-                ϕ⁺ = atan(μs,ξs)
+            if solver isa Discrete_Ordinates
+                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+            else
+                b = cartesian_boundary_index(surface)
+                ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
             end
-            ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ⁺,ϕ⁺)
             for ig in range(1,Ng)
                 if ~(ig == source.energy_group) continue end
                 for p in range(1,Np)
@@ -266,6 +266,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
             μs = Ωs[1]
             ηs = Ωs[2]
             ξs = Ωs[3]
+            ϕs = atan(ξs,ηs)
 
             # Matrix Initialization
             Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,6)
@@ -283,26 +284,12 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
             # Calculation of the source moments
             norm = 0.0
-            if surface == "X-"
-                μ⁺ = μs
-                ϕ⁺ = atan(ξs,ηs)
-            elseif surface == "X+"
-                μ⁺ = -μs
-                ϕ⁺ = atan(ξs,ηs)
-            elseif surface == "Y-"
-                μ⁺ = ηs
-                ϕ⁺ = atan(μs,ξs)
-            elseif surface == "Y+"
-                μ⁺ = -ηs
-                ϕ⁺ = atan(μs,ξs)
-            elseif surface == "Z-"
-                μ⁺ = ξs
-                ϕ⁺ = atan(ηs,μs)
-            elseif surface == "Z+"
-                μ⁺ = -ξs
-                ϕ⁺ = atan(ηs,μs)
+            if solver isa Discrete_Ordinates
+                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+            else
+                b = cartesian_boundary_index(surface)
+                ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
             end
-            ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ⁺,ϕ⁺)
             for ig in range(1,Ng)
                 if ~(ig == source.energy_group) continue end
                 for p in range(1,Np)
@@ -354,4 +341,74 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
         error("Surface sources are only available in Cartesian geometries.")
     end
     return Q, norm
+end
+
+function cartesian_boundary_index(location::String)
+    if location == "X-"
+        return 1
+    elseif location == "X+"
+        return 2
+    elseif location == "Y-"
+        return 3
+    elseif location == "Y+"
+        return 4
+    elseif location == "Z-"
+        return 5
+    elseif location == "Z+"
+        return 6
+    else
+        error("Unknown surface source location.")
+    end
+end
+
+function cartesian_surface_source(b::Int64,s::Int64)
+    if b < 1 || b > 6 error("Boundary index must be between 1 and 6.") end
+    if b == 1
+        μ⁻ = -(s+1)/2
+        μ⁺ = (-s+1)/2
+        ϕ⁻ = 0
+        ϕ⁺ = 2π
+        sb = -1
+    elseif b == 2
+        μ⁻ = (s-1)/2
+        μ⁺ = (s+1)/2
+        ϕ⁻ = 0
+        ϕ⁺ = 2π
+        sb = 1
+    elseif b == 3
+        μ⁻ = -1
+        μ⁺ = 1
+        ϕ⁻ = π/2 + (s-1)/2 * π
+        ϕ⁺ = 3*π/2 + (s-1)/2 * π
+        sb = -1
+    elseif b == 4
+        μ⁻ = -1
+        μ⁺ = 1
+        ϕ⁻ = -π/2 - (s-1)/2 * π
+        ϕ⁺ = π/2 - (s-1)/2 * π
+        sb = 1
+    elseif b == 5
+        μ⁻ = -1
+        μ⁺ = 1
+        ϕ⁻ = π + (s-1)/2 * π
+        ϕ⁺ = 2*π + (s-1)/2 * π
+        sb = -1
+    elseif b == 6
+        μ⁻ = -1
+        μ⁺ = 1
+        ϕ⁻ = 0 - (s-1)/2 * π
+        ϕ⁺ = π - (s-1)/2 * π
+        sb = 1
+    end
+    return μ⁻, μ⁺, ϕ⁻, ϕ⁺, sb
+end
+
+function boundary_real_half_range_spherical_harmonics_up_to_L(L::Int64,b::Int64,s::Int64,μ::Float64,ϕ::Float64)
+    error()
+    μ⁻,μ⁺,ϕ⁻,ϕ⁺,sb = cartesian_surface_source(b,s)
+    #if (b == 3 && (3*π/2 ≤ ϕ ≤ 2*π) && s == -1) || (b == 4 && (3*π/2 ≤ ϕ ≤ 2*π) && s == 1) ϕ -= 2*π end # Adjust for the discontinuity in the azimuthal angle for the Y- boundary
+    if μ < μ⁻ || μ > μ⁺ error("Direction cosine is out of bounds for the specified boundary.") end
+    if ϕ < ϕ⁻ || ϕ > ϕ⁺ error("Azimuthal angle is out of bounds for the specified boundary.") end
+    R_blm = sqrt(2*π/((μ⁺-μ⁻)*(ϕ⁺-ϕ⁻))) * real_half_range_spherical_harmonics_up_to_L(L,-s*sb*((-s*sb-1)/2 + (μ-μ⁻)/(μ⁺-μ⁻)),2*π*(ϕ-ϕ⁻)/(ϕ⁺-ϕ⁻))
+    return R_blm
 end
