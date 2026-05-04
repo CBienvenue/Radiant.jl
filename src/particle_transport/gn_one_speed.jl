@@ -135,7 +135,12 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
         𝚽y12⁻ = zeros(Np_surf,Nm[2],Ns[1],2)
         𝚽y12⁺ = zeros(Np_surf,Nm[2],Ns[1],2)
     else
-        #error("Not implemented yet for 3D geometries.")
+        𝚽x12⁻ = zeros(Np_surf,Nm[1],Ns[2],Ns[3],2)
+        𝚽x12⁺ = zeros(Np_surf,Nm[1],Ns[2],Ns[3],2)
+        𝚽y12⁻ = zeros(Np_surf,Nm[2],Ns[1],Ns[3],2)
+        𝚽y12⁺ = zeros(Np_surf,Nm[2],Ns[1],Ns[3],2)
+        𝚽z12⁻ = zeros(Np_surf,Nm[3],Ns[1],Ns[2],2)
+        𝚽z12⁺ = zeros(Np_surf,Nm[3],Ns[1],Ns[2],2)
     end
 
     # Source iteration loop until convergence
@@ -171,19 +176,23 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             Q_q = zeros(Nq,Nm[5],Ns[1],8,Nv,Nv)
             𝚽E12_q = zeros(Nq,Nm[4],Ns[1],8,Nv,Nv)
             𝚽x12_q = zeros(Nq,Nm[1],2,8,Nv,Nv)
-            for p in range(1,Np), q in range(1,Nq), u in range(1,8), v in range(1,Nv)
+            for u in range(1,8), v in range(1,Nv)
                 Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
                 for w in range(1,Nw)
-                    if is_SPH factor = (2*pl[p]+1)/(4*π) else factor = (2*pl[p]+1)/2 end
-                    for is in range(1,Nm[5]), ix in range(1,Ns[1])
-                        Q_q[q,is,ix,u,v,w] += factor * Ql[p,is,ix,1,1] * Mll[p,q,u,v,w]
+                    for p in range(1,Np), q in range(1,Nq)
+                        if is_SPH factor = (2*pl[p]+1)/(4*π) else factor = (2*pl[p]+1)/2 end
+                        for is in range(1,Nm[5]), ix in range(1,Ns[1])
+                            Q_q[q,is,ix,u,v,w] += factor * Ql[p,is,ix,1,1] * Mll[p,q,u,v,w]
+                        end
+                        if isCSD
+                            for is in range(1,Nm[4]), ix in range(1,Ns[1])
+                                𝚽E12_q[q,is,ix,u,v,w] += factor * 𝚽E12[p,is,ix,1,1] * Mll[p,q,u,v,w]
+                            end
+                        end
                     end
-                    for is in range(1,Nm[1]), ib in range(1,2)
-                        𝚽x12_q[q,is,ib,u,v,w] += 𝚽x12⁻[p,is,ib] * Mll_surf[p,q,u,v,w,ib,1]
-                    end
-                    if isCSD
-                        for is in range(1,Nm[4]), ix in range(1,Ns[1])
-                            𝚽E12_q[q,is,ix,u,v,w] += factor * 𝚽E12[p,is,ix,1,1] * Mll[p,q,u,v,w]
+                    for p in range(1,Np_surf), q in range(1,Nq)
+                        for is in range(1,Nm[1]), ib in range(1,2)
+                            𝚽x12_q[q,is,ib,u,v,w] += 𝚽x12⁻[p,is,ib] * Mll_surf[p,q,u,v,w,ib,1]
                         end
                     end
                 end
@@ -196,18 +205,22 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
                 end
             end
             # Transformation of restricted-angle fluxes to full-range fluxes
-            for p in range(1,Np), q in range(1,Nq), u in range(1,8), v in range(1,Nv)
+            for u in range(1,8), v in range(1,Nv)
                 Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
                 for w in range(1,Nw)
-                    for is in range(1,Nm[5]), ix in range(1,Ns[1])
-                        𝚽l[p,is,ix,1,1] += Mll[p,q,u,v,w] * 𝚽_q[q,is,ix,u,v,w]
+                    for p in range(1,Np), q in range(1,Nq)
+                        for is in range(1,Nm[5]), ix in range(1,Ns[1])
+                            𝚽l[p,is,ix,1,1] += Mll[p,q,u,v,w] * 𝚽_q[q,is,ix,u,v,w]
+                        end
+                        if isCSD
+                            for is in range(1,Nm[4]), ix in range(1,Ns[1])
+                                𝚽E12_temp[p,is,ix,1,1] += Mll[p,q,u,v,w] * 𝚽E12_q[q,is,ix,u,v,w]
+                            end
+                        end
                     end
-                    for is in range(1,Nm[1]), ib in range(1,2)
-                        𝚽x12⁺[p,is,ib] += Mll_surf[p,q,u,v,w,ib,2] * 𝚽x12_q[q,is,ib,u,v,w]
-                    end
-                    if isCSD
-                        for is in range(1,Nm[4]), ix in range(1,Ns[1])
-                            𝚽E12_temp[p,is,ix,1,1] += Mll[p,q,u,v,w] * 𝚽E12_q[q,is,ix,u,v,w]
+                    for p in range(1,Np_surf), q in range(1,Nq)
+                        for is in range(1,Nm[1]), ib in range(1,2)
+                            𝚽x12⁺[p,is,ib] += Mll_surf[p,q,u,v,w,ib,2] * 𝚽x12_q[q,is,ib,u,v,w]
                         end
                     end
                 end
@@ -217,7 +230,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             for ib in range(1,2)
                 if boundary_conditions[ib] != 0
                     if boundary_conditions[ib] == 1 # Reflective boundary condition
-                        for p in range(1,Np), q in range(1,Np), is in range(1,Nm[1])
+                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1])
                             𝚽x12⁻[p,is,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,ib]
                         end
                     elseif boundary_conditions[ib] == 2 # Periodic boundary condition
@@ -305,8 +318,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
                 # X-axis boundary conditions
                 if boundary_conditions[ib] != 0
                     if boundary_conditions[ib] == 1 # Reflective boundary condition
-                        error()
-                        for p in range(1,Np), q in range(1,Np), is in range(1,Nm[1]), iy in range(1,Ns[2])
+                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2])
                             𝚽x12⁻[p,is,iy,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,iy,ib]
                         end
                     elseif boundary_conditions[ib] == 2 # Periodic boundary condition
@@ -324,8 +336,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
                 # Y-axis boundary conditions
                 if boundary_conditions[ib+2] != 0
                     if boundary_conditions[ib+2] == 1 # Reflective boundary condition
-                        error()
-                        for p in range(1,Np), q in range(1,Np), is in range(1,Nm[2]), ix in range(1,Ns[1])
+                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1])
                             𝚽y12⁻[p,is,ix,ib] += Rpq[p,q,ib+2] * 𝚽y12⁺[q,is,ix,ib]
                         end
                     elseif boundary_conditions[ib+2] == 2 # Periodic boundary condition
@@ -345,21 +356,37 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             𝚽y12⁺ .= 0.0
 
         elseif Ndims == 3
-            
+
             # Transformation of full-range fluxes to restricted-angle fluxes
             𝚽_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nv)
             Q_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nv)
             𝚽E12_q = zeros(Nq,Nm[4],Ns[1],Ns[2],Ns[3],8,Nv,Nv)
-            for p in range(1,Np), q in range(1,Nq), u in range(1,8), v in range(1,Nv)
+            𝚽x12_q = zeros(Nq,Nm[1],Ns[2],Ns[3],2,8,Nv,Nv)
+            𝚽y12_q = zeros(Nq,Nm[2],Ns[1],Ns[3],2,8,Nv,Nv)
+            𝚽z12_q = zeros(Nq,Nm[3],Ns[1],Ns[2],2,8,Nv,Nv)
+            for u in range(1,8), v in range(1,Nv)
                 Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
                 for w in range(1,Nw)
-                    factor = (2*pl[p]+1)/(4*π)
-                    for is in range(1,Nm[5]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                        Q_q[q,is,ix,iy,iz,u,v,w] += factor * Ql[p,is,ix,iy,iz] * Mll[p,q,u,v,w]
+                    for p in range(1,Np), q in range(1,Nq)
+                        factor = (2*pl[p]+1)/(4*π)
+                        for is in range(1,Nm[5]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                            Q_q[q,is,ix,iy,iz,u,v,w] += factor * Ql[p,is,ix,iy,iz] * Mll[p,q,u,v,w]
+                        end
+                        if isCSD
+                            for is in range(1,Nm[4]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                                𝚽E12_q[q,is,ix,iy,iz,u,v,w] += factor * 𝚽E12[p,is,ix,iy,iz] * Mll[p,q,u,v,w]
+                            end
+                        end
                     end
-                    if isCSD
-                        for is in range(1,Nm[4]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                            𝚽E12_q[q,is,ix,iy,iz,u,v,w] += factor * 𝚽E12[p,is,ix,iy,iz] * Mll[p,q,u,v,w]
+                    for p in range(1,Np_surf), q in range(1,Nq)
+                        for is in range(1,Nm[1]), ib in range(1,2), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                            𝚽x12_q[q,is,iy,iz,ib,u,v,w] += 𝚽x12⁻[p,is,iy,iz,ib] * Mll_surf[p,q,u,v,w,ib,1]
+                        end
+                        for is in range(1,Nm[2]), ib in range(1,2), ix in range(1,Ns[1]), iz in range(1,Ns[3])
+                            𝚽y12_q[q,is,ix,iz,ib,u,v,w] += 𝚽y12⁻[p,is,ix,iz,ib] * Mll_surf[p,q,u,v,w,ib+2,1]
+                        end
+                        for is in range(1,Nm[3]), ib in range(1,2), ix in range(1,Ns[1]), iy in range(1,Ns[2])
+                            𝚽z12_q[q,is,ix,iy,ib,u,v,w] += 𝚽z12⁻[p,is,ix,iy,ib] * Mll_surf[p,q,u,v,w,ib+4,1]
                         end
                     end
                 end
@@ -368,23 +395,100 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             for u in range(1,8), v in range(1,Nv)
                 Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
                 for w in range(1,Nw)
-                    𝚽_q[:,:,:,:,:,u,v,w],𝚽E12_q[:,:,:,:,:,u,v,w] = gn_sweep_3D(sx[u],sy[u],sz[u],𝚽_q[:,:,:,:,:,u,v,w],Q_q[:,:,:,:,:,u,v,w],Σt,mat,Ns[1],Ns[2],Ns[3],Δs[1],Δs[2],Δs[3],Nq,Np_source,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],𝒩[:,:,3,u,v,w])
+                    𝚽_q[:,:,:,:,:,u,v,w],𝚽E12_q[:,:,:,:,:,u,v,w],𝚽x12_q[:,:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,:,u,v,w],𝚽z12_q[:,:,:,:,:,u,v,w] = gn_sweep_3D(sx[u],sy[u],sz[u],𝚽_q[:,:,:,:,:,u,v,w],Q_q[:,:,:,:,:,u,v,w],Σt,mat,Ns[1],Ns[2],Ns[3],Δs[1],Δs[2],Δs[3],Nq,Np_source,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,:,u,v,w],𝚽z12_q[:,:,:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],𝒩[:,:,3,u,v,w])
                 end
             end
             # Transformation of restricted-angle fluxes to full-range fluxes
-            for p in range(1,Np), q in range(1,Nq), u in range(1,8), v in range(1,Nv)
+            for u in range(1,8), v in range(1,Nv)
                 Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
                 for w in range(1,Nw)
-                    for is in range(1,Nm[5]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                        𝚽l[p,is,ix,iy,iz] += Mll[p,q,u,v,w] * 𝚽_q[q,is,ix,iy,iz,u,v,w]
+                    for p in range(1,Np), q in range(1,Nq)
+                        for is in range(1,Nm[5]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                            𝚽l[p,is,ix,iy,iz] += Mll[p,q,u,v,w] * 𝚽_q[q,is,ix,iy,iz,u,v,w]
+                        end
+                        if isCSD
+                            for is in range(1,Nm[4]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                                𝚽E12_temp[p,is,ix,iy,iz] += Mll[p,q,u,v,w] * 𝚽E12_q[q,is,ix,iy,iz,u,v,w]
+                            end
+                        end
                     end
-                    if isCSD
-                        for is in range(1,Nm[4]), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                            𝚽E12_temp[p,is,ix,iy,iz] += Mll[p,q,u,v,w] * 𝚽E12_q[q,is,ix,iy,iz,u,v,w]
+                    for p in range(1,Np_surf), q in range(1,Nq)
+                        for is in range(1,Nm[1]), ib in range(1,2), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                            𝚽x12⁺[p,is,iy,iz,ib] += 𝚽x12_q[q,is,iy,iz,ib,u,v,w] * Mll_surf[p,q,u,v,w,ib,2]
+                        end
+                        for is in range(1,Nm[2]), ib in range(1,2), ix in range(1,Ns[1]), iz in range(1,Ns[3])
+                            𝚽y12⁺[p,is,ix,iz,ib] += 𝚽y12_q[q,is,ix,iz,ib,u,v,w] * Mll_surf[p,q,u,v,w,ib+2,2]
+                        end
+                        for is in range(1,Nm[3]), ib in range(1,2), ix in range(1,Ns[1]), iy in range(1,Ns[2])
+                            𝚽z12⁺[p,is,ix,iy,ib] += 𝚽z12_q[q,is,ix,iy,ib,u,v,w] * Mll_surf[p,q,u,v,w,ib+4,2]
                         end
                     end
                 end
             end
+            # Boundary conditions treatment
+            𝚽x12⁻ .= 0.0
+            𝚽y12⁻ .= 0.0
+            𝚽z12⁻ .= 0.0
+            for ib in range(1,2)
+                # X-axis boundary conditions
+                if boundary_conditions[ib] != 0
+                    if boundary_conditions[ib] == 1 # Reflective boundary condition
+                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                            𝚽x12⁻[p,is,iy,iz,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,iy,iz,ib]
+                        end
+                    elseif boundary_conditions[ib] == 2 # Periodic boundary condition
+                        for p in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
+                            if ib == 1
+                                𝚽x12⁻[p,is,iy,iz,1] += 𝚽x12⁺[p,is,iy,iz,2]
+                            else
+                                𝚽x12⁻[p,is,iy,iz,2] += 𝚽x12⁺[p,is,iy,iz,1]
+                            end
+                        end
+                    else
+                        error("Invalid boundary condition type.")
+                    end
+                end
+                # Y-axis boundary conditions
+                if boundary_conditions[ib+2] != 0
+                    if boundary_conditions[ib+2] == 1 # Reflective boundary condition
+                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1]), iz in range(1,Ns[3])
+                            𝚽y12⁻[p,is,ix,iz,ib] += Rpq[p,q,ib+2] * 𝚽y12⁺[q,is,ix,iz,ib]
+                        end
+                    elseif boundary_conditions[ib+2] == 2 # Periodic boundary condition
+                        for p in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1]), iz in range(1,Ns[3])
+                            if ib == 1
+                                𝚽y12⁻[p,is,ix,iz,1] += 𝚽y12⁺[p,is,ix,iz,2]
+                            else
+                                𝚽y12⁻[p,is,ix,iz,2] += 𝚽y12⁺[p,is,ix,iz,1]
+                            end
+                        end
+                    else
+                        error("Invalid boundary condition type.")
+                    end
+                end
+                # Z-axis boundary conditions
+                if boundary_conditions[ib+4] != 0
+                    if boundary_conditions[ib+4] == 1 # Reflective boundary condition
+                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[3]), ix in range(1,Ns[1]), iy in range(1,Ns[2])
+                            𝚽z12⁻[p,is,ix,iy,ib] += Rpq[p,q,ib+4] * 𝚽z12⁺[q,is,ix,iy,ib]
+                        end
+                    elseif boundary_conditions[ib+4] == 2 # Periodic boundary condition
+                        for p in range(1,Np_surf), is in range(1,Nm[3]), ix in range(1,Ns[1]), iy in range(1,Ns[2])
+                            if ib == 1
+                                𝚽z12⁻[p,is,ix,iy,1] += 𝚽z12⁺[p,is,ix,iy,2]
+                            else
+                                𝚽z12⁻[p,is,ix,iy,2] += 𝚽z12⁺[p,is,ix,iy,1]
+                            end
+                        end
+                    else
+                        error("Invalid boundary condition type.")
+                    end
+                end
+            end
+            𝚽x12⁺ .= 0.0
+            𝚽y12⁺ .= 0.0
+            𝚽z12⁺ .= 0.0
+
         else
             error("Geometry dimension is either 1D, 2D or 3D.")
         end

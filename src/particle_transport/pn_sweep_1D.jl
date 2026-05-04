@@ -29,7 +29,7 @@ function pn_sweep_1D(sx::Int64,𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt:
         for p in range(1,Np_source)
             𝚽x12[p,1] += sources[p,2]
         end
-        if boundary_conditions[1] != 0 # Not void
+        if boundary_conditions[2] != 0 # Not void
             for p in range(1,Np), is in range(1,Nm[1])
                 if boundary_conditions[2] == 1 # Reflective
                     𝚽x12[p,is] += 𝚽x12⁺_in[p,is,2]
