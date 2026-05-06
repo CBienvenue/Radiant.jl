@@ -704,14 +704,16 @@ end
 
 function pos_to_neg_half_range_matrix_spherical_harmonics(L::Int64,Ndims::Int64)
     Np = spherical_harmonics_number_basis(L)
-    _,pm = spherical_harmonics_indices(L)
+    pl,pm = spherical_harmonics_indices(L)
     Rpq = zeros(Np,Np,2*Ndims)
     for b in range(1,2*Ndims)
         for p in range(1,Np)
             if b ∈ [1,2]
                 Rpq[p,p,b] = 1.0
             else
-                Rpq[p,p,b] = pm[p] ≥ 0 ? 1.0 : -1.0
+                # Exact parity for real spherical-harmonics reflection on Y/Z faces.
+                parity = pl[p] + abs(pm[p]) + (pm[p] < 0)
+                Rpq[p,p,b] = iseven(parity) ? 1.0 : -1.0
             end
         end
     end
