@@ -87,9 +87,9 @@ end
 
 # Source vector
 for ix in range(1,Nmx), iy in range(1,Nmy), iz in range(1,Nmz)
-    fx = -C[ix]/Δx * (g(ix,sx)*ωx[1,iy,iz]+g(ix,-sx))
-    fy = -C[iy]/Δy * (g(iy,sy)*ωy[1,ix,iz]+g(iy,-sy))
-    fz = -C[iz]/Δz * (g(iz,sz)*ωz[1,ix,iy]+g(iz,-sz))
+    fx = -C[ix]/Δx * (g(ix,sx)*ωx[1]+g(ix,-sx))
+    fy = -C[iy]/Δy * (g(iy,sy)*ωy[1]+g(iy,-sy))
+    fz = -C[iz]/Δz * (g(iz,sz)*ωz[1]+g(iz,-sz))
     for ip in range(1,Np)
         if (~isFC) && (count(>(1),(ix,iy,iz)) ≥ 2) continue end
         j = index_xyzp(ix,iy,iz,ip)
@@ -121,29 +121,29 @@ end
 for ip in 1:Np
     for iy in 1:Nmy, iz in 1:Nmz
         if (~isFC) && (count(>(1),(iy,iz)) ≥ 2) continue end
-        𝚽x12[ip,index_xy(iy,iz)] = ωx[1,iy,iz] * 𝚽x12[ip,index_xy(iy,iz)]
+        𝚽x12[ip,index_xy(iy,iz)] = ωx[1] * 𝚽x12[ip,index_xy(iy,iz)]
         for ix in 1:Nmx
             if (~isFC) && (count(>(1),(ix,iy,iz)) ≥ 2) continue end
             j = index_xyzp(ix,iy,iz,ip)
-            𝚽x12[ip,index_xy(iy,iz)] += C[ix] * sx^(ix-1) * ωx[ix+1,iy,iz] * 𝚽[j]
+            𝚽x12[ip,index_xy(iy,iz)] += C[ix] * sx^(ix-1) * ωx[ix+1] * 𝚽[j]
         end
     end
     for ix in 1:Nmx, iz in 1:Nmz
         if (~isFC) && (count(>(1),(ix,iz)) ≥ 2) continue end
-        𝚽y12[ip,index_xy(ix,iz)] = ωy[1,ix,iz] * 𝚽y12[ip,index_xy(ix,iz)]
+        𝚽y12[ip,index_xy(ix,iz)] = ωy[1] * 𝚽y12[ip,index_xy(ix,iz)]
         for iy in 1:Nmy
             if (~isFC) && (count(>(1),(ix,iy,iz)) ≥ 2) continue end
             j = index_xyzp(ix,iy,iz,ip)
-            𝚽y12[ip,index_xy(ix,iz)] += C[iy] * sy^(iy-1) * ωy[iy+1,ix,iz] * 𝚽[j]
+            𝚽y12[ip,index_xy(ix,iz)] += C[iy] * sy^(iy-1) * ωy[iy+1] * 𝚽[j]
         end
     end
     for ix in 1:Nmx, iy in 1:Nmy
         if (~isFC) && (count(>(1),(ix,iy)) ≥ 2) continue end
-        𝚽z12[ip,index_xy(ix,iy)] = ωz[1,ix,iy] * 𝚽z12[ip,index_xy(ix,iy)]
+        𝚽z12[ip,index_xy(ix,iy)] = ωz[1] * 𝚽z12[ip,index_xy(ix,iy)]
         for iz in 1:Nmz
             if (~isFC) && (count(>(1),(ix,iy,iz)) ≥ 2) continue end
             j = index_xyzp(ix,iy,iz,ip)
-            𝚽z12[ip,index_xy(ix,iy)] += C[iz] * sz^(iz-1) * ωz[iz+1,ix,iy] * 𝚽[j]
+            𝚽z12[ip,index_xy(ix,iy)] += C[iz] * sz^(iz-1) * ωz[iz+1] * 𝚽[j]
         end
     end
     for ix in 1:Nmx, iy in 1:Nmy, iz in 1:Nmz
