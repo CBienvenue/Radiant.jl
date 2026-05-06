@@ -48,7 +48,7 @@ function volume_source(particle::Particle,source::Volume_Source,cross_sections::
         if energy_groups[ig] == 1 
             for ix in range(1,Nx)
                 if xmin <= x[ix] && xmax >= x[ix]
-                    Q[ig,1,1,ix,1,1] += intensity * Δx[ix]
+                    Q[ig,1,1,ix,1,1] += intensity
                     norm = norm + intensity * Δx[ix]
                 end
             end
@@ -74,7 +74,7 @@ function volume_source(particle::Particle,source::Volume_Source,cross_sections::
         if energy_groups[ig] == 1 
             for ix in range(1,Nx), iy in range(1,Ny)
                 if xmin <= x[ix] && xmax >= x[ix] && ymin <= y[iy] && ymax >= y[iy] 
-                    Q[ig,1,1,ix,iy,1] += intensity * Δx[ix] * Δy[iy]
+                    Q[ig,1,1,ix,iy,1] += intensity
                     norm = norm + intensity * Δx[ix] * Δy[iy]
                 end
             end
@@ -105,7 +105,7 @@ function volume_source(particle::Particle,source::Volume_Source,cross_sections::
         if energy_groups[ig] == 1 
             for ix in range(1,Nx), iy in range(1,Ny), iz in range(1,Nz)
                 if xmin <= x[ix] && xmax >= x[ix] && ymin <= y[iy] && ymax >= y[iy] && zmin <= z[iz] && zmax >= z[iz] 
-                    Q[ig,1,1,ix,iy,iz] += intensity * Δx[ix] * Δy[iy] * Δz[iz]
+                    Q[ig,1,1,ix,iy,iz] += intensity
                     norm = norm + intensity * Δx[ix] * Δy[iy] * Δz[iz]
                 end
             end
