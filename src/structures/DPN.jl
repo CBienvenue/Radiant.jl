@@ -1,3 +1,27 @@
+"""
+    DPN
+
+Structure used to define the moment-based ("double-Pn") angular discretization method
+associated with the transport of a particle.
+
+# Mandatory field(s)
+- `particle::Particle` : particle for which the discretization methods is defined.
+- `solver_type::String` : type of solver for the transport calculations.
+- `scheme_type::Dict{String,String}` : type of schemes for the spatial or energy discretization.
+- `scheme_order::Dict{String,Int64}` : order of the expansion for the discretization schemes.
+
+# Optional field(s) - with default values
+- `legendre_order::Int64 = 64` : maximum order of the Legendre expansion for the
+  differential cross-sections.
+- `polynomial_basis::String` : polynomial basis (`"legendre"` in 1D,
+  `"spherical-harmonics"` in 2D or 3D by default).
+- `angular_fokker_planck::String = "galerkin"` : type of discretization for the angular
+  Fokker-Planck operation.
+- `convergence_criterion::Float64 = 1e-7` : convergence criterion of in-group iterations.
+- `maximum_iteration::Int64 = 300` : maximum number of in-group iterations.
+- `acceleration::String = "none"` : acceleration method for the in-group iterations.
+
+"""
 mutable struct DPN
 
     # Variable(s)
@@ -19,7 +43,7 @@ mutable struct DPN
         this.particle = missing
         this.solver_type = missing
         this.legendre_order = 64
-        this.convergence_criterion = 1e-7 
+        this.convergence_criterion = 1e-7
         this.maximum_iteration = 300
         this.scheme_type = Dict{String,String}()
         this.scheme_order = Dict{String,Int64}()
@@ -31,30 +55,158 @@ mutable struct DPN
     end
 end
 
+# Method(s)
+"""
+    set_particle(this::DPN,particle::Particle)
+
+To set the particle for which the transport discretization method is for.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_particle(electron)
+```
+"""
 function set_particle(this::DPN,particle::Particle)
     this.particle = particle
 end
 
+"""
+    set_solver_type(this::DPN,solver_type::String)
+
+To set the solver for the particle transport.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `solver_type::String` : solver type, which can take the following values:
+    - `solver_type = "BTE"` : Boltzmann transport equation.
+    - `solver_type = "BFP"` : Boltzmann Fokker-Planck equation.
+    - `solver_type = "BCSD"` : Boltzmann-CSD equation.
+    - `solver_type = "FP"` : Fokker-Planck equation.
+    - `solver_type = "CSD"` : Continuous slowing-down only equation.
+    - `solver_type = "BFP-EF"` : Boltzmann Fokker-Planck without elastic.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_solver_type("BFP")
+```
+"""
 function set_solver_type(this::DPN,solver_type::String)
     if uppercase(solver_type) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("Unkown type of solver.") end
     this.solver_type = uppercase(solver_type)
 end
 
+"""
+    set_legendre_order(this::DPN,legendre_order::Int64)
+
+To set the maximum order of the Legendre expansion of the differential cross-sections.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `legendre_order::Int64` : maximum order of the Legendre expansion of the differential
+  cross-sections.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_legendre_order(7)
+```
+"""
 function set_legendre_order(this::DPN,legendre_order::Int64)
     if legendre_order < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
 end
 
+"""
+    set_convergence_criterion(this::DPN,convergence_criterion::Float64)
+
+To set the convergence criterion for the in-group iterations.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `convergence_criterion::Float64` : convergence criterion.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_convergence_criterion(1e-5)
+```
+"""
 function set_convergence_criterion(this::DPN,convergence_criterion::Float64)
     if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
     this.convergence_criterion = convergence_criterion
 end
 
+"""
+    set_maximum_iteration(this::DPN,maximum_iteration::Int64)
+
+To set the maximum number of in-group iterations.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `maximum_iteration::Int64` : maximum number of in-group iterations.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_maximum_iteration(50)
+```
+"""
 function set_maximum_iteration(this::DPN,maximum_iteration::Int64)
     if maximum_iteration < 1 error("Maximum iteration has to be at least 1.") end
     this.maximum_iteration = maximum_iteration
 end
 
+"""
+    set_scheme(this::DPN,axis::String,scheme_type::String,scheme_order::Int64)
+
+To set the type of discretization scheme for derivative along the specified spatial or
+energy axis.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `axis::String` : variable of the derivative for which the scheme is applied, which can
+  take the following values:
+    - `axis = "x"` : spatial x axis (discretization of the streaming term).
+    - `axis = "y"` : spatial y axis (discretization of the streaming term).
+    - `axis = "z"` : spatial z axis (discretization of the streaming term).
+    - `axis = "E"` : energy axis (discretization of the continuous slowing-down term).
+- `scheme_type::String` : type of scheme to be applied, which can take the following values:
+    - `scheme_type = "DD"` : diamond difference scheme (any order).
+    - `scheme_type = "DG"` : discontinuous Galerkin scheme (any order).
+    - `scheme_type = "AWD"` : adaptive weighted scheme (1st and 2nd order only).
+- `scheme_order::Int64` : scheme order, which takes values greater than 1.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_scheme("x","DD",1)
+julia> m.set_scheme("E","DG",2)
+```
+"""
 function set_scheme(this::DPN,axis::String,scheme_type::String,scheme_order::Int64)
     if axis ∉ ["x","y","z","E"] error("Unknown axis.") end
     if uppercase(scheme_type) ∉ ["DD","DG","DG-","DG+","AWD"] error("Unknown type of scheme.") end
@@ -63,29 +215,134 @@ function set_scheme(this::DPN,axis::String,scheme_type::String,scheme_order::Int
     this.scheme_order[axis] = scheme_order
 end
 
+"""
+    set_acceleration(this::DPN,acceleration::String)
+
+To set the acceleration method for the in-group iteration process.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `acceleration::String` : acceleration method, which takes the following values:
+    - `acceleration = "none"` : none.
+    - `acceleration = "livolant"` : livolant acceleration method.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_acceleration("livolant")
+```
+"""
 function set_acceleration(this::DPN,acceleration::String)
     if lowercase(acceleration) ∉ ["none","livolant"] error("Unkown acceleration method.") end
     this.acceleration = acceleration
 end
 
+"""
+    set_polynomial_basis(this::DPN,basis::String)
+
+To set the polynomial basis used for the angular discretization.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `basis::String` : polynomial basis, which can take the following values:
+    - `basis = "legendre"` : Legendre polynomials (1D only).
+    - `basis = "spherical-harmonics"` : spherical harmonics (1D, 2D or 3D).
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_polynomial_basis("legendre")
+```
+"""
 function set_polynomial_basis(this::DPN,basis::String)
     if lowercase(basis) ∉ ["legendre","spherical-harmonics"] error("Unknown polynomial basis.") end
     this.polynomial_basis = lowercase(basis)
 end
 
+"""
+    set_is_full_coupling(this::DPN,isFC::Bool)
+
+Set, for multidimensional high-order schemes, if the high-order moments are fully coupled
+or not. For example, with two linear schemes, the moments are either fully coupled
+`[00,10,01,11]` or not `[00,10,01]`.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `isFC::Bool` : boolean indicating if the high-order moments are fully coupled or not.
+
+# Output Argument(s)
+N/A
+
+"""
 function set_is_full_coupling(this::DPN,isFC::Bool)
     this.isFC = isFC
 end
 
+"""
+    set_angular_fokker_planck(this::DPN,angular_fokker_planck::String)
+
+To set the discretization method for the angular Fokker-Planck term. With the `DPN` solver,
+only the `"galerkin"` discretization is currently supported.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `angular_fokker_planck::String` : discretization method for the angular Fokker-Planck
+  term, which can take the following value:
+    - `angular_fokker_planck = "galerkin"` : Galerkin moment-based discretization.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = DPN()
+julia> m.set_angular_fokker_planck("galerkin")
+```
+"""
 function set_angular_fokker_planck(this::DPN,angular_fokker_planck::String)
     if angular_fokker_planck ∉ ["galerkin"] error("Unkown method to deal with the angular Fokker-Planck term.") end
     this.angular_fokker_planck = angular_fokker_planck
 end
 
+"""
+    get_is_full_coupling(this::DPN)
+
+Get, for multidimensional high-order schemes, if the high-order moments are fully coupled
+or not.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `isFC::Bool` : boolean indicating if the high-order moments are fully coupled or not.
+
+"""
 function get_is_full_coupling(this::DPN)
     return this.isFC
 end
 
+"""
+    get_schemes(this::DPN,geometry::Geometry,isFC::Bool)
+
+Get the space and/or energy schemes informations.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `geometry::Geometry` : geometry.
+- `isFC::Bool` : boolean indicating if the high-order moments are fully coupled.
+
+# Output Argument(s)
+- `schemes::Vector{String}` : scheme types.
+- `𝒪::Vector{Int64}` : order of the schemes.
+- `Nm::Vector{Int64}` : numbers of moments.
+
+"""
 function get_schemes(this::DPN,geometry::Geometry,isFC::Bool)
     schemes = Vector{String}(undef,4)
     𝒪 = Vector{Int64}(undef,4)
@@ -112,6 +369,19 @@ function get_schemes(this::DPN,geometry::Geometry,isFC::Bool)
     return schemes,𝒪,Nm
 end
 
+"""
+    get_solver_type(this::DPN)
+
+Get the type of solver for transport calculations.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `solver::Int64` : type of solver for transport calculations.
+- `isCSD::Bool` : indicate if continuous slowing-down term is used or not.
+
+"""
 function get_solver_type(this::DPN)
     if ismissing(this.solver_type) error("Unable to get solver type. Missing data.") end
     if this.solver_type == "BTE"
@@ -138,28 +408,103 @@ function get_solver_type(this::DPN)
     return solver, isCSD
 end
 
+"""
+    get_legendre_order(this::DPN)
+
+Get the Legendre truncation order.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `legendre_order::Int64` : Legendre truncation order.
+
+"""
 function get_legendre_order(this::DPN)
     if ismissing(this.legendre_order) error("Unable to get Legendre order. Missing data.") end
     return this.legendre_order
 end
 
+"""
+    get_particle(this::DPN)
+
+Get the particle associated with the discretization methods.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `particle::Particle` : particle.
+
+"""
 function get_particle(this::DPN)
     if ismissing(this.particle) error("Unable to get particle. Missing data.") end
     return this.particle
 end
 
+"""
+    get_acceleration(this::DPN)
+
+Get the acceleration method for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `acceleration::String` : acceleration method.
+
+"""
 function get_acceleration(this::DPN)
     return this.acceleration
 end
 
+"""
+    get_convergence_criterion(this::DPN)
+
+Get the convergence criterion for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `convergence_criterion::Float64` : convergence criterion.
+
+"""
 function get_convergence_criterion(this::DPN)
     return this.convergence_criterion
 end
 
+"""
+    get_maximum_iteration(this::DPN)
+
+Get the maximum number of iterations for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `maximum_iteration::Int64` : maximum number of iterations.
+
+"""
 function get_maximum_iteration(this::DPN)
     return this.maximum_iteration
 end
 
+"""
+    get_polynomial_basis(this::DPN,Ndims::Int64)
+
+Get the polynomial basis used for the angular discretization. If the basis was not set
+explicitly, the default basis is selected based on the geometry dimension (`"legendre"`
+in 1D, `"spherical-harmonics"` otherwise).
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+- `Ndims::Int64` : geometry dimension.
+
+# Output Argument(s)
+- `polynomial_basis::String` : polynomial basis.
+
+"""
 function get_polynomial_basis(this::DPN,Ndims::Int64)
     if ismissing(this.polynomial_basis)
         if Ndims == 1
@@ -173,6 +518,19 @@ function get_polynomial_basis(this::DPN,Ndims::Int64)
     end
 end
 
+"""
+    get_angular_fokker_planck(this::DPN)
+
+Get the type of angular discretization for the Fokker-Planck operator.
+
+# Input Argument(s)
+- `this::DPN` : discretization method.
+
+# Output Argument(s)
+- `angular_fokker_planck::String` : type of angular discretization for the Fokker-Planck
+  operator.
+
+"""
 function get_angular_fokker_planck(this::DPN)
     if ismissing(this.angular_fokker_planck) error("Unable to get angular Fokker-Planck treatment type. Missing data.") end
     return this.angular_fokker_planck
