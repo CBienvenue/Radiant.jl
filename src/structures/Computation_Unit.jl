@@ -189,7 +189,7 @@ julia> electron_energy_deposition = cu.get_energy_deposition(electron)
 """
 function get_energy_deposition(this::Computation_Unit,particle::Particle)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract energy deposition, please use .run() method before.") end
-    if get_id(particle) ∉ get_id.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
+    if get_tag(particle) ∉ get_tag.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
     return energy_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,[particle])
 end
 
@@ -238,7 +238,7 @@ julia> electron_charge_deposition = cu.get_charge_deposition(electron)
 """
 function get_charge_deposition(this::Computation_Unit,particle::Particle)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract charge deposition, please use .run() method before.") end
-    if get_id(particle) ∉ get_id.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
+    if get_tag(particle) ∉ get_tag.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
     return charge_deposition(this.cross_sections,this.geometry,this.solvers,this.sources,this.flux,[particle])
 end
 
@@ -288,7 +288,7 @@ julia> flux = cu.get_flux(electron)
 """
 function get_flux(this::Computation_Unit,particle::Particle)
     if ismissing(this.flux) error("No computed flux in this computation unit. To extract flux, please use .run() method before.") end
-    if get_id(particle) ∉ get_id.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
+    if get_tag(particle) ∉ get_tag.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
     return flux(this.cross_sections,this.geometry,this.flux,particle)
 end
 

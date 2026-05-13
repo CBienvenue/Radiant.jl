@@ -66,7 +66,7 @@ Get sources for a given particle.
 
 """
 function get_source(this::Sources,particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
-    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     if isnothing(index)
         source = Source(particle,cross_sections,geometry,discrete_ordinates)
         return source

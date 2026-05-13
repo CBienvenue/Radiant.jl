@@ -154,7 +154,7 @@ Get the method associated with a particle.
 
 """
 function get_method(this::Solvers,particle::Particle)
-    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     if isnothing(index) error("Solvers does not contain data for the given particle.") end
     return this.methods_list[index]
 end

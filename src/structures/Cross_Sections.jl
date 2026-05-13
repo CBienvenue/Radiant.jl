@@ -240,6 +240,7 @@ julia> cs.set_materials([mat1,mat2])
 function set_materials(this::Cross_Sections,materials::Union{Vector{Material},Material})
     if typeof(materials) == Material materials = [materials] end
     if length(materials) == 0 error("At least one material should be provided.") end
+    _check_unique_tags(materials,"material")
     this.materials = materials
     this.number_of_materials += length(materials)
 end
@@ -263,10 +264,21 @@ julia> cs.set_particles([electron,photon,positron])
 ```
 """
 function set_particles(this::Cross_Sections,particles::Union{Vector{Particle},Particle})
-    if typeof(particles) == Particle particles = [particles] end 
+    if typeof(particles) == Particle particles = [particles] end
     if length(particles) == 0 error("At least one particle should be provided.") end
+    _check_unique_tags(particles,"particle")
     this.particles = particles
     this.number_of_particles += length(particles)
+end
+
+function _check_unique_tags(items,kind::String)
+    tags = String[]
+    for (i,item) in enumerate(items)
+        tag = get_tag(item)
+        if isempty(tag) error("The $kind at position $i has no tag. Provide one with the constructor (e.g. Material(\"water\")) or via set_tag(...).") end
+        if tag in tags error("Duplicate $kind tag \"$tag\" found.") end
+        push!(tags,tag)
+    end
 end
 
 
@@ -692,6 +704,53 @@ Get the particle list.
 """
 function get_particles(this::Cross_Sections)
     return this.particles
+end
+
+"""
+    get_particle(this::Cross_Sections,tag::String)
+    get_particle(this::Cross_Sections,type::Type)
+
+Get a stored particle from the cross-sections library by tag (e.g. `"electron"`) or by
+abstract type (e.g. `Electron`). Useful after loading a Cross_Sections from disk to
+retrieve particles instead of recreating them in a new session.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `tag::String` or `type::Type` : particle tag or particle type.
+
+# Output Argument(s)
+- `particle::Particle` : matching particle stored in the library.
+
+"""
+function get_particle(this::Cross_Sections,tag::String)
+    index = findfirst(p -> get_tag(p) == tag, this.particles)
+    if isnothing(index) error("No particle with tag \"$tag\" found in this Cross_Sections.") end
+    return this.particles[index]
+end
+
+function get_particle(this::Cross_Sections,type::Type)
+    index = findfirst(p -> get_type(p) == type, this.particles)
+    if isnothing(index) error("No particle of type $type found in this Cross_Sections.") end
+    return this.particles[index]
+end
+
+"""
+    get_material(this::Cross_Sections,tag::String)
+
+Get a stored material from the cross-sections library by tag.
+
+# Input Argument(s)
+- `this::Cross_Sections` : cross-sections library.
+- `tag::String` : material tag.
+
+# Output Argument(s)
+- `material::Material` : matching material stored in the library.
+
+"""
+function get_material(this::Cross_Sections,tag::String)
+    index = findfirst(m -> get_tag(m) == tag, this.materials)
+    if isnothing(index) error("No material with tag \"$tag\" found in this Cross_Sections.") end
+    return this.materials[index]
 end
 
 """

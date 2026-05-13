@@ -94,10 +94,10 @@ function build(this::Fixed_Sources)
     for fixed_source in this.source_collection
         particle = fixed_source.get_particle()
         method = this.solvers.get_method(particle)
-        if get_id(particle) ∈ get_id.(this.particles)
+        if get_tag(particle) ∈ get_tag.(this.particles)
             source = Source(particle,this.cross_sections,this.geometry,method)
             source.add_source(fixed_source)
-            index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+            index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
             this.sources_list[index] += source
         else
             this.number_of_particles += 1
@@ -124,7 +124,7 @@ Get the sources for a given particle.
 
 """
 function get_source(this::Fixed_Sources,particle::Particle)
-    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     method = this.solvers.get_method(particle)
     if isnothing(index)
         source = Source(particle,this.cross_sections,this.geometry,method)

@@ -20,8 +20,8 @@ N/A
 """
 function volume_source(particle::Particle,source::Volume_Source,cross_sections::Cross_Sections,geometry::Geometry)
 
-    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
-    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
+    if get_tag(particle) ∉ get_tag.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
 
     # Extract source informations

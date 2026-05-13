@@ -50,8 +50,8 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
 
     # Data extraction and validation
     particle = this.particle
-    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",particle," particle.")) end
-    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
+    if get_tag(particle) ∉ get_tag.(cross_sections.particles) error(string("No cross sections available for ",particle," particle.")) end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
     Nx = geometry.number_of_voxels["x"]
     Ndims = geometry.dimension
@@ -158,12 +158,12 @@ function add_source(this::Source,surface_sources::Surface_Source)
 
     # Data extraction and validation
     particle = surface_sources.particle
-    if get_id(particle) ∉ get_id.(this.cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    if get_tag(particle) ∉ get_tag.(this.cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
     Ndims = this.geometry.dimension
     Nx = this.geometry.number_of_voxels["x"]
     if Ndims ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
     if Ndims ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
-    if get_id(particle) != get_id(this.solver.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
+    if get_tag(particle) != get_tag(this.solver.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
 
     # Compute and format the surface source for transport solver
     Q_old = this.surface_sources
@@ -294,7 +294,7 @@ Combination of two sources.
 
 """
 function Base.:+(source1::Source,source2::Source)
-    if get_id(source1.get_particle()) != get_id(source2.get_particle()) error("Forbitten addition of different particle sources.") end
+    if get_tag(source1.get_particle()) != get_tag(source2.get_particle()) error("Forbitten addition of different particle sources.") end
     source1.volume_sources += source2.volume_sources
     Ndims = source1.geometry.dimension
     Nx = source1.geometry.number_of_voxels["x"]

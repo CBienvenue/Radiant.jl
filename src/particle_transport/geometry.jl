@@ -28,7 +28,7 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     Nrx_voxels = geo.voxels_per_region["x"]
     idr = geo.material_per_region
     Nmat = length(cs.materials)
-    id_mat = [mat.get_id() for mat in cs.materials]
+    tag_mat = [mat.get_tag() for mat in cs.materials]
 
     # Compute positions and widths along x-axis
     Nx = sum(Nrx_voxels)
@@ -57,8 +57,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     for ir in range(1,Nrx)
         for iv in range(1,Nrx_voxels[ir])
             ix += 1
-            index = findfirst(x->x==idr[ir].get_id(),id_mat)
-            if isnothing(index) error("No cross section information for material $(idr[ir].get_id()).") end
+            index = findfirst(x->x==idr[ir].get_tag(),tag_mat)
+            if isnothing(index) error("No cross section information for material $(idr[ir].get_tag()).") end
             mat[ix] = index
         end
     end
@@ -85,7 +85,7 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     Nry_voxels = geo.voxels_per_region["y"]
     idr = geo.material_per_region
     Nmat = length(cs.materials)
-    id_mat = [mat.get_id() for mat in cs.materials]
+    tag_mat = [mat.get_tag() for mat in cs.materials]
 
     # Compute positions and widths along x-axis
     Nx = sum(Nrx_voxels)
@@ -136,8 +136,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     # Set material matrix
     mat=zeros(Int64,Nx,Ny,1)
     for ix in range(1,Nx), iy in range(1,Ny)
-        index = findfirst(x->x==idr[irx[ix],iry[iy]].get_id(),id_mat)
-        if isnothing(index) error("No cross section information for material $(idr[irx[ix],iry[iy]].get_id()).") end
+        index = findfirst(x->x==idr[irx[ix],iry[iy]].get_tag(),tag_mat)
+        if isnothing(index) error("No cross section information for material $(idr[irx[ix],iry[iy]].get_tag()).") end
         mat[ix,iy] = index
     end
 
@@ -169,7 +169,7 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     Nrz_voxels = geo.voxels_per_region["z"]
     idr = geo.material_per_region
     Nmat = length(cs.materials)
-    id_mat = [mat.get_id() for mat in cs.materials]
+    tag_mat = [mat.get_tag() for mat in cs.materials]
 
     # Compute positions and widths along x-axis
     Nx = sum(Nrx_voxels)
@@ -240,8 +240,8 @@ function geometry(geo::Geometry,cs::Cross_Sections)
     # Set material matrix
     mat=zeros(Int64,Nx,Ny,Nz)
     for ix in range(1,Nx), iy in range(1,Ny), iz in range(1,Nz)
-        index = findfirst(x->x==idr[irx[ix],iry[iy],irz[iz]].get_id(),id_mat)
-        if isnothing(index) error("No cross section information for material $(idr[irx[ix],iry[iy],irz[iz]].get_id()).") end
+        index = findfirst(x->x==idr[irx[ix],iry[iy],irz[iz]].get_tag(),tag_mat)
+        if isnothing(index) error("No cross section information for material $(idr[irx[ix],iry[iy],irz[iz]].get_tag()).") end
         mat[ix,iy,iz] = index
     end
 

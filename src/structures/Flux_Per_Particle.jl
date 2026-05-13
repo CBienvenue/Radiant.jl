@@ -55,7 +55,7 @@ N/A
 
 """
 function add_flux(this::Flux_Per_Particle,flux_per_particle::Flux_Per_Particle)
-    if get_id(this.particle) != get_id(flux_per_particle.particle) error("Flux particle don't fit.") end
+    if get_tag(this.particle) != get_tag(flux_per_particle.particle) error("Flux particle don't fit.") end
     append!(this.flux,flux_per_particle.flux)
     append!(this.flux_cutoff,flux_per_particle.flux_cutoff)
 end
