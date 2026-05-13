@@ -30,8 +30,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     Ndims = geometry.get_dimension()
     geometry_type = geometry.get_type()
     norm = 0.0
-
-    surface = source.location
+    surface = uppercase(source.location)
 
     if solver isa Discrete_Ordinates
 

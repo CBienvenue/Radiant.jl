@@ -231,6 +231,7 @@ function surface_angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{
     #----
     # Compute half-range Legendre polynomials or half-range real spherical harmonics
     #----
+    surface = uppercase(surface)
 
     # Half-range Legendre polynomials
     if Qdims == 1
