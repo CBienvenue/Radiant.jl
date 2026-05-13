@@ -282,7 +282,8 @@ else
             pos2 = 0
             if imat != 1
                 for imat2 in range(1,imat-1)
-                    pos2 = pos2 + scatNDict[imat2][legendreOrderScattering[2]][legendreOrderScattering[1]]
+                    sz = scatNDict[imat2][legendreOrderScattering[2]][legendreOrderScattering[1]]
+                    pos2 = pos2 + (sz == 0 ? 1 : sz)
                 end
             end
             if haskey(scatDict,imat)

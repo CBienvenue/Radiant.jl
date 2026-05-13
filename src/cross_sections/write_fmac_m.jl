@@ -47,16 +47,17 @@ open(fmac_file,"w") do file
     #----
     # Record II + 2 : Control integer that define the length of each Record III + i
     #----
+    Nmat = v1[15]
     v2 = zeros(Int64,38)
-    v2[1] = 12              # Information text
-    v2[2] = v1[2]           # Number of energy groups per particle type
-    v2[3] = v1[2]           # Particle names
-    v2[5] = v1[1] + v1[2]   # Energy mesh boundaries
-    v2[15] = v1[1]          # Total cross-sections
-    v2[35] = v1[1] + v1[2]  # Stopping powers
-    v2[36] = v1[1]          # Momentum transfers
-    v2[37] = v1[1]          # Energy deposition cross-sections
-    v2[38] = v1[1]          # Charge deposition cross-sections
+    v2[1] = 12                       # Information text
+    v2[2] = v1[2]                    # Number of energy groups per particle type
+    v2[3] = v1[2]                    # Particle names
+    v2[5] = v1[1] + v1[2]            # Energy mesh boundaries
+    v2[15] = v1[1] * Nmat            # Total cross-sections
+    v2[35] = (v1[1] + v1[2]) * Nmat  # Stopping powers
+    v2[36] = v1[1] * Nmat            # Momentum transfers
+    v2[37] = v1[1] * Nmat            # Energy deposition cross-sections
+    v2[38] = v1[1] * Nmat            # Charge deposition cross-sections
     print_int(file,v2)
 
     #----
@@ -121,8 +122,9 @@ open(fmac_file,"w") do file
         total_cross_sections = Vector{Float64}()
         for i in range(1,Npart)
             tcs = cross_sections.get_total(particle_names[i])
-            for n in range(1,Nmat)
-                append!(total_cross_sections,tcs[:,n])
+            Ngi = size(tcs,1)
+            for g in range(1,Ngi), n in range(1,Nmat)
+                append!(total_cross_sections,tcs[g,n])
             end
         end
         print_float(file,total_cross_sections)
@@ -138,8 +140,9 @@ open(fmac_file,"w") do file
         stopping_powers = Vector{Float64}()
         for i in range(1,Npart)
             sp = cross_sections.get_boundary_stopping_powers(particle_names[i])
-            for n in range(1,Nmat)
-                append!(stopping_powers,sp[1:end-1,n])
+            Ngi = size(sp,1) - 1
+            for g in range(1,Ngi), n in range(1,Nmat)
+                append!(stopping_powers,sp[g,n])
             end
         end
         for i in range(1,Npart)
@@ -161,8 +164,9 @@ open(fmac_file,"w") do file
         momentum_transfer = Vector{Float64}()
         for i in range(1,Npart)
             mt = cross_sections.get_momentum_transfer(particle_names[i])
-            for n in range(1,Nmat)
-                append!(momentum_transfer,mt[:,n])
+            Ngi = size(mt,1)
+            for g in range(1,Ngi), n in range(1,Nmat)
+                append!(momentum_transfer,mt[g,n])
             end
         end
         print_float(file,momentum_transfer)
@@ -178,8 +182,9 @@ open(fmac_file,"w") do file
         energy_deposition = Vector{Float64}()
         for i in range(1,Npart)
             ed = cross_sections.get_energy_deposition(particle_names[i])
-            for n in range(1,Nmat)
-                append!(energy_deposition,ed[1:end-1,n])
+            Ngi = size(ed,1) - 1
+            for g in range(1,Ngi), n in range(1,Nmat)
+                append!(energy_deposition,ed[g,n])
             end
         end
         print_float(file,energy_deposition)
@@ -195,8 +200,9 @@ open(fmac_file,"w") do file
         charge_deposition = Vector{Float64}()
         for i in range(1,Npart)
             cd = cross_sections.get_charge_deposition(particle_names[i])
-            for n in range(1,Nmat)
-                append!(charge_deposition,cd[1:end-1,n])
+            Ngi = size(cd,1) - 1
+            for g in range(1,Ngi), n in range(1,Nmat)
+                append!(charge_deposition,cd[g,n])
             end
         end
         print_float(file,charge_deposition)
