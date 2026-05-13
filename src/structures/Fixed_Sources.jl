@@ -69,7 +69,7 @@ julia> fs.add_source(vs)
 ```
 """
 function add_source(this::Fixed_Sources,fixed_source::Union{Surface_Source,Volume_Source})
-    push!(this.source_collection,fixed_source)
+    push!(this.source_collection,deepcopy(fixed_source))
 end
 
 """
