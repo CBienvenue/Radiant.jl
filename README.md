@@ -12,9 +12,6 @@ For [Installation Instructions](https://cbienvenue.github.io/Radiant.jl/quick_st
 
 For a detailed account of the theory and the features of the Radiant package, please refer to the [Documentation](https://cbienvenue.github.io/Radiant.jl/).
 
-> [!WARNING]
-> Incomplete - Work in progress
-
 ## Overview of Features 
 
 ### Multigroup Cross-Sections
@@ -23,7 +20,7 @@ For a detailed account of the theory and the features of the Radiant package, pl
   - **Particles** : photons | electrons | positrons
   - **Interactions** : Photoelectric effect | Compton scattering | Pair production | Rayleigh scattering | Elastic scattering of leptons | Impact ionization | Bremsstrahlung | Annihilation | Relaxation (fluorescence and Auger electrons)
   - **Energy** : 1 keV to 900 MeV
-  - **Energy discretization**: Linear | Logarithmic
+  - **Energy discretization**: Linear | Logarithmic | Custom
   - Compound materials
 - Custom cross-sections
 - Read and write cross-sections files
@@ -31,15 +28,17 @@ For a detailed account of the theory and the features of the Radiant package, pl
 ### Deterministic Solver
 
 - **Solver** : Boltzmann transport equation | Boltzmann Fokker-Planck equation | Coupled transport of particles
-- **Medium** : Cartesian geometry in 1D, 2D and 3D | Heterogeneous medium | Void boundary conditions
+- **Medium** : Cartesian geometry in 1D, 2D and 3D | Heterogeneous medium | Boundary conditions: void, periodic and reflective
 - **Fixed external sources** : Isotropic volume sources | Monodirectional surface sources
-- **Angular discretization**
-  - Discrete ordinates method
-  - Galerkin quadrature method
-  - **Angular Fokker-Planck discretization** : Moment-preserving | Finite-difference
-  - **Quadratures** : Gauss-Legendre | Gauss-Lobatto | Gauss-Chebychev product | Carlson's level-symmetric | Lebedev
-- **Spatial discretization** : Generalized diamond difference schemes | Generalized discontinuous Galerkin schemes | Adaptive weighted schemes
+- **Angular discretization** :
+  - Discrete ordinates (SN) method
+    - Galerkin quadrature method
+    - Quadratures : Gauss-Legendre | Gauss-Lobatto | Gauss-Chebychev product | Carlson's level-symmetric | Lebedev
+  - Double Spherical Harmonics (DPN) method
+  - Discontinuous Galerkin (GN) method
+- **Spatial discretization** : Generalized diamond difference schemes | Generalized discontinuous Galerkin schemes | Adaptive weighted schemes (SN only)
 - **Energy discretization** : Multigroup method | Continuous slowing-down discretization (same as spatial)
+- **Angular Fokker-Planck discretization** : Moment-preserving (SN only) | Finite-difference
 - **Acceleration methods** : Livolant acceleration
 
 ## Examples
