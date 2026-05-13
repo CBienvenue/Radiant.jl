@@ -7,7 +7,7 @@ solvers = Solvers()
 solvers.add_solver(sn)
 ```
 
-where `sn` is a `Radiant.Discrete_Ordinates` objects, defined in the following section. Nonetheless, the user can specify a maximum number of particle generations to produce in coupled particle transport with
+where `sn` is a `Radiant.SN` objects, defined in the following section. Nonetheless, the user can specify a maximum number of particle generations to produce in coupled particle transport with
 
 ```julia
 solvers.set_number_of_generations(3)
@@ -15,10 +15,10 @@ solvers.set_number_of_generations(3)
 
 ## 6.1 Discrete Ordinates Solvers
 
-A discrete ordinates solver is represented by a `Radiant.Discrete_Ordinates` object. Once instantiated, the user associate it with a particle and defined its properties. For example, for 1D transport of photons using the Boltzmann transport equation (BTE), the user could write:
+A discrete ordinates solver is represented by a `Radiant.SN` object. Once instantiated, the user associate it with a particle and defined its properties. For example, for 1D transport of photons using the Boltzmann transport equation (BTE), the user could write:
 
 ```julia
-sn = Discrete_Ordinates()
+sn = SN()
 sn.set_particle(photon)                            # Set particle
 sn.set_solver_type("BTE")                          # Set the solver to be the BTE
 sn.set_acceleration("livolant")                    # Accelerate using Livolant acceleration
@@ -33,7 +33,7 @@ sn.set_scheme("x","AWD",1)                         # Set the spatial difference 
 Another example, for 3D transport of electrons using the Boltzmann Fokker-Planck (BFP) equation, the user could write:
 
 ```julia
-sn = Discrete_Ordinates()
+sn = SN()
 sn.set_particle(electron)                          # Set particle
 sn.set_solver_type("BFP")                          # Set the solver to be the BFP
 sn.set_acceleration("livolant")                    # Accelerate using Livolant acceleration

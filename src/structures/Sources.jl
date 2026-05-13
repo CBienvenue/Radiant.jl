@@ -50,7 +50,7 @@ end
 
 """
     get_source(this::Sources,particle::String,cross_sections::Cross_Sections,
-    geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    geometry::Geometry,discrete_ordinates::SN)
 
 Get sources for a given particle.
 
@@ -59,13 +59,13 @@ Get sources for a given particle.
 - `particle::String` : particle.
 - `cross_sections::Cross_Sections` : cross-sections library.
 - `geometry::Geometry` : geometry.
-- `discrete_ordinates::Discrete_Ordinates` : discrete ordinates solver.
+- `discrete_ordinates::SN` : discrete ordinates solver.
 
 # Output Argument(s)
 - `source::Source` : sources for the given particle.
 
 """
-function get_source(this::Sources,particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+function get_source(this::Sources,particle::String,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::SN)
     index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     if isnothing(index)
         source = Source(particle,cross_sections,geometry,discrete_ordinates)

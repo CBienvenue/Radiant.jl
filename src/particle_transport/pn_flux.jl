@@ -1,13 +1,13 @@
 """
     compute_flux(cross_sections::Cross_Sections,geometry::Geometry,
-    solver::Spherical_Harmonics,source::Source)
+    solver::DPN,source::Source)
 
 Solve the transport equation using the spherical harmonics (PN) method for a given particle.  
 
 # Input Argument(s)
 - `cross_sections::Cross_Sections` : cross section informations.
 - `geometry::Geometry` : geometry informations.
-- `solver::Spherical_Harmonics` : spherical harmonics informations.
+- `solver::DPN` : spherical harmonics informations.
 - `source::Source` : source informations.
 
 # Output Argument(s)
@@ -17,7 +17,7 @@ Solve the transport equation using the spherical harmonics (PN) method for a giv
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Spherical_Harmonics,source::Source)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::DPN,source::Source)
 
 #----
 # Geometry data

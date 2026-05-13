@@ -1,13 +1,13 @@
 """
     compute_flux(cross_sections::Cross_Sections,geometry::Geometry,
-    solver::Discrete_Ordinates,source::Source)
+    solver::SN,source::Source)
 
 Solve the transport equation using the discrete ordinates (SN) method for a given particle.  
 
 # Input Argument(s)
 - `cross_sections::Cross_Sections` : cross section informations.
 - `geometry::Geometry` : geometry informations.
-- `solver::Discrete_Ordinates` : Discrete ordinates informations.
+- `solver::SN` : Discrete ordinates informations.
 - `source::Source` : source informations.
 
 # Output Argument(s)
@@ -17,7 +17,7 @@ Solve the transport equation using the discrete ordinates (SN) method for a give
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::Discrete_Ordinates,source::Source)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::SN,source::Source)
 
 #----
 # Geometry data

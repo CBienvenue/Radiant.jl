@@ -1,11 +1,11 @@
-const Solver = Union{Discrete_Ordinates, Spherical_Harmonics, Galerkin}
+const Solver = Union{SN, DPN, GN}
 """
     Solvers
 
 Structure used to define the collection of discretization methods for transport calculations associated with each of the particle and additionnal coupled transport informations.
 
 # Mandatory field(s)
-- `methods_list::Vector{Discrete_Ordinates}` : list of the particle methods
+- `methods_list::Vector{SN}` : list of the particle methods
 - `maximum_number_of_generations::Int64` : number of particle generations to transport.
 
 # Optional field(s) - with default values
@@ -55,7 +55,7 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> ... # Define the methods properties
 julia> ms = Solvers()
 julia> ms.add_solver(m)

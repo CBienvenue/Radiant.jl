@@ -1,4 +1,4 @@
-mutable struct Galerkin
+mutable struct GN
 
     # Variable(s)
     particle                   ::Union{Missing,Particle}
@@ -16,7 +16,7 @@ mutable struct Galerkin
     subdivision                ::Int64
 
     # Constructor(s)
-    function Galerkin()
+    function GN()
         this = new()
         this.particle = missing
         this.solver_type = missing
@@ -35,32 +35,32 @@ mutable struct Galerkin
     end
 end
 
-function set_particle(this::Galerkin,particle::Particle)
+function set_particle(this::GN,particle::Particle)
     this.particle = particle
 end
 
-function set_solver_type(this::Galerkin,solver_type::String)
+function set_solver_type(this::GN,solver_type::String)
     if uppercase(solver_type) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("Unkown type of solver.") end
     this.solver_type = uppercase(solver_type)
 end
 
-function set_legendre_order(this::Galerkin,legendre_order::Int64,legendre_order_local::Int64)
+function set_legendre_order(this::GN,legendre_order::Int64,legendre_order_local::Int64)
     if legendre_order < 0 || legendre_order_local < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
     this.legendre_order_local = legendre_order_local
 end
 
-function set_convergence_criterion(this::Galerkin,convergence_criterion::Float64)
+function set_convergence_criterion(this::GN,convergence_criterion::Float64)
     if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
     this.convergence_criterion = convergence_criterion
 end
 
-function set_maximum_iteration(this::Galerkin,maximum_iteration::Int64)
+function set_maximum_iteration(this::GN,maximum_iteration::Int64)
     if maximum_iteration < 1 error("Maximum iteration has to be at least 1.") end
     this.maximum_iteration = maximum_iteration
 end
 
-function set_scheme(this::Galerkin,axis::String,scheme_type::String,scheme_order::Int64)
+function set_scheme(this::GN,axis::String,scheme_type::String,scheme_order::Int64)
     if axis ∉ ["x","y","z","E"] error("Unknown axis.") end
     if uppercase(scheme_type) ∉ ["DD","DG","DG-","DG+","AWD"] error("Unknown type of scheme.") end
     if scheme_order ≤ 0 error("Scheme order should be at least of 1.") end
@@ -68,35 +68,35 @@ function set_scheme(this::Galerkin,axis::String,scheme_type::String,scheme_order
     this.scheme_order[axis] = scheme_order
 end
 
-function set_acceleration(this::Galerkin,acceleration::String)
+function set_acceleration(this::GN,acceleration::String)
     if lowercase(acceleration) ∉ ["none","livolant"] error("Unkown acceleration method.") end
     this.acceleration = acceleration
 end
 
-function set_polynomial_basis(this::Galerkin,basis::String)
+function set_polynomial_basis(this::GN,basis::String)
     if lowercase(basis) ∉ ["legendre","spherical-harmonics"] error("Unknown polynomial basis.") end
     this.polynomial_basis = lowercase(basis)
 end
 
-function set_is_full_coupling(this::Galerkin,isFC::Bool)
+function set_is_full_coupling(this::GN,isFC::Bool)
     this.isFC = isFC
 end
 
-function set_angular_fokker_planck(this::Galerkin,angular_fokker_planck::String)
+function set_angular_fokker_planck(this::GN,angular_fokker_planck::String)
     if angular_fokker_planck ∉ ["galerkin"] error("Unkown method to deal with the angular Fokker-Planck term.") end
     this.angular_fokker_planck = angular_fokker_planck
 end
 
-function set_subdivision(this::Galerkin,subdivision::Int64)
+function set_subdivision(this::GN,subdivision::Int64)
     if subdivision < 1 error("Subdivision must be at least 1.") end
     this.subdivision = subdivision
 end
 
-function get_is_full_coupling(this::Galerkin)
+function get_is_full_coupling(this::GN)
     return this.isFC
 end
 
-function get_schemes(this::Galerkin,geometry::Geometry,isFC::Bool)
+function get_schemes(this::GN,geometry::Geometry,isFC::Bool)
     schemes = Vector{String}(undef,4)
     𝒪 = Vector{Int64}(undef,4)
     axis = geometry.get_axis()
@@ -122,7 +122,7 @@ function get_schemes(this::Galerkin,geometry::Geometry,isFC::Bool)
     return schemes,𝒪,Nm
 end
 
-function get_solver_type(this::Galerkin)
+function get_solver_type(this::GN)
     if ismissing(this.solver_type) error("Unable to get solver type. Missing data.") end
     if this.solver_type == "BTE"
         isCSD = false
@@ -148,34 +148,34 @@ function get_solver_type(this::Galerkin)
     return solver, isCSD
 end
 
-function get_legendre_order(this::Galerkin)
+function get_legendre_order(this::GN)
     if ismissing(this.legendre_order) error("Unable to get Legendre order. Missing data.") end
     return this.legendre_order
 end
 
-function get_legendre_order_local(this::Galerkin)
+function get_legendre_order_local(this::GN)
     if ismissing(this.legendre_order) || ismissing(this.legendre_order_local) error("Unable to get Legendre order. Missing data.") end
     return this.legendre_order_local
 end
 
-function get_particle(this::Galerkin)
+function get_particle(this::GN)
     if ismissing(this.particle) error("Unable to get particle. Missing data.") end
     return this.particle
 end
 
-function get_acceleration(this::Galerkin)
+function get_acceleration(this::GN)
     return this.acceleration
 end
 
-function get_convergence_criterion(this::Galerkin)
+function get_convergence_criterion(this::GN)
     return this.convergence_criterion
 end
 
-function get_maximum_iteration(this::Galerkin)
+function get_maximum_iteration(this::GN)
     return this.maximum_iteration
 end
 
-function get_polynomial_basis(this::Galerkin,Ndims::Int64)
+function get_polynomial_basis(this::GN,Ndims::Int64)
     if ismissing(this.polynomial_basis)
         if Ndims == 1
             this.polynomial_basis = "legendre"
@@ -188,11 +188,11 @@ function get_polynomial_basis(this::Galerkin,Ndims::Int64)
     end
 end
 
-function get_angular_fokker_planck(this::Galerkin)
+function get_angular_fokker_planck(this::GN)
     if ismissing(this.angular_fokker_planck) error("Unable to get angular Fokker-Planck treatment type. Missing data.") end
     return this.angular_fokker_planck
 end
 
-function get_subdivision(this::Galerkin)
+function get_subdivision(this::GN)
     return this.subdivision
 end

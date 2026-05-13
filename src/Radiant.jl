@@ -132,9 +132,9 @@ module Radiant
         "Material.jl",
         "Cross_Sections.jl",
         "Geometry.jl",
-        "Discrete_Ordinates.jl",
-        "Spherical_Harmonics.jl",
-        "Galerkin.jl",
+        "SN.jl",
+        "DPN.jl",
+        "GN.jl",
         "Solvers.jl",
         "Surface_Source.jl",
         "Volume_Source.jl",
@@ -178,7 +178,8 @@ module Radiant
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
     export Elastic_Collision,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
-    export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,Spherical_Harmonics,Galerkin
+    export Material,Cross_Sections,Geometry,SN,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,DPN,GN
+    export Discrete_Ordinates  # backward-compatible alias for SN
 
     #----
     # Execution of Radiant script files

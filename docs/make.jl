@@ -61,7 +61,7 @@ makedocs(
             "Computation_Unit" => "api_computation_unit.md",
             "Cross_Sections"   => "api_cross_sections.md",
             "Solvers" => [
-                "Discrete_Ordinates" => "api_discrete_ordinates.md",
+                "SN" => "api_sn.md",
                 "Solvers"            => "api_solvers.md"
             ],
             "Geometry"     => "api_geometry.md",

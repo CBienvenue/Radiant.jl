@@ -1,4 +1,4 @@
-mutable struct Spherical_Harmonics
+mutable struct DPN
 
     # Variable(s)
     particle                   ::Union{Missing,Particle}
@@ -14,7 +14,7 @@ mutable struct Spherical_Harmonics
     angular_fokker_planck      ::Union{Missing,String}
 
     # Constructor(s)
-    function Spherical_Harmonics()
+    function DPN()
         this = new()
         this.particle = missing
         this.solver_type = missing
@@ -31,31 +31,31 @@ mutable struct Spherical_Harmonics
     end
 end
 
-function set_particle(this::Spherical_Harmonics,particle::Particle)
+function set_particle(this::DPN,particle::Particle)
     this.particle = particle
 end
 
-function set_solver_type(this::Spherical_Harmonics,solver_type::String)
+function set_solver_type(this::DPN,solver_type::String)
     if uppercase(solver_type) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("Unkown type of solver.") end
     this.solver_type = uppercase(solver_type)
 end
 
-function set_legendre_order(this::Spherical_Harmonics,legendre_order::Int64)
+function set_legendre_order(this::DPN,legendre_order::Int64)
     if legendre_order < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
 end
 
-function set_convergence_criterion(this::Spherical_Harmonics,convergence_criterion::Float64)
+function set_convergence_criterion(this::DPN,convergence_criterion::Float64)
     if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
     this.convergence_criterion = convergence_criterion
 end
 
-function set_maximum_iteration(this::Spherical_Harmonics,maximum_iteration::Int64)
+function set_maximum_iteration(this::DPN,maximum_iteration::Int64)
     if maximum_iteration < 1 error("Maximum iteration has to be at least 1.") end
     this.maximum_iteration = maximum_iteration
 end
 
-function set_scheme(this::Spherical_Harmonics,axis::String,scheme_type::String,scheme_order::Int64)
+function set_scheme(this::DPN,axis::String,scheme_type::String,scheme_order::Int64)
     if axis ∉ ["x","y","z","E"] error("Unknown axis.") end
     if uppercase(scheme_type) ∉ ["DD","DG","DG-","DG+","AWD"] error("Unknown type of scheme.") end
     if scheme_order ≤ 0 error("Scheme order should be at least of 1.") end
@@ -63,30 +63,30 @@ function set_scheme(this::Spherical_Harmonics,axis::String,scheme_type::String,s
     this.scheme_order[axis] = scheme_order
 end
 
-function set_acceleration(this::Spherical_Harmonics,acceleration::String)
+function set_acceleration(this::DPN,acceleration::String)
     if lowercase(acceleration) ∉ ["none","livolant"] error("Unkown acceleration method.") end
     this.acceleration = acceleration
 end
 
-function set_polynomial_basis(this::Spherical_Harmonics,basis::String)
+function set_polynomial_basis(this::DPN,basis::String)
     if lowercase(basis) ∉ ["legendre","spherical-harmonics"] error("Unknown polynomial basis.") end
     this.polynomial_basis = lowercase(basis)
 end
 
-function set_is_full_coupling(this::Spherical_Harmonics,isFC::Bool)
+function set_is_full_coupling(this::DPN,isFC::Bool)
     this.isFC = isFC
 end
 
-function set_angular_fokker_planck(this::Spherical_Harmonics,angular_fokker_planck::String)
+function set_angular_fokker_planck(this::DPN,angular_fokker_planck::String)
     if angular_fokker_planck ∉ ["galerkin"] error("Unkown method to deal with the angular Fokker-Planck term.") end
     this.angular_fokker_planck = angular_fokker_planck
 end
 
-function get_is_full_coupling(this::Spherical_Harmonics)
+function get_is_full_coupling(this::DPN)
     return this.isFC
 end
 
-function get_schemes(this::Spherical_Harmonics,geometry::Geometry,isFC::Bool)
+function get_schemes(this::DPN,geometry::Geometry,isFC::Bool)
     schemes = Vector{String}(undef,4)
     𝒪 = Vector{Int64}(undef,4)
     axis = geometry.get_axis()
@@ -112,7 +112,7 @@ function get_schemes(this::Spherical_Harmonics,geometry::Geometry,isFC::Bool)
     return schemes,𝒪,Nm
 end
 
-function get_solver_type(this::Spherical_Harmonics)
+function get_solver_type(this::DPN)
     if ismissing(this.solver_type) error("Unable to get solver type. Missing data.") end
     if this.solver_type == "BTE"
         isCSD = false
@@ -138,29 +138,29 @@ function get_solver_type(this::Spherical_Harmonics)
     return solver, isCSD
 end
 
-function get_legendre_order(this::Spherical_Harmonics)
+function get_legendre_order(this::DPN)
     if ismissing(this.legendre_order) error("Unable to get Legendre order. Missing data.") end
     return this.legendre_order
 end
 
-function get_particle(this::Spherical_Harmonics)
+function get_particle(this::DPN)
     if ismissing(this.particle) error("Unable to get particle. Missing data.") end
     return this.particle
 end
 
-function get_acceleration(this::Spherical_Harmonics)
+function get_acceleration(this::DPN)
     return this.acceleration
 end
 
-function get_convergence_criterion(this::Spherical_Harmonics)
+function get_convergence_criterion(this::DPN)
     return this.convergence_criterion
 end
 
-function get_maximum_iteration(this::Spherical_Harmonics)
+function get_maximum_iteration(this::DPN)
     return this.maximum_iteration
 end
 
-function get_polynomial_basis(this::Spherical_Harmonics,Ndims::Int64)
+function get_polynomial_basis(this::DPN,Ndims::Int64)
     if ismissing(this.polynomial_basis)
         if Ndims == 1
             this.polynomial_basis = "legendre"
@@ -173,7 +173,7 @@ function get_polynomial_basis(this::Spherical_Harmonics,Ndims::Int64)
     end
 end
 
-function get_angular_fokker_planck(this::Spherical_Harmonics)
+function get_angular_fokker_planck(this::DPN)
     if ismissing(this.angular_fokker_planck) error("Unable to get angular Fokker-Planck treatment type. Missing data.") end
     return this.angular_fokker_planck
 end

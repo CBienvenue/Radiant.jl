@@ -4,7 +4,7 @@ RadiantObject = Union{
     Cross_Sections,
     Multigroup_Cross_Sections,
     Geometry,
-    Discrete_Ordinates,
+    SN,
     Solvers,
     Surface_Source,
     Volume_Source,
@@ -16,8 +16,8 @@ RadiantObject = Union{
     Flux,
     Interaction,
     Particle,
-    Spherical_Harmonics,
-    Galerkin
+    DPN,
+    GN
 }
 
 """

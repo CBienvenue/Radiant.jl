@@ -32,7 +32,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     norm = 0.0
     surface = uppercase(source.location)
 
-    if solver isa Discrete_Ordinates
+    if solver isa SN
 
         L = min(source.get_legendre_order(),solver.get_legendre_order())
         quadrature_type = solver.get_quadrature_type()
@@ -46,7 +46,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
         Np,_,_,_,_,pl,pm = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,surface)
         Lmax = maximum(pl)
 
-    elseif solver isa Spherical_Harmonics
+    elseif solver isa DPN
 
         L = min(source.get_legendre_order(),solver.get_legendre_order())
         polynomial_basis = solver.get_polynomial_basis(Ndims)
@@ -64,7 +64,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
             error("Unknown polynomial basis.")
         end
         Lmax = maximum(pl)
-    elseif solver isa Galerkin
+    elseif solver isa GN
         L = min(source.get_legendre_order(),solver.get_legendre_order())
         polynomial_basis = solver.get_polynomial_basis(Ndims)
         if polynomial_basis == "legendre"
@@ -136,7 +136,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
                 # Calculation of the source moments
                 norm = intensity
-                if solver isa Discrete_Ordinates
+                if solver isa SN
                     ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
                 else
                     b = cartesian_boundary_index(surface)
@@ -194,7 +194,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
             # Calculation of the source moments
             norm = 0.0
-            if solver isa Discrete_Ordinates
+            if solver isa SN
                 ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
             else
                 b = cartesian_boundary_index(surface)
@@ -283,7 +283,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
             # Calculation of the source moments
             norm = 0.0
-            if solver isa Discrete_Ordinates
+            if solver isa SN
                 ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
             else
                 b = cartesian_boundary_index(surface)

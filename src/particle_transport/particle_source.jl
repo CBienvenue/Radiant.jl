@@ -37,16 +37,16 @@ isFC_in = solver_in.get_is_full_coupling()
 isFC_out = solver_out.get_is_full_coupling()
 _,𝒪_in,Nm_in = solver_in.get_schemes(geometry,isFC_in)
 _,𝒪_out,Nm_out = solver_out.get_schemes(geometry,isFC_out)
-if solver_in isa Spherical_Harmonics polynomial_basis_in = solver_in.get_polynomial_basis(Ndims) end
-if solver_out isa Spherical_Harmonics polynomial_basis_out = solver_out.get_polynomial_basis(Ndims) end 
+if solver_in isa DPN polynomial_basis_in = solver_in.get_polynomial_basis(Ndims) end
+if solver_out isa DPN polynomial_basis_out = solver_out.get_polynomial_basis(Ndims) end 
 Nm_in = Nm_in[5]
 Nm_out = Nm_out[5]
-if solver_in isa Discrete_Ordinates
+if solver_in isa SN
     Qdims_in = solver_in.get_quadrature_dimension(Ndims)
     Ω_in,w_in = quadrature(solver_in.get_quadrature_order(),solver_in.get_quadrature_type(),Ndims,Qdims_in)
     if typeof(Ω_in) == Vector{Float64} Ω_in = [Ω_in,0*Ω_in,0*Ω_in] end
     P_in,_,_,pl_in,pm_in = angular_polynomial_basis(Ω_in,w_in,L_in,solver_in.get_angular_boltzmann(),Qdims_in)
-elseif solver_in isa Spherical_Harmonics
+elseif solver_in isa DPN
     if Ndims != 1
         error("Unsupported spatial dimension.")
     end
@@ -73,12 +73,12 @@ else
     error("Unknown angular discretization method for the incoming particle.")
 end
 
-if solver_out isa Discrete_Ordinates
+if solver_out isa SN
     Qdims_out = solver_out.get_quadrature_dimension(Ndims)
     Ω_out,w_out = quadrature(solver_out.get_quadrature_order(),solver_out.get_quadrature_type(),Ndims,Qdims_out)
     if typeof(Ω_out) == Vector{Float64} Ω_out = [Ω_out,0*Ω_out,0*Ω_out] end
     P_out,_,Dn_out,_,_ = angular_polynomial_basis(Ω_out,w_out,L_out,solver_out.get_angular_boltzmann(),Qdims_out)
-elseif solver_out isa Spherical_Harmonics
+elseif solver_out isa DPN
     if Ndims != 1
         error("Unsupported spatial dimension.")
     end
@@ -106,7 +106,7 @@ else
 end
 
 # Build the transfer matrix T between the two angular discretizations
-if solver_in isa Discrete_Ordinates && solver_out isa Discrete_Ordinates
+if solver_in isa SN && solver_out isa SN
 
     if solver_in.get_angular_boltzmann() == solver_out.get_angular_boltzmann() && length(w_out) == length(w_in) && w_out == w_in
         type_scat = solver_in.get_angular_boltzmann()
@@ -137,7 +137,7 @@ if solver_in isa Discrete_Ordinates && solver_out isa Discrete_Ordinates
     end
     T = Dn_out*Mn_tr
 
-elseif solver_in isa Spherical_Harmonics && solver_out isa Spherical_Harmonics
+elseif solver_in isa DPN && solver_out isa DPN
     # Build mapping depending on SH bases
     T = zeros(P_out,P_in)
     if polynomial_basis_in == "legendre" && polynomial_basis_out == "legendre"
@@ -188,7 +188,7 @@ elseif solver_in isa Spherical_Harmonics && solver_out isa Spherical_Harmonics
         error("Unsupported SH polynomial basis combination")
     end
 
-elseif solver_in isa Discrete_Ordinates && solver_out isa Spherical_Harmonics
+elseif solver_in isa SN && solver_out isa DPN
     if Ndims != 1
         error("Spherical Harmonics transfer currently supports 1D (m=0) only.")
     end
@@ -221,7 +221,7 @@ elseif solver_in isa Discrete_Ordinates && solver_out isa Spherical_Harmonics
         error("Unknown polynomial basis for outgoing SH: " * String(polynomial_basis_out))
     end
 
-elseif solver_in isa Spherical_Harmonics && solver_out isa Discrete_Ordinates
+elseif solver_in isa DPN && solver_out isa SN
     if Ndims != 1
         error("Spherical Harmonics transfer currently supports 1D (m=0) only.")
     end
