@@ -25,7 +25,7 @@ mutable struct Material
     weight_fractions    ::Vector{Float64}
 
     # Constructor(s)
-    function Material(tag::String="")
+    function Material(tag::String)
         this = new()
         this.tag                = tag
         this.density            = missing
