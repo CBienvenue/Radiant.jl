@@ -403,7 +403,6 @@ function cartesian_surface_source(b::Int64,s::Int64)
 end
 
 function boundary_real_half_range_spherical_harmonics_up_to_L(L::Int64,b::Int64,s::Int64,μ::Float64,ϕ::Float64)
-    error()
     μ⁻,μ⁺,ϕ⁻,ϕ⁺,sb = cartesian_surface_source(b,s)
     #if (b == 3 && (3*π/2 ≤ ϕ ≤ 2*π) && s == -1) || (b == 4 && (3*π/2 ≤ ϕ ≤ 2*π) && s == 1) ϕ -= 2*π end # Adjust for the discontinuity in the azimuthal angle for the Y- boundary
     if μ < μ⁻ || μ > μ⁺ error("Direction cosine is out of bounds for the specified boundary.") end

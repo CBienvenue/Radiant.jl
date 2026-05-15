@@ -1,7 +1,7 @@
 function gn_1D_BFP(sx::Int64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::Vector{Float64},Δx::Float64,Qn::Array{Float64},𝚽x12::Array{Float64},𝚽E12::Array{Float64},Nmx::Int64,NmE::Int64,Np::Int64,C::Vector{Float64},ωx::Vector{Float64},ωE::Vector{Float64},𝒩x::Matrix{Float64},𝒲::Array{Float64},isFC::Bool)
 
 # Initialization
-Nm = Nmx*NmE*Np
+if isFC Nm = Nmx*NmE*Np else Nm = (Nmx+NmE-1)*Np end
 𝒮 = zeros(Nm,Nm)
 Q = zeros(Nm)
 𝚽 = Q
