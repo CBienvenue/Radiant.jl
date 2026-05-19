@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Enforces that every commit:
+#   1. Stages Project.toml.
+#   2. Bumps its `version` field by exactly one semver increment
+#      (X.Y.Z -> X.Y.(Z+1), X.(Y+1).0, or (X+1).0.0).
+#
+# Enable locally with:  git config core.hooksPath .githooks
+
+set -euo pipefail
+
+PROJECT_TOML="Project.toml"
+
+extract_version() {
+    awk -F'"' '/^[[:space:]]*version[[:space:]]*=/ {print $2; exit}'
+}
+
+if ! git diff --cached --name-only | grep -qx "$PROJECT_TOML"; then
+    echo "pre-commit: $PROJECT_TOML must be staged (with a version bump) for every commit." >&2
+    exit 1
+fi
+
+new_version=$(git show ":$PROJECT_TOML" | extract_version || true)
+if [[ -z "${new_version:-}" ]]; then
+    echo "pre-commit: could not read 'version' from staged $PROJECT_TOML." >&2
+    exit 1
+fi
+
+if git rev-parse --verify --quiet HEAD >/dev/null; then
+    old_version=$(git show "HEAD:$PROJECT_TOML" 2>/dev/null | extract_version || true)
+else
+    old_version=""
+fi
+
+if [[ -z "${old_version:-}" ]]; then
+    exit 0
+fi
+
+semver_re='^([0-9]+)\.([0-9]+)\.([0-9]+)$'
+if ! [[ "$old_version" =~ $semver_re ]]; then
+    echo "pre-commit: previous version '$old_version' is not in MAJOR.MINOR.PATCH form." >&2
+    exit 1
+fi
+old_M=${BASH_REMATCH[1]}; old_m=${BASH_REMATCH[2]}; old_p=${BASH_REMATCH[3]}
+
+if ! [[ "$new_version" =~ $semver_re ]]; then
+    echo "pre-commit: new version '$new_version' is not in MAJOR.MINOR.PATCH form." >&2
+    exit 1
+fi
+new_M=${BASH_REMATCH[1]}; new_m=${BASH_REMATCH[2]}; new_p=${BASH_REMATCH[3]}
+
+if   (( new_M == old_M     && new_m == old_m     && new_p == old_p + 1 )); then exit 0
+elif (( new_M == old_M     && new_m == old_m + 1 && new_p == 0         )); then exit 0
+elif (( new_M == old_M + 1 && new_m == 0         && new_p == 0         )); then exit 0
+fi
+
+echo "pre-commit: version must be bumped by a single increment." >&2
+echo "  current: $old_version" >&2
+echo "  staged:  $new_version" >&2
+echo "  allowed: $old_M.$old_m.$((old_p+1)), $old_M.$((old_m+1)).0, or $((old_M+1)).0.0" >&2
+exit 1
