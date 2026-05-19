@@ -13,7 +13,7 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 - `Qdims::Int64` : quadrature dimension.
 
 # Output Argument(s)
-- `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
+- `ℳ_p::Array{Float64}`: Fokker-Planck scattering matrix.
 - `λ₀::Float64`: correction factor for total cross-section.
 
 # Reference(s)
@@ -23,9 +23,11 @@ Calculate the Fokker-Planck scattering matrix using finite-difference scheme.
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
 - Morel et al. (2007) : A Discretization Scheme for the Three-Dimensional Angular
   Fokker-Planck Operator.
+- Bienvenue et al. (2025), A Flexible, Moment-Preserving, and Monotone Discretization of the
+  Multidimensional Angular Fokker–Planck Operator.
 
 """
-function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Nd::Int64,Mn::Array{Float64},Dn::Array{Float64},Qdims::Int64)
+function fokker_planck_finite_difference(N::Int64,quadrature_type::String,Ndims::Int64,Qdims::Int64,Mn::Array{Float64},Dn::Array{Float64})
 
 λ₀ = 0.0
 
@@ -57,21 +59,21 @@ if Qdims == 1
     
     Cn = Cn⁻ + Cn⁺
     λ₀ = maximum(Cn)
-    ℳ_temp = zeros(N,N)
+    ℳ_n_temp = zeros(N,N)
     for n in range(1,N), m in range(1,N)
         if n == m
-            ℳ_temp[n,m] = λ₀ - Cn[n]
+            ℳ_n_temp[n,m] = λ₀ - Cn[n]
         elseif m == n - 1
-            ℳ_temp[n,m] = Cn⁻[n]
+            ℳ_n_temp[n,m] = Cn⁻[n]
         elseif m == n + 1
-            ℳ_temp[n,m] = Cn⁺[n]
+            ℳ_n_temp[n,m] = Cn⁺[n]
         end
     end
 
     # Reorder the scattering matrix
-    ℳ = zeros(N,N)
+    ℳ_n = zeros(N,N)
     for n in range(1,N), m in range(1,N)
-        ℳ[index[n],index[m]] = ℳ_temp[n,m]
+        ℳ_n[index[n],index[m]] = ℳ_n_temp[n,m]
     end
 
 elseif Qdims == 2
@@ -100,38 +102,38 @@ elseif Qdims == 2
         end
 
         # Compute the scattering matrix
-        ℳ = zeros(Nᵢ^2,Nᵢ^2)
+        ℳ_n = zeros(Nᵢ^2,Nᵢ^2)
         for n in range(1,Nᵢ), i in range(1,Nᵢ), m in range(1,Nᵢ), j in range(1,Nᵢ)
             ii = i+Nᵢ*(n-1)
             jj = j+Nᵢ*(m-1)
             if m == n && j == i
                 if n == 1
-                    ℳ[ii,jj] -= 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
+                    ℳ_n[ii,jj] -= 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
                 elseif n == Nᵢ
-                    ℳ[ii,jj] -= 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
+                    ℳ_n[ii,jj] -= 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
                 else
-                    ℳ[ii,jj] -= 1/wᵢ[n] * ( β12[n+1]/(μᵢ[n+1]-μᵢ[n]) + β12[n]/(μᵢ[n]-μᵢ[n-1]) )
+                    ℳ_n[ii,jj] -= 1/wᵢ[n] * ( β12[n+1]/(μᵢ[n+1]-μᵢ[n]) + β12[n]/(μᵢ[n]-μᵢ[n-1]) )
                 end
                 if i == 1
-                    ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
+                    ℳ_n[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 elseif i == Nᵢ
-                    ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
+                    ℳ_n[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
                 else
-                    ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
+                    ℳ_n[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 end
             elseif m == n - 1 && j == i
                 if n != 1
-                    ℳ[ii,jj] += 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
+                    ℳ_n[ii,jj] += 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
                 end
             elseif m == n + 1 && j == i
                 if n != Nᵢ
-                    ℳ[ii,jj] += 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
+                    ℳ_n[ii,jj] += 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
                 end
             elseif m == n && j == i - 1
-                ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
+                ℳ_n[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
 
             elseif m == n && j == i + 1
-                ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
+                ℳ_n[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
             end
         end
     else
@@ -161,7 +163,7 @@ elseif Qdims == 2
         end
 
         # Build matrix
-        ℳ = zeros(Nd,Nd)
+        ℳ_n = zeros(Nd,Nd)
         for n in range(1,Nd)
             voronoi_data_n = voronoi_data[map_2D_to_3D[n]]
             Nn_triangle = voronoi_data_n["Ni_triangle"]
@@ -172,17 +174,15 @@ elseif Qdims == 2
                 m = map_3D_to_2D[m_3D]
                 if n == m continue end
                 index_γ = findfirst(x -> x == (min(n,m),max(n,m)), edge_list)
-                ℳ[n,m] += γ[index_γ]/w[n]
-                ℳ[n,n] -= γ[index_γ]/w[n]
+                ℳ_n[n,m] += γ[index_γ]/w[n]
+                ℳ_n[n,n] -= γ[index_γ]/w[n]
             end
         end
     end
 
-    diag_ℳ = [abs(ℳ[i,i]) for i in range(1,Nd)]
+    diag_ℳ = abs.(diag(ℳ_n))
     λ₀ = maximum(diag_ℳ)
-    for i in range(1,Nd)
-        ℳ[i,i] += λ₀
-    end
+    ℳ_n[diagind(ℳ_n)] .+= λ₀
 
 elseif Qdims == 3
 
@@ -210,44 +210,44 @@ elseif Qdims == 3
         end
 
         # Compute the scattering matrix
-        ℳ = zeros(2*Nᵢ^2,2*Nᵢ^2)
+        ℳ_n = zeros(2*Nᵢ^2,2*Nᵢ^2)
         for n in range(1,Nᵢ), i in range(1,2*Nᵢ), m in range(1,Nᵢ), j in range(1,2*Nᵢ)
             ii = i+2*Nᵢ*(n-1)
             jj = j+2*Nᵢ*(m-1)
             if m == n && j == i
                 if n == 1
-                    ℳ[ii,jj] -= 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
+                    ℳ_n[ii,jj] -= 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
                 elseif n == Nᵢ
-                    ℳ[ii,jj] -= 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
+                    ℳ_n[ii,jj] -= 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
                 else
-                    ℳ[ii,jj] -= 1/wᵢ[n] * ( β12[n+1]/(μᵢ[n+1]-μᵢ[n]) + β12[n]/(μᵢ[n]-μᵢ[n-1]) )
+                    ℳ_n[ii,jj] -= 1/wᵢ[n] * ( β12[n+1]/(μᵢ[n+1]-μᵢ[n]) + β12[n]/(μᵢ[n]-μᵢ[n-1]) )
                 end
                 if i == 1
-                    ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]+2*π-ωⱼ[end]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
+                    ℳ_n[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]+2*π-ωⱼ[end]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 elseif i == 2*Nᵢ
-                    ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[1]+2*π-ωⱼ[i])
+                    ℳ_n[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[1]+2*π-ωⱼ[i])
                 else
-                    ℳ[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
+                    ℳ_n[ii,jj] -= 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1]) + 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 end
             elseif m == n - 1 && j == i
                 if n != 1
-                    ℳ[ii,jj] += 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
+                    ℳ_n[ii,jj] += 1/wᵢ[n] * β12[n]/(μᵢ[n]-μᵢ[n-1])
                 end
             elseif m == n + 1 && j == i
                 if n != Nᵢ
-                    ℳ[ii,jj] += 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
+                    ℳ_n[ii,jj] += 1/wᵢ[n] * β12[n+1]/(μᵢ[n+1]-μᵢ[n])
                 end
             elseif m == n && (j == i - 1 || i == 1 && j == 2*Nᵢ)
                 if i != 1
-                    ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
+                    ℳ_n[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]-ωⱼ[i-1])
                 else
-                    ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]+2*π-ωⱼ[end])
+                    ℳ_n[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i]+2*π-ωⱼ[end])
                 end
             elseif m == n && (j == i + 1 || i == 2*Nᵢ && j == 1)
                 if i != 2*Nᵢ
-                    ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
+                    ℳ_n[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[i+1]-ωⱼ[i])
                 else
-                    ℳ[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[1]+2*π-ωⱼ[i])
+                    ℳ_n[ii,jj] += 1/(1-μᵢ[n]^2)*γn[n]/wⱼ/(ωⱼ[1]+2*π-ωⱼ[i])
                 end
             end
         end
@@ -260,7 +260,7 @@ elseif Qdims == 3
         γ, edge_list = fokker_planck_weights_3D(Ω,w,voronoi_data)
 
         # Compute the scattering matrix
-        ℳ = zeros(Nd,Nd)
+        ℳ_n = zeros(Nd,Nd)
         for n in range(1,Nd)
             voronoi_data_n = voronoi_data[n]
             Nn_triangle = voronoi_data_n["Ni_triangle"]
@@ -268,19 +268,17 @@ elseif Qdims == 3
                 voronoi_data_ij = voronoi_data_n["data_triangle_ij"][j]
                 m = voronoi_data_ij["index"]
                 index_γ = findfirst(x -> x == (min(n,m),max(n,m)), edge_list)
-                ℳ[n,m] += γ[index_γ]/w[n]
-                ℳ[n,n] -= γ[index_γ]/w[n]
+                ℳ_n[n,m] += γ[index_γ]/w[n]
+                ℳ_n[n,n] -= γ[index_γ]/w[n]
             end
         end
     end
 
-    diag_ℳ = [abs(ℳ[i,i]) for i in range(1,Nd)]
+    diag_ℳ = abs.(diag(ℳ_n))
     λ₀ = maximum(diag_ℳ)
-    for i in range(1,Nd)
-        ℳ[i,i] += λ₀
-    end
+    ℳ_n[diagind(ℳ_n)] .+= λ₀
 
 end
-
-return ℳ, λ₀
+ℳ_p = Dn * ℳ_n * Mn
+return ℳ_p, λ₀
 end

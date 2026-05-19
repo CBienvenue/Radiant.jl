@@ -44,7 +44,7 @@ end
 function integrate_inelastic_collision_heavy_particle(Z::Int64,Ei::Float64,n::Int64,particle::Particle,E⁻min::Float64=0.0)
     Nshells,Zi,Ui,_,_,_ = electron_subshells(Z)
     σn = 0
-    for δi in range(1,1)
+    for δi in range(1,Nshells)
         σn += Zi[δi] * integrate_inelastic_collision_heavy_particle_per_subshell(Ei,n,Ui[δi],particle,E⁻min)
     end
     return σn

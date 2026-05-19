@@ -223,6 +223,8 @@ function 𝒢₅(n::Int64,a::Real,b::Real,c::Real,x::Real)
             return 1/sqrt(c)*log(2*sqrt(c*R)+2*c*x+b)
         elseif Δ < 0 && c > 0 && 2*c*x+b < -sqrt(-Δ)
             return -1/sqrt(c)*log(2*sqrt(c*R)-2*c*x-b)
+        elseif a == 0 && c > 0 && b > 0
+            return 2*log(sqrt(c*x+b)+sqrt(c*x))/sqrt(c)
         else
             error("Unknown case.")
         end

@@ -49,7 +49,7 @@ else
     particles = solvers.get_particles()
     fixed_source = Vector{Source}(undef,Npart)
     particle_sources = Vector{Source}(undef,Npart)
-    method = Vector{Discrete_Ordinates}(undef,Npart) 
+    method = Vector{Union{SN,DPN,GN}}(undef,Npart) 
     for i in range(1,Npart)
         method[i] = solvers.get_method(particles[i])
         fixed_source[i] = sources.get_source(particles[i])
@@ -59,7 +59,7 @@ else
     # Ordering the particles
     particle_index = zero(Npart)
     for i in range(1,Npart)
-        if get_id(particles[i]) ∈ get_id.(sources.get_particles())
+        if get_tag(particles[i]) ∈ get_tag.(sources.get_particles())
             i0 = i
             if i0 == 1
                 particle_index = collect(1:Npart)
@@ -93,6 +93,7 @@ else
             flux.add_flux(particle_flux)
 
             # Compute scattered particles sources
+            if n == Ngen_max && p == Npart continue end
             for q in range(1,Npart)
                 
                 j = particle_index[q]

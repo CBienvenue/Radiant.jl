@@ -1,10 +1,11 @@
+const Solver = Union{SN, DPN, GN}
 """
     Solvers
 
 Structure used to define the collection of discretization methods for transport calculations associated with each of the particle and additionnal coupled transport informations.
 
 # Mandatory field(s)
-- `methods_list::Vector{Discrete_Ordinates}` : list of the particle methods
+- `methods_list::Vector{SN}` : list of the particle methods
 - `maximum_number_of_generations::Int64` : number of particle generations to transport.
 
 # Optional field(s) - with default values
@@ -17,7 +18,7 @@ mutable struct Solvers
     number_of_particles                ::Int64
     particles                          ::Vector{Particle}
     methods_names                      ::Vector{String}
-    methods_list                       ::Vector{Discrete_Ordinates}
+    methods_list                       ::Vector{Solver}
     maximum_number_of_generations      ::Int64
     convergence_criterion              ::Real
     convergence_type                   ::String
@@ -30,7 +31,7 @@ mutable struct Solvers
         this.number_of_particles = 0
         this.particles = Vector{Particle}()
         this.methods_names = Vector{String}()
-        this.methods_list = Vector{Discrete_Ordinates}()
+        this.methods_list = Vector{Solver}()
         this.maximum_number_of_generations = 10
         this.convergence_criterion = 1e-7
         this.convergence_type = "flux"
@@ -41,26 +42,26 @@ end
 
 # Method(s)
 """
-    add_solver(this::Solvers,method::Discrete_Ordinates)
+    add_solver(this::Solvers,method::Solver)
 
 To add a particle and is associated methods to the Solvers structure.
 
 # Input Argument(s)
 - `this::Solvers` : collection of discretization method.
-- `method::Discrete_Ordinates` : discretization method.
+- `method::Solver` : discretization method.
 
 # Output Argument(s)
 N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> ... # Define the methods properties
 julia> ms = Solvers()
 julia> ms.add_solver(m)
 ```
 """
-function add_solver(this::Solvers,method::Discrete_Ordinates)
+function add_solver(this::Solvers,method::Solver)
     this.number_of_particles += 1
     push!(this.particles,method.particle)
     push!(this.methods_list,method)
@@ -149,11 +150,11 @@ Get the method associated with a particle.
 - `particle::Particle` : particle.
 
 # Output Argument(s)
-- `method::Discrete_Ordinates` : method associated with the particle.
+- `method::Solver` : method associated with the particle.
 
 """
 function get_method(this::Solvers,particle::Particle)
-    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     if isnothing(index) error("Solvers does not contain data for the given particle.") end
     return this.methods_list[index]
 end

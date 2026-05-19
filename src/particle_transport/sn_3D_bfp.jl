@@ -105,7 +105,7 @@ for ix in range(1,𝒪x), jx in range(1,𝒪x), iy in range(1,𝒪y), jy in rang
     end
 
     # CSD term
-    if ix == jx && iy == jy
+    if ix == jx && iy == jy && iz == jz
         for kE in range(1,iE-1), wE in range(1,𝒪E)
             𝒮[i,j] += C[iE] * C[jE] * C[kE] * C[wE] * (1-(-1)^(iE-kE)) * S[wE] * 𝒲[jE,kE,wE]
         end

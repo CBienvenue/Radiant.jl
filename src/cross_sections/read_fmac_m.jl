@@ -282,7 +282,8 @@ else
             pos2 = 0
             if imat != 1
                 for imat2 in range(1,imat-1)
-                    pos2 = pos2 + scatNDict[imat2][legendreOrderScattering[2]][legendreOrderScattering[1]]
+                    sz = scatNDict[imat2][legendreOrderScattering[2]][legendreOrderScattering[1]]
+                    pos2 = pos2 + (sz == 0 ? 1 : sz)
                 end
             end
             if haskey(scatDict,imat)
@@ -312,6 +313,8 @@ end
 # Initialize new instance
 multigroup_cross_sections = Array{Multigroup_Cross_Sections}(undef,numberOfParticles,numberOfMaterials)
 energy_boundaries = Vector{Vector{Float64}}(undef,numberOfParticles)
+energy = Vector{Float64}(undef,numberOfParticles)
+cutoff = Vector{Float64}(undef,numberOfParticles)
 
 # Per particle
 for n in range(1,numberOfParticles)
@@ -319,6 +322,8 @@ for n in range(1,numberOfParticles)
     for i in range(1,n-1) index = index + numberOfGroups[i] end
 
     energy_boundaries[n] = energyBoundaries[index+1+(n-1):index+(numberOfGroups[n]+1)+(n-1)]
+    energy[n] = (energy_boundaries[n][1] + energy_boundaries[n][2])/2
+    cutoff[n] = energy_boundaries[n][end]
 
     # Per material
     for imat in range(1,numberOfMaterials) 
@@ -346,8 +351,8 @@ for n in range(1,numberOfParticles)
             for ig_i in range(1,numberOfGroups[n]), ig_f in range(1,numberOfGroups[m])
                 if haskey(scatDict[imat][ig_f+index2],ig_i+index)
                     Ls = length(scatDict[imat][ig_f+index2][ig_i+index])
-                    for ℓ in range(1,Ls)
-                        scat[ig_i,ig_f,ℓ] = scatDict[imat][ig_f+index2][ig_i+index][ℓ]
+                    for l in range(1,Ls)
+                        scat[ig_i,ig_f,l] = scatDict[imat][ig_f+index2][ig_i+index][l]
                     end
                 end
             end
@@ -362,8 +367,8 @@ for n in range(1,numberOfParticles)
 
 end
 
-cross_sections.set_energy((energyBoundaries[1] + energyBoundaries[2])/2)
-cross_sections.set_cutoff(energyBoundaries[end])
+cross_sections.set_energy(energy)
+cross_sections.set_cutoff(cutoff)
 cross_sections.set_number_of_groups(numberOfGroups)
 cross_sections.set_legendre_order(legendreOrder)
 cross_sections.set_multigroup_cross_sections(multigroup_cross_sections)

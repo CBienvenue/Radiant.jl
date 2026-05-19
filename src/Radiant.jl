@@ -7,6 +7,7 @@ module Radiant
     using Printf: @sprintf
     using LinearAlgebra
     using JLD2
+    using SpecialFunctions
 
     #----
     # Include files
@@ -71,17 +72,19 @@ module Radiant
         "fokker_planck_galerkin.jl",
         "electromagnetic_scattering_matrix.jl",
         "transport.jl",
-        "compute_flux.jl",
-        "compute_one_speed.jl",
-        "compute_sweep_1D.jl",
-        "compute_sweep_2D.jl",
-        "compute_sweep_3D.jl",
-        "flux_1D_BTE.jl",
-        "flux_1D_BFP.jl",
-        "flux_2D_BTE.jl",
-        "flux_2D_BFP.jl",
-        "flux_3D_BTE.jl",
-        "flux_3D_BFP.jl",
+        "sn_flux.jl",
+        "pn_flux.jl",
+        "sn_one_speed.jl",
+        "pn_one_speed.jl",
+        "sn_sweep_1D.jl",
+        "sn_sweep_2D.jl",
+        "sn_sweep_3D.jl",
+        "sn_1D_bte.jl",
+        "sn_1D_bfp.jl",
+        "sn_2D_bte.jl",
+        "sn_2D_bfp.jl",
+        "sn_3D_bte.jl",
+        "sn_3D_bfp.jl",
         "adaptive.jl",
         "scheme_weights.jl",
         "map_moments.jl",
@@ -90,7 +93,28 @@ module Radiant
         "livolant.jl",
         "energy_deposition.jl",
         "charge_deposition.jl",
-        "flux.jl"
+        "flux.jl",
+        "pn_1D_bte.jl",
+        "pn_1D_bfp.jl",
+        "pn_2D_bte.jl",
+        "pn_3D_bte.jl",
+        "pn_sweep_1D.jl",
+        "pn_sweep_2D.jl",
+        "pn_sweep_3D.jl",
+        "restricted_to_full_domain_matrix.jl",
+        "pn_weights.jl",
+        "gn_flux.jl",
+        "gn_one_speed.jl",
+        "gn_sweep_1D.jl",
+        "gn_sweep_2D.jl",
+        "gn_sweep_3D.jl",
+        "gn_1D_bte.jl",
+        "gn_1D_bfp.jl",
+        "gn_2D_bte.jl",
+        "gn_2D_bfp.jl",
+        "gn_3D_bte.jl",
+        "gn_3D_bfp.jl",
+        "gn_weights.jl"
     ]
     radiant_src["structures/"] = [
         "Particle.jl",
@@ -108,7 +132,9 @@ module Radiant
         "Material.jl",
         "Cross_Sections.jl",
         "Geometry.jl",
-        "Discrete_Ordinates.jl",
+        "SN.jl",
+        "DPN.jl",
+        "GN.jl",
         "Solvers.jl",
         "Surface_Source.jl",
         "Volume_Source.jl",
@@ -127,6 +153,7 @@ module Radiant
         "lebedev.jl",
         "carlson.jl",
         "legendre_polynomials.jl",
+        "jacobi_polynomials.jl",
         "ferrer_associated_legendre.jl",
         "real_spherical_harmonics.jl",
         "heaviside.jl",
@@ -138,7 +165,9 @@ module Radiant
         "one_space.jl",
         "cache.jl",
         "find_package_root.jl",
-        "python_method_notation.jl"
+        "python_method_notation.jl",
+        "factorial_factor.jl",
+        "double_factorial.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end
@@ -149,6 +178,24 @@ module Radiant
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
     export Elastic_Collision,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
-    export Material,Cross_Sections,Geometry,Discrete_Ordinates,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit
+    export Material,Cross_Sections,Geometry,SN,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,DPN,GN
+    export Discrete_Ordinates  # backward-compatible alias for SN
 
+    #----
+    # Execution of Radiant script files
+    #----
+    export @radiant_input
+    macro radiant_input()
+        return quote
+            if abspath(PROGRAM_FILE) == @__FILE__
+                using Radiant
+                Radiant.run_script(@__FILE__)
+                exit()
+            end
+        end
+    end
+    function run_script(script::AbstractString)
+        isfile(script) || error("Input script not found: $script")
+        include(script)
+    end
 end

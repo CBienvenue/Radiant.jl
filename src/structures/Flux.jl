@@ -39,8 +39,8 @@ N/A
 """
 function add_flux(this::Flux,flux_per_particle::Flux_Per_Particle)
     particle = flux_per_particle.particle
-    if get_id(particle) ∈ get_id.(this.particles) 
-        index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    if get_tag(particle) ∈ get_tag.(this.particles) 
+        index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
         this.flux_per_particle[index].add_flux(flux_per_particle)
     else
         this.number_of_particles += 1
@@ -79,8 +79,8 @@ Get the total flux solution for a given particle.
 
 """
 function get_flux(this::Flux,particle::Particle)
-    if get_id(particle) ∉ get_id.(this.particles) error("No data for the specified particle.") end
-    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    if get_tag(particle) ∉ get_tag.(this.particles) error("No data for the specified particle.") end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     return this.flux_per_particle[index].get_flux()
 end
 
@@ -98,7 +98,7 @@ Get the total flux solution at cutoff for a given particle.
 
 """
 function get_flux_cutoff(this::Flux,particle::Particle)
-    if get_id(particle) ∉ get_id.(this.particles) error("No data for the specified particle.") end
-    index = findfirst(x -> get_id(x) == get_id(particle),this.particles)
+    if get_tag(particle) ∉ get_tag.(this.particles) error("No data for the specified particle.") end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     return this.flux_per_particle[index].get_flux_cutoff()
 end

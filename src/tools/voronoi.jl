@@ -164,7 +164,7 @@ function voronoi_sphere(Ω::Vector{Vector{Float64}})
             index3 = index[n][m]
             voronoi_data_ij["xij⁺"] = p2
             voronoi_data_ij["xij⁻"] = p3
-            voronoi_data_ij["ℓij"] = acos(min(max(dot(p2,p3),-1),1))
+            voronoi_data_ij["lij"] = acos(min(max(dot(p2,p3),-1),1))
 
             # Arc on unit sphere, spherical law of cosines and Girard`s theorem
             a = acos(min(max(dot(p1,p2),-1),1)); b = acos(min(max(dot(p2,p3),-1),1)); c = acos(min(max(dot(p3,p1),-1),1))
@@ -214,6 +214,10 @@ moments of the Fokker-Planck operator over the unit sphere.
 # Output Argument(s)
 - `γ::Vector{Float64}` : Voronoi discretization information.
 - `edge_list::Vector{Tuple{Int64,Int64}}` : list of each Voronoi cell edges.
+
+# Reference(s)
+- Bienvenue et al. (2025), A Flexible, Moment-Preserving, and Monotone Discretization of the
+  Multidimensional Angular Fokker–Planck Operator.
 
 """
 function fokker_planck_weights_3D(Ω::Vector{Vector{Float64}},w::Vector{Float64},voronoi_data::Vector{Dict{String,Any}})
@@ -278,6 +282,10 @@ moments of the Fokker-Planck operator over the unit half-sphere.
 # Output Argument(s)
 - `γ::Vector{Float64}` : Voronoi discretization information.
 - `edge_list::Vector{Tuple{Int64,Int64}}` : list of each Voronoi cell edges.
+
+# Reference(s)
+- Bienvenue et al. (2025), A Flexible, Moment-Preserving, and Monotone Discretization of the
+  Multidimensional Angular Fokker–Planck Operator.
 
 """
 function fokker_planck_weights_2D(Ω::Vector{Vector{Float64}},w::Vector{Float64},Ω_3D::Vector{Vector{Float64}},w_3D::Vector{Float64},voronoi_data::Vector{Dict{String,Any}})

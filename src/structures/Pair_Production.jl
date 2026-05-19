@@ -191,15 +191,15 @@ Gives the Legendre moments of the scattering cross-sections for pair production.
 - `particles::Vector{Particle}` : list of particles.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,type::String,iz::Int64,particles::Vector{Particle})
 
     # Validation
     if type != "P" error("Unknown interaction.") end
-    σℓ = zeros(L+1)
-    if Ei-2 < 0 return σℓ end
+    σl = zeros(L+1)
+    if Ei-2 < 0 return σl end
 
     # Electron/Positron production
     σs = baro(Z,Ei,Ef)
@@ -209,16 +209,16 @@ function dcs(this::Pair_Production,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,typ
 
     # Compute angular distribution
     if this.angular_scattering_type == "sommerfield"
-        Wℓ = sommerfield(Ei,L)
+        Wl = sommerfield(Ei,L)
     elseif this.angular_scattering_type == "modified_dipole"
-        Wℓ = poskus(Z,Ei,Ef,L)
+        Wl = poskus(Z,Ei,Ef,L)
     else
         error("Unkown angular distribution.")
     end
 
     # Compute Legendre moments of the scattering cross-section
-    for ℓ in range(0,L) σℓ[ℓ+1] += σs * Wℓ[ℓ+1] end
-    return σℓ
+    for l in range(0,L) σl[l+1] += σs * Wl[l+1] end
+    return σl
 end
 
 """

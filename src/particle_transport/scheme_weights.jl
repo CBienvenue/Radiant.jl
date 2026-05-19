@@ -1,10 +1,10 @@
 """
-    scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
+    scheme_weights(Nm::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
 
 Compute the weights of the closure relations. 
 
 # Input Argument(s)
-- `𝒪::Vector{Int64}`: vector of orders of the flux polynomial expansion.
+- `Nm::Vector{Int64}`: vector of orders of the flux polynomial expansion.
 - `schemes::Vector{String}`: vector of types of the closure relation.
 - `Ndims::Int64`: geometry dimension.
 - `isCSD::Bool`: boolean indicating if the continuous slowing-down term is used or not.
@@ -22,11 +22,11 @@ Compute the weights of the closure relations.
   Fokker–Planck equation in 1D and 2D Cartesian geometries.
 
 """
-function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
+function scheme_weights(Nm::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
 
     # Input validation
     for n in range(1,4)
-        if 𝒪[n] <= 0 error("All scheme require at least a 1st-order p expansion.") end
+        if Nm[n] <= 0 error("Scheme required at least a 1st-order polynomial expansion.") end
     end
 
     # Adaptive keyword
@@ -41,7 +41,7 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
     if Ndims == 1 && ~isCSD
 
         xscheme = schemes[1]
-        Mx = 𝒪[1]-1
+        Mx = Nm[1]-1
         ωx = zeros(Mx+2)
 
         if xscheme == "DD" || (xscheme == "AWD" && Mx == 0)
@@ -79,8 +79,8 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         
         xscheme = schemes[1]
         yscheme = schemes[2]
-        Mx = 𝒪[1]-1
-        My = 𝒪[2]-1
+        Mx = Nm[1]-1
+        My = Nm[2]-1
         ωx = zeros(Mx+2,My+1,My+1)
         ωy = zeros(My+2,Mx+1,Mx+1)
 
@@ -128,9 +128,9 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         xscheme = schemes[1]
         yscheme = schemes[2]
         zscheme = schemes[3]
-        Mx = 𝒪[1]-1
-        My = 𝒪[2]-1
-        Mz = 𝒪[3]-1
+        Mx = Nm[1]-1
+        My = Nm[2]-1
+        Mz = Nm[3]-1
         ωx = zeros(Mx+2,My+1,Mz+1)
         ωy = zeros(My+2,Mx+1,Mz+1)
         ωz = zeros(Mz+2,Mx+1,My+1)
@@ -197,8 +197,8 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         
         xscheme = schemes[1]
         Escheme = schemes[4]
-        Mx = 𝒪[1]-1
-        ME = 𝒪[4]-1
+        Mx = Nm[1]-1
+        ME = Nm[4]-1
         ωx = zeros(Mx+2,ME+1,ME+1)
         ωE = zeros(ME+2,Mx+1,Mx+1)
 
@@ -246,9 +246,9 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         xscheme = schemes[1]
         yscheme = schemes[2]
         Escheme = schemes[4]
-        Mx = 𝒪[1]-1
-        My = 𝒪[2]-1
-        ME = 𝒪[4]-1
+        Mx = Nm[1]-1
+        My = Nm[2]-1
+        ME = Nm[4]-1
         ωx = zeros(Mx+2,My+1,ME+1)
         ωy = zeros(My+2,Mx+1,ME+1)
         ωE = zeros(ME+2,Mx+1,My+1)
@@ -317,10 +317,10 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
         yscheme = schemes[2]
         zscheme = schemes[3]
         Escheme = schemes[4]
-        Mx = 𝒪[1]-1
-        My = 𝒪[2]-1
-        Mz = 𝒪[3]-1
-        ME = 𝒪[4]-1
+        Mx = Nm[1]-1
+        My = Nm[2]-1
+        Mz = Nm[3]-1
+        ME = Nm[4]-1
         ωx = zeros(Mx+2,My+1,Mz+1,ME+1)
         ωy = zeros(My+2,Mx+1,Mz+1,ME+1)
         ωz = zeros(Mz+2,Mx+1,My+1,ME+1)
@@ -406,10 +406,68 @@ function scheme_weights(𝒪::Vector{Int64},schemes::Vector{String},Ndims::Int64
     end
 
     # Constant factors
-    𝒞 = zeros(maximum(𝒪))
-    for i in range(1,maximum(𝒪)) 𝒞[i] = sqrt(2*i-1) end
-    𝒲 = zeros(𝒪[4],𝒪[4],𝒪[4])
-    for i in range(1,𝒪[4]), j in range(1,𝒪[4]), k in range(1,𝒪[4]) 𝒲[i,j,k] = 𝒢₆(i-1,j-1,k-1) end
+    𝒞 = zeros(maximum(Nm))
+    for i in range(1,maximum(Nm)) 𝒞[i] = sqrt(2*i-1) end
+    𝒲 = zeros(Nm[4],Nm[4],Nm[4])
+    for i in range(1,Nm[4]), j in range(1,Nm[4]), k in range(1,Nm[4]) 𝒲[i,j,k] = 𝒢₆(i-1,j-1,k-1) end
 
     return ω, 𝒞, is_adaptive, 𝒲
+end
+
+"""
+    scheme_weights(Nm::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
+
+Compute the weights of the closure relations. 
+
+# Input Argument(s)
+- `Nm::Vector{Int64}`: vector of orders of the flux polynomial expansion.
+- `schemes::Vector{String}`: vector of types of the closure relation.
+- `Ndims::Int64`: geometry dimension.
+- `isCSD::Bool`: boolean indicating if the continuous slowing-down term is used or not.
+
+# Output Argument(s)
+- `ω::Vector{Array{Float64}}`: weighting factors of the scheme.
+- `𝒞::Vector{Float64}`: constants related to normalized Legendre expansion.
+- `𝒲::Array{Float64}` : weighting constants.
+
+# Reference(s)
+- Voloschenko (2011) : Some improvements in solving the transport equation by the use of
+  the family of weighted nodal scheme.
+- Bienvenue and Hébert (2022) : High-order diamond differencing scheme for the Boltzmann
+  Fokker–Planck equation in 1D and 2D Cartesian geometries.
+
+"""
+function scheme_weights_gn(Nm::Vector{Int64},schemes::Vector{String},Ndims::Int64,isCSD::Bool)
+
+    # Input validation
+    for n in range(1,4)
+        if Nm[n] <= 0 error("Scheme required at least a 1st-order polynomial expansion.") end
+    end
+
+    ω = Vector{Vector{Float64}}(undef,4)
+    for n in range(1,4)
+        ωi = zeros(Nm[n]+1)
+        if schemes[n] == "DD"
+            ωi[1] = (-1)^Nm[n]
+            for m in range(1,Nm[n])
+                ωi[m+1] = 1 - (-1)^(Nm[n]-m+1)
+            end
+        elseif schemes[n] == "DG"
+            ωi[1] = 0
+            for m in range(1,Nm[n])
+                ωi[m+1] = 1
+            end
+        else
+            error("Closure relation not implemented yet.")
+        end
+        ω[n] = ωi
+    end
+
+    # Constant factors
+    𝒞 = zeros(maximum(Nm))
+    for i in range(1,maximum(Nm)) 𝒞[i] = sqrt(2*i-1) end
+    𝒲 = zeros(Nm[4],Nm[4],Nm[4])
+    for i in range(1,Nm[4]), j in range(1,Nm[4]), k in range(1,Nm[4]) 𝒲[i,j,k] = 𝒢₆(i-1,j-1,k-1) end
+
+    return ω, 𝒞, 𝒲
 end

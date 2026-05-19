@@ -16,7 +16,7 @@ Structure used to define a material and its properties.
 mutable struct Material
 
     # Variable(s)
-    id                  ::Int64
+    tag                 ::String
     density             ::Union{Missing,Float64}
     state_of_matter     ::String
     number_of_elements  ::Int64
@@ -25,9 +25,9 @@ mutable struct Material
     weight_fractions    ::Vector{Float64}
 
     # Constructor(s)
-    function Material()
+    function Material(tag::String)
         this = new()
-        this.id                 = generate_unique_id()
+        this.tag                = tag
         this.density            = missing
         this.state_of_matter    = "solid"
         this.number_of_elements = 0
@@ -214,23 +214,43 @@ function get_weight_fractions(this::Material)
 end
 
 """
-    get_id(this::Material)
+    get_tag(this::Material)
 
-To get the unique ID of the material.
+Get the tag (string identifier) of the material.
 
 # Input Argument(s)
 - `this::Material` : material.
 
 # Output Argument(s)
-- `ID::Int64` : ID of the material.
+- `tag::String` : tag of the material.
 
 # Examples
 ```jldoctest
-julia> id = mat.get_id()
+julia> tag = mat.get_tag()
 ```
 """
-function get_id(this::Material)
-    return this.id
+function get_tag(this::Material)
+    return this.tag
+end
+
+"""
+    set_tag(this::Material,tag::String)
+
+Set the tag (string identifier) of the material.
+
+# Input Argument(s)
+- `this::Material` : material.
+- `tag::String` : tag.
+
+# Examples
+```jldoctest
+julia> mat = Material()
+julia> mat.set_tag("water")
+```
+"""
+function set_tag(this::Material,tag::String)
+    if isempty(tag) error("Material tag cannot be empty.") end
+    this.tag = tag
 end
 
 """

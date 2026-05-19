@@ -61,22 +61,25 @@ makedocs(
             "Computation_Unit" => "api_computation_unit.md",
             "Cross_Sections"   => "api_cross_sections.md",
             "Solvers" => [
-                "Discrete_Ordinates" => "api_discrete_ordinates.md",
-                "Solvers"            => "api_solvers.md"
+                "Solvers" => "api_solvers.md",
+                "SN"      => "api_sn.md",
+                "DPN"     => "api_dpn.md",
+                "GN"      => "api_gn.md"
             ],
             "Geometry"     => "api_geometry.md",
             "Interactions" => [
-                "Annihilation"      => "api_annihilation.md",
-                "Bremsstrahlung"    => "api_bremsstrahlung.md",
-                "Compton"           => "api_compton.md",
-                "Elastic_Collision"   => "api_elastic_collision.md",
-                "Inlastic_Collision" => "api_inelastic_collision.md",
-                "Pair_Production"   => "api_pair_production.md",
-                "Photoelectric"     => "api_photoelectric.md",
-                "Rayleigh"          => "api_rayleigh.md",
-                "Relaxation "       => "api_relaxation.md"
+                "Annihilation"       => "api_annihilation.md",
+                "Bremsstrahlung"     => "api_bremsstrahlung.md",
+                "Compton"            => "api_compton.md",
+                "Elastic_Collision"  => "api_elastic_collision.md",
+                "Inelastic_Collision"=> "api_inelastic_collision.md",
+                "Pair_Production"    => "api_pair_production.md",
+                "Photoelectric"      => "api_photoelectric.md",
+                "Rayleigh"           => "api_rayleigh.md",
+                "Relaxation"         => "api_relaxation.md"
             ],
             "Material" => "api_material.md",
+            "Particle" => "api_particle.md",
             "Sources" => [
                 "Surface_Source" => "api_surface_source.md",
                 "Volume_Source"  => "api_volume_source.md",

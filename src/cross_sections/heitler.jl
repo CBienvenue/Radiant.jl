@@ -81,7 +81,7 @@ Gives the Legendre moments of the Heitler angular distribution.
 - `L::Int64` : Legendre truncation order.
 
 # Output Argument(s)
-- `Wℓ::Float64` : Legendre moments of the Heitler angular distribution.
+- `Wl::Float64` : Legendre moments of the Heitler angular distribution.
 
 # Reference(s)
 - Heitler (1954), The Quantum Theory of Radiation.
@@ -93,7 +93,7 @@ Gives the Legendre moments of the Heitler angular distribution.
 function angular_heitler(Ei::Float64,Ef::Float64,L::Int64)
 
     # Initialization
-    Wℓ = zeros(L+1)
+    Wl = zeros(L+1)
     γ = Ei+1
     ζmin = 1/(γ+1+sqrt(γ^2-1))
 
@@ -109,7 +109,7 @@ function angular_heitler(Ei::Float64,Ef::Float64,L::Int64)
     end
 
     # Compute the Legendre moments of the angular distribution
-    Pℓμ = legendre_polynomials(L,μ)
-    for ℓ in range(0,L) Wℓ[ℓ+1] += Pℓμ[ℓ+1] end
-    return Wℓ
+    Plμ = legendre_polynomials_up_to_L(L,μ)
+    for l in range(0,L) Wl[l+1] += Plμ[l+1] end
+    return Wl
 end

@@ -193,7 +193,7 @@ Gives the Legendre moments of the scattering cross-sections for photoelectric in
 - `Ef⁺::Float64` : lower bounds associated with the outgoing particle.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Photoelectric,L::Int64,Ei::Float64,Z::Int64,δi::Int64,Ef⁻::Float64,Ef⁺::Float64)
@@ -213,12 +213,12 @@ function dcs(this::Photoelectric,L::Int64,Ei::Float64,Z::Int64,δi::Int64,Ef⁻:
     end
 
     # Angular distribution
-    Wℓ = sauter(Ei,L)
+    Wl = sauter(Ei,L)
 
     # Legendre moments of the scattering cross-section
-    σℓ = zeros(L+1)
-    for ℓ in range(0,L) σℓ[ℓ+1] = σa * Wℓ[ℓ+1] end
-    return σℓ
+    σl = zeros(L+1)
+    for l in range(0,L) σl[l+1] = σa * Wl[l+1] end
+    return σl
 end
 
 """

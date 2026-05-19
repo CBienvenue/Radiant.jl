@@ -22,7 +22,7 @@ Gives the Legendre moments of the Mott cross-sections.
     - `"rutherford"` : screened Rutherford.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the Mott cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the Mott cross-sections.
 
 # Reference(s)
 - Boschini et al. (2013), An expression for the Mott cross section of electrons and
@@ -41,31 +41,31 @@ function mott(Z::Int64,Ei::Float64,particle::Particle,L::Int64,Ecutoff::Union{Mi
     β = sqrt(β²)
     β₀ = 0.7181287
     η = moliere_screening(Z,Ei,is_seltzer_correction)
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
 
     #----
     # Import and compute data
     #----
 
     # Compute and save in cache, if not already in cache
-    if ~haskey(cache_radiant[],"Cℓk") || length(cache_radiant[]["Cℓk"][:,1]) < L+1 
-        Cℓk = zeros(L+1,div(L,2)+1)
-        for ℓ in range(0,L), k in range(0,div(L,2))
-            Cℓk[ℓ+1,k+1] = (-1)^k * exp( sum(log.(1:2*ℓ-2*k)) - sum(log.(1:k)) - sum(log.(1:ℓ-k)) - sum(log.(1:ℓ-2*k)) )
+    if ~haskey(cache_radiant[],"Clk") || length(cache_radiant[]["Clk"][:,1]) < L+1 
+        Clk = zeros(L+1,div(L,2)+1)
+        for l in range(0,L), k in range(0,div(L,2))
+            Clk[l+1,k+1] = (-1)^k * exp( sum(log.(1:2*l-2*k)) - sum(log.(1:k)) - sum(log.(1:l-k)) - sum(log.(1:l-2*k)) )
         end
-        cache_radiant[]["Cℓk"] = Cℓk
+        cache_radiant[]["Clk"] = Clk
     end
-    if ~haskey(cache_radiant[],"Cℓki") || length(cache_radiant[]["Cℓki"][:,1,1,1]) < L+1
-        Cℓki = zeros(L+1,div(L,2)+1,2,L+2)
-        for ℓ in range(0,L), k in range(0,div(L,2)), i in range(0,1), g in range(0,ℓ-2*k+i)
-            Cℓki[ℓ+1,k+1,i+1,g+1] = 2 * exp( sum(log.(1:ℓ-2*k+i)) - sum(log.(1:g)) - sum(log.(1:ℓ-2*k+i-g)) ) * (-1)^g
+    if ~haskey(cache_radiant[],"Clki") || length(cache_radiant[]["Clki"][:,1,1,1]) < L+1
+        Clki = zeros(L+1,div(L,2)+1,2,L+2)
+        for l in range(0,L), k in range(0,div(L,2)), i in range(0,1), g in range(0,l-2*k+i)
+            Clki[l+1,k+1,i+1,g+1] = 2 * exp( sum(log.(1:l-2*k+i)) - sum(log.(1:g)) - sum(log.(1:l-2*k+i-g)) ) * (-1)^g
         end
-        cache_radiant[]["Cℓki"] = Cℓki
+        cache_radiant[]["Clki"] = Clki
     end
 
     # Extract data
-    Cℓk = cache_radiant[]["Cℓk"]
-    Cℓki = cache_radiant[]["Cℓki"]
+    Clk = cache_radiant[]["Clk"]
+    Clki = cache_radiant[]["Clki"]
     if model == "boschini"
         data = fast_load("mott_data_boschini_2013.jld2")
         if is_electron(particle)
@@ -106,41 +106,41 @@ function mott(Z::Int64,Ei::Float64,particle::Particle,L::Int64,Ecutoff::Union{Mi
     𝒢₁⁻ = 𝒢₁(μmin,2+L,1+2*η,-1)
     𝒢₂⁺ = 𝒢₂(sqrt(1-μmin),2*(2+L),2*η,1)
     𝒢₂⁻ = 𝒢₂(sqrt(1-μmax),2*(2+L),2*η,1)
-    for ℓ in range(0,L)
-        for k in range(0,div(ℓ,2))
-            σℓk = 0.0
+    for l in range(0,L)
+        for k in range(0,div(l,2))
+            σlk = 0.0
             # Compute I₁ -----
             I₁ = zeros(3)
             for i in range(0,2)
-                I₁[i+1] += 𝒢₁⁺[ℓ-2*k+i+1] - 𝒢₁⁻[ℓ-2*k+i+1]
+                I₁[i+1] += 𝒢₁⁺[l-2*k+i+1] - 𝒢₁⁻[l-2*k+i+1]
                 I₁[i+1] *= αi[i+1]
             end 
-            σℓk += sum(I₁)
+            σlk += sum(I₁)
             # Compute I₂ -----
             I₂ = zeros(2)
             for i in range(0,1)
-                for g in range(0,ℓ-2*k+i)
-                    I₂[i+1] += Cℓki[ℓ+1,k+1,i+1,g+1] * ( 𝒢₂⁺[2*(1+g)] - 𝒢₂⁻[2*(1+g)])
+                for g in range(0,l-2*k+i)
+                    I₂[i+1] += Clki[l+1,k+1,i+1,g+1] * ( 𝒢₂⁺[2*(1+g)] - 𝒢₂⁻[2*(1+g)])
                 end
                 I₂[i+1] *= αi[i+4]
             end
-            σℓk += sum(I₂)
-            σℓ[ℓ+1] += Cℓk[ℓ+1,k+1] * σℓk
+            σlk += sum(I₂)
+            σl[l+1] += Clk[l+1,k+1] * σlk
         end
-        σℓ[ℓ+1] *= 1/(2^ℓ)
+        σl[l+1] *= 1/(2^l)
     end
     Γ = 2*π*rₑ^2*Z*(Z+ξ)/(β²*Ei*(Ei+2))
-    σℓ .*= Γ
+    σl .*= Γ
 
     #----
     # Correction to deal with high-order Legendre moments instabilities
     #----
-    for ℓ in range(1,L)
-        if abs(σℓ[1]) < abs(σℓ[ℓ+1])
-            σℓ[ℓ+1:end] .= 0.0
+    for l in range(1,L)
+        if abs(σl[1]) < abs(σl[l+1])
+            σl[l+1:end] .= 0.0
             break
         end
     end
 
-    return σℓ
+    return σl
 end

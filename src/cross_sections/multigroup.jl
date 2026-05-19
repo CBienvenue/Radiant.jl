@@ -23,7 +23,7 @@ Produce the multigroup macroscopic cross sections.
   account for the cross-sections library.
 
 # Output Argument(s)
-- `Σsℓ::Array{Float64,3}`: Legendre moments of the differential cross section [in cm⁻¹].
+- `Σsl::Array{Float64,3}`: Legendre moments of the differential cross section [in cm⁻¹].
 - `Σt::Vector{Float64}`: total cross sections [in cm⁻¹].
 - `Σa::Vector{Float64}`: absorption cross sections [in cm⁻¹].
 - `Σe::Vector{Float64}`: energy deposition cross sections [in MeV × cm⁻¹].
@@ -48,7 +48,7 @@ mₑc² = 0.510999
 Nz = length(Z)
 Ngi = length(Eiᵇ)-1; Ngf = length(Efᵇ)-1
 Σt = zeros(Ngi); Σtₑ = zeros(Ngi); Σa = zeros(Ngi); Σe = zeros(Ngi+1); Σc = zeros(Ngi+1); Sb = zeros(Ngi+1); S = zeros(Ngi); T = zeros(Ngi)
-Σsℓ = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
+Σsl = zeros(Ngi,Ngf,L+1); Σsₑ = zeros(Ngi,Ngf)
 𝓕 = zeros(Ngf+1,L+1); 𝓕ₑ = zeros(Ngf+1)
 charge_in = incoming_particle.get_charge()
 charge_out = scattered_particle.get_charge()
@@ -90,7 +90,7 @@ for gi in range(1,Ngi)
             𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
             if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
             for gf in range(1,Ngf)
-                Σsℓ[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1]
+                Σsl[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1]
                 Σsₑ[gi,gf] += w[ni]/2 * 𝓕ₑ[gf] 
             end
         end
@@ -137,16 +137,16 @@ for gi in range(1,Ngi)
     Σe[gi] = Σtₑ[gi] - sum(Σsₑ[gi,:]) + S[gi]
 
     # Charge deposition cross sections
-    Σc[gi] = Σt[gi] * q_deposited - sum(Σsℓ[gi,:,1]) * q_extracted
+    Σc[gi] = Σt[gi] * q_deposited - sum(Σsl[gi,:,1]) * q_extracted
 
     # Extended transport corrections
     if scattering_model ∈ ["BFP","BTE"] && is_ETC
-        Σt[gi],Σsℓ[gi,gi,:] = transport_correction(interaction,L,Σt[gi],Σsℓ[gi,gi,:])
+        Σt[gi],Σsl[gi,gi,:] = transport_correction(interaction,L,Σt[gi],Σsl[gi,gi,:])
     end
 
     # Elastic decomposition in soft and catastrophic components
     if scattering_model == "BFP" && is_AFP_decomposition
-        Σt[gi],Σsℓ[gi,gi,:],T[gi] = angular_fokker_planck_decomposition(interaction,L,Σt[gi],Σsℓ[gi,gi,:],T[gi])
+        Σt[gi],Σsl[gi,gi,:],T[gi] = angular_fokker_planck_decomposition(interaction,L,Σt[gi],Σsl[gi,gi,:],T[gi])
     end
 end
 
@@ -158,5 +158,5 @@ end
 
 Σe *= mₑc²; Sb *= mₑc²; S *= mₑc² ; # Change of units (mₑc² → MeV)
 
-return Σsℓ, Σt, Σa, Σe, Σc, Sb, S, T
+return Σsl, Σt, Σa, Σe, Σc, Sb, S, T
 end

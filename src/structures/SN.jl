@@ -1,5 +1,5 @@
 """
-    Discrete_Ordinates
+    SN
 
 Structure used to define the discretization method associated with the transport of a particle.
 
@@ -20,7 +20,7 @@ Structure used to define the discretization method associated with the transport
 - `acceleration::Int64 = "none"` : acceleration method for the in-group iterations.
 
 """
-mutable struct Discrete_Ordinates
+mutable struct SN
 
     # Variable(s)
     particle                   ::Union{Missing,Particle}
@@ -39,14 +39,14 @@ mutable struct Discrete_Ordinates
     isFC                       ::Bool
 
     # Constructor(s)
-    function Discrete_Ordinates()
+    function SN()
         this = new()
         this.particle = missing
         this.solver_type = missing
         this.quadrature_type = missing
         this.quadrature_order = missing
         this.quadrature_dimension = 0
-        this.legendre_order = 1000
+        this.legendre_order = 64
         this.angular_fokker_planck = "finite-difference"
         this.angular_boltzmann = "galerkin-d"
         this.convergence_criterion = 1e-7 
@@ -59,14 +59,17 @@ mutable struct Discrete_Ordinates
     end
 end
 
+# Backward-compatible alias: legacy user code using `Discrete_Ordinates()` keeps working.
+const Discrete_Ordinates = SN
+
 # Method(s)
 """
-    set_particle(this::Discrete_Ordinates,particle::Particle)
+    set_particle(this::SN,particle::Particle)
 
 To set the particle for which the transport discretization method is for. 
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `particle::Particle` : particle.
 
 # Output Argument(s)
@@ -74,21 +77,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_particle(electron) 
 ```
 """
-function set_particle(this::Discrete_Ordinates,particle::Particle)
+function set_particle(this::SN,particle::Particle)
     this.particle = particle
 end
 
 """
-    set_solver_type(this::Discrete_Ordinates,solver_type::String)
+    set_solver_type(this::SN,solver_type::String)
 
 To set the solver for the particle transport.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `solver_type::String` : solver type, which can takes the following values:
     - `solver_type = "BTE"` : Boltzmann transport equation
     - `solver_type = "BFP"` : Boltzmann Fokker-Planck equation
@@ -102,22 +105,22 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_particle("BFP")
 ```
 """
-function set_solver_type(this::Discrete_Ordinates,solver_type::String)
+function set_solver_type(this::SN,solver_type::String)
     if uppercase(solver_type) ∉ ["BTE","BFP","BCSD","FP","CSD","BFP-EF"] error("Unkown type of solver.") end
     this.solver_type = uppercase(solver_type)
 end
 
 """
-    set_quadrature(this::Discrete_Ordinates,type::String,order::Int64,Qdims::Int64=0)
+    set_quadrature(this::SN,type::String,order::Int64,Qdims::Int64=0)
 
 To set the quadrature properties for the discretization of the angular domain.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `type::String` : type of quadrature, which can takes the following values:
     - `type = "gauss-legendre"` : Gauss-Legendre quadrature (1D Cartesian geometry only).
     - `type = "gauss-lobatto"` : Gauss-Lobatto quadrature (1D Cartesian geometry only).
@@ -138,11 +141,11 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_quadrature("gauss-legendre",4)
 ```
 """
-function set_quadrature(this::Discrete_Ordinates,type::String,order::Int64,Qdims::Int64=0)
+function set_quadrature(this::SN,type::String,order::Int64,Qdims::Int64=0)
     if lowercase(type) ∉ ["gauss-legendre","gauss-lobatto","carlson","lebedev","gauss-legendre-chebychev"] error("Unknown quadrature type.") end
     if order ≤ 1 error("Quadrature order should be at least 2.") end
     if ~(0 ≤ Qdims ≤ 3) error("Quadrature dimension should be either 1, 2 or 3.") end
@@ -152,12 +155,12 @@ function set_quadrature(this::Discrete_Ordinates,type::String,order::Int64,Qdims
 end
 
 """
-    set_legendre_order(this::Discrete_Ordinates,legendre_order::Int64)
+    set_legendre_order(this::SN,legendre_order::Int64)
 
 To set the maximum order of the Legendre expansion of the differential cross-sections.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `legendre_order::Int64` : maximum order of the Legendre expansion of the differential cross-sections.
 
 # Output Argument(s)
@@ -165,22 +168,22 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_legendre_order(7)
 ```
 """
-function set_legendre_order(this::Discrete_Ordinates,legendre_order::Int64)
+function set_legendre_order(this::SN,legendre_order::Int64)
     if legendre_order < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
 end
 
 """
-    set_angular_fokker_planck(this::Discrete_Ordinates,angular_fokker_planck::String)
+    set_angular_fokker_planck(this::SN,angular_fokker_planck::String)
 
 To set the discretization method for the angular Fokker-Planck term.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `angular_fokker_planck::String` : discretization method for the angular Fokker-Planck term, which can takes the following values:
     - `angular_fokker_planck = "finite-difference"` : finite difference discretization.
     - `angular_fokker_planck = "galerkin"` : galerkin moment-based discretization.
@@ -191,22 +194,22 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_angular_fokker_planck("differential-quadrature")
 ```
 """
-function set_angular_fokker_planck(this::Discrete_Ordinates,angular_fokker_planck::String)
+function set_angular_fokker_planck(this::SN,angular_fokker_planck::String)
     if angular_fokker_planck ∉ ["finite-difference","differential-quadrature","galerkin"] error("Unkown method to deal with the angular Fokker-Planck term.") end
     this.angular_fokker_planck = angular_fokker_planck
 end
 
 """
-    set_angular_boltzmann(this::Discrete_Ordinates,angular_boltzmann::String)
+    set_angular_boltzmann(this::SN,angular_boltzmann::String)
 
 To set the angular discretization method for the Boltzmann operator.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `angular_boltzmann::String` : angular discretization method for the Boltzmann operator, which can takes the following values:
     - `angular_boltzmann = "standard"` : standard discrete ordinates (SN) method.
     - `angular_boltzmann = "galerkin-m"` : Galerkin method by inversion of the discrete-to-moment M matrix.
@@ -217,23 +220,23 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_angular_boltzmann("standard")
 ```
 """
-function set_angular_boltzmann(this::Discrete_Ordinates,angular_boltzmann::String)
+function set_angular_boltzmann(this::SN,angular_boltzmann::String)
     if angular_boltzmann ∉ ["standard","galerkin-m","galerkin-d","galerkin"] error("Unkown method to deal with the Boltzmann kernel.") end
     if (angular_boltzmann == "galerkin") angular_boltzmann = "galerkin-d" end
     this.angular_boltzmann = angular_boltzmann
 end
 
 """
-    set_convergence_criterion(this::Discrete_Ordinates,convergence_criterion::Float64)
+    set_convergence_criterion(this::SN,convergence_criterion::Float64)
 
 To set the convergence criterion for the in-group iterations.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `convergence_criterion::Float64` : convergence criterion.
 
 # Output Argument(s)
@@ -241,22 +244,22 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_convergence_criterion(1e-5)
 ```
 """
-function set_convergence_criterion(this::Discrete_Ordinates,convergence_criterion::Float64)
+function set_convergence_criterion(this::SN,convergence_criterion::Float64)
     if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
     this.convergence_criterion = convergence_criterion
 end
 
 """
-    set_maximum_iteration(this::Discrete_Ordinates,maximum_iteration::Int64)
+    set_maximum_iteration(this::SN,maximum_iteration::Int64)
 
 To set the maximum number of in-group iterations.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `maximum_iteration::Int64` : maximum number of in-group iterations.
 
 # Output Argument(s)
@@ -264,22 +267,22 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_maximum_iteration(50)
 ```
 """
-function set_maximum_iteration(this::Discrete_Ordinates,maximum_iteration::Int64)
+function set_maximum_iteration(this::SN,maximum_iteration::Int64)
     if maximum_iteration < 1 error("Maximum iteration has to be at least 1.") end
     this.maximum_iteration = maximum_iteration
 end
 
 """
-    set_scheme(this::Discrete_Ordinates,axis::String,scheme_type::String,scheme_order::Int64)
+    set_scheme(this::SN,axis::String,scheme_type::String,scheme_order::Int64)
 
 To set the type of discretization scheme for derivative along the specified spatial or energy axis.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `axis::String` : variable of the derivative for which the scheme is applied, which can takes the following values:
     - `axis = "x"` : spatial x axis (discretization of the streaming term)
     - `axis = "y"` : spatial y axis (discretization of the streaming term)
@@ -296,12 +299,12 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_scheme("x","DD",1)
 julia> m.set_scheme("E","DG",2)
 ```
 """
-function set_scheme(this::Discrete_Ordinates,axis::String,scheme_type::String,scheme_order::Int64)
+function set_scheme(this::SN,axis::String,scheme_type::String,scheme_order::Int64)
     if axis ∉ ["x","y","z","E"] error("Unknown axis.") end
     if uppercase(scheme_type) ∉ ["DD","DG","DG-","DG+","AWD"] error("Unknown type of scheme.") end
     if scheme_order ≤ 0 error("Scheme order should be at least of 1.") end
@@ -310,12 +313,12 @@ function set_scheme(this::Discrete_Ordinates,axis::String,scheme_type::String,sc
 end
 
 """
-    set_acceleration(this::Discrete_Ordinates,acceleration::String)
+    set_acceleration(this::SN,acceleration::String)
 
 To set the acceleration method for the in-group iteration process.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `acceleration::String` : acceleration method, which takes the following values
     - `acceleration = "none"` : none
     - `acceleration = "livolant"` : livolant acceleration method
@@ -324,132 +327,132 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = Discrete_Ordinates()
+julia> m = SN()
 julia> m.set_acceleration("livolant")
 ```
 """
-function set_acceleration(this::Discrete_Ordinates,acceleration::String)
+function set_acceleration(this::SN,acceleration::String)
     if lowercase(acceleration) ∉ ["none","livolant"] error("Unkown acceleration method.") end
     this.acceleration = acceleration
 end
 
 """
-    get_legendre_order(this::Discrete_Ordinates)
+    get_legendre_order(this::SN)
 
 Get the Legendre truncation order.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `legendre_order::Int64` : Legendre truncation order.
 
 """
-function get_legendre_order(this::Discrete_Ordinates)
+function get_legendre_order(this::SN)
     if ismissing(this.legendre_order) error("Unable to get Legendre order. Missing data.") end
     return this.legendre_order
 end
 
 """
-    get_quadrature_order(this::Discrete_Ordinates)
+    get_quadrature_order(this::SN)
 
 Get the quadrature order.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `quadrature_order::Int64` : quadrature order.
 
 """
-function get_quadrature_order(this::Discrete_Ordinates)
+function get_quadrature_order(this::SN)
     if ismissing(this.quadrature_order) error("Unable to get quadrature order. Missing data.") end
     return this.quadrature_order
 end
 
 """
-    get_quadrature_type(this::Discrete_Ordinates)
+    get_quadrature_type(this::SN)
 
 Get the quadrature type.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `quadrature_type::String` : quadrature type.
 
 """
-function get_quadrature_type(this::Discrete_Ordinates)
+function get_quadrature_type(this::SN)
     if ismissing(this.quadrature_type) error("Unable to get quadrature type. Missing data.") end
     return this.quadrature_type
 end
 
 """
-    get_angular_boltzmann(this::Discrete_Ordinates)
+    get_angular_boltzmann(this::SN)
 
 Get the type of angular discretization for the Boltzmann operator.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `angular_boltzmann::String` : type of angular discretization for the Boltzmann operator.
 
 """
-function get_angular_boltzmann(this::Discrete_Ordinates)
+function get_angular_boltzmann(this::SN)
     if ismissing(this.angular_boltzmann) error("Unable to get angular Boltzmann treatment type. Missing data.") end
     return this.angular_boltzmann
 end
 
 """
-    get_angular_fokker_planck(this::Discrete_Ordinates)
+    get_angular_fokker_planck(this::SN)
 
 Get the type of angular discretization for the Fokker-Planck operator.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `angular_fokker_planck::String` : type of angular discretization for the Fokker-Planck
   operator.
 
 """
-function get_angular_fokker_planck(this::Discrete_Ordinates)
+function get_angular_fokker_planck(this::SN)
     if ismissing(this.angular_fokker_planck) error("Unable to get angular Fokker-Planck treatment type. Missing data.") end
     return this.angular_fokker_planck
 end
 
 """
-    get_particle(this::Discrete_Ordinates)
+    get_particle(this::SN)
 
 Get the particle associated with the discretization methods.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `particle::Particle` : particle.
 
 """
-function get_particle(this::Discrete_Ordinates)
+function get_particle(this::SN)
     if ismissing(this.particle) error("Unable to get particle. Missing data.") end
     return this.particle
 end
 
 """
-    get_solver_type(this::Discrete_Ordinates)
+    get_solver_type(this::SN)
 
 Get the type of solver for transport calculations.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `solver::String` : type of solver for transport calculations.
 - `isCSD::Bool` : indicate if continuous slowing-down term is used or not.
 
 """
-function get_solver_type(this::Discrete_Ordinates)
+function get_solver_type(this::SN)
     if ismissing(this.solver_type) error("Unable to get solver type. Missing data.") end
     if this.solver_type == "BTE"
         isCSD = false
@@ -476,12 +479,12 @@ function get_solver_type(this::Discrete_Ordinates)
 end
 
 """
-    get_schemes(this::Discrete_Ordinates,geometry::Geometry,isFC::Bool)
+    get_schemes(this::SN,geometry::Geometry,isFC::Bool)
 
 Get the space and/or energy schemes informations.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `geometry::Geometry` : geometry.
 - `isFC::Bool` : boolean indicating if the high-order moments are fully coupled.
 
@@ -491,7 +494,7 @@ Get the space and/or energy schemes informations.
 - `Nm::Vector{Int64}` : numbers of moments.
 
 """
-function get_schemes(this::Discrete_Ordinates,geometry::Geometry,isFC::Bool)
+function get_schemes(this::SN,geometry::Geometry,isFC::Bool)
     schemes = Vector{String}(undef,4)
     𝒪 = Vector{Int64}(undef,4)
     axis = geometry.get_axis()
@@ -518,66 +521,66 @@ function get_schemes(this::Discrete_Ordinates,geometry::Geometry,isFC::Bool)
 end
 
 """
-    get_convergence_criterion(this::Discrete_Ordinates)
+    get_convergence_criterion(this::SN)
 
 Get the convergence criterion for in-group iteration convergence.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `convergence_criterion::Float64` : convergence criterion.
 
 """
-function get_convergence_criterion(this::Discrete_Ordinates)
+function get_convergence_criterion(this::SN)
     return this.convergence_criterion
 end
 
 """
-    get_maximum_iteration(this::Discrete_Ordinates)
+    get_maximum_iteration(this::SN)
 
 Get the maximum number of iterations for in-group iteration convergence.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `maximum_iteration::Int64` : maximum number of iterations.
 
 """
-function get_maximum_iteration(this::Discrete_Ordinates)
+function get_maximum_iteration(this::SN)
     return this.maximum_iteration
 end
 
 """
-    get_acceleration(this::Discrete_Ordinates)
+    get_acceleration(this::SN)
 
 Get the acceleration method for in-group iteration convergence.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `acceleration::String` : acceleration method.
 
 """
-function get_acceleration(this::Discrete_Ordinates)
+function get_acceleration(this::SN)
     return this.acceleration
 end
 
 """
-    get_quadrature_dimension(this::Discrete_Ordinates)
+    get_quadrature_dimension(this::SN)
 
 Get the quadrature dimension.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `quadrature_dimension::Int64` : quadrature dimension.
 
 """
-function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
+function get_quadrature_dimension(this::SN,Ndims::Int64)
     quadrature_type = this.get_quadrature_type()
     Qdims = this.get_quadrature_dimension()
     if quadrature_type ∈ ["gauss-legendre","gauss-lobatto"]
@@ -601,14 +604,14 @@ function get_quadrature_dimension(this::Discrete_Ordinates,Ndims::Int64)
 end
 
 """
-    set_is_full_coupling(this::Discrete_Ordinates,isFC::Bool)
+    set_is_full_coupling(this::SN,isFC::Bool)
 
 Set, for multidimensional high-order schemes, if the high-order moments are fully coupled
 or not. For example, with two linear schemes, the moments are either fully coupled
 [00,10,01,11] or not [00,10,01].
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 - `isFC::Bool` : boolean indicating if the high-orde moments are fully coupled
   or not.
 
@@ -616,41 +619,41 @@ or not. For example, with two linear schemes, the moments are either fully coupl
 N/A
 
 """
-function set_is_full_coupling(this::Discrete_Ordinates,isFC::Bool)
+function set_is_full_coupling(this::SN,isFC::Bool)
     this.isFC = isFC
 end
 
 """
-    get_is_full_coupling(this::Discrete_Ordinates)
+    get_is_full_coupling(this::SN)
 
 Get, for multidimensional high-order schemes, if the high-order moments are fully coupled
 or not. For example, with two linear schemes, the moments are either fully coupled
 [00,10,01,11] or not [00,10,01].
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `isFC::Bool` : boolean indicating if the high-orde moments are fully coupled
   or not.
 
 """
-function get_is_full_coupling(this::Discrete_Ordinates)
+function get_is_full_coupling(this::SN)
     return this.isFC
 end
 
 """
-    get_quadrature_dimension(this::Discrete_Ordinates)
+    get_quadrature_dimension(this::SN)
 
 Get the quadrature dimension.
 
 # Input Argument(s)
-- `this::Discrete_Ordinates` : discretization method.
+- `this::SN` : discretization method.
 
 # Output Argument(s)
 - `quadrature_dimension::Int64` : quadrature dimension.
 
 """
-function get_quadrature_dimension(this::Discrete_Ordinates)
+function get_quadrature_dimension(this::SN)
     return this.quadrature_dimension
 end

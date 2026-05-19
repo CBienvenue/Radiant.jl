@@ -1,23 +1,5 @@
 # Cache for the Radiant package
 const cache_radiant = Ref{Dict{String,Any}}(Dict())
-const unique_id_counter = Ref(0)
-
-"""
-    generate_unique_id()
-
-Generate a unique identifier through Radiant package.
-
-# Input Argument(s)
-N/A
-
-# Output Argument(s)
-- `unique_id::Int64` : unique id.
-
-"""
-function generate_unique_id()
-    unique_id_counter[] += 1
-    return unique_id_counter[]
-end
 
 """
     fast_load(file::String)

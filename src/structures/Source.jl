@@ -14,25 +14,25 @@ mutable struct Source
     normalization_factor       ::Float64
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
-    discrete_ordinates         ::Discrete_Ordinates
+    solver         ::Solver
 
     # Constructor(s)
-    function Source(particle::Particle,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    function Source(particle::Particle,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
         this = new()
         this.name = missing
         this.particle = particle
         this.normalization_factor = 0
         this.cross_sections = cross_sections
         this.geometry = geometry
-        this.discrete_ordinates = discrete_ordinates
-        initalize_sources(this,cross_sections,geometry,discrete_ordinates)
+        this.solver = solver
+        initalize_sources(this,cross_sections,geometry,solver)
         return this
     end
 end
 
 # Method(s)
 """
-    initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+    initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
 
 Initialize volume and boundary sources.
 
@@ -40,30 +40,67 @@ Initialize volume and boundary sources.
 - `this::Source` : source structure.
 - `cross_sections::Cross_Sections` : cross-sections library.
 - `geometry::Geometry` : geometry.
-- `discrete_ordinates::Discrete_Ordinates` : discrete ordinates solver.
+- `solver::Solver` : discrete ordinates solver.
 
 # Output Argument(s)
 N/A
 
 """
-function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,discrete_ordinates::Discrete_Ordinates)
+function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry::Geometry,solver::Solver)
+
+    # Data extraction and validation
     particle = this.particle
-    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",particle," particle.")) end
-    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
+    if get_tag(particle) ∉ get_tag.(cross_sections.particles) error(string("No cross sections available for ",particle," particle.")) end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
     Nx = geometry.number_of_voxels["x"]
-    Qdims = discrete_ordinates.get_quadrature_dimension(geometry.dimension)
-    if geometry.dimension ≥ 2 Ny = geometry.number_of_voxels["y"] else Ny = 1 end
-    if geometry.dimension ≥ 3 Nz = geometry.number_of_voxels["z"] else Nz = 1 end
-    Ω,w = quadrature(discrete_ordinates.quadrature_order,discrete_ordinates.quadrature_type,Qdims)
-    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
-    number_of_directions = length(w)
-    P,_,_,_ = angular_polynomial_basis(geometry.dimension,Ω,w,discrete_ordinates.get_legendre_order(),discrete_ordinates.quadrature_order,discrete_ordinates.get_angular_boltzmann(),Qdims)
-    _,_,Nm = discrete_ordinates.get_schemes(geometry,discrete_ordinates.get_is_full_coupling())
+    Ndims = geometry.dimension
+    if Ndims ≥ 2 Ny = geometry.number_of_voxels["y"] else Ny = 1 end
+    if Ndims ≥ 3 Nz = geometry.number_of_voxels["z"] else Nz = 1 end
+    _,_,Nm = solver.get_schemes(geometry,solver.get_is_full_coupling())
 
+    # Angular discretization
+    if solver isa SN
+        Qdims = solver.get_quadrature_dimension(Ndims)
+        Ω,w = quadrature(solver.quadrature_order,solver.quadrature_type,Qdims)
+        if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+        P,_,_,_ = angular_polynomial_basis(Ω,w,solver.get_legendre_order(),solver.get_angular_boltzmann(),Qdims)
+    elseif solver isa DPN
+        polynomial_basis = solver.get_polynomial_basis(Ndims)
+        L = solver.get_legendre_order()
+        if polynomial_basis == "legendre"
+            P = L+1
+        else
+            P = (L+1)^2
+        end
+    elseif solver isa GN
+        polynomial_basis = solver.get_polynomial_basis(Ndims)
+        Lp = solver.get_legendre_order()
+        if polynomial_basis == "legendre"
+            error("Not available yet for Galerkin with Legendre basis.")
+        else
+            P = (Lp+1)^2
+        end
+    else
+        error("No methods available for $(get_type(particle)) particle.")
+    end
+
+    # Initialize sources
+    L = 0 
     this.volume_sources = zeros(Ng,P,Nm[5],Nx,Ny,Nz)
-    this.surface_sources = Array{Union{Array{Float64},Float64}}(undef,Ng,number_of_directions,2*geometry.dimension)
-    this.surface_sources .= 0.0
+    this.surface_sources = Array{Union{Array{Float64},Float64}}(undef,Ng,L+1,2*Ndims)
+    for ig in range(1,Ng), l in range(0,L)
+        if Ndims == 1
+            for i in range(1,2) this.surface_sources[ig,l+1,i] = 0.0 end
+        elseif Ndims == 2
+            for i in range(1,2) this.surface_sources[ig,l+1,i] = zeros(Ny) end
+            for i in range(3,4) this.surface_sources[ig,l+1,i] = zeros(Nx) end
+        elseif Ndims == 3
+            for i in range(1,2) this.surface_sources[ig,l+1,i] = zeros(Ny,Nz) end
+            for i in range(3,4) this.surface_sources[ig,l+1,i] = zeros(Nx,Nz) end
+            for i in range(5,6) this.surface_sources[ig,l+1,i] = zeros(Nx,Ny) end
+        end
+    end
 end
 
 """
@@ -118,27 +155,47 @@ N/A
 
 """
 function add_source(this::Source,surface_sources::Surface_Source)
+
+    # Data extraction and validation
     particle = surface_sources.particle
-    if get_id(particle) ∉ get_id.(this.cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
-    index = findfirst(x -> get_id(x) == get_id(particle),this.cross_sections.particles)
-    Ng = this.cross_sections.number_of_groups[index]
-    if this.geometry.dimension ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
-    if this.geometry.dimension ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
-    if get_id(particle) != get_id(this.discrete_ordinates.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
-    Qdims = this.discrete_ordinates.get_quadrature_dimension(this.geometry.dimension)
-    _,w = quadrature(this.discrete_ordinates.quadrature_order,this.discrete_ordinates.quadrature_type,Qdims)
-    number_of_directions = length(w)
-    Q = Array{Union{Array{Float64},Float64}}(undef,Ng,number_of_directions,2*this.geometry.dimension)
-    Q .= 0.0
-    Q,norm = surface_source(Q,particle,surface_sources,this.cross_sections,this.geometry,this.discrete_ordinates)
-    d = size(this.surface_sources)
-    for i in range(1,d[1]), j in range(1,d[2]), k in range(1,d[3])
-        if length(size(this.surface_sources[i,j,k])) == length(size(Q[i,j,k])) 
-            this.surface_sources[i,j,k] += Q[i,j,k]
-        elseif length(size(this.surface_sources[i,j,k])) < length(size(Q[i,j,k])) 
-            this.surface_sources[i,j,k] = Q[i,j,k]
+    if get_tag(particle) ∉ get_tag.(this.cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    Ndims = this.geometry.dimension
+    Nx = this.geometry.number_of_voxels["x"]
+    if Ndims ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
+    if Ndims ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
+    if get_tag(particle) != get_tag(this.solver.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
+
+    # Compute and format the surface source for transport solver
+    Q_old = this.surface_sources
+    Q_new,norm = surface_source(particle,surface_sources,this.cross_sections,this.geometry,this.solver)
+
+    # Add it to the source object
+    dims_new = size(Q_new)
+    dims_old = size(Q_old)
+    if (dims_new[1] != dims_old[1]) || (dims_new[3] != dims_old[3]) error("Number of groups and/or dimension of sources are not coherent.") end
+    Ng = dims_old[1]
+    L_new = dims_new[2] - 1
+    L_old = dims_old[2] - 1
+    if L_new > L_old
+        Q_block = Array{Union{Array{Float64},Float64}}(undef,Ng,L_new-L_old,2*Ndims)
+        for ig in range(1,Ng), l in range(0,L_new-L_old-1)
+            if Ndims == 1
+                for i in range(1,2) Q_block[ig,l+1,i] = 0.0 end
+            elseif Ndims == 2
+                for i in range(1,2) Q_block[ig,l+1,i] = zeros(Ny) end
+                for i in range(3,4) Q_block[ig,l+1,i] = zeros(Nx) end
+            elseif Ndims == 3
+                for i in range(1,2) Q_block[ig,l+1,i] = zeros(Ny,Nz) end
+                for i in range(3,4) Q_block[ig,l+1,i] = zeros(Nx,Nz) end
+                for i in range(5,6) Q_block[ig,l+1,i] = zeros(Nx,Ny) end
+            end
         end
+        Q_old = cat(Q_old,Q_block; dims=2)
     end
+    for ig in range(1,Ng), l in range(0,L_new), i in range(1,2*Ndims)
+        Q_old[ig,l+1,i] += Q_new[ig,l+1,i]
+    end
+    this.surface_sources = Q_old
     surface_sources.normalization_factor += norm
 end
 
@@ -237,15 +294,42 @@ Combination of two sources.
 
 """
 function Base.:+(source1::Source,source2::Source)
-    if get_id(source1.get_particle()) != get_id(source2.get_particle()) error("Forbitten addition of different particle sources.") end
+    if get_tag(source1.get_particle()) != get_tag(source2.get_particle()) error("Forbitten addition of different particle sources.") end
     source1.volume_sources += source2.volume_sources
-    d = size(source1.surface_sources)
-    for i in range(1,d[1]), j in range(1,d[2]), k in range(1,d[3])
-        if length(size(source1.surface_sources[i,j,k])) == length(size(source2.surface_sources[i,j,k])) 
-            source1.surface_sources[i,j,k] += source2.surface_sources[i,j,k]
-        elseif length(size(source1.surface_sources[i,j,k])) < length(size(source2.surface_sources[i,j,k])) 
-            source1.surface_sources[i,j,k] = source2.surface_sources[i,j,k]
+    Ndims = source1.geometry.dimension
+    Nx = source1.geometry.number_of_voxels["x"]
+    if Ndims ≥ 2 Ny = source1.geometry.number_of_voxels["y"] else Ny = 1 end
+    if Ndims ≥ 3 Nz = source1.geometry.number_of_voxels["z"] else Nz = 1 end
+
+    # Add it to the source object
+    Q_1 = source1.surface_sources
+    Q_2 = source2.surface_sources
+    dims_1 = size(Q_1)
+    dims_2 = size(Q_2)
+    if (dims_1[1] != dims_2[1]) || (dims_1[3] != dims_2[3]) error("Number of groups and/or dimension of sources are not coherent.") end
+    Ng = dims_1[1]
+    Ndims = div(dims_1[3],2)
+    L_1 = dims_1[2] - 1
+    L_2 = dims_2[2] - 1
+    if L_2 > L_1
+        Q_block = Array{Union{Array{Float64},Float64}}(undef,Ng,L_2-L_1,2*Ndims)
+        for ig in range(1,Ng), l in range(0,L_2-L_1-1)
+            if Ndims == 1
+                for i in range(1,2) Q_block[ig,l+1,i] = 0.0 end
+            elseif Ndims == 2
+                for i in range(1,2) Q_block[ig,l+1,i] = zeros(Ny) end
+                for i in range(3,4) Q_block[ig,l+1,i] = zeros(Nx) end
+            elseif Ndims == 3
+                for i in range(1,2) Q_block[ig,l+1,i] = zeros(Ny,Nz) end
+                for i in range(3,4) Q_block[ig,l+1,i] = zeros(Nx,Nz) end
+                for i in range(5,6) Q_block[ig,l+1,i] = zeros(Nx,Ny) end
+            end
         end
+        Q_1 = cat(Q_1,Q_block; dims=2)
     end
+    for ig in range(1,Ng), l in range(0,L_2), i in range(1,2*Ndims)
+        Q_1[ig,l+1,i] += Q_2[ig,l+1,i]
+    end
+    source1.surface_sources = Q_1
     return source1
 end

@@ -315,7 +315,7 @@ interaction.
 - `ri::Float64` : average radius per subshell.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64,type::String,particle::Particle,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64)
@@ -324,7 +324,7 @@ function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64
     # Initialization
     #----
     σs = 0.0
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
     if type == "S"
         E⁺ = Ef
         E⁻ = Ei-Ui-E⁺
@@ -336,7 +336,7 @@ function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64
     else
         error("Unknown type")
     end
-    if W < 0 return σℓ end
+    if W < 0 return σl end
 
     #----
     # Close collisions
@@ -354,13 +354,13 @@ function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64
     #----
     # Compute the angular distribution
     #----
-    Wℓ = angular_moller(Ei,Ef,L)
+    Wl = angular_moller(Ei,Ef,L)
 
     #----
     # Compute the Legendre moments of the cross-section
     #----
-    for ℓ in range(0,L) σℓ[ℓ+1] += Wℓ[ℓ+1] * σs end
-    return σℓ
+    for l in range(0,L) σl[l+1] += Wl[l+1] * σs end
+    return σl
 end
 
 """

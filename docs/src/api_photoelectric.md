@@ -1,10 +1,12 @@
+# Photoelectric
+
 ## Structure
 ```@docs
 Radiant.Photoelectric
 ```
 
-## Methods
+## Setters
 ```@docs
-Radiant.set_model(this::Radiant.Photoelectric,model::String)
 Radiant.set_interaction_types(this::Radiant.Photoelectric,interaction_types)
+Radiant.set_model(this::Radiant.Photoelectric,model::String)
 ```

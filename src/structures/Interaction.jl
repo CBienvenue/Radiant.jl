@@ -338,7 +338,7 @@ Gives the Legendre moments of the scattering cross-sections.
 - `incoming_particle::Particle` : incoming particle.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,Ec::Float64,incoming_particle::Particle)

@@ -11,7 +11,7 @@ relativistic impulse approximation.
 - `Ef::Float64` : outgoing photon energy.
 
 # Output Argument(s)
-- `σℓ::Float64` : Legendre moments of the Compton differential cross-section.
+- `σl::Float64` : Legendre moments of the Compton differential cross-section.
 
 # Reference(s)
 - Brusa et al. (1996), Fast sampling algorithm for the simulation of photon Compton
@@ -44,17 +44,17 @@ function impulse_approximation(Z::Int64,L::Int64,δi::Int64,Ei::Float64,Ef::Floa
     #----
     # Compute the scattering cross-section
     #----
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
     if Ei - Ef - Ui[δi] ≥ 0
         for n in range(1,Nμ)
-            Pℓμ = legendre_polynomials(L,μ[n])
+            Plμ = legendre_polynomials_up_to_L(L,μ[n])
             Ec = Ei*mₑ*c^2/(mₑ*c^2+Ei*(1-μ[n]))
             pz = (Ei*Ef*(1-μ[n])-mₑ*c^2*(Ei-Ef))/(c*sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n]))
             Ji = J₀i*(1+2*J₀i*abs(pz))*exp(1/2-1/2*(1+2*J₀i*abs(pz))^2)
             σs = w[n] * π * rₑ^2 * Ef/Ei * (Ec/Ei+Ei/Ec+μ[n]^2-1) * 1/sqrt(Ei^2+Ef^2-2*Ei*Ef*μ[n]+Ei^2*(Ef-Ec)^2/Ec^2) * Zi[δi]*Ji *mₑ*c
             σs *= (a₀ ^ 2) / 27.211386245988 * 100^2 * 1e6 * mₑc² # Change of unit
-            for ℓ in range(0,L) σℓ[ℓ+1] += Pℓμ[ℓ+1] * σs end
+            for l in range(0,L) σl[l+1] += Plμ[l+1] * σs end
         end
     end
-    return σℓ
+    return σl
 end

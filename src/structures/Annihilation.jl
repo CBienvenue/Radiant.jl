@@ -181,7 +181,7 @@ Gives the Legendre moments of the scattering cross-sections for annihilation.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 
 # Output Argument(s)
-- `σℓ::Vector{Float64}` : Legendre moments of the scattering cross-sections.
+- `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
 function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z::Int64,Ein::Vector{Float64},Ec::Float64)
@@ -189,7 +189,7 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z:
     #----
     # Initialization
     #----
-    σℓ = zeros(L+1)
+    σl = zeros(L+1)
 
     #----
     # Two annihilation photons
@@ -200,36 +200,36 @@ function dcs(this::Annihilation,L::Int64,Ei::Float64,Ef::Float64,type::String,Z:
         σs = heitler(Z,Ei,Ef)
 
         # Angular distribution
-        Wℓ = angular_heitler(Ei,Ef,L)
+        Wl = angular_heitler(Ei,Ef,L)
 
         # Compute the Legendre moments of the cross-section
-        for ℓ in range(0,L) σℓ[ℓ+1] = σs * Wℓ[ℓ+1] end
+        for l in range(0,L) σl[l+1] = σs * Wl[l+1] end
 
     #----
     # Annihilation of positrons scattered under the cutoff from inelastic collisionnal interaction
     #----
     elseif type == "P_inel"
         σa = this.inelastic_collision_model.acs(Ei,Ec,Positron(),Z,Ein[end])
-        σℓ[1] += 2 * σa
+        σl[1] += 2 * σa
 
     #----
     # Annihilation of positrons scattered under the cutoff from Bremsstrahlung interaction
     #----
     elseif type == "P_brems"
         σa = this.bremsstrahlung_model.acs(Ei,Z,Ec,Positron(),Ein[end])
-        σℓ[1] += 2 * σa
+        σl[1] += 2 * σa
 
     #----
     # Annihilation of positrons produced under the cutoff following pair production event
     #----
     elseif type == "P_pp"
         σa = this.pair_production_model.acs(Ei,Z,[Ein[end]])
-        σℓ[1] += 2 * σa
+        σl[1] += 2 * σa
 
     else
         error("Unknown interaction.")
     end
-    return σℓ
+    return σl
 end
 
 """

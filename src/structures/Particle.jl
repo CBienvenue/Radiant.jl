@@ -17,6 +17,15 @@ function Alpha() Particle(Alpha) end
 function Muon() Particle(Muon) end
 function Antimuon() Particle(Antimuon) end
 
+function Photon(tag::String) p = Particle(Photon); p.tag = tag; return p end
+function Electron(tag::String) p = Particle(Electron); p.tag = tag; return p end
+function Positron(tag::String) p = Particle(Positron); p.tag = tag; return p end
+function Proton(tag::String) p = Particle(Proton); p.tag = tag; return p end
+function Antiproton(tag::String) p = Particle(Antiproton); p.tag = tag; return p end
+function Alpha(tag::String) p = Particle(Alpha); p.tag = tag; return p end
+function Muon(tag::String) p = Particle(Muon); p.tag = tag; return p end
+function Antimuon(tag::String) p = Particle(Antimuon); p.tag = tag; return p end
+
 """
     Particle
 
@@ -26,37 +35,44 @@ Structure used to define a Particle and its properties.
 mutable struct Particle
 
     # Variable(s)
-    id      ::Int64
+    tag     ::String
     type    ::Type
-    mass    ::Union{Missing,Real} 
+    mass    ::Union{Missing,Real}
     charge  ::Union{Missing,Real}
 
     # Constructor(s)
     function Particle(type::Type)
         this = new()
-        this.id = generate_unique_id()
         if type == Photon
+            this.tag = "photon"
             this.mass = 0
             this.charge = 0
         elseif type == Electron
+            this.tag = "electron"
             this.mass = 0.51099895069
             this.charge = -1
         elseif type == Positron
+            this.tag = "positron"
             this.mass = 0.51099895069
             this.charge = 1
         elseif type == Proton
+            this.tag = "proton"
             this.mass = 938.2720894
             this.charge = 1
         elseif type == Antiproton
+            this.tag = "antiproton"
             this.mass = 938.2720894
             this.charge = -1
         elseif type == Alpha
+            this.tag = "alpha"
             this.mass = 3727.3794118
             this.charge = 2
         elseif type == Muon
+            this.tag = "muon"
             this.mass = 105.6583755
             this.charge = -1
         elseif type == Antimuon
+            this.tag = "antimuon"
             this.mass = 105.6583755
             this.charge = 1
         else
@@ -65,9 +81,10 @@ mutable struct Particle
         this.type = type
         return this
     end
-    function Particle(mass::Union{Missing,Real}=missing,charge::Union{Missing,Real}=missing)
+    function Particle(tag::String,mass::Union{Missing,Real}=missing,charge::Union{Missing,Real}=missing)
+        if isempty(tag) error("Particle tag cannot be empty.") end
         this = new()
-        this.id = generate_unique_id()
+        this.tag = tag
         this.type = Custom_Particle
         this.mass = mass
         this.charge = charge
@@ -254,17 +271,32 @@ function get_type(this::Particle)
 end
 
 """
-    get_id(this::Particle)
+    get_tag(this::Particle)
 
-Get the particle unique identifier.
+Get the particle tag (string identifier).
 
 # Input Argument(s)
 - `this::Particle` : particle.
 
 # Output Argument(s)
-- `id::Int64` : unique identifier.
+- `tag::String` : tag.
 
 """
-function get_id(this::Particle)
-    return this.id
+function get_tag(this::Particle)
+    return this.tag
+end
+
+"""
+    set_tag(this::Particle,tag::String)
+
+Set the particle tag (string identifier).
+
+# Input Argument(s)
+- `this::Particle` : particle.
+- `tag::String` : tag.
+
+"""
+function set_tag(this::Particle,tag::String)
+    if isempty(tag) error("Particle tag cannot be empty.") end
+    this.tag = tag
 end

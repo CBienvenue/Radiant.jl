@@ -8,11 +8,11 @@ Extract atomic electron subshells, number and energies for atomic number Z ∈ {
 - `is_free::Bool` : are the electrons free (not bounded) ?
 
 # Output Argument(s)
+- `Nshells::Int64`: number of electron subshells.
 - `Zi::Vector{Float64}`: mean number of electrons per subshells.
 - `Ui::Vector{Float64}`: binding energy per subshell [in mₑc²].
 - `Ti::Vector{Float64}`: mean kinetic energy per subshell [in mₑc²].
 - `ri::Vector{Float64}`: average radius per subshell [in cm].
-- `Nshells::Int64`: number of electron subshells.
 - `subshells::Vector{String}`: subshells subshells.
 
 # Reference(s)

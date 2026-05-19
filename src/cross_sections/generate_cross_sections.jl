@@ -69,18 +69,18 @@ for i in range(1,Npart), n in range(1,Nmat)
     mcs = Multigroup_Cross_Sections(Ng[i])
     Σt = zeros(Ng[i]); Σa = zeros(Ng[i]); Σe = zeros(Ng[i]+1); Σc = zeros(Ng[i]+1); Sb = zeros(Ng[i]+1); S = zeros(Ng[i]); T = zeros(Ng[i]);
     for j in range(1,Npart)
-        Σsℓ = zeros(Ng[i],Ng[j],L+1)
+        Σsl = zeros(Ng[i],Ng[j],L+1)
         for interaction in interactions
             for pin in interaction.get_in_particles(), pout in interaction.get_out_particles()
                 if pin != get_type(particles[i]) || pout != get_type(particles[j]) continue end
                 for type in interaction.get_types(pin,pout)
                     println("\n Interaction: $(typeof(interaction)) | Type: $type | Incoming particle: $(get_type(particles[i])) | Outgoing particle: $(get_type(particles[j]))")
-                    @time Σsℓi, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,interactions)
-                    Σsℓ .+= Σsℓi; Σt .+= Σti; Σa .+= Σai; Σe .+= Σei; Σc .+= Σci; Sb .+= Sbi; S .+= Si; T .+= Ti;
+                    @time Σsli, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,interactions)
+                    Σsl .+= Σsli; Σt .+= Σti; Σa .+= Σai; Σe .+= Σei; Σc .+= Σci; Sb .+= Sbi; S .+= Si; T .+= Ti;
                 end
             end
         end
-        mcs.set_scattering(Σsℓ)
+        mcs.set_scattering(Σsl)
     end
     mcs.set_total(Σt)
     mcs.set_absorption(Σa)

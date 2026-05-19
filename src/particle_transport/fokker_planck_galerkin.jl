@@ -1,6 +1,6 @@
 """
     fokker_planck_galerkin(N::Int64,Mn::Array{Float64},Dn::Array{Float64},
-    pℓ::Vector{Int64},P::Int64)
+    pl::Vector{Int64},P::Int64)
 
 Compute the angular Fokker-Planck scattering matrix using Galerkin quadrature.
 
@@ -8,11 +8,11 @@ Compute the angular Fokker-Planck scattering matrix using Galerkin quadrature.
 - `N::Int64`: number of directions.
 - `Mn::Array{Float64}`: moment-to-discrete matrix.
 - `Dn::Array{Float64}`: discrete-to-moment matrix.
-- `pℓ::Vector{Int64}`: legendre order associated with each interpolation basis. 
+- `pl::Vector{Int64}`: legendre order associated with each interpolation basis. 
 - `P::Int64`: number of angular interpolation basis.
 
 # Output Argument(s)
-- `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
+- `ℳ_p::Array{Float64}`: Fokker-Planck scattering matrix.
 - `λ₀::Float64`: correction factor for total cross-section.
 
 # Reference(s)
@@ -22,26 +22,32 @@ Compute the angular Fokker-Planck scattering matrix using Galerkin quadrature.
   Techniques.
 
 """
-function fokker_planck_galerkin(N::Int64,Mn::Array{Float64},Dn::Array{Float64},pℓ::Vector{Int64},P::Int64)
+function fokker_planck_galerkin(N::Int64,Mn::Array{Float64},Dn::Array{Float64},pl::Vector{Int64},P::Int64)
 
-# Inversion of M-matrix
-Σ = zeros(P,P)
-for p in range(1,P)
-    ℓ = pℓ[p]
-    Σ[p,p] = -ℓ*(ℓ+1)
+    # Initialisation
+    λ₀ = 0
+    ℳ_p = fokker_planck_galerkin(P,pl)
+
+    # Making the diagonal positive
+    ℳ_n = zeros(N,N)
+    ℳ_n = Mn*ℳ_p*Dn
+    for n in range(1,N)
+        if (ℳ_n[n,n] < -λ₀) λ₀ = -ℳ_n[n,n] end
+    end
+    for n in range(1,N)
+        ℳ_n[n,n] += λ₀
+    end
+    ℳ_p = Dn*ℳ_n*Mn
+    return ℳ_p, λ₀
+
 end
-ℳ = zeros(N,N)
-ℳ = Mn*Σ*Dn
 
-# Making the diagonal positive
-λ₀ = 0
-for n in range(1,N)
-    if (ℳ[n,n] < -λ₀) λ₀ = -ℳ[n,n] end
-end
-for n in range(1,N)
-    ℳ[n,n] += λ₀
-end
-
-return ℳ, λ₀
-
+function fokker_planck_galerkin(P::Int64,pl::Vector{Int64})
+    # Angular Fokker-Planck moments
+    ℳ_p = zeros(P,P)
+    for p in range(1,P)
+        l = pl[p]
+        ℳ_p[p,p] = -l*(l+1)
+    end
+    return ℳ_p
 end

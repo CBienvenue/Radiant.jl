@@ -20,8 +20,8 @@ N/A
 """
 function volume_source(particle::Particle,source::Volume_Source,cross_sections::Cross_Sections,geometry::Geometry)
 
-    if get_id(particle) ∉ get_id.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
-    index = findfirst(x -> get_id(x) == get_id(particle),cross_sections.particles)
+    if get_tag(particle) ∉ get_tag.(cross_sections.particles) error(string("No cross sections available for ",get_type(particle)," particle.")) end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),cross_sections.particles)
     Ng = cross_sections.number_of_groups[index]
 
     # Extract source informations
@@ -48,7 +48,7 @@ function volume_source(particle::Particle,source::Volume_Source,cross_sections::
         if energy_groups[ig] == 1 
             for ix in range(1,Nx)
                 if xmin <= x[ix] && xmax >= x[ix]
-                    Q[ig,1,1,ix,1,1] += intensity * Δx[ix]
+                    Q[ig,1,1,ix,1,1] += intensity
                     norm = norm + intensity * Δx[ix]
                 end
             end
@@ -74,7 +74,7 @@ function volume_source(particle::Particle,source::Volume_Source,cross_sections::
         if energy_groups[ig] == 1 
             for ix in range(1,Nx), iy in range(1,Ny)
                 if xmin <= x[ix] && xmax >= x[ix] && ymin <= y[iy] && ymax >= y[iy] 
-                    Q[ig,1,1,ix,iy,1] += intensity * Δx[ix] * Δy[iy]
+                    Q[ig,1,1,ix,iy,1] += intensity
                     norm = norm + intensity * Δx[ix] * Δy[iy]
                 end
             end
@@ -105,7 +105,7 @@ function volume_source(particle::Particle,source::Volume_Source,cross_sections::
         if energy_groups[ig] == 1 
             for ix in range(1,Nx), iy in range(1,Ny), iz in range(1,Nz)
                 if xmin <= x[ix] && xmax >= x[ix] && ymin <= y[iy] && ymax >= y[iy] && zmin <= z[iz] && zmax >= z[iz] 
-                    Q[ig,1,1,ix,iy,iz] += intensity * Δx[ix] * Δy[iy] * Δz[iz]
+                    Q[ig,1,1,ix,iy,iz] += intensity
                     norm = norm + intensity * Δx[ix] * Δy[iy] * Δz[iz]
                 end
             end
