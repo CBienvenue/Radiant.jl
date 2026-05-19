@@ -213,7 +213,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             elseif surface == "X+" && μs < 0
                                 Q[ig,p,2][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
                             end
-                            norm += intensity * Δy[iy]
+                            if p == 1 norm += intensity * Δy[iy] end
                         end
                     end
                     if surface ∈ ["Y-","Y+"]
@@ -224,7 +224,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             elseif surface == "Y+" && ηs < 0
                                 Q[ig,p,4][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
                             end
-                            norm += intensity * Δx[ix]
+                            if p == 1 norm += intensity * Δx[ix] end
                         end
                     end
                 end
@@ -303,7 +303,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             elseif surface == "X+" && μs < 0
                                 Q[ig,p,2][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
                             end
-                            norm += intensity * Δy[iy] * Δz[iz]
+                            if p == 1 norm += intensity * Δy[iy] * Δz[iz] end
                         end
                     end
                     if surface ∈ ["Y-","Y+"]
@@ -315,7 +315,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             elseif surface == "Y+" && ηs < 0
                                 Q[ig,p,4][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
                             end
-                            norm += intensity * Δx[ix] * Δz[iz]
+                            if p == 1 norm += intensity * Δx[ix] * Δz[iz] end
                         end
                     end
                     if surface ∈ ["Z-","Z+"]
@@ -327,7 +327,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             elseif surface == "Z+" && ξs < 0
                                 Q[ig,p,6][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
                             end
-                            norm += intensity * Δx[ix] * Δy[iy]
+                            if p == 1 norm += intensity * Δx[ix] * Δy[iy] end
                         end
                     end
                 end
