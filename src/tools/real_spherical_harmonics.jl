@@ -227,6 +227,44 @@ function real_patch_range_spherical_harmonics_up_to_L(L::Int64,μ::Float64,ϕ::F
     return ψlm
 end
 
+"""
+    real_patch_range_spherical_harmonics_up_to_L_symmetric(L::Int64,μ::Float64,ϕ::Float64,Nv::Int64,u::Int64,i::Int64,j::Int64)
+
+Calculate the real spherical harmonics over a sub-triangle patch from the
+barycentric subdivision of octant `u`, up to order `L`.
+
+The sub-triangle `K` (with vertices `A, B, C`) is mapped to the reference
+octant triangle `T₀ = ((1,0,0), (0,1,0), (0,0,1))` via the barycentric
+correspondence; the octant-range spherical harmonics are evaluated at the
+image point `(μ', ϕ')` and rescaled by the patch area.
+
+# Input Argument(s)
+- `L::Int64`: maximum Legendre order.
+- `μ::Float64`, `ϕ::Float64`: spherical coordinates inside patch `K`.
+- `Nv::Int64`: barycentric subdivision order.
+- `u::Int64`: octant index.
+- `i::Int64`, `j::Int64`: row and position indices of the sub-triangle inside the octant.
+
+# Output Argument(s)
+- `ψlm::Vector{Vector{Float64}}`: patch-range real spherical harmonics up to L.
+"""
+function real_patch_range_spherical_harmonics_up_to_L_symmetric(L::Int64,μ::Float64,ϕ::Float64,Nv::Int64,u::Int64,i::Int64,j::Int64)
+    if L < 0 error("Legendre order must be ≥ 0.") end
+    A, B, C = octant_subtriangle_vertices(u, i, j, Nv)
+    μp, ϕp, _, _ = muphi_to_muprime_phiprime(μ, ϕ, A, B, C)
+    μp = clamp(μp, 0.0, 1.0)
+    ϕp = clamp(ϕp, 0.0, π/2)
+    area_K = spherical_triangle_area(A, B, C)
+    ψlm = real_octant_range_spherical_harmonics_up_to_L(L, μp, ϕp)
+    norm_factor = sqrt(π / (2 * area_K))
+    for l in 0:L
+        for m_idx in eachindex(ψlm[l+1])
+            ψlm[l+1][m_idx] *= norm_factor
+        end
+    end
+    return ψlm
+end
+
 function spherical_harmonics_number_basis(L)
     return (L+1)^2
 end

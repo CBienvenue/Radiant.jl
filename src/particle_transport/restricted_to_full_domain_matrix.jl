@@ -139,7 +139,10 @@ function octant_to_full_range_matrix_spherical_harmonics(L::Int64)
     return Np,Mll
 end
 
-function patch_to_full_range_matrix_spherical_harmonics(L::Int64,Lq::Int64,Nv::Int64)
+function patch_to_full_range_matrix_spherical_harmonics(L::Int64,Lq::Int64,Nv::Int64;tiling::String="polar-anchored")
+    if tiling == "symmetric"
+        return patch_to_full_range_matrix_spherical_harmonics_symmetric(L,Lq,Nv)
+    end
     Np = spherical_harmonics_number_basis(L)
     Nq = spherical_harmonics_number_basis(Lq)
     pl_p,pm_p = spherical_harmonics_indices(L)
@@ -317,7 +320,10 @@ function Pnαβ(n::Int64,α::Int64,β::Int64,x::Real)
     return Pnαβ
 end
 
-function patch_to_half_range_matrix_spherical_harmonics(L::Int64,Lq::Int64,Nv::Int64,Ndims::Int64)
+function patch_to_half_range_matrix_spherical_harmonics(L::Int64,Lq::Int64,Nv::Int64,Ndims::Int64;tiling::String="polar-anchored")
+    if tiling == "symmetric"
+        return patch_to_half_range_matrix_spherical_harmonics_symmetric(L,Lq,Nv,Ndims)
+    end
     Np = spherical_harmonics_number_basis(L)
     Nq = spherical_harmonics_number_basis(Lq)
     pl_p,pm_p = spherical_harmonics_indices(L)
@@ -718,4 +724,124 @@ function pos_to_neg_half_range_matrix_spherical_harmonics(L::Int64,Ndims::Int64)
         end
     end
     return Rpq
+end
+
+"""
+    patch_to_full_range_matrix_spherical_harmonics_symmetric(L, Lq, Nv)
+
+Build the patch-to-full-range moment-transfer matrix `Mll[p, q, u, i, j]` for
+the symmetric tiling. The full-range basis is indexed by `p`, the patch (octant
+sub-triangle) basis by `q`. Storage shape: `(Np, Nq, 8, Nv, 2Nv-1)`.
+
+Integration is by 32-point Duffy-chart Gauss-Legendre per sub-triangle.
+"""
+function patch_to_full_range_matrix_spherical_harmonics_symmetric(L::Int64,Lq::Int64,Nv::Int64)
+    Np = spherical_harmonics_number_basis(L)
+    Nq = spherical_harmonics_number_basis(Lq)
+    Nw_max = 2*Nv - 1
+    Mll = zeros(Np,Nq,8,Nv,Nw_max)
+    N = 32
+    x,weight = gauss_legendre(N)
+    Nquad = N * N
+
+    Yfull = Matrix{Float64}(undef, Np, Nquad)
+
+    for u in 1:8, i in 1:Nv
+        for j in 1:(2i - 1)
+            Ψ_orth, Px, Py, Pz, JW = symmetric_patch_orthonormal_basis(Lq, Nv, u, i, j, x, weight)
+
+            for k in 1:Nquad
+                μ_g = Px[k]
+                ϕ_g = atan(Pz[k], Py[k])
+                if ϕ_g < 0.0 ϕ_g += 2π end
+                Yf = real_spherical_harmonics_up_to_L(L, μ_g, ϕ_g)
+                wfac = JW[k]
+                p = 0
+                for l in 0:L, m in -l:l
+                    p += 1
+                    Yfull[p, k] = Yf[l+1][l+m+1] * wfac
+                end
+            end
+
+            LinearAlgebra.mul!(view(Mll, :, :, u, i, j), Yfull, LinearAlgebra.transpose(Ψ_orth))
+        end
+    end
+
+    return Np, Nq, Mll
+end
+
+"""
+    patch_to_half_range_matrix_spherical_harmonics_symmetric(L, Lq, Nv, Ndims)
+
+Build the patch-to-half-range moment-transfer matrix `Mll[p, q, u, i, j, b, is]`
+for the symmetric tiling. Shape: `(Np, Nq, 8, Nv, 2Nv-1, 2*Ndims, 2)`.
+
+For each boundary face `b` and orientation `is`, only octants whose sign on the
+boundary axis matches contribute. Within an octant, every sub-triangle is fully
+on the correct side, so the same octant filter is sufficient.
+"""
+function patch_to_half_range_matrix_spherical_harmonics_symmetric(L::Int64,Lq::Int64,Nv::Int64,Ndims::Int64)
+    Np = spherical_harmonics_number_basis(L)
+    Nq = spherical_harmonics_number_basis(Lq)
+    Nw_max = 2*Nv - 1
+    Mll = zeros(Np,Nq,8,Nv,Nw_max,2*Ndims,2)
+    N = 32
+    x,weight = gauss_legendre(N)
+    Nquad = N * N
+
+    sx = [1,1,1,1,-1,-1,-1,-1]
+    sy = [1,1,-1,-1,1,1,-1,-1]
+    sz = [1,-1,1,-1,1,-1,1,-1]
+
+    Yhalf = Vector{Float64}(undef, Np)
+
+    for u in 1:8, i in 1:Nv
+        for j in 1:(2i - 1)
+            Ψ_orth, Px, Py, Pz, JW = symmetric_patch_orthonormal_basis(Lq, Nv, u, i, j, x, weight)
+
+            for is in 1:2
+                s_bnd = (is == 1) ? -1 : 1
+                for b in 1:(2 * Ndims)
+                    μ⁻, μ⁺, ϕ⁻, ϕ⁺, sb = cartesian_surface_source(b, s_bnd)
+
+                    if !((b ∈ (1,2) && sx[u] == sb * s_bnd) || (b ∈ (3,4) && sy[u] == sb * s_bnd) || (b ∈ (5,6) && sz[u] == sb * s_bnd))
+                        continue
+                    end
+
+                    Δμ_b = μ⁺ - μ⁻
+                    Δϕ_b = ϕ⁺ - ϕ⁻
+                    boundary_scale = sqrt(2 * π / (Δμ_b * Δϕ_b))
+                    wrap = (b == 3 && s_bnd == -1) || (b == 4 && s_bnd == 1)
+
+                    for k in 1:Nquad
+                        μ_g = Px[k]
+                        ϕ_g = atan(Pz[k], Py[k])
+                        if ϕ_g < 0.0 ϕ_g += 2π end
+                        if wrap && (3π/2 ≤ ϕ_g ≤ 2π) ϕ_g -= 2π end
+
+                        μp_b = -s_bnd * sb * (((-s_bnd * sb - 1) / 2) + (μ_g - μ⁻) / Δμ_b)
+                        μp_b = clamp(μp_b, 0.0, 1.0)
+                        ϕp_b = 2 * π * (ϕ_g - ϕ⁻) / Δϕ_b
+
+                        Yh = real_half_range_spherical_harmonics_up_to_L(L, μp_b, ϕp_b)
+                        p = 0
+                        for l in 0:L, m in -l:l
+                            p += 1
+                            Yhalf[p] = Yh[l+1][l+m+1]
+                        end
+
+                        wfac = boundary_scale * JW[k]
+                        for q in 1:Nq
+                            ψq_k = Ψ_orth[q, k]
+                            for p in 1:Np
+                                Mll[p, q, u, i, j, b, is] += wfac * Yhalf[p] * ψq_k
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return Mll
 end

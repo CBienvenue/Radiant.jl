@@ -61,7 +61,7 @@ Solve the one-speed transport equation for a given particle.
 # Reference(s)
 
 """
-function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64})
+function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64},tiling::String="polar-anchored")
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
@@ -74,13 +74,18 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     if (Ndims > 1) sy = [1,1,-1,-1,1,1,-1,-1] end
     if (Ndims > 2) sz = [1,-1,1,-1,1,-1,1,-1] end
 
+    # Patch indexing helper: number of patches along the "w" axis for octant u,
+    # row v, subdivision Nv, and the chosen angular tiling.
+    Nw_max = (tiling == "symmetric") ? (2*Nv - 1) : Nv
+    Nw_of(u, v) = (tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v)
+
     # Fixed boundary sources
     if Ndims == 1
-        sources_q = zeros(Nq,2*Ndims,8,Nv,Nv)
+        sources_q = zeros(Nq,2*Ndims,8,Nv,Nw_max)
     else
-        sources_q = Array{Union{Float64,Array{Float64}}}(undef,Nq,2*Ndims,8,Nv,Nv)
+        sources_q = Array{Union{Float64,Array{Float64}}}(undef,Nq,2*Ndims,8,Nv,Nw_max)
         for q in range(1,Nq), u in range(1,8), v in range(1,Nv)
-            Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+            Nw = Nw_of(u, v)
             for w in range(1,Nw), ib in range(1,2)
                 if Ndims == 2
                     sources_q[q,ib,u,v,w] = zeros(Ns[2])
@@ -96,7 +101,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
         end
     end
     for p in range(1,Np_source), q in range(1,Nq), u in range(1,8), v in range(1,Nv)
-        Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+        Nw = Nw_of(u, v)
         for w in range(1,Nw)
             for ib in range(1,2)
                 if Ndims == 1
@@ -147,33 +152,33 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     # source iteration loop to avoid repeated allocations; BLAS mul! replaces loops.
     inv_4π = 1/(4*π)
     if Ndims == 3
-        𝚽_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nv)
-        Q_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nv)
-        𝚽E12_q = zeros(Nq,Nm[4],Ns[1],Ns[2],Ns[3],8,Nv,Nv)
-        𝚽x12_q = zeros(Nq,Nm[1],Ns[2],Ns[3],2,8,Nv,Nv)
-        𝚽y12_q = zeros(Nq,Nm[2],Ns[1],Ns[3],2,8,Nv,Nv)
-        𝚽z12_q = zeros(Nq,Nm[3],Ns[1],Ns[2],2,8,Nv,Nv)
+        𝚽_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nw_max)
+        Q_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nw_max)
+        𝚽E12_q = zeros(Nq,Nm[4],Ns[1],Ns[2],Ns[3],8,Nv,Nw_max)
+        𝚽x12_q = zeros(Nq,Nm[1],Ns[2],Ns[3],2,8,Nv,Nw_max)
+        𝚽y12_q = zeros(Nq,Nm[2],Ns[1],Ns[3],2,8,Nv,Nw_max)
+        𝚽z12_q = zeros(Nq,Nm[3],Ns[1],Ns[2],2,8,Nv,Nw_max)
         Mll_factored = similar(Mll)
-        for u in 1:8, v in 1:Nv, w in 1:Nv, q in 1:Nq, p in 1:Np
+        for u in 1:8, v in 1:Nv, w in 1:Nw_max, q in 1:Nq, p in 1:Np
             Mll_factored[p,q,u,v,w] = (2*pl[p]+1) * inv_4π * Mll[p,q,u,v,w]
         end
     elseif Ndims == 2
-        𝚽_q = zeros(Nq,Nm[5],Ns[1],Ns[2],8,Nv,Nv)
-        Q_q = zeros(Nq,Nm[5],Ns[1],Ns[2],8,Nv,Nv)
-        𝚽E12_q = zeros(Nq,Nm[4],Ns[1],Ns[2],8,Nv,Nv)
-        𝚽x12_q = zeros(Nq,Nm[1],Ns[2],2,8,Nv,Nv)
-        𝚽y12_q = zeros(Nq,Nm[2],Ns[1],2,8,Nv,Nv)
+        𝚽_q = zeros(Nq,Nm[5],Ns[1],Ns[2],8,Nv,Nw_max)
+        Q_q = zeros(Nq,Nm[5],Ns[1],Ns[2],8,Nv,Nw_max)
+        𝚽E12_q = zeros(Nq,Nm[4],Ns[1],Ns[2],8,Nv,Nw_max)
+        𝚽x12_q = zeros(Nq,Nm[1],Ns[2],2,8,Nv,Nw_max)
+        𝚽y12_q = zeros(Nq,Nm[2],Ns[1],2,8,Nv,Nw_max)
         Mll_factored = similar(Mll)
-        for u in 1:8, v in 1:Nv, w in 1:Nv, q in 1:Nq, p in 1:Np
+        for u in 1:8, v in 1:Nv, w in 1:Nw_max, q in 1:Nq, p in 1:Np
             Mll_factored[p,q,u,v,w] = (2*pl[p]+1) * inv_4π * Mll[p,q,u,v,w]
         end
     elseif Ndims == 1
-        𝚽_q = zeros(Nq,Nm[5],Ns[1],8,Nv,Nv)
-        Q_q = zeros(Nq,Nm[5],Ns[1],8,Nv,Nv)
-        𝚽E12_q = zeros(Nq,Nm[4],Ns[1],8,Nv,Nv)
-        𝚽x12_q = zeros(Nq,Nm[1],2,8,Nv,Nv)
+        𝚽_q = zeros(Nq,Nm[5],Ns[1],8,Nv,Nw_max)
+        Q_q = zeros(Nq,Nm[5],Ns[1],8,Nv,Nw_max)
+        𝚽E12_q = zeros(Nq,Nm[4],Ns[1],8,Nv,Nw_max)
+        𝚽x12_q = zeros(Nq,Nm[1],2,8,Nv,Nw_max)
         Mll_factored = similar(Mll)
-        for u in 1:8, v in 1:Nv, w in 1:Nv, q in 1:Nq, p in 1:Np
+        for u in 1:8, v in 1:Nv, w in 1:Nw_max, q in 1:Nq, p in 1:Np
             fac = is_SPH ? (2*pl[p]+1)*inv_4π : (2*pl[p]+1)/2
             Mll_factored[p,q,u,v,w] = fac * Mll[p,q,u,v,w]
         end
@@ -219,7 +224,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
 
             # Transformation of full-range fluxes to restricted-angle fluxes
             @views for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     Mt = transpose(Mll_factored[:,:,u,v,w])
                     mul!(reshape(Q_q[:,:,:,u,v,w], Nq, NS), Mt, Ql_mat)
@@ -233,7 +238,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             end
             # Computation of the restricted-angle fluxes by sweeping through the spatial grid
             for u in range(1,8), v in range(1,Nv)
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in range(1,Nw)
                     𝚽_q[:,:,:,u,v,w],𝚽E12_q[:,:,:,u,v,w],𝚽x12_q[:,:,:,u,v,w] = gn_sweep_1D(sx[u],𝚽_q[:,:,:,u,v,w],Q_q[:,:,:,u,v,w],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,Np_surf,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w])
                 end
@@ -241,7 +246,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
             𝚽l_mat = reshape(𝚽l, Np, NS)
             @views for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     M = Mll[:,:,u,v,w]
                     mul!(𝚽l_mat, M, reshape(𝚽_q[:,:,:,u,v,w], Nq, NS), 1.0, 1.0)
@@ -292,7 +297,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
 
             # Transformation of full-range fluxes to restricted-angle fluxes
             @views for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     Mt = transpose(Mll_factored[:,:,u,v,w])
                     mul!(reshape(Q_q[:,:,:,:,u,v,w], Nq, NS), Mt, Ql_mat)
@@ -307,7 +312,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             end
             # Computation of the restricted-angle fluxes by sweeping through the spatial grid
             for u in range(1,8), v in range(1,Nv)
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in range(1,Nw)
                     𝚽_q[:,:,:,:,u,v,w],𝚽E12_q[:,:,:,:,u,v,w],𝚽x12_q[:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,u,v,w] = gn_sweep_2D(sx[u],sy[u],𝚽_q[:,:,:,:,u,v,w],Q_q[:,:,:,:,u,v,w],Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],Nq,Np_source,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w])
                 end
@@ -315,7 +320,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
             𝚽l_mat = reshape(𝚽l, Np, NS)
             @views for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     M = Mll[:,:,u,v,w]
                     mul!(𝚽l_mat, M, reshape(𝚽_q[:,:,:,:,u,v,w], Nq, NS), 1.0, 1.0)
@@ -390,7 +395,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
 
             # Transformation of full-range fluxes to restricted-angle fluxes (BLAS gemm)
             @views for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     Mt = transpose(Mll_factored[:,:,u,v,w])
                     mul!(reshape(Q_q[:,:,:,:,:,u,v,w], Nq, NS), Mt, Ql_mat)
@@ -406,7 +411,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             end
             # Computation of the restricted-angle fluxes by sweeping through the spatial grid
             for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     𝚽_q[:,:,:,:,:,u,v,w],𝚽E12_q[:,:,:,:,:,u,v,w],𝚽x12_q[:,:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,:,u,v,w],𝚽z12_q[:,:,:,:,:,u,v,w] = gn_sweep_3D(sx[u],sy[u],sz[u],𝚽_q[:,:,:,:,:,u,v,w],Q_q[:,:,:,:,:,u,v,w],Σt,mat,Ns[1],Ns[2],Ns[3],Δs[1],Δs[2],Δs[3],Nq,Np_source,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,:,u,v,w],𝚽z12_q[:,:,:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],𝒩[:,:,3,u,v,w])
                 end
@@ -414,7 +419,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
             𝚽l_mat = reshape(𝚽l, Np, NS)
             @views for u in 1:8, v in 1:Nv
-                Nw = Int(-sx[u]*v + (sx[u]+1)/2*(Nv+1))
+                Nw = Nw_of(u, v)
                 for w in 1:Nw
                     M = Mll[:,:,u,v,w]
                     mul!(𝚽l_mat, M, reshape(𝚽_q[:,:,:,:,:,u,v,w], Nq, NS), 1.0, 1.0)

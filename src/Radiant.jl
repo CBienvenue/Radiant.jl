@@ -156,6 +156,7 @@ module Radiant
         "jacobi_polynomials.jl",
         "ferrer_associated_legendre.jl",
         "real_spherical_harmonics.jl",
+        "spherical_triangle.jl",
         "heaviside.jl",
         "interpolation.jl",
         "integrals.jl",

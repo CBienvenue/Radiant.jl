@@ -37,15 +37,16 @@ boundary_conditions = geometry.get_boundary_conditions()
 L = solver.get_legendre_order()
 L_elem = solver.get_legendre_order_local()
 Nv = solver.get_subdivision()
+tiling = solver.get_tiling()
 polynomial_basis = solver.get_polynomial_basis(Ndims)
 if polynomial_basis == "legendre"
     if Ndims != 1 error("Legendre basis is only available in 1D.") end
     error("Not available yet for Galerkin with Legendre basis.")
 elseif polynomial_basis == "spherical-harmonics"
     is_SPH = true
-    Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics(L,L_elem,Nv)
+    Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics(L,L_elem,Nv;tiling=tiling)
     pl,pm = spherical_harmonics_indices(L)
-    𝒩 = gn_weights_spherical_harmonics(L_elem,Nv,Ndims)
+    𝒩 = gn_weights_spherical_harmonics(L_elem,Nv,Ndims;tiling=tiling)
 else
     error("Unknown polynomial basis.")
 end
@@ -129,7 +130,7 @@ Np_surf = spherical_harmonics_number_basis(L_surf)
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
 Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
-Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L_surf,L_elem,Nv,Ndims)
+Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L_surf,L_elem,Nv,Ndims;tiling=tiling)
 
 #----
 # Boundary conditions
@@ -201,7 +202,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling)
     end
 
     # Verification of convergence in all energy groups

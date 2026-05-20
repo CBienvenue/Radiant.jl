@@ -1,7 +1,10 @@
-function gn_weights_spherical_harmonics(L::Int64,Nv::Int64,Ndims::Int64)
+function gn_weights_spherical_harmonics(L::Int64,Nv::Int64,Ndims::Int64;tiling::String="polar-anchored")
     if L < 0 error("Legendre order is greater or equal to zero.") end
     if Nv <= 0 error("Number of direction cosine patches should be greater than zero.") end
     if ~(1 ≤ Ndims ≤ 3) error("Number of dimensions should be between 1 and 3.") end
+    if tiling == "symmetric"
+        return gn_weights_spherical_harmonics_symmetric(L,Nv,Ndims)
+    end
     Np = spherical_harmonics_number_basis(L)
     pl,pm = spherical_harmonics_indices(L)
     𝒩 = zeros(Np,Np,Ndims,8,Nv,Nv)
@@ -228,6 +231,70 @@ function gn_weights_spherical_harmonics(L::Int64,Nv::Int64,Ndims::Int64)
             end
         end
     end
+    return 𝒩
+end
+
+"""
+    gn_weights_spherical_harmonics_symmetric(L, Nv, Ndims)
+
+Compute the Galerkin patch-weight matrix `𝒩[p, q, d, u, i, j]` for the symmetric
+tiling: each octant is barycentrically subdivided into `Nv²` spherical sub-triangles
+treating the three axis-vertices equivalently.
+
+Patches are indexed by `(u, i, j)` with `i ∈ 1:Nv` (barycentric row) and
+`j ∈ 1:(2i-1)` (position within the row, alternating up/down). The third axis of
+the returned array has length `2*Nv-1`; entries with `j > 2i-1` remain zero.
+
+Each sub-triangle integral is computed via a Duffy-chart Gauss-Legendre quadrature
+of order 32 (1024 points per patch). Unlike the polar-anchored variant, the
+polar/azimuthal BLAS factorisation does not apply here — the patches are curved
+spherical triangles not aligned with `(μ, ϕ)` axes.
+"""
+function gn_weights_spherical_harmonics_symmetric(L::Int64,Nv::Int64,Ndims::Int64)
+    Np = spherical_harmonics_number_basis(L)
+    Nw_max = 2*Nv - 1
+    𝒩 = zeros(Np,Np,Ndims,8,Nv,Nw_max)
+    N = 32
+    x,weight = gauss_legendre(N)
+    Nquad = N * N
+
+    Ψw = Matrix{Float64}(undef, Np, Nquad)
+
+    for u in 1:8, i in 1:Nv
+        for j in 1:(2i - 1)
+            Ψ, Px, Py, Pz, JW = symmetric_patch_orthonormal_basis(L, Nv, u, i, j, x, weight)
+
+            # Direction 1: Ω_x = Px
+            for k in 1:Nquad
+                wkx = Px[k] * JW[k]
+                for p in 1:Np
+                    Ψw[p, k] = Ψ[p, k] * wkx
+                end
+            end
+            LinearAlgebra.mul!(view(𝒩, :, :, 1, u, i, j), Ψw, LinearAlgebra.transpose(Ψ))
+
+            if Ndims ≥ 2
+                for k in 1:Nquad
+                    wky = Py[k] * JW[k]
+                    for p in 1:Np
+                        Ψw[p, k] = Ψ[p, k] * wky
+                    end
+                end
+                LinearAlgebra.mul!(view(𝒩, :, :, 2, u, i, j), Ψw, LinearAlgebra.transpose(Ψ))
+            end
+
+            if Ndims == 3
+                for k in 1:Nquad
+                    wkz = Pz[k] * JW[k]
+                    for p in 1:Np
+                        Ψw[p, k] = Ψ[p, k] * wkz
+                    end
+                end
+                LinearAlgebra.mul!(view(𝒩, :, :, 3, u, i, j), Ψw, LinearAlgebra.transpose(Ψ))
+            end
+        end
+    end
+
     return 𝒩
 end
 

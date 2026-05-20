@@ -40,6 +40,7 @@ mutable struct GN
     polynomial_basis           ::Union{Missing,String}
     angular_fokker_planck      ::Union{Missing,String}
     subdivision                ::Int64
+    tiling                     ::String
 
     # Constructor(s)
     function GN()
@@ -57,6 +58,7 @@ mutable struct GN
         this.polynomial_basis = missing
         this.angular_fokker_planck = "galerkin"
         this.subdivision = 1
+        this.tiling = "symmetric"
         return this
     end
 end
@@ -341,6 +343,37 @@ function set_subdivision(this::GN,subdivision::Int64)
 end
 
 """
+    set_tiling(this::GN,tiling::String)
+
+To set the angular tiling strategy used by the `GN` solver with the spherical
+harmonics basis. The tiling controls how each octant of the angular sphere is
+partitioned into patches.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+- `tiling::String` : tiling strategy, which can take the following values:
+    - `tiling = "polar-anchored"` : default. Each octant is split into `Nv` polar
+      bands in μ with `Nv+1-v` azimuthal patches per band (triangular tiling
+      anchored at the polar axis, aligned with the spatial x-axis).
+    - `tiling = "symmetric"` : each octant is barycentrically subdivided into
+      `Nv²` spherical sub-triangles, treating the three axis-vertices (±x, ±y, ±z)
+      equivalently. Restores symmetry under permutation of the spatial axes.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = GN()
+julia> m.set_tiling("symmetric")
+```
+"""
+function set_tiling(this::GN,tiling::String)
+    if lowercase(tiling) ∉ ["polar-anchored","symmetric"] error("Unknown tiling strategy.") end
+    this.tiling = lowercase(tiling)
+end
+
+"""
     get_is_full_coupling(this::GN)
 
 Get, for multidimensional high-order schemes, if the high-order moments are fully coupled
@@ -597,4 +630,20 @@ Get the number of angular subdivisions.
 """
 function get_subdivision(this::GN)
     return this.subdivision
+end
+
+"""
+    get_tiling(this::GN)
+
+Get the angular tiling strategy.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+
+# Output Argument(s)
+- `tiling::String` : angular tiling strategy (`"polar-anchored"` or `"symmetric"`).
+
+"""
+function get_tiling(this::GN)
+    return this.tiling
 end
