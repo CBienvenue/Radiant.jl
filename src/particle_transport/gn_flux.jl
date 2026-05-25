@@ -104,7 +104,7 @@ if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = solver.get_angular_fokker_planck()
-    ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np)
+    ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np;L=L,L_elem=L_elem,Nv=Nv,Ndims=Ndims,tiling=tiling,Mll=Mll)
     Σtot .+= T .* λ₀
 end
 

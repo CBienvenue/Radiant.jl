@@ -296,14 +296,17 @@ end
 """
     set_angular_fokker_planck(this::GN,angular_fokker_planck::String)
 
-To set the discretization method for the angular Fokker-Planck term. With the `GN` solver,
-only the `"galerkin"` discretization is currently supported.
+To set the discretization method for the angular Fokker-Planck term.
 
 # Input Argument(s)
 - `this::GN` : discretization method.
 - `angular_fokker_planck::String` : discretization method for the angular Fokker-Planck
-  term, which can take the following value:
-    - `angular_fokker_planck = "galerkin"` : Galerkin moment-based discretization.
+  term, which can take the following values:
+    - `angular_fokker_planck = "galerkin"` : Galerkin moment-based discretization
+      (diagonal on full-range spherical harmonics, `ℳ[p,p] = -ℓ_p(ℓ_p+1)`).
+    - `angular_fokker_planck = "finite-difference"` : finite-volume (TPFA)
+      discretization of the Laplace-Beltrami operator on the GN patch graph,
+      using the natural connectivity of the tiling (no Voronoi needed).
 
 # Output Argument(s)
 N/A
@@ -311,11 +314,11 @@ N/A
 # Examples
 ```jldoctest
 julia> m = GN()
-julia> m.set_angular_fokker_planck("galerkin")
+julia> m.set_angular_fokker_planck("finite-difference")
 ```
 """
 function set_angular_fokker_planck(this::GN,angular_fokker_planck::String)
-    if angular_fokker_planck ∉ ["galerkin"] error("Unkown method to deal with the angular Fokker-Planck term.") end
+    if angular_fokker_planck ∉ ["galerkin","finite-difference"] error("Unkown method to deal with the angular Fokker-Planck term.") end
     this.angular_fokker_planck = angular_fokker_planck
 end
 

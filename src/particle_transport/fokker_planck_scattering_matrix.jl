@@ -58,19 +58,24 @@ Calculate the Fokker-Planck scattering matrix for the spherical harmonics method
   Fokker-Planck Equation.
 
 """
-function fokker_planck_scattering_matrix(method::String,pl::Vector{Int64},P::Int64)
+function fokker_planck_scattering_matrix(method::String,pl::Vector{Int64},P::Int64;L::Int64=-1,L_elem::Int64=0,Nv::Int64=0,Ndims::Int64=0,tiling::String="polar-anchored",Mll::Union{Nothing,Array{Float64,5}}=nothing)
     if method == "galerkin"
         ℳ = fokker_planck_galerkin(P,pl)
+        # Stabilization of the scattering matrix
+        λ₀ = 0.0
+        for p in range(1,P)
+            if (ℳ[p,p] < -λ₀) λ₀ = -ℳ[p,p] end
+        end
+        for p in range(1,P)
+            ℳ[p,p] += λ₀
+        end
+        return ℳ, λ₀
+    elseif method == "finite-difference"
+        if L < 0 || Mll === nothing
+            error("Keyword arguments L and Mll are required for the GN finite-difference method.")
+        end
+        return fokker_planck_finite_difference_gn(L,L_elem,Nv,Ndims,tiling,Mll,pl)
     else
         error("Unknown method to treat the Fokker-Planck term.")
     end
-    # Stabilization of the scattering matrix
-    λ₀ = 0.0
-    for p in range(1,P)
-        if (ℳ[p,p] < -λ₀) λ₀ = -ℳ[p,p] end
-    end
-    for p in range(1,P)
-        ℳ[p,p] += λ₀
-    end
-    return ℳ, λ₀
 end
