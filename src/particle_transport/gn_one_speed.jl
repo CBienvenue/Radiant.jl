@@ -184,7 +184,29 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
         end
     end
 
+    # Pre-allocate per-voxel workspaces (𝒮, Q, 𝚽) and moving-boundary buffers
+    # to avoid allocations inside the deep sweep loops. The cell-system
+    # dimension matches gn_3D_BTE!/gn_3D_BFP! exactly: Nm[5] in-cell moments × Nq angular.
+    Nm_solve = Nm[5] * Nq
+    if Ndims == 3
+        𝚽x12_buf = zeros(Nq, Nm[1], Ns[2], Ns[3])
+        𝚽y12_buf = zeros(Nq, Nm[2], Ns[3])
+        𝚽z12_buf = zeros(Nq, Nm[3])
+    elseif Ndims == 2
+        𝚽x12_buf = zeros(Nq, Nm[1], Ns[2])
+        𝚽y12_buf = zeros(Nq, Nm[2])
+        𝚽z12_buf = zeros(0,0)
+    else
+        𝚽x12_buf = zeros(Nq, Nm[1])
+        𝚽y12_buf = zeros(0,0)
+        𝚽z12_buf = zeros(0,0)
+    end
+    𝒮_ws = zeros(Nm_solve, Nm_solve)
+    Q_ws = zeros(Nm_solve)
+    𝚽_ws = zeros(Nm_solve)
+
     # Source iteration loop until convergence
+    Ql = similar(Qlout)
     i_in = 1
     ϵ_in = 0.0
     ρ_in = NaN
@@ -192,7 +214,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     while ~(isInnerConv)
 
         # Calculation of the Legendre components of the source (in-scattering)
-        Ql = copy(Qlout)
+        Ql .= Qlout
         if solver ∉ [4,5,6] Ql = scattering_source(Ql,𝚽l,Σs,mat,Np,pl,Nm[5],Ns) end
 
         # Finite element treatment of the angular Fokker-Planck term
@@ -237,10 +259,20 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
                 end
             end
             # Computation of the restricted-angle fluxes by sweeping through the spatial grid
-            for u in range(1,8), v in range(1,Nv)
+            @views for u in 1:8, v in 1:Nv
                 Nw = Nw_of(u, v)
-                for w in range(1,Nw)
-                    𝚽_q[:,:,:,u,v,w],𝚽E12_q[:,:,:,u,v,w],𝚽x12_q[:,:,:,u,v,w] = gn_sweep_1D(sx[u],𝚽_q[:,:,:,u,v,w],Q_q[:,:,:,u,v,w],Σt,mat[:,1,1],Ns[1],Δs[1],Nq,Np_source,Np_surf,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w])
+                for w in 1:Nw
+                    gn_sweep_1D!(𝚽_q[:,:,:,u,v,w],
+                                𝚽E12_q[:,:,:,u,v,w],
+                                𝚽x12_q[:,:,:,u,v,w],
+                                sx[u],Σt,mat[:,1,1],Ns[1],Δs[1],
+                                Q_q[:,:,:,u,v,w],
+                                Nq,Np_source,𝒪,Nm,C,ω,
+                                sources_q[:,:,u,v,w],
+                                S⁻,S⁺,S,𝒲,isFC,isCSD,
+                                𝒩[:,:,1,u,v,w],
+                                𝒮_ws,Q_ws,𝚽_ws,
+                                𝚽x12_buf)
                 end
             end
             # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
@@ -311,10 +343,21 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
                 end
             end
             # Computation of the restricted-angle fluxes by sweeping through the spatial grid
-            for u in range(1,8), v in range(1,Nv)
+            @views for u in 1:8, v in 1:Nv
                 Nw = Nw_of(u, v)
-                for w in range(1,Nw)
-                    𝚽_q[:,:,:,:,u,v,w],𝚽E12_q[:,:,:,:,u,v,w],𝚽x12_q[:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,u,v,w] = gn_sweep_2D(sx[u],sy[u],𝚽_q[:,:,:,:,u,v,w],Q_q[:,:,:,:,u,v,w],Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],Nq,Np_source,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w])
+                for w in 1:Nw
+                    gn_sweep_2D!(𝚽_q[:,:,:,:,u,v,w],
+                                𝚽E12_q[:,:,:,:,u,v,w],
+                                𝚽x12_q[:,:,:,:,u,v,w],
+                                𝚽y12_q[:,:,:,:,u,v,w],
+                                sx[u],sy[u],Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],
+                                Q_q[:,:,:,:,u,v,w],
+                                Nq,Np_source,𝒪,Nm,C,ω,
+                                sources_q[:,:,u,v,w],
+                                S⁻,S⁺,S,𝒲,isFC,isCSD,
+                                𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],
+                                𝒮_ws,Q_ws,𝚽_ws,
+                                𝚽x12_buf,𝚽y12_buf)
                 end
             end
             # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
@@ -410,10 +453,22 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
                 end
             end
             # Computation of the restricted-angle fluxes by sweeping through the spatial grid
-            for u in 1:8, v in 1:Nv
+            @views for u in 1:8, v in 1:Nv
                 Nw = Nw_of(u, v)
                 for w in 1:Nw
-                    𝚽_q[:,:,:,:,:,u,v,w],𝚽E12_q[:,:,:,:,:,u,v,w],𝚽x12_q[:,:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,:,u,v,w],𝚽z12_q[:,:,:,:,:,u,v,w] = gn_sweep_3D(sx[u],sy[u],sz[u],𝚽_q[:,:,:,:,:,u,v,w],Q_q[:,:,:,:,:,u,v,w],Σt,mat,Ns[1],Ns[2],Ns[3],Δs[1],Δs[2],Δs[3],Nq,Np_source,𝒪,Nm,C,ω,sources_q[:,:,u,v,w],𝚽x12_q[:,:,:,:,:,u,v,w],𝚽y12_q[:,:,:,:,:,u,v,w],𝚽z12_q[:,:,:,:,:,u,v,w],S⁻,S⁺,S,𝚽E12_q[:,:,:,:,:,u,v,w],𝒲,isFC,isCSD,𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],𝒩[:,:,3,u,v,w])
+                    gn_sweep_3D!(𝚽_q[:,:,:,:,:,u,v,w],
+                                𝚽E12_q[:,:,:,:,:,u,v,w],
+                                𝚽x12_q[:,:,:,:,:,u,v,w],
+                                𝚽y12_q[:,:,:,:,:,u,v,w],
+                                𝚽z12_q[:,:,:,:,:,u,v,w],
+                                sx[u],sy[u],sz[u],Σt,mat,Ns[1],Ns[2],Ns[3],Δs[1],Δs[2],Δs[3],
+                                Q_q[:,:,:,:,:,u,v,w],
+                                Nq,Np_source,𝒪,Nm,C,ω,
+                                sources_q[:,:,u,v,w],
+                                S⁻,S⁺,S,𝒲,isFC,isCSD,
+                                𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],𝒩[:,:,3,u,v,w],
+                                𝒮_ws,Q_ws,𝚽_ws,
+                                𝚽x12_buf,𝚽y12_buf,𝚽z12_buf)
                 end
             end
             # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
@@ -523,12 +578,12 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
             # Livolant acceleration
             if 𝒜 == "livolant" && mod(i_in,3) == 0
                 𝚽l⁺ = livolant(𝚽l,𝚽l⁻[1,:,:,:,:,:],𝚽l⁻[2,:,:,:,:,:])
-                𝚽l⁻[2,:,:,:,:,:] = 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] = 𝚽l
+                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
+                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
                 𝚽l .= 𝚽l⁺
             else
-                𝚽l⁻[2,:,:,:,:,:] = 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] = 𝚽l
+                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
+                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
             end
             
             # Save flux solution and go to next iteration

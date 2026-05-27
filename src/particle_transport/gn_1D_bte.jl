@@ -1,11 +1,13 @@
-function gn_1D_BTE(sx::Int64,Σt::Float64,Δx::Float64,Qn::Array{Float64},𝚽x12::Vector{Float64},Nmx::Int64,Np::Int64,C::Vector{Float64},ωx::Vector{Float64},𝒩x::Matrix{Float64})
+function gn_1D_BTE!(𝚽n::AbstractArray{Float64,2},𝚽x12::AbstractVector{Float64},sx::Int64,Σt::Float64,Δx::Float64,Qn::AbstractArray{Float64,2},𝒮::Matrix{Float64},Q::Vector{Float64},𝚽::Vector{Float64},Nmx::Int64,Np::Int64,C::Vector{Float64},ωx::Vector{Float64},𝒩x::AbstractMatrix{Float64})
 
 # Initialization
 Nm = Nmx*Np
-𝒮 = zeros(Nm,Nm)
-Q = zeros(Nm)
-𝚽 = Q
-𝚽n = copy(Qn)
+@inbounds for j in 1:Nm
+    Q[j] = 0.0
+    for i in 1:Nm
+        𝒮[i,j] = 0.0
+    end
+end
 g(n,sx) = if sx > 0 return 1 else return -(-1)^(n-1) end
 index_xp(ix,ip) = Nmx*(ip-1)+ix
 
@@ -40,8 +42,9 @@ for ix in range(1,Nmx)
     end
 end
 
-# Solve the equation system
-𝚽 = 𝒮\Q
+# Solve the equation system (in place)
+F = lu!(𝒮)
+ldiv!(𝚽, F, Q)
 
 # Closure relations
 for ip in range(1,Np)
@@ -53,7 +56,6 @@ for ip in range(1,Np)
     end
 end
 
-# Returning solutions
-return 𝚽n, 𝚽x12
+return nothing
 
 end

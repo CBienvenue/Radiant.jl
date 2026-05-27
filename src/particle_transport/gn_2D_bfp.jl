@@ -1,34 +1,36 @@
-function gn_2D_BFP(sx::Int64,sy::Int64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::Vector{Float64},Δx::Float64,Δy::Float64,Qn::Array{Float64},𝚽x12::Array{Float64},𝚽y12::Array{Float64},𝚽E12::Array{Float64},Nmx::Int64,Nmy::Int64,NmE::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωE::Array{Float64},𝒩x::Matrix{Float64},𝒩y::Matrix{Float64},𝒲::Array{Float64},isFC::Bool)
+function gn_2D_BFP!(𝚽n::AbstractArray{Float64,2},𝚽x12::AbstractArray{Float64,2},𝚽y12::AbstractArray{Float64,2},𝚽E12::AbstractArray{Float64,2},sx::Int64,sy::Int64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::AbstractVector{Float64},Δx::Float64,Δy::Float64,Qn::AbstractArray{Float64,2},𝒮::Matrix{Float64},Q::Vector{Float64},𝚽::Vector{Float64},Nmx::Int64,Nmy::Int64,NmE::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωE::Array{Float64},𝒩x::AbstractMatrix{Float64},𝒩y::AbstractMatrix{Float64},𝒲::Array{Float64},isFC::Bool)
 
 # Initialization
-if isFC Nm = Nmx*Nmy*NmE*Np else Nm = (Nmx+Nmy+NmE-2)*Np end
-𝒮 = zeros(Nm,Nm)
-Q = zeros(Nm)
-𝚽 = Q
-𝚽n = copy(Qn)
+Nm = isFC ? Nmx*Nmy*NmE*Np : (Nmx+Nmy+NmE-2)*Np
+@inbounds for j in 1:Nm
+    Q[j] = 0.0
+    for i in 1:Nm
+        𝒮[i,j] = 0.0
+    end
+end
 g(n,sx) = if sx > 0 return 1 else return -(-1)^(n-1) end
 function index_xy(ix,iy)
-    if isFC 
-        return Nmx*(iy-1)+ix 
-    else  
+    if isFC
+        return Nmx*(iy-1)+ix
+    else
         i = 1 + (iy-1) + (ix-1)
         if iy > 1 i += Nmx-1 end
         return i
     end
 end
 function index_Ex(iE,ix)
-    if isFC 
-        return NmE*(ix-1)+iE 
-    else  
+    if isFC
+        return NmE*(ix-1)+iE
+    else
         i = 1 + (ix-1) + (iE-1)
         if ix > 1 i += NmE-1 end
         return i
     end
 end
 function index_Ey(iE,iy)
-    if isFC 
-        return NmE*(iy-1)+iE 
-    else  
+    if isFC
+        return NmE*(iy-1)+iE
+    else
         i = 1 + (iy-1) + (iE-1)
         if iy > 1 i += NmE-1 end
         return i
@@ -83,7 +85,7 @@ for ix in range(1,Nmx), jx in range(1,Nmx), iy in range(1,Nmy), jy in range(1,Nm
                 𝒮[i,j] += C[iE] * C[jE] * C[kE] * C[wE] * (1-(-1)^(iE-kE)) * S[wE] * 𝒲[jE,kE,wE]
             end
             𝒮[i,j] += C[iE] * S⁺ * (-1)^(iE-1) * C[jE] * (-1)^(jE-1) * ωE[jE+1]
-        end 
+        end
     end
 end
 
@@ -113,8 +115,9 @@ for ix in range(1,Nmx), iy in range(1,Nmy), iE in range(1,NmE)
     end
 end
 
-# Solve the equation system
-𝚽 = 𝒮\Q
+# Solve the equation system (in place)
+F = lu!(𝒮)
+ldiv!(𝚽, F, Q)
 
 # Closure relations
 for ip in 1:Np
@@ -152,7 +155,6 @@ for ip in 1:Np
     end
 end
 
-# Returning solutions
-return 𝚽n, 𝚽x12, 𝚽y12, 𝚽E12
+return nothing
 
 end

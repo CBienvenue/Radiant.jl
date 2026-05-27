@@ -1,16 +1,18 @@
-function gn_2D_BTE(sx::Int64,sy::Int64,Σt::Float64,Δx::Float64,Δy::Float64,Qn::Array{Float64},𝚽x12::Array{Float64},𝚽y12::Array{Float64},Nmx::Int64,Nmy::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},𝒩x::Matrix{Float64},𝒩y::Matrix{Float64},isFC::Bool)
+function gn_2D_BTE!(𝚽n::AbstractArray{Float64,2},𝚽x12::AbstractArray{Float64,2},𝚽y12::AbstractArray{Float64,2},sx::Int64,sy::Int64,Σt::Float64,Δx::Float64,Δy::Float64,Qn::AbstractArray{Float64,2},𝒮::Matrix{Float64},Q::Vector{Float64},𝚽::Vector{Float64},Nmx::Int64,Nmy::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},𝒩x::AbstractMatrix{Float64},𝒩y::AbstractMatrix{Float64},isFC::Bool)
 
 # Initialization
-if isFC Nm = Nmx*Nmy*Np else Nm = (Nmx+Nmy-1)*Np end
-𝒮 = zeros(Nm,Nm)
-Q = zeros(Nm)
-𝚽 = Q
-𝚽n = copy(Qn)
+Nm = isFC ? Nmx*Nmy*Np : (Nmx+Nmy-1)*Np
+@inbounds for j in 1:Nm
+    Q[j] = 0.0
+    for i in 1:Nm
+        𝒮[i,j] = 0.0
+    end
+end
 g(n,sx) = if sx > 0 return 1 else return -(-1)^(n-1) end
 function index_xy(ix,iy)
-    if isFC 
-        return Nmx*(iy-1)+ix 
-    else  
+    if isFC
+        return Nmx*(iy-1)+ix
+    else
         i = 1 + (iy-1) + (ix-1)
         if iy > 1 i += Nmx-1 end
         return i
@@ -73,8 +75,9 @@ for ix in range(1,Nmx), iy in range(1,Nmy)
     end
 end
 
-# Solve the equation system
-𝚽 = 𝒮\Q
+# Solve the equation system (in place)
+F = lu!(𝒮)
+ldiv!(𝚽, F, Q)
 
 # Closure relations
 for ip in 1:Np
@@ -101,7 +104,6 @@ for ip in 1:Np
     end
 end
 
-# Returning solutions
-return 𝚽n, 𝚽x12, 𝚽y12
+return nothing
 
 end

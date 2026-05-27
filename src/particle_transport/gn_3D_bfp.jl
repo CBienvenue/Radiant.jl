@@ -1,11 +1,13 @@
-function gn_3D_BFP(sx::Int64,sy::Int64,sz::Int64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::Vector{Float64},Δx::Float64,Δy::Float64,Δz::Float64,Qn::Array{Float64},𝚽x12::Array{Float64},𝚽y12::Array{Float64},𝚽z12::Array{Float64},𝚽E12::Array{Float64},Nmx::Int64,Nmy::Int64,Nmz::Int64,NmE::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},ωE::Array{Float64},𝒩x::Matrix{Float64},𝒩y::Matrix{Float64},𝒩z::Matrix{Float64},𝒲::Array{Float64},isFC::Bool)
+function gn_3D_BFP!(𝚽n::AbstractArray{Float64,2},𝚽x12::AbstractArray{Float64,2},𝚽y12::AbstractArray{Float64,2},𝚽z12::AbstractArray{Float64,2},𝚽E12::AbstractArray{Float64,2},sx::Int64,sy::Int64,sz::Int64,Σt::Float64,S⁻::Float64,S⁺::Float64,S::AbstractVector{Float64},Δx::Float64,Δy::Float64,Δz::Float64,Qn::AbstractArray{Float64,2},𝒮::Matrix{Float64},Q::Vector{Float64},𝚽::Vector{Float64},Nmx::Int64,Nmy::Int64,Nmz::Int64,NmE::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},ωE::Array{Float64},𝒩x::AbstractMatrix{Float64},𝒩y::AbstractMatrix{Float64},𝒩z::AbstractMatrix{Float64},𝒲::Array{Float64},isFC::Bool)
 
 # Initialization
-if isFC Nm = Nmx*Nmy*Nmz*NmE*Np else Nm = (Nmx+Nmy+Nmz+NmE-3)*Np end
-𝒮 = zeros(Nm,Nm)
-Q = zeros(Nm)
-𝚽 = Q
-𝚽n = copy(Qn)
+Nm = isFC ? Nmx*Nmy*Nmz*NmE*Np : (Nmx+Nmy+Nmz+NmE-3)*Np
+@inbounds for j in 1:Nm
+    Q[j] = 0.0
+    for i in 1:Nm
+        𝒮[i,j] = 0.0
+    end
+end
 g(n,sx) = if sx > 0 return 1 else return -(-1)^(n-1) end
 function index_Exy(iE,ix,iy)
     if isFC
@@ -105,7 +107,7 @@ for ix in range(1,Nmx), jx in range(1,Nmx), iy in range(1,Nmy), jy in range(1,Nm
                 𝒮[i,j] += C[iE] * C[jE] * C[kE] * C[wE] * (1-(-1)^(iE-kE)) * S[wE] * 𝒲[jE,kE,wE]
             end
             𝒮[i,j] += C[iE] * S⁺ * (-1)^(iE-1) * C[jE] * (-1)^(jE-1) * ωE[jE+1]
-        end 
+        end
     end
 end
 
@@ -141,8 +143,9 @@ for ix in range(1,Nmx), iy in range(1,Nmy), iz in range(1,Nmz), iE in range(1,Nm
     end
 end
 
-# Solve the equation system
-𝚽 = 𝒮\Q
+# Solve the equation system (in place)
+F = lu!(𝒮)
+ldiv!(𝚽, F, Q)
 
 # Closure relations
 for ip in 1:Np
@@ -189,7 +192,6 @@ for ip in 1:Np
     end
 end
 
-# Returning solutions
-return 𝚽n, 𝚽x12, 𝚽y12, 𝚽z12, 𝚽E12
+return nothing
 
 end

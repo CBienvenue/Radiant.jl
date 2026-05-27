@@ -1,43 +1,45 @@
-function gn_3D_BTE(sx::Int64,sy::Int64,sz::Int64,Σt::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::Array{Float64},𝚽x12::Array{Float64},𝚽y12::Array{Float64},𝚽z12::Array{Float64},Nmx::Int64,Nmy::Int64,Nmz::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},𝒩x::Matrix{Float64},𝒩y::Matrix{Float64},𝒩z::Matrix{Float64},isFC::Bool)
+function gn_3D_BTE!(𝚽n::AbstractArray{Float64,2},𝚽x12::AbstractArray{Float64,2},𝚽y12::AbstractArray{Float64,2},𝚽z12::AbstractArray{Float64,2},sx::Int64,sy::Int64,sz::Int64,Σt::Float64,Δx::Float64,Δy::Float64,Δz::Float64,Qn::AbstractArray{Float64,2},𝒮::Matrix{Float64},Q::Vector{Float64},𝚽::Vector{Float64},Nmx::Int64,Nmy::Int64,Nmz::Int64,Np::Int64,C::Vector{Float64},ωx::Array{Float64},ωy::Array{Float64},ωz::Array{Float64},𝒩x::AbstractMatrix{Float64},𝒩y::AbstractMatrix{Float64},𝒩z::AbstractMatrix{Float64},isFC::Bool)
 
 # Initialization
-if isFC Nm = Nmx*Nmy*Nmz*Np else Nm = (Nmx+Nmy+Nmz-2)*Np end
-𝒮 = zeros(Nm,Nm)
-Q = zeros(Nm)
-𝚽 = Q
-𝚽n = copy(Qn)
+Nm = isFC ? Nmx*Nmy*Nmz*Np : (Nmx+Nmy+Nmz-2)*Np
+@inbounds for j in 1:Nm
+    Q[j] = 0.0
+    for i in 1:Nm
+        𝒮[i,j] = 0.0
+    end
+end
 g(n,sx) = if sx > 0 return 1 else return -(-1)^(n-1) end
 function index_xy(ix,iy)
-    if isFC 
+    if isFC
         return Nmx*(iy-1) + ix
-    else  
+    else
         i = 1 + (ix-1) + (iy-1)
         if iy > 1 i += Nmx-1 end
         return i
     end
 end
 function index_yz(iy,iz)
-    if isFC 
+    if isFC
         return Nmy*(iz-1) + iy
-    else  
+    else
         i = 1 + (iy-1) + (iz-1)
         if iz > 1 i += Nmy-1 end
         return i
     end
 end
 function index_xz(ix,iz)
-    if isFC 
+    if isFC
         return Nmx*(iz-1) + ix
-    else  
+    else
         i = 1 + (ix-1) + (iz-1)
         if iz > 1 i += Nmx-1 end
         return i
     end
 end
 function index_xyz(ix,iy,iz)
-    if isFC 
+    if isFC
         return Nmy*Nmx*(iz-1) + Nmx*(iy-1) + ix
-    else  
+    else
         i = 1 + (ix-1) + (iy-1) + (iz-1)
         if iy > 1 i += Nmx-1 end
         if iz > 1 i += Nmx-1 + Nmy-1 end
@@ -99,12 +101,12 @@ for ix in range(1,Nmx), iy in range(1,Nmy), iz in range(1,Nmz)
 
         # Incoming boundary sources - x
         for jp in range(1,Np)
-            Q[j] += fx * 𝒩x[ip,jp] * 𝚽x12[jp,index_xy(iy,iz)]
+            Q[j] += fx * 𝒩x[ip,jp] * 𝚽x12[jp,index_yz(iy,iz)]
         end
 
         # Incoming boundary sources - y
         for jp in range(1,Np)
-            Q[j] += fy * 𝒩y[ip,jp] * 𝚽y12[jp,index_xy(ix,iz)]
+            Q[j] += fy * 𝒩y[ip,jp] * 𝚽y12[jp,index_xz(ix,iz)]
         end
 
         # Incoming boundary sources - z
@@ -114,27 +116,28 @@ for ix in range(1,Nmx), iy in range(1,Nmy), iz in range(1,Nmz)
     end
 end
 
-# Solve the equation system
-𝚽 = 𝒮\Q
+# Solve the equation system (in place: lu! mutates 𝒮; ldiv! writes solution into 𝚽)
+F = lu!(𝒮)
+ldiv!(𝚽, F, Q)
 
 # Closure relations
 for ip in 1:Np
     for iy in 1:Nmy, iz in 1:Nmz
         if (~isFC) && (count(>(1),(iy,iz)) ≥ 2) continue end
-        𝚽x12[ip,index_xy(iy,iz)] = ωx[1] * 𝚽x12[ip,index_xy(iy,iz)]
+        𝚽x12[ip,index_yz(iy,iz)] = ωx[1] * 𝚽x12[ip,index_yz(iy,iz)]
         for ix in 1:Nmx
             if (~isFC) && (count(>(1),(ix,iy,iz)) ≥ 2) continue end
             j = index_xyzp(ix,iy,iz,ip)
-            𝚽x12[ip,index_xy(iy,iz)] += C[ix] * sx^(ix-1) * ωx[ix+1] * 𝚽[j]
+            𝚽x12[ip,index_yz(iy,iz)] += C[ix] * sx^(ix-1) * ωx[ix+1] * 𝚽[j]
         end
     end
     for ix in 1:Nmx, iz in 1:Nmz
         if (~isFC) && (count(>(1),(ix,iz)) ≥ 2) continue end
-        𝚽y12[ip,index_xy(ix,iz)] = ωy[1] * 𝚽y12[ip,index_xy(ix,iz)]
+        𝚽y12[ip,index_xz(ix,iz)] = ωy[1] * 𝚽y12[ip,index_xz(ix,iz)]
         for iy in 1:Nmy
             if (~isFC) && (count(>(1),(ix,iy,iz)) ≥ 2) continue end
             j = index_xyzp(ix,iy,iz,ip)
-            𝚽y12[ip,index_xy(ix,iz)] += C[iy] * sy^(iy-1) * ωy[iy+1] * 𝚽[j]
+            𝚽y12[ip,index_xz(ix,iz)] += C[iy] * sy^(iy-1) * ωy[iy+1] * 𝚽[j]
         end
     end
     for ix in 1:Nmx, iy in 1:Nmy
@@ -153,7 +156,6 @@ for ip in 1:Np
     end
 end
 
-# Returning solutions
-return 𝚽n, 𝚽x12, 𝚽y12, 𝚽z12
+return nothing
 
 end

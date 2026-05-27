@@ -794,6 +794,8 @@ function patch_to_half_range_matrix_spherical_harmonics_symmetric(L::Int64,Lq::I
     sz = [1,-1,1,-1,1,-1,1,-1]
 
     Yhalf = Vector{Float64}(undef, Np)
+    Plm_buf = Matrix{Float64}(undef, L+1, L+1)
+    Pl_buf  = Vector{Float64}(undef, L+1)
 
     for u in 1:8, i in 1:Nv
         for j in 1:(2i - 1)
@@ -823,12 +825,7 @@ function patch_to_half_range_matrix_spherical_harmonics_symmetric(L::Int64,Lq::I
                         μp_b = clamp(μp_b, 0.0, 1.0)
                         ϕp_b = 2 * π * (ϕ_g - ϕ⁻) / Δϕ_b
 
-                        Yh = real_half_range_spherical_harmonics_up_to_L(L, μp_b, ϕp_b)
-                        p = 0
-                        for l in 0:L, m in -l:l
-                            p += 1
-                            Yhalf[p] = Yh[l+1][l+m+1]
-                        end
+                        real_half_range_spherical_harmonics_up_to_L!(Yhalf, Plm_buf, Pl_buf, L, μp_b, ϕp_b)
 
                         wfac = boundary_scale * JW[k]
                         for q in 1:Nq

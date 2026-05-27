@@ -139,6 +139,103 @@ function real_half_range_spherical_harmonics_up_to_L(L::Int64,μ::Float64,ϕ::Fl
 end
 
 """
+    real_half_range_spherical_harmonics_up_to_L!(Yhalf::AbstractVector{Float64},
+        Plm::AbstractMatrix{Float64}, Pl::AbstractVector{Float64},
+        L::Int64, μ::Float64, ϕ::Float64)
+
+In-place variant of `real_half_range_spherical_harmonics_up_to_L` that writes the
+flat (length (L+1)²) result into `Yhalf`, ordered with `(l,m)` running outer-to-inner
+over `l=0..L, m=-l..l`. Uses `Plm` and `Pl` as workspaces; no internal allocations.
+
+Layout: `Yhalf[(l)² + l + m + 1]` holds the (l,m) component.
+"""
+function real_half_range_spherical_harmonics_up_to_L!(Yhalf::AbstractVector{Float64},Plm::AbstractMatrix{Float64},Pl::AbstractVector{Float64},L::Int64,μ::Float64,ϕ::Float64)
+
+    # Associated Legendre functions Plm(l, m, 2μ-1), 0 ≤ m ≤ l ≤ L
+    # Stored as Plm[l+1, m+1]; entries with m > l are unused.
+    fill!(Plm, 0.0)
+    twoμm1 = 2*μ - 1
+    if μ == -1 || μ == 1
+        jacobi_polynomials_up_to_L!(Pl, L, 0, 0, twoμm1)
+        for l in 0:L
+            Plm[l+1, 1] = Pl[l+1]
+        end
+    else
+        sq = 1 - twoμm1*twoμm1
+        for m in 0:L
+            jacobi_polynomials_up_to_L!(Pl, L-m, m, m, twoμm1)
+            # factor = (l+m)!/l! * 2^(-m) * (1-(2μ-1)²)^(m/2)
+            # We compute (l+m)!/l! incrementally as `pochhammer`.
+            two_pow_m = 2.0^m
+            sq_pow_m_half = m == 0 ? 1.0 : sq^(m/2)
+            for l in m:L
+                pochhammer = 1.0
+                @inbounds for i in (l+1):(l+m)
+                    pochhammer *= i
+                end
+                Plm[l+1, m+1] = pochhammer / two_pow_m * sq_pow_m_half * Pl[l-m+1]
+            end
+        end
+    end
+
+    # Half-range spherical harmonics, flat ordering
+    p = 0
+    inv_two_π = 1/(2π)
+    @inbounds for l in 0:L
+        twol1 = 2*l + 1
+        for m in -l:l
+            p += 1
+            am = abs(m)
+            𝓣m = m ≥ 0 ? cos(m*ϕ) : sin(am*ϕ)
+            # factor = (l-am)!/(l+am)! = 1 / ∏_{i=l-am+1..l+am} i  (for am ≥ 1; 1 for am=0)
+            inv_pochhammer = 1.0
+            for i in (l-am+1):(l+am)
+                inv_pochhammer /= i
+            end
+            Clm = sqrt((2 - (m == 0)) * inv_two_π * twol1 * inv_pochhammer)
+            Yhalf[p] = Clm * Plm[l+1, am+1] * 𝓣m
+        end
+    end
+    return nothing
+end
+
+"""
+    jacobi_polynomials_up_to_L!(Pl::AbstractVector{Float64}, L::Int64,
+        α::Int64, β::Int64, x::Real)
+
+In-place variant: writes Jacobi polynomials P_l^{(α,β)}(x), l = 0..L, into `Pl`.
+"""
+function jacobi_polynomials_up_to_L!(Pl::AbstractVector{Float64},L::Int64,α::Int64,β::Int64,x::Real)
+    if x == 1
+        for l in 0:L
+            Pl[l+1] = factorial_factor([l+α],[l,α])
+        end
+        return nothing
+    elseif x == -1
+        for l in 0:L
+            Pl[l+1] = (-1)^l * factorial_factor([l+β],[l,β])
+        end
+        return nothing
+    end
+    Pl[1] = 1
+    if L ≥ 1
+        Pl[2] = (α+1) + 0.5*(α+β+2)*(x-1)
+    end
+    @inbounds for l in 2:L
+        if l < 125
+            Pl[l+1] = ((2*l+α+β-1)*((2*l+α+β)*(2*l+α+β-2)*x+α^2-β^2)*Pl[l] - (2*(l+α-1)*(l+β-1)*(2*l+α+β))*Pl[l-1])/(2*l*(l+α+β)*(2*l+α+β-2))
+        else
+            θ = acos(x)
+            kθ = 1/(sqrt(π)*sin(0.5*θ)^(α+0.5)*cos(0.5*θ)^(β+0.5))
+            N = l + 0.5 * (α + β + 1)
+            γ = -0.5*π * (α+0.5)
+            Pl[l+1] = 1/sqrt(l) * kθ * cos(N*θ+γ)
+        end
+    end
+    return nothing
+end
+
+"""
     real_octant_range_spherical_harmonics_up_to_L(L::Int64,μ::Float64,ϕ::Float64)
 
 Calculate the octant-range real spherical harmonics up to order L.
