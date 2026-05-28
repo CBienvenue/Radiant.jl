@@ -16,6 +16,8 @@ module Radiant
     radiant_src["cross_sections/"] = [
         "read_fmac_m.jl",
         "write_fmac_m.jl",
+        "read_matxs.jl",
+        "write_matxs.jl",
         "generate_cross_sections.jl",
         "custom_cross_sections.jl",
         "energy_group_structure.jl",

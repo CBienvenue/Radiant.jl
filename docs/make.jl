@@ -49,6 +49,7 @@ makedocs(
             "2 Materials"                    => "user_guide_materials.md",
             "3 Particles"                    => "user_guide_particles.md",
             "4 Cross-Sections"               => "user_guide_cross_sections.md",
+            "4.5 The MATXS File Format"      => "user_guide_matxs_format.md",
             "5 Geometry"                     => "user_guide_geometry.md",
             "6 Solvers"                      => "user_guide_solvers.md",
             "7 Fixed External Sources"       => "user_guide_fixed_external_sources.md",

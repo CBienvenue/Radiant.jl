@@ -89,6 +89,8 @@ function is_ready_to_build(this::Cross_Sections)
     if ismissing(this.source) error("Cannot build multigroup cross-sections data. The source of cross-sections data is not specified.") end
     if lowercase(this.source) == "fmac-m"
         if ismissing(this.file) error("Cannot build multigroup cross-sections data. The FMAC-M file name and its directory are not specified.") end
+    elseif lowercase(this.source) == "matxs"
+        if ismissing(this.file) error("Cannot build multigroup cross-sections data. The MATXS file name and its directory are not specified.") end
     elseif lowercase(this.source) == "physics-models"
         if ismissing(this.group_structure) error("Cannot build multigroup cross-sections data. The multigroup structure is not specified.") end
         if ismissing(this.interactions) error("Cannot build multigroup cross-sections data. The type of interaction(s) between particle(s) and the material are not specified.") end
@@ -128,6 +130,8 @@ function build(this::Cross_Sections)
     # Extract or produce formatted cross-sections data for transport calculations
     if lowercase(this.source) == "fmac-m"
         read_fmac_m(this)
+    elseif lowercase(this.source) == "matxs"
+        read_matxs(this)
     elseif lowercase(this.source) == "physics-models"
         try
             generate_cross_sections(this)
@@ -147,13 +151,15 @@ function build(this::Cross_Sections)
 end
 
 """
-    write(this::Cross_Sections,file::String)
+    write(this::Cross_Sections,file::String,format::String="fmac-m",binary::Bool=false)
 
-To write a FMAC-M formatted file containing the cross-sections library.
+To write a file containing the cross-sections library in the requested format.
 
 # Input Argument(s)
 - `this::Cross_Sections` : cross-sections library.
 - `file::String` : file name and directory.
+- `format::String` : output format, either `"fmac-m"` (default) or `"matxs"`.
+- `binary::Bool` : write the binary encoding (MATXS only, not yet implemented).
 
 # Output Argument(s)
 N/A
@@ -163,11 +169,18 @@ N/A
 julia> cs = Cross_Sections()
 julia> ... # Defining the cross-sections library properties
 julia> cs.write("fmac_m.txt")
+julia> cs.write("library.matxs","matxs")
 ```
 """
-function write(this::Cross_Sections,file::String)
+function write(this::Cross_Sections,file::String,format::String="fmac-m",binary::Bool=false)
     if ~this.is_build this.build() end
-    write_fmac_m(this,file)
+    if lowercase(format) == "fmac-m"
+        write_fmac_m(this,file)
+    elseif lowercase(format) == "matxs"
+        write_matxs(this,file,binary)
+    else
+        error("Unknown cross-sections output format: $format.")
+    end
 end
 
 """
@@ -191,7 +204,7 @@ julia> cs.set_source("FMAC-M")
 ```
 """
 function set_source(this::Cross_Sections,source::String)
-    if lowercase(source) ∉ ["fmac-m","physics-models","custom"] error("Unkown source of cross-sections data.") end
+    if lowercase(source) ∉ ["fmac-m","matxs","physics-models","custom"] error("Unkown source of cross-sections data.") end
     this.source = source
 end
 

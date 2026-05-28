@@ -8,6 +8,7 @@ Three sources of cross-sections are supported, and selected with `set_source(...
 |-------------------------|--------------------------------------------------------------------------|
 | `"physics-models"`      | Cross-sections are produced internally from physics models.              |
 | `"fmac-m"`              | Cross-sections are read from a FMAC-M formatted file.                    |
+| `"matxs"`               | Cross-sections are read from a MATXS (NJOY/CCCC) formatted file.          |
 | `"custom"`              | User-supplied absorption and isotropic scattering cross-sections.        |
 
 ## 4.1 Generating Cross-Sections from Physics Models
@@ -158,9 +159,44 @@ To write the current cross-section library to disk:
 cs.write("./fmac_m_file.txt")
 ```
 
-`cs.write(...)` will call `cs.build()` automatically if the library has not yet been built.
+`cs.write(...)` will call `cs.build()` automatically if the library has not yet been built. The
+output format is selected with the optional second argument (`"fmac-m"` by default):
 
-## 4.5 Retrieving Cross-Section Data
+```julia
+cs.write("./fmac_m_file.txt")            # FMAC-M (default)
+cs.write("./library.matxs","matxs")      # MATXS, BCD/ASCII encoding
+cs.write("./library.matxs","matxs",true) # MATXS, binary encoding
+```
+
+## 4.5 Reading and Writing MATXS Files
+
+Radiant can also read and write the [MATXS](@ref "The MATXS File Format") format — the
+generalized multigroup interface file based on the CCCC conventions and produced by NJOY's
+`matxsr` module. As with FMAC-M, a MATXS file stores a fully-built multigroup library that can
+be reused between calculations.
+
+To read a MATXS file (the BCD/ASCII and binary encodings are auto-detected):
+
+```julia
+cs = Cross_Sections()
+cs.set_source("matxs")
+cs.set_file("./library.matxs")
+cs.set_materials([water,al])              # Must match the materials stored in the file (in order)
+cs.set_particles([electron,photon])       # Must match the particles stored in the file
+cs.build()
+```
+
+To write the current library as a MATXS file:
+
+```julia
+cs.write("./library.matxs","matxs")       # BCD/ASCII encoding
+cs.write("./library.matxs","matxs",true)  # binary encoding
+```
+
+The record structure, the reaction-name keywords (`*tot0`, `*heat`, `*scat`, `*edep`, …) and
+the particle codes used by Radiant are detailed in [The MATXS File Format](@ref).
+
+## 4.6 Retrieving Cross-Section Data
 
 After `build()` has been called, the multigroup data can be inspected through the getter methods of `Cross_Sections`. They return arrays indexed by group (and material, where applicable):
 
@@ -191,13 +227,13 @@ e = cs.get_particle(Electron)    # By type
 w = cs.get_material("water")
 ```
 
-## 4.6 Summary of the Cross_Sections API
+## 4.7 Summary of the Cross_Sections API
 
 | Method                                            | Description                                                  |
 |---------------------------------------------------|--------------------------------------------------------------|
 | `Cross_Sections()`                                | Constructor.                                                 |
-| `set_source(s)`                                   | Source: `"physics-models"`, `"fmac-m"`, `"custom"`.          |
-| `set_file(path)`                                  | File path (used by `"fmac-m"`).                              |
+| `set_source(s)`                                   | Source: `"physics-models"`, `"fmac-m"`, `"matxs"`, `"custom"`. |
+| `set_file(path)`                                  | File path (used by `"fmac-m"` and `"matxs"`).                |
 | `set_materials(list)`                             | Set the list of materials.                                   |
 | `set_particles(list)`                             | Set the list of particles.                                   |
 | `set_interactions(list)`                          | Set the list of interaction models.                          |
@@ -207,7 +243,7 @@ w = cs.get_material("water")
 | `set_number_of_groups(Ng)`                        | Set per-particle number of energy groups.                    |
 | `set_absorption(Σa)`, `set_scattering(Σs)`        | Set custom cross-sections.                                   |
 | `build()`                                         | Build the multigroup transfer matrices.                      |
-| `write(path)`                                     | Write the library to a FMAC-M file.                          |
+| `write(path[,format[,binary]])`                   | Write the library; `format` is `"fmac-m"` (default) or `"matxs"`. |
 | `get_energies(p)`, `get_energy_boundaries(p)`, `get_energy_width(p)` | Query the energy structure for particle `p`.              |
 | `get_total(p)`, `get_absorption(p)`               | Get total / absorption cross-sections.                       |
 | `get_scattering(pin,pout,L)`                      | Legendre moments of the scattering matrix.                   |
