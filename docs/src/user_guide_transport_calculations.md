@@ -71,6 +71,16 @@ The scalar flux per energy group and per voxel for a given particle is obtained 
 
 The returned array has the structure `(Ng, Nx, Ny, Nz)` (with `Ny = Nz = 1` in lower dimensions).
 
+### 8.3.4 In-Group Spectral Radius
+
+`get_spectral_radius` returns the estimated in-group spectral radius of the source iteration, per energy group, for a given particle:
+
+```julia
+ρ_electron = c.get_spectral_radius(electron)   # Vector of length Ng
+```
+
+The estimate is the geometric-average relative-residual reduction per transport pass over the converged in-group solve (see the convergence-acceleration discussion in the theory manual). It is close to the within-group scattering ratio for unaccelerated source iteration (`set_acceleration("none")`) and substantially smaller for the acceleration methods, so it is a convenient diagnostic of how effective the chosen accelerator is. Groups that converge without iterating (e.g. with no in-group source) report `NaN`.
+
 ## 8.4 Plotting Results
 
 The results returned by `get_*` are standard Julia arrays and can be visualized with any plotting library (e.g. `Plots`, `PyPlot`, `Makie`). A typical 1D depth/dose plot is built as:

@@ -36,6 +36,8 @@ mutable struct SN
     scheme_type                ::Dict{String,String}
     scheme_order               ::Dict{String,Int64}
     acceleration               ::String
+    gmres_restart              ::Int64
+    anderson_depth             ::Int64
     isFC                       ::Bool
 
     # Constructor(s)
@@ -54,6 +56,8 @@ mutable struct SN
         this.scheme_type = Dict{String,String}()
         this.scheme_order = Dict{String,Int64}()
         this.acceleration = "none"
+        this.gmres_restart = 30
+        this.anderson_depth = 3
         this.isFC = true
         return this
     end
@@ -313,27 +317,46 @@ function set_scheme(this::SN,axis::String,scheme_type::String,scheme_order::Int6
 end
 
 """
-    set_acceleration(this::SN,acceleration::String)
+    set_acceleration(this::SN,acceleration::String,parameter::Int64=0)
 
 To set the acceleration method for the in-group iteration process.
 
 # Input Argument(s)
 - `this::SN` : discretization method.
 - `acceleration::String` : acceleration method, which takes the following values
-    - `acceleration = "none"` : none
-    - `acceleration = "livolant"` : livolant acceleration method
+    - `acceleration = "none"` : source iteration without acceleration
+    - `acceleration = "livolant"` : Livolant two-point extrapolation
+    - `acceleration = "anderson"` : depth-`m` Anderson acceleration
+    - `acceleration = "gmres"` : matrix-free restarted GMRES
+    - `acceleration = "bicgstab"` : matrix-free BiCGStab
+- `parameter::Int64` : optional tuning parameter for the chosen method. It is the Krylov
+   subspace size before restart for `"gmres"` (default 30) and the memory depth for
+   `"anderson"` (default 3); it is ignored by the other methods. A value of `0` keeps the
+   current default.
+
 # Output Argument(s)
 N/A
 
 # Examples
 ```jldoctest
 julia> m = SN()
-julia> m.set_acceleration("livolant")
+julia> m.set_acceleration("gmres")      # GMRES with the default restart of 30
+julia> m.set_acceleration("gmres",50)   # GMRES restarted every 50 Krylov vectors
+julia> m.set_acceleration("anderson",5) # Anderson acceleration with memory depth 5
 ```
 """
-function set_acceleration(this::SN,acceleration::String)
-    if lowercase(acceleration) ∉ ["none","livolant"] error("Unkown acceleration method.") end
-    this.acceleration = acceleration
+function set_acceleration(this::SN,acceleration::String,parameter::Int64=0)
+    accel = lowercase(acceleration)
+    if accel ∉ ["none","livolant","anderson","gmres","bicgstab"] error("Unkown acceleration method.") end
+    this.acceleration = accel
+    if parameter != 0
+        if parameter < 1 error("Acceleration parameter has to be at least 1.") end
+        if accel == "gmres"
+            this.gmres_restart = parameter
+        elseif accel == "anderson"
+            this.anderson_depth = parameter
+        end
+    end
 end
 
 """
@@ -566,6 +589,38 @@ Get the acceleration method for in-group iteration convergence.
 """
 function get_acceleration(this::SN)
     return this.acceleration
+end
+
+"""
+    get_gmres_restart(this::SN)
+
+Get the GMRES restart parameter for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::SN` : discretization method.
+
+# Output Argument(s)
+- `gmres_restart::Int64` : Krylov subspace size before restart.
+
+"""
+function get_gmres_restart(this::SN)
+    return this.gmres_restart
+end
+
+"""
+    get_anderson_depth(this::SN)
+
+Get the Anderson acceleration memory depth for in-group iteration convergence.
+
+# Input Argument(s)
+- `this::SN` : discretization method.
+
+# Output Argument(s)
+- `anderson_depth::Int64` : Anderson memory depth.
+
+"""
+function get_anderson_depth(this::SN)
+    return this.anderson_depth
 end
 
 """

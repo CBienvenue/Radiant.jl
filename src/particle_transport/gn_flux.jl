@@ -119,6 +119,8 @@ end
 #----
 
 𝒜 = solver.get_acceleration()
+gmres_restart = solver.get_gmres_restart()
+anderson_depth = solver.get_anderson_depth()
 
 #----
 # Fixed sources
@@ -157,6 +159,7 @@ is_outer_convergence = false
 ϵ_out = Inf
 is_outer_iteration = false
 Ntot = 0
+ρ_in = -ones(Ng) # In-group spectral radius (per energy group, last outer iteration)
 if is_outer_iteration 𝚽l⁻ = zeros(Ng,Np,Nm[5],Ns[1],Ns[2],Ns[3]) end
 
 while ~(is_outer_convergence)
@@ -201,7 +204,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling,gmres_restart,anderson_depth)
     end
 
     # Verification of convergence in all energy groups
@@ -227,6 +230,7 @@ end
 flux = Flux_Per_Particle(part)
 flux.add_flux(𝚽l)
 if is_CSD flux.add_flux_cutoff(𝚽cutoff) end
+flux.add_spectral_radius(ρ_in)
 
 return flux
 

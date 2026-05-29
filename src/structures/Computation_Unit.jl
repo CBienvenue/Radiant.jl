@@ -293,6 +293,37 @@ function get_flux(this::Computation_Unit,particle::Particle)
 end
 
 """
+    get_spectral_radius(this::Computation_Unit,particle::Particle)
+
+Get the estimated in-group spectral radius, per energy group, of the in-group iteration for the
+specified particle. The estimate is the geometric-average relative residual reduction per pass
+over the converged in-group solve; it is close to the within-group scattering ratio for
+unaccelerated source iteration (`"none"`) and substantially smaller for the acceleration methods.
+See the convergence-acceleration section of the documentation for details.
+
+# Input Argument(s)
+- `this::Computation_Unit` : computation unit.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `spectral_radius::Vector{Float64}` : estimated in-group spectral radius per energy group (`NaN`
+  for groups that converged without iterating, e.g. those with no in-group source).
+
+# Examples
+```jldoctest
+julia> electron = Electron() # Particle to be transported
+julia> cu = Computation_Unit()
+julia> ... # Define computation unit and run it.
+julia> ρ = cu.get_spectral_radius(electron)
+```
+"""
+function get_spectral_radius(this::Computation_Unit,particle::Particle)
+    if ismissing(this.flux) error("No computed flux in this computation unit. To extract the spectral radius, please use .run() method before.") end
+    if get_tag(particle) ∉ get_tag.(this.flux.get_particles()) error("Flux for the specified particle is not available.") end
+    return this.flux.get_spectral_radius(particle)
+end
+
+"""
     get_voxels_position(this::Computation_Unit,axis::String)
 
 Get the mid-point voxels position along the specified axis.

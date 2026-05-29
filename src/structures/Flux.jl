@@ -102,3 +102,22 @@ function get_flux_cutoff(this::Flux,particle::Particle)
     index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
     return this.flux_per_particle[index].get_flux_cutoff()
 end
+
+"""
+    get_spectral_radius(this::Flux,particle::Particle)
+
+Get the per-energy-group in-group spectral-radius estimate for a given particle.
+
+# Input Argument(s)
+- `this::Flux` : structure to contain flux solutions.
+- `particle::Particle` : particle.
+
+# Output Argument(s)
+- `spectral_radius::Vector{Float64}` : estimated in-group spectral radius per energy group.
+
+"""
+function get_spectral_radius(this::Flux,particle::Particle)
+    if get_tag(particle) ∉ get_tag.(this.particles) error("No data for the specified particle.") end
+    index = findfirst(x -> get_tag(x) == get_tag(particle),this.particles)
+    return this.flux_per_particle[index].get_spectral_radius()
+end

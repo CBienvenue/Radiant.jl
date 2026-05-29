@@ -75,6 +75,7 @@ module Radiant
         "fokker_planck_finite_difference_gn.jl",
         "electromagnetic_scattering_matrix.jl",
         "transport.jl",
+        "sn_inner_pass.jl",
         "sn_flux.jl",
         "pn_flux.jl",
         "sn_one_speed.jl",
@@ -93,7 +94,6 @@ module Radiant
         "map_moments.jl",
         "constant_linear.jl",
         "angular_polynomial_basis.jl",
-        "livolant.jl",
         "energy_deposition.jl",
         "charge_deposition.jl",
         "flux.jl",
@@ -108,6 +108,7 @@ module Radiant
         "gn_patch_geometry.jl",
         "pn_weights.jl",
         "gn_flux.jl",
+        "gn_inner_pass.jl",
         "gn_one_speed.jl",
         "gn_sweep_1D.jl",
         "gn_sweep_2D.jl",
@@ -172,7 +173,12 @@ module Radiant
         "find_package_root.jl",
         "python_method_notation.jl",
         "factorial_factor.jl",
-        "double_factorial.jl"
+        "double_factorial.jl",
+        "krylov_state.jl",
+        "gmres.jl",
+        "bicgstab.jl",
+        "anderson.jl",
+        "livolant.jl"
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end
