@@ -2,8 +2,7 @@
     compute_flux(cross_sections::Cross_Sections,geometry::Geometry,
     solver::GN,source::Source)
 
-Solve the transport equation using the spherical Galerkin harmonics (GN) method for a given \
-particle.  
+Solve the transport equation using the spherical Galerkin harmonics (GN) method for a given particle.  
 
 # Input Argument(s)
 - `cross_sections::Cross_Sections` : cross section informations.
