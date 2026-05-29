@@ -40,7 +40,11 @@ tiling = solver.get_tiling()
 polynomial_basis = solver.get_polynomial_basis(Ndims)
 if polynomial_basis == "legendre"
     if Ndims != 1 error("Legendre basis is only available in 1D.") end
-    error("Not available yet for Galerkin with Legendre basis.")
+    is_SPH = false
+    Np,Nq,Mll = patch_to_full_range_matrix_legendre(L,L_elem,Nv)
+    pl = collect(0:L)
+    pm = zeros(Int64,Np)
+    𝒩 = gn_weights_legendre_1D(L_elem,Nv)
 elseif polynomial_basis == "spherical-harmonics"
     is_SPH = true
     Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics(L,L_elem,Nv;tiling=tiling)
@@ -103,7 +107,13 @@ if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = solver.get_angular_fokker_planck()
-    ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np;L=L,L_elem=L_elem,Nv=Nv,Ndims=Ndims,tiling=tiling,Mll=Mll)
+    if is_SPH
+        ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np;L=L,L_elem=L_elem,Nv=Nv,Ndims=Ndims,tiling=tiling,Mll=Mll)
+    elseif fokker_planck_type == "finite-difference"
+        ℳ,λ₀ = fokker_planck_finite_difference_gn_legendre_1D(L,L_elem,Nv,Mll)
+    else
+        ℳ,λ₀ = fokker_planck_scattering_matrix("galerkin",pl,Np)
+    end
     Σtot .+= T .* λ₀
 end
 
@@ -127,17 +137,29 @@ anderson_depth = solver.get_anderson_depth()
 #----
 
 L_surf = 15
-Np_surf = spherical_harmonics_number_basis(L_surf)
+if is_SPH
+    Np_surf = spherical_harmonics_number_basis(L_surf)
+else
+    Np_surf = L_surf + 1
+end
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
 Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
-Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L_surf,L_elem,Nv,Ndims;tiling=tiling)
+if is_SPH
+    Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L_surf,L_elem,Nv,Ndims;tiling=tiling)
+else
+    Mll_surf = patch_to_half_range_matrix_legendre(L_surf,L_elem,Nv,Ndims)
+end
 
 #----
 # Boundary conditions
 #----
 if any(x->x == 1,boundary_conditions) # If reflective, construct the reflection matrices
-    Rpq = pos_to_neg_half_range_matrix_spherical_harmonics(L_surf,Ndims)
+    if is_SPH
+        Rpq = pos_to_neg_half_range_matrix_spherical_harmonics(L_surf,Ndims)
+    else
+        Rpq = pos_to_neg_half_range_matrix_legendre(L_surf,Ndims)
+    end
 else
     Rpq = Array{Float64}(undef,0,0,0)
 end

@@ -298,6 +298,51 @@ function gn_weights_spherical_harmonics_symmetric(L::Int64,Nv::Int64,Ndims::Int6
     return 𝒩
 end
 
+"""
+    gn_weights_legendre_1D(L_elem::Int64, Nv::Int64)
+
+Compute the per-patch streaming-weight matrix `𝒩[p, q, 1, u, v, 1]` for the 1D
+Legendre (azimuthally symmetric) GN basis, the Legendre counterpart of
+`gn_weights_spherical_harmonics`. Here
+`𝒩[p,q,1,u,v,1] = ∫_band μ · ψ_p^loc(μ) ψ_q^loc(μ) dμ` in the patch-orthonormal
+Legendre basis `ψ_q^loc(μ) = sqrt((2 q_l + 1)/Δ) · P_{q_l}(ξ)`,
+`ξ = (2μ - μ0 - μ1)/Δ`. Only octants `u ∈ {1, 5}` (sx = ±1) carry μ-band patches.
+
+# Input Argument(s)
+- `L_elem::Int64` : per-patch local Legendre order (`Nq = L_elem + 1`).
+- `Nv::Int64` : number of μ-bands per hemisphere.
+
+# Output Argument(s)
+- `𝒩::Array{Float64,6}` : streaming weights, shape `(Nq, Nq, 1, 8, Nv, 1)`.
+"""
+function gn_weights_legendre_1D(L_elem::Int64, Nv::Int64)
+    if L_elem < 0 error("Local Legendre order must be ≥ 0.") end
+    if Nv <= 0 error("Number of μ-bands per hemisphere must be > 0.") end
+    Nq = L_elem + 1
+    𝒩 = zeros(Nq, Nq, 1, 8, Nv, 1)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    # Local orthonormal Legendre at the (band-independent) reference points ξ = x.
+    Pξ = [legendre_polynomials_up_to_L(L_elem, x[n]) for n in 1:N]
+    for u in (1, 5), v in 1:Nv
+        μ0, μ1 = _gn_legendre_band(u, v, Nv)
+        Δ = μ1 - μ0
+        for n in 1:N
+            μ = μ0 + Δ * t[n]
+            wn = weight[n] * (Δ / 2)
+            for p in 1:Nq
+                ψp = sqrt((2 * (p - 1) + 1) / Δ) * Pξ[n][p]
+                for q in 1:Nq
+                    ψq = sqrt((2 * (q - 1) + 1) / Δ) * Pξ[n][q]
+                    𝒩[p, q, 1, u, v, 1] += wn * μ * ψp * ψq
+                end
+            end
+        end
+    end
+    return 𝒩
+end
+
 # function gn_weights_spherical_harmonics(L::Int64,Nv::Int64,Ndims::Int64)
 #     if L < 0 error("Legendre order is greater or equal to zero.") end
 #     if Nv <= 0 error("Number of direction cosine patches should be greater than zero.") end

@@ -95,3 +95,86 @@ function fokker_planck_finite_difference_gn(L::Int64,_L_elem::Int64,Nv::Int64,_N
 
     return ℳ, λ₀
 end
+
+"""
+    fokker_planck_finite_difference_gn_legendre_1D(L, L_elem, Nv, Mll)
+
+Build the angular Fokker-Planck scattering matrix `ℳ` for the 1D Legendre
+(azimuthally symmetric) GN basis, the Legendre counterpart of
+`fokker_planck_finite_difference_gn`. It uses a finite-volume (TPFA)
+discretization of the azimuthally-symmetric Laplace-Beltrami operator
+`d/dμ[(1-μ²) d/dμ]` on the chain of μ-bands.
+
+The 2·Nv μ-bands form a chain ordered from μ = -1 to μ = +1 (octant `u = 5`
+bands first, then octant `u = 1`). Adjacent bands `k, k+1` share the boundary
+`μ_int`; the TPFA conductance is `γ = (1-μ_int²) / (μ_c[k+1]-μ_c[k])` and the
+value-space measure is the band width `ω_k = Δμ_k`.
+
+# Input Argument(s)
+- `L::Int64` : global Legendre order (full-range basis size `Np = L + 1`).
+- `_L_elem::Int64` : per-patch local Legendre order (unused beyond `q = 1`).
+- `Nv::Int64` : number of μ-bands per hemisphere.
+- `Mll::Array{Float64,5}` : patch-to-full-range moment matrix, shape `(Np, Nq, 8, Nv, 1)`.
+
+# Output Argument(s)
+- `ℳ::Array{Float64,2}` : Fokker-Planck scattering matrix, shape `(L+1, L+1)`.
+- `λ₀::Float64` : stabilisation factor added to `Σₜ` by the caller.
+"""
+function fokker_planck_finite_difference_gn_legendre_1D(L::Int64, _L_elem::Int64, Nv::Int64, Mll::Array{Float64,5})
+
+    # 1. μ-band chain ordered from μ = -1 to μ = +1.
+    patches = NTuple{2,Int64}[]
+    for v in 1:Nv push!(patches, (5, v)) end   # μ ∈ [-1, 0]
+    for v in 1:Nv push!(patches, (1, v)) end   # μ ∈ [0, 1]
+    Nk = length(patches)
+    μ0k = zeros(Nk); μ1k = zeros(Nk); μc = zeros(Nk); ω = zeros(Nk)
+    for k in 1:Nk
+        u, v = patches[k]
+        a, b = _gn_legendre_band(u, v, Nv)
+        μ0k[k] = a; μ1k[k] = b; μc[k] = 0.5 * (a + b); ω[k] = b - a
+    end
+
+    # 2. Graph Laplacian (TPFA) on patch-mean values, self-adjoint w.r.t. ⟨u,v⟩_ω.
+    ℒ = zeros(Nk, Nk)
+    for k in 1:(Nk - 1)
+        μ_int = μ1k[k]               # shared band boundary (= μ0k[k+1])
+        d_geo = μc[k + 1] - μc[k]
+        if d_geo == 0.0 continue end
+        γ = (1.0 - μ_int^2) / d_geo
+        ℒ[k, k + 1]     += γ / ω[k]
+        ℒ[k + 1, k]     += γ / ω[k + 1]
+        ℒ[k, k]         -= γ / ω[k]
+        ℒ[k + 1, k + 1] -= γ / ω[k + 1]
+    end
+
+    # 3. Projection matrices in the Radiant 1D Legendre convention:
+    #    φ(μ) = Σ_p (2ℓ_p+1)/2 · P_p · φ_p, with Mc[p,k] = Mll[p,1,u,v,1].
+    Np = L + 1
+    𝓜̃ = zeros(Nk, Np)
+    𝓓̃ = zeros(Np, Nk)
+    for k in 1:Nk
+        u, v = patches[k]
+        s = sqrt(ω[k])
+        if s == 0.0 continue end
+        invs = 1.0 / s
+        for p in 1:Np
+            mp1 = Mll[p, 1, u, v, 1]
+            𝓜̃[k, p] = (2 * (p - 1) + 1) / 2 * mp1 * invs
+            𝓓̃[p, k] = s * mp1
+        end
+    end
+
+    # 4. Assemble ℳ = 𝓓̃ · ℒ · 𝓜̃ in the full-range moment space.
+    ℳ = 𝓓̃ * (ℒ * 𝓜̃)
+
+    # 5. Stabilisation: shift the diagonal so all diagonal entries are ≥ 0.
+    λ₀ = 0.0
+    @inbounds for p in 1:Np
+        if ℳ[p, p] < -λ₀ λ₀ = -ℳ[p, p] end
+    end
+    @inbounds for p in 1:Np
+        ℳ[p, p] += λ₀
+    end
+
+    return ℳ, λ₀
+end

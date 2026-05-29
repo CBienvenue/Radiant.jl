@@ -64,6 +64,18 @@ end
 # Number of azimuthal slots per polar band (polar-anchored).
 _gn_nw(u::Int64, v::Int64, Nv::Int64) = _GN_SX[u] == 1 ? (Nv + 1 - v) : v
 
+# Equal-width μ-band [μ0, μ1] of band `v ∈ 1:Nv` in hemisphere octant `u` for the
+# 1D Legendre (azimuthally symmetric) GN tiling. Nv bands per hemisphere:
+#   u = 1 (sx = +1): μ ∈ [0, 1]   → band v = [(v-1)/Nv, v/Nv]
+#   u = 5 (sx = -1): μ ∈ [-1, 0]  → band v = [-1+(v-1)/Nv, -1+v/Nv]
+function _gn_legendre_band(u::Int64, v::Int64, Nv::Int64)
+    if _GN_SX[u] == 1
+        return ((v - 1) / Nv, v / Nv)
+    else
+        return ((v - 1) / Nv - 1.0, v / Nv - 1.0)
+    end
+end
+
 # Antiderivative G(μ) = ∫ √(1-μ²) dμ = (μ √(1-μ²) + asin μ) / 2.
 function _gn_G(μ::Float64)
     return 0.5 * (μ * sqrt(max(0.0, 1.0 - μ * μ)) + asin(clamp(μ, -1.0, 1.0)))

@@ -74,9 +74,12 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     if (Ndims > 2) sz = [1,-1,1,-1,1,-1,1,-1] end
 
     # Patch indexing helper: number of patches along the "w" axis for octant u,
-    # row v, subdivision Nv, and the chosen angular tiling.
-    Nw_max = (tiling == "symmetric") ? (2*Nv - 1) : Nv
-    Nw_of(u, v) = (tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v)
+    # row v, subdivision Nv, and the chosen angular tiling. With the Legendre
+    # basis (1D, azimuthally symmetric) the angular domain collapses to μ-bands:
+    # there is a single azimuthal slot and only octants u ∈ {1, 5} carry patches.
+    Nw_max = is_SPH ? ((tiling == "symmetric") ? (2*Nv - 1) : Nv) : 1
+    Nw_of = is_SPH ? ((u, v) -> (tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v)) :
+                     ((u, v) -> (u == 1 || u == 5) ? 1 : 0)
 
     # Fixed boundary sources
     if Ndims == 1
@@ -242,7 +245,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     end
 
     # Shorthand wrapper around one source-iteration pass
-    pass!(homogeneous) = gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous=homogeneous)
+    pass!(homogeneous) = gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,is_SPH,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous=homogeneous)
 
     # State vector z = (𝚽l, incoming boundary angular fluxes on each active axis)
     if Ndims == 1

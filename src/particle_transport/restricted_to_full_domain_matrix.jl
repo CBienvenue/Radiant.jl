@@ -295,6 +295,50 @@ function patch_to_full_range_matrix_spherical_harmonics(L::Int64,Lq::Int64,Nv::I
     return Np,Nq,Mll
 end
 
+"""
+    patch_to_full_range_matrix_legendre(L::Int64, L_elem::Int64, Nv::Int64)
+
+Build the patch-to-full-range moment-transfer matrix `Mll[p, q, u, v, 1]` for the
+1D Legendre (azimuthally symmetric) GN basis, the Legendre counterpart of
+`patch_to_full_range_matrix_spherical_harmonics`. Here
+`Mll[p,q,u,v,1] = ∫_band P_{l_p}(μ) ψ_q^loc(μ) dμ`, with the patch-orthonormal
+Legendre basis `ψ_q^loc(μ) = sqrt((2 q_l + 1)/Δ) · P_{q_l}(ξ)`. Only octants
+`u ∈ {1, 5}` carry patches. With `Nv = 1` this reproduces
+`half_to_full_range_matrix_legendre` (per hemisphere).
+
+# Output Argument(s)
+- `Np::Int64` : number of full-range moments (`L + 1`).
+- `Nq::Int64` : number of per-patch moments (`L_elem + 1`).
+- `Mll::Array{Float64,5}` : moment-transfer matrix, shape `(Np, Nq, 8, Nv, 1)`.
+"""
+function patch_to_full_range_matrix_legendre(L::Int64, L_elem::Int64, Nv::Int64)
+    if L < 0 || L_elem < 0 error("Legendre orders must be ≥ 0.") end
+    if Nv <= 0 error("Number of μ-bands per hemisphere must be > 0.") end
+    Np = L + 1
+    Nq = L_elem + 1
+    Mll = zeros(Np, Nq, 8, Nv, 1)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    Ploc = [legendre_polynomials_up_to_L(L_elem, x[n]) for n in 1:N]
+    for u in (1, 5), v in 1:Nv
+        μ0, μ1 = _gn_legendre_band(u, v, Nv)
+        Δ = μ1 - μ0
+        for n in 1:N
+            μ = μ0 + Δ * t[n]
+            Pfull = legendre_polynomials_up_to_L(L, μ)
+            wn = weight[n] * (Δ / 2)
+            for q in 1:Nq
+                ψq = sqrt((2 * (q - 1) + 1) / Δ) * Ploc[n][q]
+                for p in 1:Np
+                    Mll[p, q, u, v, 1] += wn * Pfull[p] * ψq
+                end
+            end
+        end
+    end
+    return Np, Nq, Mll
+end
+
 function 𝒯m(m::Int64,φ::Real)
     if m ≥ 0
         return cos(m*φ)
@@ -498,6 +542,60 @@ function patch_to_half_range_matrix_spherical_harmonics(L::Int64,Lq::Int64,Nv::I
                         end
 
                         ϕ_base += Δϕ_uw
+                    end
+                end
+            end
+        end
+    end
+    return Mll
+end
+
+"""
+    patch_to_half_range_matrix_legendre(L_surf::Int64, L_elem::Int64, Nv::Int64, Ndims::Int64)
+
+Build the patch-to-half-range surface moment-transfer matrix
+`Mll[p, q, u, v, 1, b, is]` for the 1D Legendre GN basis (`Ndims == 1`), the
+Legendre counterpart of `patch_to_half_range_matrix_spherical_harmonics`. Here
+`Mll[p,q,u,v,1,b,is] = ∫_band R̄_p(sx[u]·μ) ψ_q^loc(μ) dμ`, where the half-range
+surface basis `R̄_p(μ̂) = sqrt(2 p_l + 1) · P_{p_l}(2 μ̂ - 1)` over `μ̂ = sx[u]·μ ∈ [0,1]`
+matches `half_range_legendre_polynomials_up_to_L`. `is = 1` (incoming, s = -1)
+and `is = 2` (outgoing, s = +1) select the hemisphere through the octant filter
+`sx[u] == sb·s` (`sb = -1` for face `b = 1`, `sb = +1` for face `b = 2`).
+
+# Output Argument(s)
+- `Mll::Array{Float64,7}` : shape `(L_surf+1, L_elem+1, 8, Nv, 1, 2*Ndims, 2)`.
+"""
+function patch_to_half_range_matrix_legendre(L_surf::Int64, L_elem::Int64, Nv::Int64, Ndims::Int64)
+    if Ndims != 1 error("Legendre half-range surface matrix is only available in 1D.") end
+    Np = L_surf + 1
+    Nq = L_elem + 1
+    Mll = zeros(Np, Nq, 8, Nv, 1, 2 * Ndims, 2)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    sb_of = (-1, 1)  # cartesian_surface_source sb for faces b = 1, 2
+    norm_half = sqrt.(2 .* (0:L_surf) .+ 1)
+    Ploc = [legendre_polynomials_up_to_L(L_elem, x[n]) for n in 1:N]
+    for is in 1:2
+        s = (is == 1) ? -1 : 1
+        for b in 1:(2 * Ndims)
+            sb = sb_of[b]
+            for u in (1, 5)
+                σ = _GN_SX[u]
+                if σ != sb * s continue end
+                for v in 1:Nv
+                    μ0, μ1 = _gn_legendre_band(u, v, Nv)
+                    Δ = μ1 - μ0
+                    for n in 1:N
+                        μ = μ0 + Δ * t[n]
+                        Rhalf = norm_half .* legendre_polynomials_up_to_L(L_surf, 2 * σ * μ - 1)
+                        wn = weight[n] * (Δ / 2)
+                        for q in 1:Nq
+                            ψq = sqrt((2 * (q - 1) + 1) / Δ) * Ploc[n][q]
+                            for p in 1:Np
+                                Mll[p, q, u, v, 1, b, is] += wn * Rhalf[p] * ψq
+                            end
+                        end
                     end
                 end
             end
@@ -722,6 +820,27 @@ function pos_to_neg_half_range_matrix_spherical_harmonics(L::Int64,Ndims::Int64)
                 Rpq[p,p,b] = iseven(parity) ? 1.0 : -1.0
             end
         end
+    end
+    return Rpq
+end
+
+"""
+    pos_to_neg_half_range_matrix_legendre(L_surf::Int64, Ndims::Int64)
+
+Reflection matrix `Rpq[p, q, b]` mapping outgoing to incoming half-range surface
+moments for the 1D Legendre GN basis, the Legendre counterpart of
+`pos_to_neg_half_range_matrix_spherical_harmonics`. In the per-hemisphere
+half-range Legendre basis, the μ → -μ reflection on an x-face is the identity
+(matching the spherical-harmonics result on the x-faces).
+
+# Output Argument(s)
+- `Rpq::Array{Float64,3}` : shape `(L_surf+1, L_surf+1, 2*Ndims)`.
+"""
+function pos_to_neg_half_range_matrix_legendre(L_surf::Int64, Ndims::Int64)
+    Np = L_surf + 1
+    Rpq = zeros(Np, Np, 2 * Ndims)
+    for b in 1:(2 * Ndims), p in 1:Np
+        Rpq[p, p, b] = 1.0
     end
     return Rpq
 end

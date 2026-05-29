@@ -215,7 +215,8 @@ dpn.set_is_full_coupling(true)
 gn = GN()
 gn.set_particle(electron)
 gn.set_solver_type("BFP")
-gn.set_legendre_order(16,0)                   # global order, local order
+gn.set_polynomial_basis("legendre")           # 1D: Legendre-in-μ basis (default)
+gn.set_legendre_order(16,2)                   # global order, local order
 gn.set_subdivision(4)                         # number of angular sub-intervals
 # ... other settings as for DPN
 ```
@@ -223,11 +224,13 @@ gn.set_subdivision(4)                         # number of angular sub-intervals
 `set_legendre_order(L_global, L_local)` controls the global Legendre truncation order and a per-subdivision local order. `set_subdivision(n)` sets the number of angular subdivisions.
 
 The polynomial basis available for `DPN` and `GN` are:
-- `"legendre"` (default in 1D),
-- `"spherical-harmonics"` (default in 2D and 3D).
+- `"legendre"` — a Legendre expansion in the polar cosine `μ` assuming azimuthal symmetry (default in 1D; for the `GN` solver this basis is available in 1D only),
+- `"spherical-harmonics"` — a real spherical-harmonics expansion on the unit sphere (default in 2D and 3D; available in 1D, 2D and 3D).
+
+For the `GN` solver in 1D, the `"legendre"` basis subdivides `μ ∈ [-1,1]` into `set_subdivision(n)` equal-width bands per hemisphere and carries a per-band local Legendre expansion of order `L_local`. It generalizes the `DPN` (double-Pn) discretization, which it reproduces with `set_subdivision(1)` and `L_local = L_global`.
 
 !!! note
-    `DPN` and `GN` solvers currently support only the `"galerkin"` discretization of the Fokker–Planck operator.
+    The `DPN` solver supports only the `"galerkin"` discretization of the Fokker–Planck operator. The `GN` solver supports both `"galerkin"` and `"finite-difference"`; with the 1D `"legendre"` basis the latter uses a finite-volume discretization of the azimuthally-symmetric Laplace–Beltrami operator on the chain of `μ`-bands.
 
 !!! note
     The `GN` solver supports the same in-group acceleration methods as `SN` — `"none"`, `"livolant"`, `"anderson"`, `"gmres"` and `"bicgstab"`, with the same optional `set_acceleration` tuning parameter (see Section 6.2.6). The `DPN` solver currently supports only `"none"` and `"livolant"`.

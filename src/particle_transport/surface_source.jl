@@ -68,7 +68,11 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
         L = min(source.get_legendre_order(),solver.get_legendre_order())
         polynomial_basis = solver.get_polynomial_basis(Ndims)
         if polynomial_basis == "legendre"
-            error()
+            Qdims = 1
+            Np,_ = half_to_full_range_matrix_legendre(L)
+            pl = collect(0:L)
+            pm = zeros(Int64,Np)
+            Lmax = maximum(pl)
         else
             Qdims = 3
             Np,_ = half_to_full_range_matrix_spherical_harmonics(L)

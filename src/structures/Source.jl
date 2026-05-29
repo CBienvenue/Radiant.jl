@@ -77,7 +77,7 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
         polynomial_basis = solver.get_polynomial_basis(Ndims)
         Lp = solver.get_legendre_order()
         if polynomial_basis == "legendre"
-            error("Not available yet for Galerkin with Legendre basis.")
+            P = Lp+1
         else
             P = (Lp+1)^2
         end
