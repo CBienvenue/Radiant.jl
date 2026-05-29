@@ -54,51 +54,53 @@ Solve the one-speed transport equation for a given particle.
 - `S::Array{Float64}` : stopping powers.
 - `T::Vector{Float64}`: momentum transfer.
 - `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
-- `𝒜::String` : acceleration method for in-group iterations.
+- `𝒜::String` : acceleration method for in-group iterations ("none", "livolant", "anderson",
+   "gmres" or "bicgstab").
 - `Ntot::Int64` : accumulator for the total number of in-group iterations.
 - `is_EM::Bool` : boolean for electromagnetic fields.
 - `ℳ_EM::Array{Float64}` : electromagnetic scattering matrix.
 - `𝒲::Array{Float64}` : weighting constants.
+- `boundary_conditions::Vector{Int64}` : boundary condition per geometry surface.
+- `Np_source::Int64` : number of angular basis of the surface sources.
+- `gmres_restart::Int64` : Krylov subspace size before restart (GMRES only).
+- `anderson_depth::Int64` : Anderson memory depth.
 
 # Output Argument(s)
 - `𝚽l::Array{Float64}`: Legendre components of the in-cell flux.
 - `𝚽E12::Array{Float64}`: outgoing flux along the energy axis.
-- `ρ_in::Float64`: estimated spectral radius.
+- `ρ_in::Float64`: estimated spectral radius (NaN for the Krylov/Anderson methods, where it is
+   replaced in the printout by the achieved relative residual).
 - `Ntot::Int64` : accumulator for the total number of in-group iterations.
 
 # Reference(s)
 - Larsen and Morel (2010) : Advances in Discrete-Ordinates Methodology.
+- Warsa, Wareing and Morel (2004) : Krylov Iterative Methods Applied to Multidimensional Sn
+  Calculations.
 
 """
-function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64)
+function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isAdapt::Bool,isCSD::Bool,solver::Int64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,gmres_restart::Int64=30,anderson_depth::Int64=3)
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
     if isCSD
         𝚽E12_temp = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
     end
-    N⁻ = 2
-    𝚽l⁻ = zeros(N⁻,Np,Nm[5],Ns[1],Ns[2],Ns[3])
 
-    # Boundary conditions initialization
+    # Boundary conditions initialization (unused axes get empty placeholders, never accessed)
+    𝚽y12_in = zeros(0); 𝚽z12_in = zeros(0)
+    𝚽y12_temp = zeros(0); 𝚽z12_temp = zeros(0)
     if ndims == 1
         𝚽x12_in = zeros(Np_surf,Nm[1],2)
-        𝚽x12_out = copy(𝚽x12_in)
         𝚽x12_temp = copy(𝚽x12_in)
     elseif ndims == 2
         𝚽x12_in = zeros(Np_surf,Nm[1],2,Ns[2])
         𝚽y12_in = zeros(Np_surf,Nm[2],2,Ns[1])
-        𝚽x12_out = copy(𝚽x12_in)
-        𝚽y12_out = copy(𝚽y12_in)
         𝚽x12_temp = copy(𝚽x12_in)
         𝚽y12_temp = copy(𝚽y12_in)
     elseif ndims == 3
         𝚽x12_in = zeros(Np_surf,Nm[1],2,Ns[2],Ns[3])
         𝚽y12_in = zeros(Np_surf,Nm[2],2,Ns[1],Ns[3])
         𝚽z12_in = zeros(Np_surf,Nm[3],2,Ns[1],Ns[2])
-        𝚽x12_out = copy(𝚽x12_in)
-        𝚽y12_out = copy(𝚽y12_in)
-        𝚽z12_out = copy(𝚽z12_in)
         𝚽x12_temp = copy(𝚽x12_in)
         𝚽y12_temp = copy(𝚽y12_in)
         𝚽z12_temp = copy(𝚽z12_in)
@@ -106,168 +108,89 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
         error("Dimension is not 1, 2 or 3.")
     end
 
-    # Source iteration loop until convergence
+    # Source scratch
     Ql = similar(Qlout)
-    i_in = 1
-    ϵ_in = 0.0
     ρ_in = NaN
-    isInnerConv=false
-    while ~(isInnerConv)
 
-        # Calculation of the Legendre components of the source (in-scattering)
-        Ql .= Qlout
-        if solver ∉ [4,5,6] Ql = scattering_source(Ql,𝚽l,Σs,mat,Np,pl,Nm[5],Ns) end
-
-        # Finite element treatment of the angular Fokker-Planck term
-        if solver ∈ [2,4] Ql = fokker_planck_source(Np,Nm[5],T,𝚽l,Ql,Ns,mat,ℳ) end
-
-        # Electromagnetic source
-        if is_EM
-            for ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[5])
-                for p in range(1,Np), q in range(1,Np)
-                    Ql[p,is,ix,iy,iz] += ℳ_EM[p,q] * 𝚽l[q,is,ix,iy,iz]
-                end
-            end
-        end
-
-        # If there is no source
-        if ~any(x->x!=0,sources) && ~any(x->x!=0,Ql) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
-            𝚽l .= 0
-            ϵ_in = 0.0; i_in = 1
-            println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , Nd = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
-            break
-        end
-
-        #----
-        # Loop over all discrete ordinates
-        #----
+    # If there is no source anywhere, the in-group solution is trivially zero
+    if ~any(x->x!=0,sources) && ~any(x->x!=0,Qlout) && (~isCSD || ~any(x->x!=0,𝚽E12))
         𝚽l .= 0
-        for n in range(1,Nd)
-            if isCSD 𝚽E12_out = 𝚽E12[n,:,:,:,:] else 𝚽E12_out = Array{Float64}(undef) end
-            if ndims == 1
-                nx⁻ = n_to_n⁺[1][n]
-                nx⁺ = n_to_n⁺[2][n]
-                if nx⁻ != 0
-                    Mnx⁻ = Mn_surf[1][nx⁻,:]
-                    Dnx⁻ = Dn_surf[1][:,nx⁻]
-                elseif nx⁺ != 0
-                    Mnx⁻ = Mn_surf[2][nx⁺,:]
-                    Dnx⁻ = Dn_surf[2][:,nx⁺]
-                else
-                    Mnx⁻ = zeros(Np)
-                    Dnx⁻ = zeros(Np)
-                end
-                𝚽l[:,:,:,1,1], 𝚽E12_out,𝚽x12_out = sn_sweep_1D(𝚽l[:,:,:,1,1],Ql[:,:,:,1,1],Σt,mat[:,1,1],Ns[1],Δs[1],Ω[1][n],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12_out,S⁻,S⁺,S,𝒲,isFC,𝚽x12_in,boundary_conditions,Np_source)
-            elseif ndims == 2
-                nx⁻ = n_to_n⁺[1][n]
-                nx⁺ = n_to_n⁺[2][n]
-                ny⁻ = n_to_n⁺[3][n]
-                ny⁺ = n_to_n⁺[4][n]
-                if nx⁻ != 0
-                    Mnx⁻ = Mn_surf[1][nx⁻,:]
-                    Dnx⁻ = Dn_surf[1][:,nx⁻]
-                elseif nx⁺ != 0
-                    Mnx⁻ = Mn_surf[2][nx⁺,:]
-                    Dnx⁻ = Dn_surf[2][:,nx⁺]
-                else
-                    Mnx⁻ = zeros(Np)
-                    Dnx⁻ = zeros(Np)
-                end
-                if ny⁻ != 0
-                    Mny⁻ = Mn_surf[3][ny⁻,:]
-                    Dny⁻ = Dn_surf[3][:,ny⁻]
-                elseif ny⁺ != 0
-                    Mny⁻ = Mn_surf[4][ny⁺,:]
-                    Dny⁻ = Dn_surf[4][:,ny⁺]
-                else
-                    Mny⁻ = zeros(Np)
-                    Dny⁻ = zeros(Np)
-                end
-                𝚽l[:,:,:,:,1],𝚽E12_out,𝚽x12_out,𝚽y12_out = sn_sweep_2D(𝚽l[:,:,:,:,1],Ql[:,:,:,:,1],Σt,mat[:,:,1],Ns[1:2],Δs[1:2],[Ω[1][n],Ω[2][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12_out,S⁻,S⁺,S,𝒲,isFC,𝚽x12_in,𝚽y12_in,boundary_conditions,Np_source)
-            elseif ndims == 3
-                nx⁻ = n_to_n⁺[1][n]
-                nx⁺ = n_to_n⁺[2][n]
-                ny⁻ = n_to_n⁺[3][n]
-                ny⁺ = n_to_n⁺[4][n]
-                nz⁻ = n_to_n⁺[5][n]
-                nz⁺ = n_to_n⁺[6][n]
-                if nx⁻ != 0
-                    Mnx⁻ = Mn_surf[1][nx⁻,:]
-                    Dnx⁻ = Dn_surf[1][:,nx⁻]
-                elseif nx⁺ != 0
-                    Mnx⁻ = Mn_surf[2][nx⁺,:]
-                    Dnx⁻ = Dn_surf[2][:,nx⁺]
-                else
-                    Mnx⁻ = zeros(Np)
-                    Dnx⁻ = zeros(Np)
-                end
-                if ny⁻ != 0
-                    Mny⁻ = Mn_surf[3][ny⁻,:]
-                    Dny⁻ = Dn_surf[3][:,ny⁻]
-                elseif ny⁺ != 0
-                    Mny⁻ = Mn_surf[4][ny⁺,:]
-                    Dny⁻ = Dn_surf[4][:,ny⁺]
-                else
-                    Mny⁻ = zeros(Np)
-                    Dny⁻ = zeros(Np)
-                end
-                if nz⁻ != 0
-                    Mnz⁻ = Mn_surf[5][nz⁻,:]
-                    Dnz⁻ = Dn_surf[5][:,nz⁻]
-                elseif nz⁺ != 0
-                    Mnz⁻ = Mn_surf[6][nz⁺,:]
-                    Dnz⁻ = Dn_surf[6][:,nz⁺]
-                else
-                    Mnz⁻ = zeros(Np)
-                    Dnz⁻ = zeros(Np)
-                end
-                𝚽l,𝚽E12_out,𝚽x12_out,𝚽y12_out,𝚽z12_out = sn_sweep_3D(𝚽l,Ql,Σt,mat,Ns,Δs,[Ω[1][n],Ω[2][n],Ω[3][n]],Mn[n,:],Dn[:,n],Np,Mnx⁻,Dnx⁻,Mny⁻,Dny⁻,Mnz⁻,Dnz⁻,Np_surf,𝒪,Nm,C,ω,sources,isAdapt,isCSD,ΔE,𝚽E12_out,S⁻,S⁺,S,𝒲,isFC,𝚽x12_in,𝚽y12_in,𝚽z12_in,boundary_conditions,Np_source)
-            else
-                error("Dimension is not 1, 2 or 3.")
-            end
-            𝚽x12_temp .+= 𝚽x12_out
-            if ndims >= 2 𝚽y12_temp .+= 𝚽y12_out end
-            if ndims >= 3 𝚽z12_temp .+= 𝚽z12_out end
-            if isCSD 𝚽E12_temp[n,:,:,:,:] = 𝚽E12_out end
-        end
-        𝚽x12_in .= 𝚽x12_temp; 𝚽x12_temp .= 0.0
-        if ndims >= 2 𝚽y12_in .= 𝚽y12_temp; 𝚽y12_temp .= 0.0 end
-        if ndims >= 3 𝚽z12_in .= 𝚽z12_temp; 𝚽z12_temp .= 0.0 end
-        
-        #----
-        # Verification of convergence of the one-group flux
-        #----  
-        ϵ_in = 0.0
-        if (solver ∉ [5,6]) if (solver ∉ [5,6]) ϵ_in = norm(𝚽l .- 𝚽l⁻[1,:,:,:,:,:]) / max(norm(𝚽l), 1e-16) end end
-        if (ϵ_in < ϵ_max) || i_in >= I_max
-
-            # Convergence or maximum iterations reach
-            isInnerConv = true
-            Ntot += i_in
-            if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽l[1,1,:,:,:]) .- vec(𝚽l⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽l⁻[1,1,1,:,:,:]) .- vec(𝚽l⁻[2,1,1,:,:,:]) ).^2)) end
-            if ~(i_in >= I_max)
-                println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
-            else
-                println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
-            end
-
-        else
-
-            # Livolant acceleration
-            if 𝒜 == "livolant" && mod(i_in,3) == 0
-                𝚽l⁺ = livolant(𝚽l,𝚽l⁻[1,:,:,:,:,:],𝚽l⁻[2,:,:,:,:,:])
-                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
-                𝚽l .= 𝚽l⁺
-            else
-                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
-            end
-            
-            # Save flux solution and go to next iteration
-            i_in += 1
-
-        end
+        println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",0.0)," , N = ",1," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+        return 𝚽l,𝚽E12_temp,ρ_in,Ntot
     end
+
+    # Shorthand wrapper around one source-iteration pass
+    pass!(homogeneous) = sn_inner_pass!(𝚽l,𝚽x12_in,𝚽y12_in,𝚽z12_in,𝚽x12_temp,𝚽y12_temp,𝚽z12_temp,𝚽E12_temp,Ql,Qlout,𝚽E12,Σt,Σs,mat,ndims,Nd,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,C,ω,sources,isAdapt,isCSD,solver,ΔE,S⁻,S⁺,S,T,ℳ,is_EM,ℳ_EM,𝒲,boundary_conditions,Np_source;homogeneous=homogeneous)
+    
+    # State vector z = (𝚽l, incoming boundary angular fluxes on each active axis)
+    if ndims == 1
+        work = Array{Float64}[𝚽l,𝚽x12_in]
+    elseif ndims == 2
+        work = Array{Float64}[𝚽l,𝚽x12_in,𝚽y12_in]
+    elseif ndims == 3
+        work = Array{Float64}[𝚽l,𝚽x12_in,𝚽y12_in,𝚽z12_in]
+    else
+        error("Dimension is not 1, 2 or 3.")
+    end
+    Nref = Ref(Ntot)
+
+    # One application of the affine map T (homogeneous=false) or the linear operator A (=true): load the state into the working arrays, run one pass, read the result back.
+    function load_and_pass!(out::KState,zin::KState,homogeneous::Bool)
+        state_copy!(work,zin)
+        pass!(homogeneous)
+        state_copy!(out,work)
+        Nref[] += 1
+    end
+    # Closure that applies the fixed-point map T (used by the source-iteration solvers), and the
+    # matrix-vector product zin ↦ (I − A)·zin = zin − A·zin (used by the Krylov solvers).
+    fixedpoint!(out::KState,zin::KState) = load_and_pass!(out,zin,false)
+    matvec!(out::KState,zin::KState) = (load_and_pass!(out,zin,true); state_scale!(-1.0,out); state_axpy!(1.0,zin,out))
+
+    # One branch per acceleration method, all built on the single pass above.
+    local niter, resid, conv
+    if 𝒜 == "none"
+        # Plain source iteration: livolant! with the extrapolation disabled.
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=typemax(Int64))
+
+    elseif 𝒜 == "livolant"
+        # Source iteration with the periodic two-point Livolant extrapolation (every 3 passes).
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=3)
+
+    elseif 𝒜 == "anderson"
+        # Depth-m Anderson acceleration of the fixed-point iteration.
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = anderson!(z,fixedpoint!;depth=anderson_depth,maxit=I_max,tol=ϵ_max,β=1.0)
+
+    elseif 𝒜 == "gmres"
+        # Restarted GMRES on (I − A) z = c, with the right-hand side c = T(0) from a zero state.
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = gmres!(z,matvec!,c;restart=gmres_restart,maxit=I_max,tol=ϵ_max)
+
+    elseif 𝒜 == "bicgstab"
+        # BiCGStab on (I − A) z = c, with the right-hand side c = T(0) from a zero state.
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = bicgstab!(z,matvec!,c;maxit=I_max,tol=ϵ_max)
+
+    else
+        error("Unknown acceleration method: $𝒜.")
+    end
+
+    # Reconstruction pass: a final non-homogeneous pass on the converged state fills the physical
+    # 𝚽l, the outgoing energy flux 𝚽E12_temp and the boundary fluxes (z is a fixed point).
+    state_copy!(work,z); pass!(false); Nref[] += 1
+    Ntot = Nref[]
+
+    if conv
+        println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," ) [",𝒜,"]")
+    else
+        println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," ) [",𝒜,"]")
+    end
+
     return 𝚽l,𝚽E12_temp,ρ_in,Ntot
 end

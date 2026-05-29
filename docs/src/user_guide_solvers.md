@@ -120,10 +120,34 @@ sn.set_is_full_coupling(true)   # default
 ### 6.2.6 In-Group Iteration Settings
 
 ```julia
-sn.set_acceleration("livolant")    # or "none"
+sn.set_acceleration("livolant")    # in-group acceleration method
 sn.set_convergence_criterion(1e-7) # default
 sn.set_maximum_iteration(300)      # default
 ```
+
+The available acceleration methods are:
+
+| Value         | Method                                                        |
+|---------------|---------------------------------------------------------------|
+| `"none"`      | Plain source iteration (default).                             |
+| `"livolant"`  | Livolant two-point vector extrapolation.                     |
+| `"anderson"`  | Depth-$m$ Anderson acceleration of the fixed-point iteration. |
+| `"gmres"`     | Matrix-free restarted GMRES on the equivalent linear system.  |
+| `"bicgstab"`  | Matrix-free BiCGStab (lower memory than GMRES).               |
+
+`"gmres"` and `"anderson"` accept an optional tuning parameter passed directly to
+`set_acceleration` — the Krylov restart length for GMRES (default 30) and the memory depth for
+Anderson (default 3):
+
+```julia
+sn.set_acceleration("gmres",50)    # GMRES restarted every 50 Krylov vectors
+sn.set_acceleration("anderson",5)  # Anderson with memory depth 5
+```
+
+The convergence criterion and maximum iteration count are shared by all methods (for the Krylov solvers, the criterion is the relative-residual tolerance and the maximum iteration count bounds the number of transport sweeps).
+
+!!! note
+    The benefit of acceleration depends on the *within-group* scattering ratio. For electron BFP/CSD transport this ratio is small and source iteration already converges in a few iterations, so `"none"` or `"livolant"` is sufficient. The `"anderson"`, `"gmres"` and `"bicgstab"` methods pay off on highly scattering, optically thick BTE problems (and 2D/3D cases) where the spectral radius approaches one — see Section 1.6.4 of the Theory guide for a quantitative comparison.
 
 ### 6.2.7 Examples
 
@@ -205,6 +229,9 @@ The polynomial basis available for `DPN` and `GN` are:
 !!! note
     `DPN` and `GN` solvers currently support only the `"galerkin"` discretization of the Fokker–Planck operator.
 
+!!! note
+    The `GN` solver supports the same in-group acceleration methods as `SN` — `"none"`, `"livolant"`, `"anderson"`, `"gmres"` and `"bicgstab"`, with the same optional `set_acceleration` tuning parameter (see Section 6.2.6). The `DPN` solver currently supports only `"none"` and `"livolant"`.
+
 ## 6.4 Mixing Solvers for Different Particles
 
 A single calculation can mix solver types — for example using an `SN` solver for photons and a `GN` solver for electrons:
@@ -245,7 +272,7 @@ The `Solvers` object dispatches each particle to its associated method during co
 | `set_angular_fokker_planck(t)`               | Angular Fokker–Planck discretization.                      |
 | `set_scheme(axis,type,order)`                | Spatial / energy scheme.                                   |
 | `set_is_full_coupling(b)`                    | Toggle full coupling of high-order moments.                |
-| `set_acceleration(t)`                        | `"none"` or `"livolant"`.                                  |
+| `set_acceleration(t[,p])`                    | `"none"`, `"livolant"`, `"anderson"`, `"gmres"`, `"bicgstab"`; optional `p` = GMRES restart / Anderson depth. |
 | `set_convergence_criterion(ε)`               | In-group convergence criterion.                            |
 | `set_maximum_iteration(N)`                   | In-group maximum number of iterations.                     |
 

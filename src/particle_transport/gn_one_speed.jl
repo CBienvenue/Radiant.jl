@@ -44,7 +44,8 @@ Solve the one-speed transport equation for a given particle.
 - `S::Array{Float64}` : stopping powers.
 - `T::Vector{Float64}`: momentum transfer.
 - `ℳ::Array{Float64}`: Fokker-Planck scattering matrix.
-- `𝒜::String` : acceleration method for in-group iterations.
+- `𝒜::String` : acceleration method for in-group iterations ("none", "livolant", "anderson",
+   "gmres" or "bicgstab").
 - `Ntot::Int64` : accumulator for the total number of in-group iterations.
 - `𝒲::Array{Float64}` : weighting constants.
 - `Mll::Array{Float64}` : transformation matrix from restrict-angle to full-range fluxes.
@@ -61,15 +62,13 @@ Solve the one-speed transport equation for a given particle.
 # Reference(s)
 
 """
-function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64},tiling::String="polar-anchored")
+function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64},tiling::String="polar-anchored",gmres_restart::Int64=30,anderson_depth::Int64=3)
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
     if isCSD
         𝚽E12_temp = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
     end
-    N⁻ = 2
-    𝚽l⁻ = zeros(N⁻,Np,Nm[5],Ns[1],Ns[2],Ns[3])
     sx = [1,1,1,1,-1,-1,-1,-1]
     if (Ndims > 1) sy = [1,1,-1,-1,1,1,-1,-1] end
     if (Ndims > 2) sz = [1,-1,1,-1,1,-1,1,-1] end
@@ -130,7 +129,31 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
         end
     end
 
-    # Boundary fluxes initialization
+    # Zeroed clone of the surface source, same shape as sources_q, used by the homogeneous
+    # operator A·z (the GN surface source enters the sweeps through sources_q, not Np_source).
+    if Ndims == 1
+        sources_q_zero = zeros(Nq,2*Ndims,8,Nv,Nw_max)
+    else
+        sources_q_zero = Array{Union{Float64,Array{Float64}}}(undef,Nq,2*Ndims,8,Nv,Nw_max)
+        for q in range(1,Nq), u in range(1,8), v in range(1,Nv)
+            Nw = Nw_of(u, v)
+            for w in range(1,Nw), ib in range(1,2)
+                if Ndims == 2
+                    sources_q_zero[q,ib,u,v,w] = zeros(Ns[2])
+                    sources_q_zero[q,ib+2,u,v,w] = zeros(Ns[1])
+                elseif Ndims == 3
+                    sources_q_zero[q,ib,u,v,w] = zeros(Ns[2],Ns[3])
+                    sources_q_zero[q,ib+2,u,v,w] = zeros(Ns[1],Ns[3])
+                    sources_q_zero[q,ib+4,u,v,w] = zeros(Ns[1],Ns[2])
+                else
+                    error("Invalid number of dimensions.")
+                end
+            end
+        end
+    end
+
+    # Boundary fluxes initialization (unused axes get empty placeholders, never accessed)
+    𝚽y12⁻ = zeros(0); 𝚽y12⁺ = zeros(0); 𝚽z12⁻ = zeros(0); 𝚽z12⁺ = zeros(0)
     if Ndims == 1
         𝚽x12⁻ = zeros(Np_surf,Nm[1],2)
         𝚽x12⁺ = zeros(Np_surf,Nm[1],2)
@@ -150,6 +173,8 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
 
     # Pre-allocate restricted-angle buffers and precompute scaled Mll outside the
     # source iteration loop to avoid repeated allocations; BLAS mul! replaces loops.
+    # (Unused axes get empty placeholders, never accessed.)
+    𝚽y12_q = zeros(0); 𝚽z12_q = zeros(0)
     inv_4π = 1/(4*π)
     if Ndims == 3
         𝚽_q = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],8,Nv,Nw_max)
@@ -205,391 +230,87 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     Q_ws = zeros(Nm_solve)
     𝚽_ws = zeros(Nm_solve)
 
-    # Source iteration loop until convergence
+    # Source scratch
     Ql = similar(Qlout)
-    i_in = 1
-    ϵ_in = 0.0
     ρ_in = NaN
-    isInnerConv=false
-    while ~(isInnerConv)
 
-        # Calculation of the Legendre components of the source (in-scattering)
-        Ql .= Qlout
-        if solver ∉ [4,5,6] Ql = scattering_source(Ql,𝚽l,Σs,mat,Np,pl,Nm[5],Ns) end
-
-        # Finite element treatment of the angular Fokker-Planck term
-        if solver ∈ [2,4] Ql = fokker_planck_source(Np,Nm[5],T,𝚽l,Ql,Ns,mat,ℳ) end
-
-        # If there is no source
-        if ~any(x->x!=0,sources) && ~any(x->x!=0,Ql) && (~isCSD || (isCSD && ~any(x->x!=0,𝚽E12)))
-            𝚽l = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-            ϵ_in = 0.0; i_in = 1
-            println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , Nd = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
-            break
-        end
-
-        #----
-        # Loop over all discrete ordinates
-        #----
+    # If there is no source anywhere, the in-group solution is trivially zero
+    if ~any(x->x!=0,sources) && ~any(x->x!=0,Qlout) && (~isCSD || ~any(x->x!=0,𝚽E12))
         𝚽l .= 0
-        𝚽E12_temp .= 0
-        if Ndims == 1
-            fill!(Q_q, 0.0)
-            fill!(𝚽_q, 0.0)
-            fill!(𝚽E12_q, 0.0)
-            fill!(𝚽x12_q, 0.0)
+        println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",0.0)," , N = ",1," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+        return 𝚽l,𝚽E12_temp,ρ_in,Ntot
+    end
 
-            NS = Nm[5] * Ns[1]
-            NSE = Nm[4] * Ns[1]
-            NSx = Nm[1]
-            Ql_mat = reshape(Ql, Np, NS)
+    # Shorthand wrapper around one source-iteration pass
+    pass!(homogeneous) = gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous=homogeneous)
 
-            # Transformation of full-range fluxes to restricted-angle fluxes
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    Mt = transpose(Mll_factored[:,:,u,v,w])
-                    mul!(reshape(Q_q[:,:,:,u,v,w], Nq, NS), Mt, Ql_mat)
-                    if isCSD
-                        mul!(reshape(𝚽E12_q[:,:,:,u,v,w], Nq, NSE), Mt, reshape(𝚽E12, Np, NSE))
-                    end
-                    for ib in 1:2
-                        mul!(reshape(𝚽x12_q[:,:,ib,u,v,w], Nq, NSx),transpose(Mll_surf[:,:,u,v,w,ib,1]),reshape(𝚽x12⁻[:,:,ib], Np_surf, NSx))
-                    end
-                end
-            end
-            # Computation of the restricted-angle fluxes by sweeping through the spatial grid
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    gn_sweep_1D!(𝚽_q[:,:,:,u,v,w],
-                                𝚽E12_q[:,:,:,u,v,w],
-                                𝚽x12_q[:,:,:,u,v,w],
-                                sx[u],Σt,mat[:,1,1],Ns[1],Δs[1],
-                                Q_q[:,:,:,u,v,w],
-                                Nq,Np_source,𝒪,Nm,C,ω,
-                                sources_q[:,:,u,v,w],
-                                S⁻,S⁺,S,𝒲,isFC,isCSD,
-                                𝒩[:,:,1,u,v,w],
-                                𝒮_ws,Q_ws,𝚽_ws,
-                                𝚽x12_buf)
-                end
-            end
-            # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
-            𝚽l_mat = reshape(𝚽l, Np, NS)
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    M = Mll[:,:,u,v,w]
-                    mul!(𝚽l_mat, M, reshape(𝚽_q[:,:,:,u,v,w], Nq, NS), 1.0, 1.0)
-                    if isCSD
-                        mul!(reshape(𝚽E12_temp, Np, NSE), M, reshape(𝚽E12_q[:,:,:,u,v,w], Nq, NSE), 1.0, 1.0)
-                    end
-                    for ib in 1:2
-                        mul!(reshape(𝚽x12⁺[:,:,ib], Np_surf, NSx),Mll_surf[:,:,u,v,w,ib,2],reshape(𝚽x12_q[:,:,ib,u,v,w], Nq, NSx),1.0, 1.0)
-                    end
-                end
-            end
-            # Boundary conditions treatment
-            𝚽x12⁻ .= 0.0
-            for ib in range(1,2)
-                if boundary_conditions[ib] != 0
-                    if boundary_conditions[ib] == 1 # Reflective boundary condition
-                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1])
-                            𝚽x12⁻[p,is,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,ib]
-                        end
-                    elseif boundary_conditions[ib] == 2 # Periodic boundary condition
-                        for p in range(1,Np_surf), is in range(1,Nm[1])
-                            if ib == 1
-                                𝚽x12⁻[p,is,1] += 𝚽x12⁺[p,is,2]
-                            else
-                                𝚽x12⁻[p,is,2] += 𝚽x12⁺[p,is,1]
-                            end
-                        end
-                    else
-                        error("Invalid boundary condition type.")
-                    end
-                end
-            end
-            𝚽x12⁺ .= 0.0
+    # State vector z = (𝚽l, incoming boundary angular fluxes on each active axis)
+    if Ndims == 1
+        work = Array{Float64}[𝚽l,𝚽x12⁻]
+    elseif Ndims == 2
+        work = Array{Float64}[𝚽l,𝚽x12⁻,𝚽y12⁻]
+    elseif Ndims == 3
+        work = Array{Float64}[𝚽l,𝚽x12⁻,𝚽y12⁻,𝚽z12⁻]
+    end
+    Nref = Ref(Ntot)
 
-        elseif Ndims == 2
+    # One application of the affine map T (homogeneous=false) or the linear operator A (=true):
+    # load the state into the working arrays, run one pass, read the result back.
+    function load_and_pass!(out::KState,zin::KState,homogeneous::Bool)
+        state_copy!(work,zin)
+        pass!(homogeneous)
+        state_copy!(out,work)
+        Nref[] += 1
+    end
+    # Closure that applies the fixed-point map T (used by the source-iteration solvers), and the
+    # matrix-vector product zin ↦ (I − A)·zin = zin − A·zin (used by the Krylov solvers).
+    fixedpoint!(out::KState,zin::KState) = load_and_pass!(out,zin,false)
+    matvec!(out::KState,zin::KState) = (load_and_pass!(out,zin,true); state_scale!(-1.0,out); state_axpy!(1.0,zin,out))
 
-            fill!(Q_q, 0.0)
-            fill!(𝚽_q, 0.0)
-            fill!(𝚽E12_q, 0.0)
-            fill!(𝚽x12_q, 0.0)
-            fill!(𝚽y12_q, 0.0)
+    # One branch per acceleration method, all built on the single pass above.
+    local niter, resid, conv
+    if 𝒜 == "none"
+        # Plain source iteration: livolant! with the extrapolation disabled.
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=typemax(Int64))
 
-            NS = Nm[5] * Ns[1] * Ns[2]
-            NSE = Nm[4] * Ns[1] * Ns[2]
-            NSx = Nm[1] * Ns[2]
-            NSy = Nm[2] * Ns[1]
-            Ql_mat = reshape(Ql, Np, NS)
+    elseif 𝒜 == "livolant"
+        # Source iteration with the periodic two-point Livolant extrapolation (every 3 passes).
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=3)
 
-            # Transformation of full-range fluxes to restricted-angle fluxes
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    Mt = transpose(Mll_factored[:,:,u,v,w])
-                    mul!(reshape(Q_q[:,:,:,:,u,v,w], Nq, NS), Mt, Ql_mat)
-                    if isCSD
-                        mul!(reshape(𝚽E12_q[:,:,:,:,u,v,w], Nq, NSE), Mt, reshape(𝚽E12, Np, NSE))
-                    end
-                    for ib in 1:2
-                        mul!(reshape(𝚽x12_q[:,:,:,ib,u,v,w], Nq, NSx),transpose(Mll_surf[:,:,u,v,w,ib,1]),reshape(𝚽x12⁻[:,:,:,ib], Np_surf, NSx))
-                        mul!(reshape(𝚽y12_q[:,:,:,ib,u,v,w], Nq, NSy),transpose(Mll_surf[:,:,u,v,w,ib+2,1]),reshape(𝚽y12⁻[:,:,:,ib], Np_surf, NSy))
-                    end
-                end
-            end
-            # Computation of the restricted-angle fluxes by sweeping through the spatial grid
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    gn_sweep_2D!(𝚽_q[:,:,:,:,u,v,w],
-                                𝚽E12_q[:,:,:,:,u,v,w],
-                                𝚽x12_q[:,:,:,:,u,v,w],
-                                𝚽y12_q[:,:,:,:,u,v,w],
-                                sx[u],sy[u],Σt,mat[:,:,1],Ns[1],Ns[2],Δs[1],Δs[2],
-                                Q_q[:,:,:,:,u,v,w],
-                                Nq,Np_source,𝒪,Nm,C,ω,
-                                sources_q[:,:,u,v,w],
-                                S⁻,S⁺,S,𝒲,isFC,isCSD,
-                                𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],
-                                𝒮_ws,Q_ws,𝚽_ws,
-                                𝚽x12_buf,𝚽y12_buf)
-                end
-            end
-            # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
-            𝚽l_mat = reshape(𝚽l, Np, NS)
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    M = Mll[:,:,u,v,w]
-                    mul!(𝚽l_mat, M, reshape(𝚽_q[:,:,:,:,u,v,w], Nq, NS), 1.0, 1.0)
-                    if isCSD
-                        mul!(reshape(𝚽E12_temp, Np, NSE), M, reshape(𝚽E12_q[:,:,:,:,u,v,w], Nq, NSE), 1.0, 1.0)
-                    end
-                    for ib in 1:2
-                        mul!(reshape(𝚽x12⁺[:,:,:,ib], Np_surf, NSx),Mll_surf[:,:,u,v,w,ib,2],reshape(𝚽x12_q[:,:,:,ib,u,v,w], Nq, NSx),1.0, 1.0)
-                        mul!(reshape(𝚽y12⁺[:,:,:,ib], Np_surf, NSy),Mll_surf[:,:,u,v,w,ib+2,2],reshape(𝚽y12_q[:,:,:,ib,u,v,w], Nq, NSy),1.0, 1.0)
-                    end
-                end
-            end
-            # Boundary conditions treatment
-            𝚽x12⁻ .= 0.0
-            𝚽y12⁻ .= 0.0
-            for ib in range(1,2)
-                # X-axis boundary conditions
-                if boundary_conditions[ib] != 0
-                    if boundary_conditions[ib] == 1 # Reflective boundary condition
-                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2])
-                            𝚽x12⁻[p,is,iy,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,iy,ib]
-                        end
-                    elseif boundary_conditions[ib] == 2 # Periodic boundary condition
-                        for p in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2])
-                            if ib == 1
-                                𝚽x12⁻[p,is,iy,1] += 𝚽x12⁺[p,is,iy,2]
-                            else
-                                𝚽x12⁻[p,is,iy,2] += 𝚽x12⁺[p,is,iy,1]
-                            end
-                        end
-                    else
-                        error("Invalid boundary condition type.")
-                    end
-                end
-                # Y-axis boundary conditions
-                if boundary_conditions[ib+2] != 0
-                    if boundary_conditions[ib+2] == 1 # Reflective boundary condition
-                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1])
-                            𝚽y12⁻[p,is,ix,ib] += Rpq[p,q,ib+2] * 𝚽y12⁺[q,is,ix,ib]
-                        end
-                    elseif boundary_conditions[ib+2] == 2 # Periodic boundary condition
-                        for p in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1])
-                            if ib == 1
-                                𝚽y12⁻[p,is,ix,1] += 𝚽y12⁺[p,is,ix,2]
-                            else
-                                𝚽y12⁻[p,is,ix,2] += 𝚽y12⁺[p,is,ix,1]
-                            end
-                        end
-                    else
-                        error("Invalid boundary condition type.")
-                    end
-                end
-            end
-            𝚽x12⁺ .= 0.0
-            𝚽y12⁺ .= 0.0
+    elseif 𝒜 == "anderson"
+        # Depth-m Anderson acceleration of the fixed-point iteration.
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = anderson!(z,fixedpoint!;depth=anderson_depth,maxit=I_max,tol=ϵ_max,β=1.0)
 
-        elseif Ndims == 3
+    elseif 𝒜 == "gmres"
+        # Restarted GMRES on (I − A) z = c, with the right-hand side c = T(0) from a zero state.
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = gmres!(z,matvec!,c;restart=gmres_restart,maxit=I_max,tol=ϵ_max)
 
-            fill!(Q_q, 0.0)
-            fill!(𝚽_q, 0.0)
-            fill!(𝚽E12_q, 0.0)
-            fill!(𝚽x12_q, 0.0)
-            fill!(𝚽y12_q, 0.0)
-            fill!(𝚽z12_q, 0.0)
+    elseif 𝒜 == "bicgstab"
+        # BiCGStab on (I − A) z = c, with the right-hand side c = T(0) from a zero state.
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = bicgstab!(z,matvec!,c;maxit=I_max,tol=ϵ_max)
 
-            NS = Nm[5] * Ns[1] * Ns[2] * Ns[3]
-            NSE = Nm[4] * Ns[1] * Ns[2] * Ns[3]
-            NSx = Nm[1] * Ns[2] * Ns[3]
-            NSy = Nm[2] * Ns[1] * Ns[3]
-            NSz = Nm[3] * Ns[1] * Ns[2]
-            Ql_mat = reshape(Ql, Np, NS)
+    else
+        error("Unknown acceleration method: $𝒜.")
+    end
 
-            # Transformation of full-range fluxes to restricted-angle fluxes (BLAS gemm)
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    Mt = transpose(Mll_factored[:,:,u,v,w])
-                    mul!(reshape(Q_q[:,:,:,:,:,u,v,w], Nq, NS), Mt, Ql_mat)
-                    if isCSD
-                        mul!(reshape(𝚽E12_q[:,:,:,:,:,u,v,w], Nq, NSE), Mt, reshape(𝚽E12, Np, NSE))
-                    end
-                    for ib in 1:2
-                        mul!(reshape(𝚽x12_q[:,:,:,:,ib,u,v,w], Nq, NSx),transpose(Mll_surf[:,:,u,v,w,ib,1]),reshape(𝚽x12⁻[:,:,:,:,ib], Np_surf, NSx))
-                        mul!(reshape(𝚽y12_q[:,:,:,:,ib,u,v,w], Nq, NSy),transpose(Mll_surf[:,:,u,v,w,ib+2,1]),reshape(𝚽y12⁻[:,:,:,:,ib], Np_surf, NSy))
-                        mul!(reshape(𝚽z12_q[:,:,:,:,ib,u,v,w], Nq, NSz),transpose(Mll_surf[:,:,u,v,w,ib+4,1]),reshape(𝚽z12⁻[:,:,:,:,ib], Np_surf, NSz))
-                    end
-                end
-            end
-            # Computation of the restricted-angle fluxes by sweeping through the spatial grid
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    gn_sweep_3D!(𝚽_q[:,:,:,:,:,u,v,w],
-                                𝚽E12_q[:,:,:,:,:,u,v,w],
-                                𝚽x12_q[:,:,:,:,:,u,v,w],
-                                𝚽y12_q[:,:,:,:,:,u,v,w],
-                                𝚽z12_q[:,:,:,:,:,u,v,w],
-                                sx[u],sy[u],sz[u],Σt,mat,Ns[1],Ns[2],Ns[3],Δs[1],Δs[2],Δs[3],
-                                Q_q[:,:,:,:,:,u,v,w],
-                                Nq,Np_source,𝒪,Nm,C,ω,
-                                sources_q[:,:,u,v,w],
-                                S⁻,S⁺,S,𝒲,isFC,isCSD,
-                                𝒩[:,:,1,u,v,w],𝒩[:,:,2,u,v,w],𝒩[:,:,3,u,v,w],
-                                𝒮_ws,Q_ws,𝚽_ws,
-                                𝚽x12_buf,𝚽y12_buf,𝚽z12_buf)
-                end
-            end
-            # Transformation of restricted-angle fluxes to full-range fluxes (BLAS gemm, accumulate)
-            𝚽l_mat = reshape(𝚽l, Np, NS)
-            @views for u in 1:8, v in 1:Nv
-                Nw = Nw_of(u, v)
-                for w in 1:Nw
-                    M = Mll[:,:,u,v,w]
-                    mul!(𝚽l_mat, M, reshape(𝚽_q[:,:,:,:,:,u,v,w], Nq, NS), 1.0, 1.0)
-                    if isCSD
-                        mul!(reshape(𝚽E12_temp, Np, NSE), M, reshape(𝚽E12_q[:,:,:,:,:,u,v,w], Nq, NSE), 1.0, 1.0)
-                    end
-                    for ib in 1:2
-                        mul!(reshape(𝚽x12⁺[:,:,:,:,ib], Np_surf, NSx),Mll_surf[:,:,u,v,w,ib,2],reshape(𝚽x12_q[:,:,:,:,ib,u,v,w], Nq, NSx),1.0, 1.0)
-                        mul!(reshape(𝚽y12⁺[:,:,:,:,ib], Np_surf, NSy),Mll_surf[:,:,u,v,w,ib+2,2],reshape(𝚽y12_q[:,:,:,:,ib,u,v,w], Nq, NSy),1.0, 1.0)
-                        mul!(reshape(𝚽z12⁺[:,:,:,:,ib], Np_surf, NSz),Mll_surf[:,:,u,v,w,ib+4,2],reshape(𝚽z12_q[:,:,:,:,ib,u,v,w], Nq, NSz),1.0, 1.0)
-                    end
-                end
-            end
-            # Boundary conditions treatment
-            𝚽x12⁻ .= 0.0
-            𝚽y12⁻ .= 0.0
-            𝚽z12⁻ .= 0.0
-            for ib in range(1,2)
-                # X-axis boundary conditions
-                if boundary_conditions[ib] != 0
-                    if boundary_conditions[ib] == 1 # Reflective boundary condition
-                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                            𝚽x12⁻[p,is,iy,iz,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,iy,iz,ib]
-                        end
-                    elseif boundary_conditions[ib] == 2 # Periodic boundary condition
-                        for p in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                            if ib == 1
-                                𝚽x12⁻[p,is,iy,iz,1] += 𝚽x12⁺[p,is,iy,iz,2]
-                            else
-                                𝚽x12⁻[p,is,iy,iz,2] += 𝚽x12⁺[p,is,iy,iz,1]
-                            end
-                        end
-                    else
-                        error("Invalid boundary condition type.")
-                    end
-                end
-                # Y-axis boundary conditions
-                if boundary_conditions[ib+2] != 0
-                    if boundary_conditions[ib+2] == 1 # Reflective boundary condition
-                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1]), iz in range(1,Ns[3])
-                            𝚽y12⁻[p,is,ix,iz,ib] += Rpq[p,q,ib+2] * 𝚽y12⁺[q,is,ix,iz,ib]
-                        end
-                    elseif boundary_conditions[ib+2] == 2 # Periodic boundary condition
-                        for p in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1]), iz in range(1,Ns[3])
-                            if ib == 1
-                                𝚽y12⁻[p,is,ix,iz,1] += 𝚽y12⁺[p,is,ix,iz,2]
-                            else
-                                𝚽y12⁻[p,is,ix,iz,2] += 𝚽y12⁺[p,is,ix,iz,1]
-                            end
-                        end
-                    else
-                        error("Invalid boundary condition type.")
-                    end
-                end
-                # Z-axis boundary conditions
-                if boundary_conditions[ib+4] != 0
-                    if boundary_conditions[ib+4] == 1 # Reflective boundary condition
-                        for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[3]), ix in range(1,Ns[1]), iy in range(1,Ns[2])
-                            𝚽z12⁻[p,is,ix,iy,ib] += Rpq[p,q,ib+4] * 𝚽z12⁺[q,is,ix,iy,ib]
-                        end
-                    elseif boundary_conditions[ib+4] == 2 # Periodic boundary condition
-                        for p in range(1,Np_surf), is in range(1,Nm[3]), ix in range(1,Ns[1]), iy in range(1,Ns[2])
-                            if ib == 1
-                                𝚽z12⁻[p,is,ix,iy,1] += 𝚽z12⁺[p,is,ix,iy,2]
-                            else
-                                𝚽z12⁻[p,is,ix,iy,2] += 𝚽z12⁺[p,is,ix,iy,1]
-                            end
-                        end
-                    else
-                        error("Invalid boundary condition type.")
-                    end
-                end
-            end
-            𝚽x12⁺ .= 0.0
-            𝚽y12⁺ .= 0.0
-            𝚽z12⁺ .= 0.0
+    # Reconstruction pass: a final non-homogeneous pass on the converged state refills the physical
+    # 𝚽l, the outgoing energy flux 𝚽E12_temp and the boundary fluxes (z is a fixed point).
+    state_copy!(work,z); pass!(false); Nref[] += 1
+    Ntot = Nref[]
 
-        else
-            error("Geometry dimension is either 1D, 2D or 3D.")
-        end
-
-        #----
-        # Verification of convergence of the one-group flux
-        #----
-        ϵ_in = 0.0
-        if (solver ∉ [5,6]) ϵ_in = norm(𝚽l .- 𝚽l⁻[1,:,:,:,:,:]) / max(norm(𝚽l), 1e-16) end
-        if (ϵ_in < ϵ_max) || i_in >= I_max
-
-            # Convergence or maximum iterations reach
-            isInnerConv = true
-            Ntot += i_in
-            if i_in ≥ 3 ρ_in = sqrt(sum(( vec(𝚽l[1,1,:,:,:]) .- vec(𝚽l⁻[1,1,1,:,:,:]) ).^2))/sqrt(sum(( vec(𝚽l⁻[1,1,1,:,:,:]) .- vec(𝚽l⁻[2,1,1,:,:,:]) ).^2)) end
-            if ~(i_in >= I_max)
-                println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
-            else
-                println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",ϵ_in)," , N = ",i_in," , ρ = ",@sprintf("%.2f",ρ_in)," )")
-            end
-
-        else
-
-            # Livolant acceleration
-            if 𝒜 == "livolant" && mod(i_in,3) == 0
-                𝚽l⁺ = livolant(𝚽l,𝚽l⁻[1,:,:,:,:,:],𝚽l⁻[2,:,:,:,:,:])
-                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
-                𝚽l .= 𝚽l⁺
-            else
-                𝚽l⁻[2,:,:,:,:,:] .= 𝚽l⁻[1,:,:,:,:,:]
-                𝚽l⁻[1,:,:,:,:,:] .= 𝚽l
-            end
-            
-            # Save flux solution and go to next iteration
-            i_in += 1
-
-        end
+    if conv
+        println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," ) [",𝒜,"]")
+    else
+        println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," ) [",𝒜,"]")
     end
     return 𝚽l,𝚽E12_temp,ρ_in,Ntot
 end

@@ -36,10 +36,11 @@ For a detailed account of the theory and the features of the Radiant package, pl
     - Quadratures : Gauss-Legendre | Gauss-Lobatto | Gauss-Chebychev product | Carlson's level-symmetric | Lebedev
   - Double Spherical Harmonics (DPN) method
   - Discontinuous Galerkin (GN) method
+    - Angular discretization: polar-anchored, symmetric
 - **Spatial discretization** : Generalized diamond difference schemes | Generalized discontinuous Galerkin schemes | Adaptive weighted schemes (SN only)
 - **Energy discretization** : Multigroup method | Continuous slowing-down discretization (same as spatial)
-- **Angular Fokker-Planck discretization** : Moment-preserving (SN only) | Finite-difference
-- **Acceleration methods** : Livolant acceleration
+- **Angular Fokker-Planck discretization** : Moment-preserving | Finite-difference
+- **Acceleration methods** : Livolant, Anderson, GMRES, BICGSTAB
 
 ## Examples
 

@@ -18,7 +18,7 @@ Radiant.set_angular_boltzmann(this::Radiant.SN,angular_boltzmann::String)
 Radiant.set_convergence_criterion(this::Radiant.SN,convergence_criterion::Float64)
 Radiant.set_maximum_iteration(this::Radiant.SN,maximum_iteration::Int64)
 Radiant.set_scheme(this::Radiant.SN,axis::String,scheme_type::String,scheme_order::Int64)
-Radiant.set_acceleration(this::Radiant.SN,acceleration::String)
+Radiant.set_acceleration(this::Radiant.SN,acceleration::String,parameter::Int64)
 Radiant.set_is_full_coupling(this::Radiant.SN,isFC::Bool)
 ```
 
@@ -35,6 +35,8 @@ Radiant.get_angular_fokker_planck(this::Radiant.SN)
 Radiant.get_convergence_criterion(this::Radiant.SN)
 Radiant.get_maximum_iteration(this::Radiant.SN)
 Radiant.get_acceleration(this::Radiant.SN)
+Radiant.get_gmres_restart(this::Radiant.SN)
+Radiant.get_anderson_depth(this::Radiant.SN)
 Radiant.get_is_full_coupling(this::Radiant.SN)
 Radiant.get_schemes(this::Radiant.SN,geometry::Radiant.Geometry,isFC::Bool)
 ```
