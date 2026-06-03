@@ -16,15 +16,23 @@ The pass is the affine map `T(z) = A·z + c` over the state `z = (𝚽l, boundar
 `𝚽E12_temp` receives the outgoing energy flux (when `isCSD`); `Ql`, `*_q` and `*_ws`/`*_buf` are
 scratch. Remaining arguments mirror `gn_one_speed`.
 """
-function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,is_SPH,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous::Bool)
+function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,is_SPH,fold,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous::Bool)
 
     # Octant sign patterns and patch indexing helper (recomputed cheaply; see gn_one_speed).
-    # With the Legendre basis (is_SPH == false) the azimuth collapses: a single
-    # slot per octant and only octants u ∈ {1, 5} carry μ-band patches.
+    # In 1D the azimuth collapses (both Legendre and spherical-harmonics bases): a
+    # single slot per octant and only octants u ∈ {1, 5} carry μ-band patches.
     sx = [1,1,1,1,-1,-1,-1,-1]
     if (Ndims > 1) sy = [1,1,-1,-1,1,1,-1,-1] end
     if (Ndims > 2) sz = [1,-1,1,-1,1,-1,1,-1] end
-    Nw_of(u, v) = is_SPH ? ((tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v)) : ((u == 1 || u == 5) ? 1 : 0)
+    # In 1D the angular domain collapses to two half-spheres (u ∈ {1,5}, full
+    # azimuth) for the Legendre basis and for the folded spherical-harmonics basis;
+    # the unfolded spherical-harmonics basis keeps the full octant tiling. In 2D the
+    # z-symmetry fold skips the even octants (four quadrants {1,3,5,7}).
+    azim_collapsed = (Ndims == 1) && (!is_SPH || fold)
+    z_fold_2D = (Ndims == 2) && (Nv == 1) && fold
+    Nw_of(u, v) = azim_collapsed ? ((u == 1 || u == 5) ? 1 : 0) :
+                  (z_fold_2D && iseven(u)) ? 0 :
+                  ((tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v))
 
     # Calculation of the Legendre components of the source (in-scattering). For the homogeneous
     # operator A·z the out-of-group source Qlout is dropped; the scattering/Fokker-Planck builders

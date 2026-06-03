@@ -16,7 +16,6 @@ RadiantObject = Union{
     Flux,
     Interaction,
     Particle,
-    DPN,
     GN
 }
 

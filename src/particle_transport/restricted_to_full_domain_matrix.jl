@@ -339,6 +339,138 @@ function patch_to_full_range_matrix_legendre(L::Int64, L_elem::Int64, Nv::Int64)
     return Np, Nq, Mll
 end
 
+"""
+    patch_to_full_range_matrix_spherical_harmonics_1D(L::Int64, Lq::Int64, Nv::Int64)
+
+Build the patch-to-full-range moment-transfer matrix `Mll[p, q, u, v, 1]` for the
+1D spherical-harmonics GN basis over two half-spheres, the SH counterpart of
+`patch_to_full_range_matrix_legendre`. In 1D the polar axis is the x-axis and the
+problem is azimuthally symmetric, so each domain is a full-azimuth (`ϕ ∈ [0, 2π]`)
+μ-band of a hemisphere. Only octants `u ∈ {1, 5}` carry patches, `Nw = 1`. Here
+`Mll[p,q,u,v,1] = ∫_band ∫_0^{2π} Y_p(μ,ϕ) ψ_q^loc(μ,ϕ) dμ dϕ`. By azimuthal
+orthogonality the matrix is block-diagonal in `m`; the `m = 0` block reproduces
+`half_to_full_range_matrix_spherical_harmonics`. With `Nv = 1, Lq = L` this matches
+that reference per hemisphere (to machine precision on the physically-excited
+`m = 0` block; the decoupled `m ≠ 0` entries differ only by the residual
+`(1-μ²)^{m/2}` quadrature error and stay zero in any 1D solution).
+
+# Output Argument(s)
+- `Np::Int64` : number of full-range moments.
+- `Nq::Int64` : number of per-patch moments.
+- `Mll::Array{Float64,5}` : moment-transfer matrix, shape `(Np, Nq, 8, Nv, 1)`.
+"""
+function patch_to_full_range_matrix_spherical_harmonics_1D(L::Int64, Lq::Int64, Nv::Int64)
+    if L < 0 || Lq < 0 error("Legendre orders must be ≥ 0.") end
+    if Nv <= 0 error("Number of μ-bands per hemisphere must be > 0.") end
+    Np = spherical_harmonics_number_basis(L)
+    Nq = spherical_harmonics_number_basis(Lq)
+    pl_p, pm_p = spherical_harmonics_indices(L)
+    pl_q, pm_q = spherical_harmonics_indices(Lq)
+    Mll = zeros(Np, Nq, 8, Nv, 1)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    Cp = Vector{Float64}(undef, Np)
+    for p in 1:Np
+        lp = pl_p[p]; mp = pm_p[p]
+        Cp[p] = sqrt((2 - (mp == 0)) * factorial_factor([lp - abs(mp)], [lp + abs(mp)]))
+    end
+    Cq = Vector{Float64}(undef, Nq)
+    for q in 1:Nq
+        lq = pl_q[q]; mq = pm_q[q]
+        Cq[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
+    end
+    denom = Float64(Nv * (Nv + 1))
+    mu_of_v(s::Int, v::Int) = (s == 1) ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) : (-1.0 + ((v - 1) * v) / denom)
+    for u in (1, 5), v in 1:Nv
+        su = _GN_SX[u]
+        μ0 = mu_of_v(su, v); μ1 = mu_of_v(su, v + 1); Δμ = μ1 - μ0
+        Δϕ = 2π
+        scale_uv = 0.25 * sqrt((π / 2) * (Δμ * Δϕ))
+        for p in 1:Np
+            lp = pl_p[p]; mp = pm_p[p]; amp = abs(mp)
+            scale_p = scale_uv * Cp[p]
+            for q in 1:Nq
+                if pm_q[q] != mp continue end   # azimuthal orthogonality (full 2π)
+                az = 1.0 + (mp == 0)            # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
+                cos_int = 0.0
+                for n in 1:N
+                    μp = μ0 + Δμ * t[n]
+                    cos_int += weight[n] * Pnm(lp, amp, μp) * Pnm(pl_q[q], abs(pm_q[q]), su == 1 ? x[n] : -x[n])
+                end
+                Mll[p, q, u, v, 1] += scale_p * Cq[q] * az * cos_int
+            end
+        end
+    end
+    return Np, Nq, Mll
+end
+
+"""
+    patch_to_full_range_matrix_spherical_harmonics_2D_quarter(L::Int64, Lq::Int64)
+
+Build the patch-to-full-range moment-transfer matrices `Mll[p, q, u, 1, 1]` for the
+2D spherical-harmonics GN basis over four quadrants, the GN counterpart of
+`quarter_to_full_range_matrix_spherical_harmonics`. The 2D angular flux is symmetric
+under `μ_z → -μ_z`, so each domain is a full-`μ_z` quadrant of the sphere selected by
+`(sign μ_x, sign μ_y)`, stored in octant slots `u ∈ {1, 3, 5, 7}` (one representative
+per `(sx, sy)` sign pair), each spanning the azimuthal range `Δϕ = π`. With `Lq = L`
+the `u = 1` slice reproduces `quarter_to_full_range_matrix_spherical_harmonics`.
+
+# Output Argument(s)
+- `Np::Int64`, `Nq::Int64`, `Mll::Array{Float64,5}` of shape `(Np, Nq, 8, 1, 1)`.
+"""
+function patch_to_full_range_matrix_spherical_harmonics_2D_quarter(L::Int64, Lq::Int64)
+    if L < 0 || Lq < 0 error("Legendre orders must be ≥ 0.") end
+    Np = spherical_harmonics_number_basis(L)
+    Nq = spherical_harmonics_number_basis(Lq)
+    pl_p, pm_p = spherical_harmonics_indices(L)
+    pl_q, pm_q = spherical_harmonics_indices(Lq)
+    Mll = zeros(Np, Nq, 8, 1, 1)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    Cp = Vector{Float64}(undef, Np)
+    for p in 1:Np
+        lp = pl_p[p]; mp = pm_p[p]
+        Cp[p] = sqrt((2 - (mp == 0)) * factorial_factor([lp - abs(mp)], [lp + abs(mp)]))
+    end
+    Cq = Vector{Float64}(undef, Nq)
+    for q in 1:Nq
+        lq = pl_q[q]; mq = pm_q[q]
+        Cq[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
+    end
+    Tq = Matrix{Float64}(undef, Nq, N)
+    for q in 1:Nq
+        mq = pm_q[q]
+        for n in 1:N
+            Tq[q, n] = (mq ≥ 0) ? cos(mq * π * (x[n] + 1.0)) : sin(-mq * π * (x[n] + 1.0))
+        end
+    end
+    Δϕ = π
+    scale_uv = 0.25 * sqrt((π / 2) * (1.0 * Δϕ))   # Δμ = 1 for a hemisphere band
+    for u in (1, 3, 5, 7)
+        su = _GN_SX[u]; sv = _GN_SY[u]
+        μ0 = (su == 1) ? 0.0 : -1.0; μ1 = (su == 1) ? 1.0 : 0.0
+        ϕ0 = (sv == 1) ? (-π / 2) : (π / 2)
+        for p in 1:Np
+            lp = pl_p[p]; mp = pm_p[p]; amp = abs(mp)
+            scale_p = scale_uv * Cp[p]
+            for q in 1:Nq
+                cos_int = 0.0; az = 0.0
+                for n in 1:N
+                    μp = μ0 + (μ1 - μ0) * t[n]
+                    cos_int += weight[n] * Pnm(lp, amp, μp) * Pnm(pl_q[q], abs(pm_q[q]), su == 1 ? x[n] : -x[n])
+                    ϕ = ϕ0 + Δϕ * t[n]
+                    Tp = (mp ≥ 0) ? cos(mp * ϕ) : sin(-mp * ϕ)
+                    az += weight[n] * Tp * Tq[q, n]
+                end
+                Mll[p, q, u, 1, 1] += scale_p * Cq[q] * az * cos_int
+            end
+        end
+    end
+    return Np, Nq, Mll
+end
+
 function 𝒯m(m::Int64,φ::Real)
     if m ≥ 0
         return cos(m*φ)
@@ -594,6 +726,151 @@ function patch_to_half_range_matrix_legendre(L_surf::Int64, L_elem::Int64, Nv::I
                             ψq = sqrt((2 * (q - 1) + 1) / Δ) * Ploc[n][q]
                             for p in 1:Np
                                 Mll[p, q, u, v, 1, b, is] += wn * Rhalf[p] * ψq
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return Mll
+end
+
+"""
+    patch_to_half_range_matrix_spherical_harmonics_1D(L_surf::Int64, L_elem::Int64, Nv::Int64)
+
+Build the patch-to-half-range surface moment-transfer matrix
+`Mll[p, q, u, v, 1, b, is]` for the 1D spherical-harmonics GN basis over two
+half-spheres, the SH counterpart of `patch_to_half_range_matrix_legendre`. Faces
+`b ∈ {1, 2}` (x-faces) only; the surface and patch share the full azimuth
+`ϕ ∈ [0, 2π]`. `is = 1` (incoming, s = -1) and `is = 2` (outgoing, s = +1) select
+the hemisphere through the octant filter `sx[u] == sb·s` (`sb = -1` for `b = 1`,
+`sb = +1` for `b = 2`), so only octants `u ∈ {1, 5}` contribute, `Nw = 1`.
+
+# Output Argument(s)
+- `Mll::Array{Float64,7}` : shape `(Np, Nq, 8, Nv, 1, 2, 2)`.
+"""
+function patch_to_half_range_matrix_spherical_harmonics_1D(L_surf::Int64, L_elem::Int64, Nv::Int64)
+    Np = spherical_harmonics_number_basis(L_surf)
+    Nq = spherical_harmonics_number_basis(L_elem)
+    pl_p, pm_p = spherical_harmonics_indices(L_surf)
+    pl_q, pm_q = spherical_harmonics_indices(L_elem)
+    Mll = zeros(Np, Nq, 8, Nv, 1, 2, 2)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    Cp = Vector{Float64}(undef, Np)
+    for p in 1:Np
+        lp = pl_p[p]; mp = pm_p[p]
+        Cp[p] = sqrt((2 - (mp == 0)) / (2 * π) * (2 * lp + 1) * factorial_factor([lp - abs(mp)], [lp + abs(mp)]))
+    end
+    Cq = Vector{Float64}(undef, Nq)
+    for q in 1:Nq
+        lq = pl_q[q]; mq = pm_q[q]
+        Cq[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
+    end
+    denom = Float64(Nv * (Nv + 1))
+    mu_of_v(s::Int, v::Int) = (s == 1) ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) : (-1.0 + ((v - 1) * v) / denom)
+    for is in 1:2
+        s = (is == 1) ? -1 : 1
+        for b in 1:2
+            μ⁻, μ⁺, ϕ⁻, ϕ⁺, sb = cartesian_surface_source(b, s)
+            Δμ = μ⁺ - μ⁻
+            Δϕ = ϕ⁺ - ϕ⁻                 # = 2π for x-faces
+            boundary_scale = sqrt(2 * π / (Δμ * Δϕ))
+            for u in (1, 5)
+                if _GN_SX[u] != sb * s continue end
+                su = _GN_SX[u]
+                for v in 1:Nv
+                    μ0 = mu_of_v(su, v); μ1 = mu_of_v(su, v + 1); Δμ_uv = μ1 - μ0
+                    Δϕ_uw = 2π
+                    scale_uv = boundary_scale * 0.25 * sqrt((π / 2) * (Δμ_uv * Δϕ_uw))
+                    for p in 1:Np
+                        lp = pl_p[p]; mp = pm_p[p]; amp = abs(mp)
+                        scale_p = scale_uv * Cp[p]
+                        for q in 1:Nq
+                            if pm_q[q] != mp continue end   # azimuthal orthogonality
+                            az = 1.0 + (mp == 0)            # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
+                            cos_int = 0.0
+                            for n in 1:N
+                                μi = μ0 + Δμ_uv * t[n]
+                                μp = -s * sb * (((-s * sb - 1) / 2) + (μi - μ⁻) / Δμ)
+                                cos_int += weight[n] * Pnm(lp, amp, 2 * μp - 1) * Pnm(pl_q[q], abs(pm_q[q]), su == 1 ? x[n] : -x[n])
+                            end
+                            Mll[p, q, u, v, 1, b, is] += scale_p * Cq[q] * az * cos_int
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return Mll
+end
+
+"""
+    patch_to_half_range_matrix_spherical_harmonics_2D_quarter(L_surf::Int64, L_elem::Int64)
+
+Build the patch-to-half-range surface moment-transfer matrix
+`Mll[p, q, u, 1, 1, b, is]` for the 2D spherical-harmonics GN basis over four
+quadrants, the GN counterpart of `patch_to_half_range_matrix_spherical_harmonics`
+restricted to the four-quadrant (z-folded) tiling. Faces `b ∈ {1, 2, 3, 4}` (x- and
+y-faces). The four quadrant patches are stored in octant slots `u ∈ {1, 3, 5, 7}`;
+each contributes to the faces whose normal-axis sign it matches (`sx[u] == sb·s` for
+x-faces, `sy[u] == sb·s` for y-faces). Integration is by 32×32 Gauss-Legendre
+quadrature over the quadrant patch (μ-band × azimuthal range `π`), evaluating the
+half-range surface harmonics at the global direction and the patch-local basis
+consistent with `patch_to_full_range_matrix_spherical_harmonics_2D_quarter`.
+
+# Output Argument(s)
+- `Mll::Array{Float64,7}` : shape `(Np_surf, Nq, 8, 1, 1, 4, 2)`.
+"""
+function patch_to_half_range_matrix_spherical_harmonics_2D_quarter(L_surf::Int64, L_elem::Int64)
+    Np = spherical_harmonics_number_basis(L_surf)
+    Nq = spherical_harmonics_number_basis(L_elem)
+    pl_q, pm_q = spherical_harmonics_indices(L_elem)
+    Mll = zeros(Np, Nq, 8, 1, 1, 4, 2)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    Cq = Vector{Float64}(undef, Nq)
+    for q in 1:Nq
+        lq = pl_q[q]; mq = pm_q[q]
+        Cq[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
+    end
+    sx = (1, 1, 1, 1, -1, -1, -1, -1)
+    sy = (1, 1, -1, -1, 1, 1, -1, -1)
+    Yhalf = Vector{Float64}(undef, Np)
+    Plm_buf = Matrix{Float64}(undef, L_surf + 1, L_surf + 1)
+    Pl_buf = Vector{Float64}(undef, L_surf + 1)
+    for is in 1:2
+        s = (is == 1) ? -1 : 1
+        for b in 1:4
+            μ⁻, μ⁺, ϕ⁻, ϕ⁺, sb = cartesian_surface_source(b, s)
+            Δμ_b = μ⁺ - μ⁻; Δϕ_b = ϕ⁺ - ϕ⁻
+            boundary_scale = sqrt(2 * π / (Δμ_b * Δϕ_b))
+            for u in (1, 3, 5, 7)
+                su = sx[u]; sv = sy[u]
+                if !((b ∈ (1, 2) && su == sb * s) || (b ∈ (3, 4) && sv == sb * s)) continue end
+                μ0 = (su == 1) ? 0.0 : -1.0; μ1 = (su == 1) ? 1.0 : 0.0; Δμ = μ1 - μ0
+                ϕ0 = (sv == 1) ? (-π / 2) : (π / 2); Δϕ = π
+                nrm = 1.0 / sqrt(2 * Δμ)
+                for i in 1:N
+                    μ = μ0 + Δμ * t[i]
+                    xμ = su == 1 ? x[i] : -x[i]
+                    # half-range surface latitude/longitude for face b (inline of
+                    # boundary_real_half_range_spherical_harmonics_up_to_L, no bounds check)
+                    μ̂ = clamp(-s * sb * (((-s * sb - 1) / 2) + (μ - μ⁻) / Δμ_b), 0.0, 1.0)
+                    for j in 1:N
+                        ϕ = ϕ0 + Δϕ * t[j]
+                        ϕ̂ = 2 * π * (ϕ - ϕ⁻) / Δϕ_b
+                        real_half_range_spherical_harmonics_up_to_L!(Yhalf, Plm_buf, Pl_buf, L_surf, μ̂, ϕ̂)
+                        jac = (Δμ / 2) * (Δϕ / 2) * weight[i] * weight[j] * boundary_scale
+                        for q in 1:Nq
+                            mq = pm_q[q]
+                            ψq = nrm * Cq[q] * Pnm(pl_q[q], abs(mq), xμ) * (mq ≥ 0 ? cos(mq * 2π * t[j]) : sin(-mq * 2π * t[j]))
+                            wj = jac * ψq
+                            for p in 1:Np
+                                Mll[p, q, u, 1, 1, b, is] += wj * Yhalf[p]
                             end
                         end
                     end

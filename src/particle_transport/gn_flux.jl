@@ -37,7 +37,15 @@ L = solver.get_legendre_order()
 L_elem = solver.get_legendre_order_local()
 Nv = solver.get_subdivision()
 tiling = solver.get_tiling()
+# `z_fold` folds the angular domain by the symmetry of the reduced-dimension problem:
+# in 1D (spherical harmonics) the azimuthally-symmetric flux collapses onto two
+# half-spheres; in 2D the μ_z → -μ_z symmetry collapses the sphere onto four
+# quadrants (with Nv = 1). With `z_fold = false` the full octant tiling is used in
+# every dimension (the general GN treatment, with azimuthal subdivision).
+fold    = solver.get_z_fold()
 polynomial_basis = solver.get_polynomial_basis(Ndims)
+fold_1D = (Ndims == 1 && fold && polynomial_basis == "spherical-harmonics")  # 1D SH → two half-spheres
+z_fold  = (Ndims == 2 && Nv == 1 && fold)            # 2D → four quadrants
 if polynomial_basis == "legendre"
     if Ndims != 1 error("Legendre basis is only available in 1D.") end
     is_SPH = false
@@ -47,9 +55,22 @@ if polynomial_basis == "legendre"
     𝒩 = gn_weights_legendre_1D(L_elem,Nv)
 elseif polynomial_basis == "spherical-harmonics"
     is_SPH = true
-    Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics(L,L_elem,Nv;tiling=tiling)
-    pl,pm = spherical_harmonics_indices(L)
-    𝒩 = gn_weights_spherical_harmonics(L_elem,Nv,Ndims;tiling=tiling)
+    if fold_1D
+        # Two half-spheres (azimuthally collapsed), Nv polar bands per hemisphere.
+        Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics_1D(L,L_elem,Nv)
+        pl,pm = spherical_harmonics_indices(L)
+        𝒩 = gn_weights_spherical_harmonics_1D(L_elem,Nv)
+    elseif z_fold
+        # Four quadrants (z-symmetry fold).
+        Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics_2D_quarter(L,L_elem)
+        pl,pm = spherical_harmonics_indices(L)
+        𝒩 = gn_weights_spherical_harmonics_2D_quarter(L_elem)
+    else
+        # Full octant tiling with azimuthal subdivision (general GN, any dimension).
+        Np,Nq,Mll = patch_to_full_range_matrix_spherical_harmonics(L,L_elem,Nv;tiling=tiling)
+        pl,pm = spherical_harmonics_indices(L)
+        𝒩 = gn_weights_spherical_harmonics(L_elem,Nv,Ndims;tiling=tiling)
+    end
 else
     error("Unknown polynomial basis.")
 end
@@ -107,7 +128,13 @@ if solver_type ∈ [2,4]
     T = zeros(Ng,Nmat)
     T = cross_sections.get_momentum_transfer(part)
     fokker_planck_type = solver.get_angular_fokker_planck()
-    if is_SPH
+    if fold_1D
+        # 1D spherical-harmonics over two half-spheres: only the dimension-agnostic
+        # galerkin operator is supported (the finite-difference patch graph assumes
+        # the octant tiling). This is the same capability as the DPN solver.
+        if fokker_planck_type != "galerkin" error("The folded 1D spherical-harmonics GN basis (two half-spheres) only supports the \"galerkin\" angular Fokker-Planck operator; use set_z_fold(false) for the octant tiling.") end
+        ℳ,λ₀ = fokker_planck_scattering_matrix("galerkin",pl,Np)
+    elseif is_SPH
         ℳ,λ₀ = fokker_planck_scattering_matrix(fokker_planck_type,pl,Np;L=L,L_elem=L_elem,Nv=Nv,Ndims=Ndims,tiling=tiling,Mll=Mll)
     elseif fokker_planck_type == "finite-difference"
         ℳ,λ₀ = fokker_planck_finite_difference_gn_legendre_1D(L,L_elem,Nv,Mll)
@@ -145,7 +172,11 @@ end
 surface_sources = source.get_surface_sources()
 volume_sources = source.get_volume_sources()
 Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
-if is_SPH
+if fold_1D
+    Mll_surf = patch_to_half_range_matrix_spherical_harmonics_1D(L_surf,L_elem,Nv)
+elseif z_fold
+    Mll_surf = patch_to_half_range_matrix_spherical_harmonics_2D_quarter(L_surf,L_elem)
+elseif is_SPH
     Mll_surf = patch_to_half_range_matrix_spherical_harmonics(L_surf,L_elem,Nv,Ndims;tiling=tiling)
 else
     Mll_surf = patch_to_half_range_matrix_legendre(L_surf,L_elem,Nv,Ndims)
@@ -226,7 +257,7 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling,gmres_restart,anderson_depth)
+        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling,gmres_restart,anderson_depth,fold)
     end
 
     # Verification of convergence in all energy groups

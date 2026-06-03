@@ -43,6 +43,7 @@ mutable struct GN
     angular_fokker_planck      ::Union{Missing,String}
     subdivision                ::Int64
     tiling                     ::String
+    z_fold                     ::Bool
 
     # Constructor(s)
     function GN()
@@ -63,6 +64,7 @@ mutable struct GN
         this.angular_fokker_planck = "galerkin"
         this.subdivision = 1
         this.tiling = "symmetric"
+        this.z_fold = true
         return this
     end
 end
@@ -142,6 +144,25 @@ function set_legendre_order(this::GN,legendre_order::Int64,legendre_order_local:
     if legendre_order < 0 || legendre_order_local < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = legendre_order
     this.legendre_order_local = legendre_order_local
+end
+
+"""
+    set_legendre_order(this::GN,legendre_order::Int64)
+
+Set the global Legendre truncation order and couple the local patch order to it
+(`legendre_order_local = legendre_order`), i.e. one fully-coupled patch per base domain.
+This is the Double-PN convenience used by the [`DPN`](@ref) constructor.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+- `legendre_order::Int64` : global (and local) Legendre truncation order.
+
+# Output Argument(s)
+N/A
+
+"""
+function set_legendre_order(this::GN,legendre_order::Int64)
+    set_legendre_order(this,legendre_order,legendre_order)
 end
 
 """
@@ -703,4 +724,49 @@ Get the angular tiling strategy.
 """
 function get_tiling(this::GN)
     return this.tiling
+end
+
+"""
+    set_z_fold(this::GN,z_fold::Bool)
+
+Enable or disable the angular-symmetry fold of the reduced-dimension angular domain
+(`z_fold = true` by default, the DPN-equivalent treatment):
+
+- In 1D with the spherical-harmonics basis, the azimuthally-symmetric flux is folded
+  onto two half-spheres (`z_fold = true`) instead of the full octant tiling with
+  azimuthal subdivision (`z_fold = false`).
+- In 2D the `μ_z → -μ_z` symmetry folds the sphere onto four quadrants
+  (`z_fold = true`, with subdivision `Nv = 1`) instead of eight octants
+  (`z_fold = false`).
+- In 3D it has no effect (eight octants either way).
+
+With `z_fold = false` the full octant tiling is used in every dimension (the general
+GN treatment). The 1D Legendre basis is always azimuthally collapsed and is unaffected.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+- `z_fold::Bool` : whether to fold the angular domain by the problem's symmetry.
+
+# Output Argument(s)
+N/A
+
+"""
+function set_z_fold(this::GN,z_fold::Bool)
+    this.z_fold = z_fold
+end
+
+"""
+    get_z_fold(this::GN)
+
+Get whether the 2D z-symmetry fold (four quadrants) is enabled.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+
+# Output Argument(s)
+- `z_fold::Bool` : whether the z-symmetry fold is enabled.
+
+"""
+function get_z_fold(this::GN)
+    return this.z_fold
 end

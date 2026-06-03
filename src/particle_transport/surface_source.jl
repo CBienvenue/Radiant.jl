@@ -46,24 +46,6 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
         Np,_,_,_,_,pl,pm = surface_angular_polynomial_basis(Ω,w,L,SN_type,Qdims,surface)
         Lmax = maximum(pl)
 
-    elseif solver isa DPN
-
-        L = min(source.get_legendre_order(),solver.get_legendre_order())
-        polynomial_basis = solver.get_polynomial_basis(Ndims)
-        Qdims = Ndims
-        if polynomial_basis == "legendre"
-            Np,_ = half_to_full_range_matrix_legendre(L)
-            pl = collect(0:L)
-            pm = zeros(Int64,Np)
-        elseif polynomial_basis == "spherical-harmonics"
-            if Ndims == 1 Qdims = 2 end
-            Np,_ = half_to_full_range_matrix_spherical_harmonics(L)
-            pl,pm = spherical_harmonics_indices(L)
-            error()
-        else
-            error("Unknown polynomial basis.")
-        end
-        Lmax = maximum(pl)
     elseif solver isa GN
         L = min(source.get_legendre_order(),solver.get_legendre_order())
         polynomial_basis = solver.get_polynomial_basis(Ndims)

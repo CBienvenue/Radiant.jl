@@ -62,7 +62,7 @@ Solve the one-speed transport equation for a given particle.
 # Reference(s)
 
 """
-function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64},tiling::String="polar-anchored",gmres_restart::Int64=30,anderson_depth::Int64=3)
+function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},pm::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64},tiling::String="polar-anchored",gmres_restart::Int64=30,anderson_depth::Int64=3,fold::Bool=false)
 
     # Flux Initialization
     𝚽E12_temp = Array{Float64}(undef)
@@ -74,12 +74,20 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     if (Ndims > 2) sz = [1,-1,1,-1,1,-1,1,-1] end
 
     # Patch indexing helper: number of patches along the "w" axis for octant u,
-    # row v, subdivision Nv, and the chosen angular tiling. With the Legendre
-    # basis (1D, azimuthally symmetric) the angular domain collapses to μ-bands:
-    # there is a single azimuthal slot and only octants u ∈ {1, 5} carry patches.
-    Nw_max = is_SPH ? ((tiling == "symmetric") ? (2*Nv - 1) : Nv) : 1
-    Nw_of = is_SPH ? ((u, v) -> (tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v)) :
-                     ((u, v) -> (u == 1 || u == 5) ? 1 : 0)
+    # row v, subdivision Nv, and the chosen angular tiling. In 1D (azimuthally
+    # symmetric, both Legendre and spherical-harmonics bases) the angular domain
+    # collapses to μ-bands: a single azimuthal slot and only octants u ∈ {1, 5}
+    # carry patches.
+    # In 1D the angular domain collapses to two half-spheres (u ∈ {1,5}, full
+    # azimuth) for the Legendre basis and for the folded spherical-harmonics basis;
+    # the unfolded spherical-harmonics basis keeps the full octant tiling. In 2D the
+    # z-symmetry fold skips the even octants (four quadrants {1,3,5,7}).
+    azim_collapsed = (Ndims == 1) && (!is_SPH || fold)
+    z_fold_2D = (Ndims == 2) && (Nv == 1) && fold
+    Nw_max = azim_collapsed ? 1 : ((tiling == "symmetric") ? (2*Nv - 1) : Nv)
+    Nw_of = azim_collapsed ? ((u, v) -> (u == 1 || u == 5) ? 1 : 0) :
+            ((u, v) -> (z_fold_2D && iseven(u)) ? 0 :
+                       ((tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v)))
 
     # Fixed boundary sources
     if Ndims == 1
@@ -245,7 +253,7 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     end
 
     # Shorthand wrapper around one source-iteration pass
-    pass!(homogeneous) = gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,is_SPH,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous=homogeneous)
+    pass!(homogeneous) = gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,C,ω,isCSD,solver,𝚽E12,S⁻,S⁺,S,T,ℳ,𝒲,𝒩,boundary_conditions,Np_source,Nv,Mll,Mll_surf,Rpq,Mll_factored,tiling,is_SPH,fold,Ql,𝚽E12_temp,sources_q,sources_q_zero,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,𝒮_ws,Q_ws,𝚽_ws,𝚽x12_buf,𝚽y12_buf,𝚽z12_buf;homogeneous=homogeneous)
 
     # State vector z = (𝚽l, incoming boundary angular fluxes on each active axis)
     if Ndims == 1

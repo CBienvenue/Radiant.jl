@@ -65,14 +65,6 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
         Ω,w = quadrature(solver.quadrature_order,solver.quadrature_type,Qdims)
         if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
         P,_,_,_ = angular_polynomial_basis(Ω,w,solver.get_legendre_order(),solver.get_angular_boltzmann(),Qdims)
-    elseif solver isa DPN
-        polynomial_basis = solver.get_polynomial_basis(Ndims)
-        L = solver.get_legendre_order()
-        if polynomial_basis == "legendre"
-            P = L+1
-        else
-            P = (L+1)^2
-        end
     elseif solver isa GN
         polynomial_basis = solver.get_polynomial_basis(Ndims)
         Lp = solver.get_legendre_order()

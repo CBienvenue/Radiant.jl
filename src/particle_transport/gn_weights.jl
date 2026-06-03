@@ -235,6 +235,80 @@ function gn_weights_spherical_harmonics(L::Int64,Nv::Int64,Ndims::Int64;tiling::
 end
 
 """
+    gn_weights_spherical_harmonics_2D_quarter(L_elem::Int64)
+
+Compute the per-quadrant streaming-weight matrices `𝒩[p, q, d, u, 1, 1]` (`d = 1, 2`
+for x- and y-streaming) for the 2D spherical-harmonics GN basis over four quadrants,
+the four-quadrant counterpart of the octant streaming-weight builder. The 2D angular flux is
+symmetric under `μ_z → -μ_z`, so each domain is a full-`μ_z` quadrant of the sphere
+selected by `(sign μ_x, sign μ_y)`. The four quadrants are stored in octant slots
+`u ∈ {1, 3, 5, 7}` (one representative per `(sx, sy)` sign pair); the remaining slots
+stay zero. Each quadrant spans the azimuthal range `Δϕ = π`. With `L_elem = L` the
+`u = 1` slice reproduces the DPN four-quadrant (Double-PN) streaming weights.
+
+# Input Argument(s)
+- `L_elem::Int64` : per-patch local Legendre order (`Nq = (L_elem+1)(L_elem+2)/2`).
+
+# Output Argument(s)
+- `𝒩::Array{Float64,6}` : streaming weights, shape `(Nq, Nq, 2, 8, 1, 1)`.
+"""
+function gn_weights_spherical_harmonics_2D_quarter(L_elem::Int64)
+    if L_elem < 0 error("Local Legendre order must be ≥ 0.") end
+    Nq = spherical_harmonics_number_basis(L_elem)
+    pl, pm = spherical_harmonics_indices(L_elem)
+    𝒩 = zeros(Nq, Nq, 2, 8, 1, 1)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    C = Vector{Float64}(undef, Nq)
+    for q in 1:Nq
+        lq = pl[q]; mq = pm[q]
+        C[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
+    end
+    # Patch-local azimuthal basis 𝒯m(m, π(x+1)) (reference over [0,2π]).
+    Tref = Matrix{Float64}(undef, Nq, N)
+    for q in 1:Nq
+        mq = pm[q]
+        for n in 1:N
+            Tref[q, n] = (mq ≥ 0) ? cos(mq * π * (x[n] + 1.0)) : sin(-mq * π * (x[n] + 1.0))
+        end
+    end
+    P_pos = Matrix{Float64}(undef, Nq, N)
+    P_neg = Matrix{Float64}(undef, Nq, N)
+    for q in 1:Nq
+        lq = pl[q]; amq = abs(pm[q])
+        for n in 1:N
+            P_pos[q, n] = Pnm(lq, amq, x[n])
+            P_neg[q, n] = Pnm(lq, amq, -x[n])
+        end
+    end
+    pref = π / 8
+    for u in (1, 3, 5, 7)
+        su = _GN_SX[u]; sv = _GN_SY[u]
+        Psign = (su == 1) ? P_pos : P_neg
+        μ0 = (su == 1) ? 0.0 : -1.0; μ1 = (su == 1) ? 1.0 : 0.0; Δμ = μ1 - μ0
+        ϕ0 = (sv == 1) ? (-π / 2) : (π / 2)
+        for p in 1:Nq
+            for q in 1:Nq
+                azx = 0.0; azy = 0.0; cx = 0.0; cyz = 0.0
+                for n in 1:N
+                    μi = μ0 + Δμ * t[n]
+                    PpPq = Psign[p, n] * Psign[q, n]
+                    cx += weight[n] * μi * PpPq
+                    cyz += weight[n] * sqrt(1 - μi^2) * PpPq
+                    TpTq = Tref[p, n] * Tref[q, n]
+                    azx += weight[n] * TpTq
+                    azy += weight[n] * cos(ϕ0 + π * t[n]) * TpTq
+                end
+                𝒩[p, q, 1, u, 1, 1] += pref * C[p] * C[q] * azx * cx
+                𝒩[p, q, 2, u, 1, 1] += pref * C[p] * C[q] * azy * cyz
+            end
+        end
+    end
+    return 𝒩
+end
+
+"""
     gn_weights_spherical_harmonics_symmetric(L, Nv, Ndims)
 
 Compute the Galerkin patch-weight matrix `𝒩[p, q, d, u, i, j]` for the symmetric
@@ -337,6 +411,78 @@ function gn_weights_legendre_1D(L_elem::Int64, Nv::Int64)
                     ψq = sqrt((2 * (q - 1) + 1) / Δ) * Pξ[n][q]
                     𝒩[p, q, 1, u, v, 1] += wn * μ * ψp * ψq
                 end
+            end
+        end
+    end
+    return 𝒩
+end
+
+"""
+    gn_weights_spherical_harmonics_1D(L_elem::Int64, Nv::Int64)
+
+Compute the per-patch x-streaming weight matrix `𝒩[p, q, 1, u, v, 1]` for the 1D
+spherical-harmonics GN basis over two half-spheres, the SH counterpart of
+`gn_weights_legendre_1D`. In 1D the polar axis is the x-axis and the angular
+domain is azimuthally symmetric, so each domain is a full-azimuth (`ϕ ∈ [0, 2π]`)
+μ-band of a hemisphere. Only octants `u ∈ {1, 5}` (`sx = ±1`) carry patches and
+`Nw = 1` per band. Here
+`𝒩[p,q,1,u,v,1] = ∫_band ∫_0^{2π} μ · ψ_p^loc(μ,ϕ) ψ_q^loc(μ,ϕ) dμ dϕ` in the
+patch-local real-SH basis. By azimuthal orthogonality the matrix is block-diagonal
+in `m`; the `m = 0` block (the only one excited by an azimuthally symmetric 1D
+problem) reproduces the DPN half-sphere (Double-PN) streaming weights. With `Nv = 1, L_elem = L`
+this matches that reference per hemisphere.
+
+# Input Argument(s)
+- `L_elem::Int64` : per-patch local Legendre order (`Nq = (L_elem+1)(L_elem+2)/2`).
+- `Nv::Int64` : number of μ-bands per hemisphere.
+
+# Output Argument(s)
+- `𝒩::Array{Float64,6}` : streaming weights, shape `(Nq, Nq, 1, 8, Nv, 1)`.
+"""
+function gn_weights_spherical_harmonics_1D(L_elem::Int64, Nv::Int64)
+    if L_elem < 0 error("Local Legendre order must be ≥ 0.") end
+    if Nv <= 0 error("Number of μ-bands per hemisphere must be > 0.") end
+    Nq = spherical_harmonics_number_basis(L_elem)
+    pl, pm = spherical_harmonics_indices(L_elem)
+    𝒩 = zeros(Nq, Nq, 1, 8, Nv, 1)
+    N = 32
+    x, weight = gauss_legendre(N)
+    t = 0.5 .* (x .+ 1.0)
+    # Local-basis azimuthal-times-cosine normalization (same as the octant
+    # patch q-basis in patch_to_full_range_matrix_spherical_harmonics).
+    C = Vector{Float64}(undef, Nq)
+    for q in 1:Nq
+        lq = pl[q]; mq = pm[q]
+        C[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
+    end
+    # Pre-compute Pnm(l,|m|,±x).
+    P_pos = Matrix{Float64}(undef, Nq, N)
+    P_neg = Matrix{Float64}(undef, Nq, N)
+    for q in 1:Nq
+        lq = pl[q]; amq = abs(pm[q])
+        for n in 1:N
+            P_pos[q, n] = Pnm(lq, amq, x[n])
+            P_neg[q, n] = Pnm(lq, amq, -x[n])
+        end
+    end
+    pref = π / 8
+    for u in (1, 5), v in 1:Nv
+        su = _GN_SX[u]
+        Psign = (su == 1) ? P_pos : P_neg
+        μ0, μ1 = _gn_legendre_band(u, v, Nv)
+        Δμ = μ1 - μ0
+        for p in 1:Nq
+            mp = pm[p]
+            sp = pref * C[p]
+            for q in 1:Nq
+                if pm[q] != mp continue end   # azimuthal orthogonality (full 2π)
+                az = 1.0 + (mp == 0)          # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
+                cos_int = 0.0
+                for n in 1:N
+                    μi = μ0 + Δμ * t[n]
+                    cos_int += weight[n] * μi * Psign[p, n] * Psign[q, n]
+                end
+                𝒩[p, q, 1, u, v, 1] += sp * C[q] * az * cos_int
             end
         end
     end
