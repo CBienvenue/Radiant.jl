@@ -115,8 +115,13 @@ function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,�
         for ib in range(1,2)
             if boundary_conditions[ib] != 0
                 if boundary_conditions[ib] == 1 # Reflective boundary condition
-                    for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1])
-                        𝚽x12⁻[p,is,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,ib]
+                    # Batched reflection with the stride-1 basis index p innermost (q-summation
+                    # order preserved ⇒ bit-identical to the original p-outer form).
+                    @inbounds for is in range(1,Nm[1]), q in range(1,Np_surf)
+                        s = 𝚽x12⁺[q,is,ib]
+                        @simd for p in range(1,Np_surf)
+                            𝚽x12⁻[p,is,ib] += Rpq[p,q,ib] * s
+                        end
                     end
                 elseif boundary_conditions[ib] == 2 # Periodic boundary condition
                     for p in range(1,Np_surf), is in range(1,Nm[1])
@@ -203,8 +208,13 @@ function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,�
             # X-axis boundary conditions
             if boundary_conditions[ib] != 0
                 if boundary_conditions[ib] == 1 # Reflective boundary condition
-                    for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2])
-                        𝚽x12⁻[p,is,iy,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,iy,ib]
+                    # Batched reflection with the stride-1 basis index p innermost (q-summation
+                    # order preserved ⇒ bit-identical to the original p-outer form).
+                    @inbounds for iy in range(1,Ns[2]), is in range(1,Nm[1]), q in range(1,Np_surf)
+                        s = 𝚽x12⁺[q,is,iy,ib]
+                        @simd for p in range(1,Np_surf)
+                            𝚽x12⁻[p,is,iy,ib] += Rpq[p,q,ib] * s
+                        end
                     end
                 elseif boundary_conditions[ib] == 2 # Periodic boundary condition
                     for p in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2])
@@ -221,8 +231,11 @@ function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,�
             # Y-axis boundary conditions
             if boundary_conditions[ib+2] != 0
                 if boundary_conditions[ib+2] == 1 # Reflective boundary condition
-                    for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1])
-                        𝚽y12⁻[p,is,ix,ib] += Rpq[p,q,ib+2] * 𝚽y12⁺[q,is,ix,ib]
+                    @inbounds for ix in range(1,Ns[1]), is in range(1,Nm[2]), q in range(1,Np_surf)
+                        s = 𝚽y12⁺[q,is,ix,ib]
+                        @simd for p in range(1,Np_surf)
+                            𝚽y12⁻[p,is,ix,ib] += Rpq[p,q,ib+2] * s
+                        end
                     end
                 elseif boundary_conditions[ib+2] == 2 # Periodic boundary condition
                     for p in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1])
@@ -316,8 +329,14 @@ function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,�
             # X-axis boundary conditions
             if boundary_conditions[ib] != 0
                 if boundary_conditions[ib] == 1 # Reflective boundary condition
-                    for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
-                        𝚽x12⁻[p,is,iy,iz,ib] += Rpq[p,q,ib] * 𝚽x12⁺[q,is,iy,iz,ib]
+                    # Batched reflection 𝚽x12⁻[:,col] += Rpq[:,:,ib]·𝚽x12⁺[:,col]; loop with the
+                    # stride-1 basis index p innermost and q just outside (summation order over q
+                    # preserved ⇒ bit-identical to the original p-outer form).
+                    @inbounds for iz in range(1,Ns[3]), iy in range(1,Ns[2]), is in range(1,Nm[1]), q in range(1,Np_surf)
+                        s = 𝚽x12⁺[q,is,iy,iz,ib]
+                        @simd for p in range(1,Np_surf)
+                            𝚽x12⁻[p,is,iy,iz,ib] += Rpq[p,q,ib] * s
+                        end
                     end
                 elseif boundary_conditions[ib] == 2 # Periodic boundary condition
                     for p in range(1,Np_surf), is in range(1,Nm[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3])
@@ -334,8 +353,11 @@ function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,�
             # Y-axis boundary conditions
             if boundary_conditions[ib+2] != 0
                 if boundary_conditions[ib+2] == 1 # Reflective boundary condition
-                    for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1]), iz in range(1,Ns[3])
-                        𝚽y12⁻[p,is,ix,iz,ib] += Rpq[p,q,ib+2] * 𝚽y12⁺[q,is,ix,iz,ib]
+                    @inbounds for iz in range(1,Ns[3]), ix in range(1,Ns[1]), is in range(1,Nm[2]), q in range(1,Np_surf)
+                        s = 𝚽y12⁺[q,is,ix,iz,ib]
+                        @simd for p in range(1,Np_surf)
+                            𝚽y12⁻[p,is,ix,iz,ib] += Rpq[p,q,ib+2] * s
+                        end
                     end
                 elseif boundary_conditions[ib+2] == 2 # Periodic boundary condition
                     for p in range(1,Np_surf), is in range(1,Nm[2]), ix in range(1,Ns[1]), iz in range(1,Ns[3])
@@ -352,8 +374,11 @@ function gn_inner_pass!(𝚽l,Qlout,Σt,Σs,mat,Ndims,Ns,Δs,Np,Nq,pl,Np_surf,�
             # Z-axis boundary conditions
             if boundary_conditions[ib+4] != 0
                 if boundary_conditions[ib+4] == 1 # Reflective boundary condition
-                    for p in range(1,Np_surf), q in range(1,Np_surf), is in range(1,Nm[3]), ix in range(1,Ns[1]), iy in range(1,Ns[2])
-                        𝚽z12⁻[p,is,ix,iy,ib] += Rpq[p,q,ib+4] * 𝚽z12⁺[q,is,ix,iy,ib]
+                    @inbounds for iy in range(1,Ns[2]), ix in range(1,Ns[1]), is in range(1,Nm[3]), q in range(1,Np_surf)
+                        s = 𝚽z12⁺[q,is,ix,iy,ib]
+                        @simd for p in range(1,Np_surf)
+                            𝚽z12⁻[p,is,ix,iy,ib] += Rpq[p,q,ib+4] * s
+                        end
                     end
                 elseif boundary_conditions[ib+4] == 2 # Periodic boundary condition
                     for p in range(1,Np_surf), is in range(1,Nm[3]), ix in range(1,Ns[1]), iy in range(1,Ns[2])
