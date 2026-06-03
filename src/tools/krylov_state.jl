@@ -17,6 +17,34 @@ matching the rest of the transport solver.
 # Type alias for a Krylov state vector.
 const KState = Vector{Array{Float64}}
 
+# --- Per-component kernels (function barriers) ---------------------------------------------
+# `KState`'s element type `Array{Float64}` is abstract in its dimensionality (`Array{Float64,N}
+# where N`), so an element-wise loop written directly over `a[k][i]` cannot specialize: it
+# compiles to generic, bounds-checked, dynamically-shaped indexing. Routing each component
+# through these `::AbstractArray` kernels triggers one dynamic dispatch per component (4 of them),
+# after which the inner loop runs on a concrete array type — fully typed and SIMD-vectorized.
+# This is the dominant cost of the in-group source iteration (see gn_one_speed/sn_one_speed), so
+# keep these as separate, non-inlined methods.
+function _kdot(ak::AbstractArray,bk::AbstractArray)
+    s = 0.0
+    @inbounds @simd for i in eachindex(ak,bk)
+        s += ak[i] * bk[i]
+    end
+    return s
+end
+function _kaxpy!(α::Float64,xk::AbstractArray,yk::AbstractArray)
+    @inbounds @simd for i in eachindex(xk,yk)
+        yk[i] += α * xk[i]
+    end
+    return yk
+end
+function _kscale!(α::Float64,xk::AbstractArray)
+    @inbounds @simd for i in eachindex(xk)
+        xk[i] *= α
+    end
+    return xk
+end
+
 """
     state_dot(a::KState,b::KState)
 
@@ -25,10 +53,7 @@ Euclidean inner product `⟨a,b⟩` summed over every component array.
 function state_dot(a::KState,b::KState)
     s = 0.0
     @inbounds for k in eachindex(a,b)
-        ak = a[k]; bk = b[k]
-        for i in eachindex(ak,bk)
-            s += ak[i] * bk[i]
-        end
+        s += _kdot(a[k],b[k])
     end
     return s
 end
@@ -47,10 +72,7 @@ In-place `y ← y + α·x`. Returns `y`.
 """
 function state_axpy!(α::Float64,x::KState,y::KState)
     @inbounds for k in eachindex(x,y)
-        xk = x[k]; yk = y[k]
-        for i in eachindex(xk,yk)
-            yk[i] += α * xk[i]
-        end
+        _kaxpy!(α,x[k],y[k])
     end
     return y
 end
@@ -62,10 +84,7 @@ In-place `x ← α·x`. Returns `x`.
 """
 function state_scale!(α::Float64,x::KState)
     @inbounds for k in eachindex(x)
-        xk = x[k]
-        for i in eachindex(xk)
-            xk[i] *= α
-        end
+        _kscale!(α,x[k])
     end
     return x
 end

@@ -51,18 +51,28 @@ the `μ` formula used in [`livolant`](@ref). With `e₀ = z₁ − z₀`, `e₁ 
 
 guarded so that a non-positive or undefined value falls back to `μ = 1` (no extrapolation).
 """
+# Per-component kernel (function barrier): see krylov_state.jl for why the loop is split out —
+# the `::AbstractArray` argument lets it specialize and SIMD-vectorize on the concrete array type.
+function _livolant_sums(a::AbstractArray,b::AbstractArray,c::AbstractArray)
+    sum_eΔe = 0.0
+    sum_Δe2 = 0.0
+    @inbounds @simd for i in eachindex(a,b,c)
+        e₀ = b[i] - c[i]
+        e₁ = a[i] - b[i]
+        Δe = e₁ - e₀
+        sum_eΔe += e₀ * Δe
+        sum_Δe2 += Δe * Δe
+    end
+    return sum_eΔe, sum_Δe2
+end
+
 function livolant_factor(z₂::KState,z₁::KState,z₀::KState)
     sum_eΔe = 0.0
     sum_Δe2 = 0.0
     @inbounds for k in eachindex(z₂,z₁,z₀)
-        a = z₂[k]; b = z₁[k]; c = z₀[k]
-        for i in eachindex(a,b,c)
-            e₀ = b[i] - c[i]
-            e₁ = a[i] - b[i]
-            Δe = e₁ - e₀
-            sum_eΔe += e₀ * Δe
-            sum_Δe2 += Δe * Δe
-        end
+        e, d = _livolant_sums(z₂[k],z₁[k],z₀[k])
+        sum_eΔe += e
+        sum_Δe2 += d
     end
     if sum_Δe2 == 0.0 return 1.0 end
     μ = -sum_eΔe / sum_Δe2
@@ -119,10 +129,12 @@ function livolant!(z::KState,fixedpoint!;maxit::Int64,tol::Float64,period::Int64
 
         fixedpoint!(g,z); iter += 1
 
-        # Residual f = g(z) - z on the full state
+        # Residual f = g(z) - z on the full state, scaled by the latest iterate ‖g‖
+        # (matches the unaccelerated source-iteration criterion; one full-state reduction
+        # rather than two, see also state_norm).
         state_copy!(f,g); state_axpy!(-1.0,z,f)
         fnorm = state_norm(f)
-        scale = max(state_norm(z),state_norm(g),1e-16)
+        scale = max(state_norm(g),1e-16)
         resid = fnorm/scale
         if isnan(resid0) resid0 = resid end
         if resid < tol state_copy!(z,g); converged = true; break end
