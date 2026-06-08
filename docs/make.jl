@@ -64,7 +64,6 @@ makedocs(
             "Solvers" => [
                 "Solvers" => "api_solvers.md",
                 "SN"      => "api_sn.md",
-                "DPN"     => "api_dpn.md",
                 "GN"      => "api_gn.md"
             ],
             "Geometry"     => "api_geometry.md",
