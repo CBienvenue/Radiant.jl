@@ -9,7 +9,7 @@ Radiant.Solvers
 
 ## Setters
 ```@docs
-Radiant.add_solver(this::Radiant.Solvers,method::Union{Radiant.SN,Radiant.DPN,Radiant.GN})
+Radiant.add_solver(this::Radiant.Solvers,method::Union{Radiant.SN,Radiant.GN})
 Radiant.set_maximum_number_of_generations(this::Radiant.Solvers,maximum_number_of_generations::Int64)
 Radiant.set_convergence_criterion(this::Radiant.Solvers,convergence_criterion::Real)
 Radiant.set_convergence_type(this::Radiant.Solvers,convergence_type::String)
