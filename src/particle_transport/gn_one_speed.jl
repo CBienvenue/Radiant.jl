@@ -319,9 +319,9 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     Ntot = Nref[]
 
     if conv
-        println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," ) [",𝒜,"]")
+        println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," )")
     else
-        println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," ) [",𝒜,"]")
+        println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," )")
     end
     return 𝚽l,𝚽E12_temp,ρ_in,Ntot
 end

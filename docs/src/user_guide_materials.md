@@ -40,7 +40,22 @@ By default a material is `"solid"`. The state of matter influences density-effec
 water.set_state_of_matter("liquid")
 ```
 
-## 2.4 Inspecting a Material
+## 2.4 Mean Excitation Energy
+
+The mean excitation energy ``I`` is the key material parameter of the collisional (inelastic) stopping power. By default Radiant determines it automatically:
+
+1. for a few recognized compositions, the ICRU-recommended value is used (e.g. ``78`` eV for liquid water, ``85.7`` eV for dry air);
+2. for any other material, ``I`` is computed from the elemental values through the Bragg additivity rule.
+
+The additivity rule **systematically overestimates** ``I`` for many compounds because it ignores chemical-binding and phase effects (for example it yields ``≈ 87`` eV for an ICRP soft-tissue composition and ``≈ 92`` eV for striated muscle, versus the ICRU/ESTAR values of about ``73`` eV and ``74.7`` eV). Since ``I`` directly shifts the stopping power, this can move the Bragg peak noticeably. For tissues and other compounds it is therefore recommended to impose the ICRU/ESTAR value explicitly with `set_mean_excitation_energy` (in eV):
+
+```julia
+muscle.set_mean_excitation_energy(74.7)   # ICRU/ESTAR value for striated muscle
+```
+
+A value set this way takes precedence over both the tabulated value and the additivity rule. The getter `get_mean_excitation_energy()` returns the user-defined value, or `missing` if none was set (in which case the automatic value is used internally).
+
+## 2.5 Inspecting a Material
 
 Calling `println(material)` prints a summary of the material:
 
@@ -61,9 +76,10 @@ water.get_state_of_matter()        # "liquid"
 water.get_number_of_elements()     # 2
 water.get_atomic_numbers()         # [1, 8]
 water.get_weight_fractions()       # [0.1111, 0.8889]
+water.get_mean_excitation_energy() # missing (78 eV used internally for water)
 ```
 
-## 2.5 Summary of the Material API
+## 2.6 Summary of the Material API
 
 | Method                                   | Description                                                |
 |------------------------------------------|------------------------------------------------------------|
@@ -72,9 +88,11 @@ water.get_weight_fractions()       # [0.1111, 0.8889]
 | `set_density(ρ)`                         | Set the mass density [g/cm³].                              |
 | `set_state_of_matter(s)`                 | Set the state of matter (`"solid"`, `"liquid"`, `"gaz"`).  |
 | `add_element(sym,w=1)`                   | Add an element with its mass weight fraction.              |
+| `set_mean_excitation_energy(I)`          | Override the mean excitation energy [eV] (else auto).      |
 | `get_tag()`                              | Get the material tag.                                      |
 | `get_density()`                          | Get the mass density.                                      |
 | `get_state_of_matter()`                  | Get the state of matter.                                   |
 | `get_number_of_elements()`               | Get the number of elements composing the material.         |
 | `get_atomic_numbers()`                   | Get the atomic numbers of the elements.                    |
 | `get_weight_fractions()`                 | Get the mass weight fractions of the elements.             |
+| `get_mean_excitation_energy()`           | Get the user-defined mean excitation energy [eV] or `missing`. |

@@ -49,18 +49,63 @@ function mean_excitation_energy(Z::Int64)
     end
 end
 
-function effective_mean_excitation_energy(Z::Vector{Int64},ωz::Vector{Float64})
+function effective_mean_excitation_energy(Z::Vector{Int64},ωz::Vector{Float64},I_override::Float64=NaN)
 
-    # Predefined compunds materials
-    if is_water(Z,ωz)
-        Ieff = 152.6422e-6  # (in mₑc²) correspond to 78 eV
+    # 1) Explicit per-material override (in mₑc²), set via Material.set_mean_excitation_energy
+    if !isnan(I_override)
+        Ieff = I_override
 
-    # General cases
     else
-        Ieff = exp(  sum(ωz.*Z.*log.(mean_excitation_energy.(Z)))  /  sum(ωz.*Z)  )
+        # 2) Canonical compound from the tabulated ICRU values
+        Itab = tabulated_mean_excitation_energy(Z,ωz)
+        if !isnan(Itab)
+            Ieff = Itab
+
+        # 3) General case : Bragg additivity rule
+        else
+            Ieff = exp(  sum(ωz.*Z.*log.(mean_excitation_energy.(Z)))  /  sum(ωz.*Z)  )
+        end
     end
 
     return Ieff
+end
+
+"""
+    tabulated_mean_excitation_energy(Z::Vector{Int64},ωz::Vector{Float64})
+
+Return the ICRU-37/44 recommended mean excitation energy (in mₑc²) for a few canonical
+compositions (liquid water, dry air, ...), or `NaN` if the composition does not match a
+tabulated one. For any other material, the Bragg additivity rule applies, and a precise
+value can be imposed with `Material.set_mean_excitation_energy` (recommended for tissues,
+e.g. striated muscle ≈ 74.7 eV, whose CT-derived composition does not match a template).
+"""
+function tabulated_mean_excitation_energy(Z::Vector{Int64},ωz::Vector{Float64})
+    mₑc² = 0.510999
+    # Water keeps its original (lenient) detection and value (78 eV)
+    if is_water(Z,ωz) return 78.0/(1e6*mₑc²) end
+    # (atomic number => mass fraction) templates, with mean excitation energy in eV
+    templates = (
+        (Dict(6=>0.000124, 7=>0.755267, 8=>0.231781, 18=>0.012827), 85.7),  # dry air (sea level)
+    )
+    for (comp,I_eV) in templates
+        if matches_composition(Z,ωz,comp) return I_eV/(1e6*mₑc²) end
+    end
+    return NaN
+end
+
+"""
+    matches_composition(Z,ωz,comp;rtol,atol)
+
+Test whether the material `(Z,ωz)` matches a tabulated composition `comp` (atomic number
+=> mass fraction): identical element set and weight fractions within tolerance.
+"""
+function matches_composition(Z::Vector{Int64},ωz::Vector{Float64},comp::Dict{Int64,Float64};rtol::Float64=0.02,atol::Float64=0.005)
+    if Set(Z) != Set(keys(comp)) return false end
+    for (z,w_ref) in comp
+        w = ωz[findfirst(==(z),Z)]
+        if abs(w - w_ref) > atol + rtol*w_ref return false end
+    end
+    return true
 end
 
 function is_water(Z::Vector{Int64},ωz::Vector{Float64})

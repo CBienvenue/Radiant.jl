@@ -1,4 +1,22 @@
 """
+    galerkin_minimum_order(Nd::Int64,Qdims::Int64)
+
+Smallest truncation order whose number of (selected) angular basis functions reaches `Nd`,
+i.e. the minimum order needed to build a square Nd×Nd Galerkin basis from a quadrature with
+`Nd` directions: `Nd-1` in 1D, and in 2D/3D the smallest `n` such that the number of real
+spherical harmonics up to order `n` (with the Galerkin selection used here) is at least `Nd`.
+"""
+function galerkin_minimum_order(Nd::Int64,Qdims::Int64)
+    if Qdims == 1 return Nd-1 end
+    n = 0
+    while true
+        count = (Qdims == 2) ? div((n+1)*(n+2),2) : (n+1)^2
+        if count ≥ Nd return n end
+        n += 1
+    end
+end
+
+"""
     angular_polynomial_basis(Ndims::Int64,Ω::Union{Vector{Vector{Float64}},
     Vector{Float64}},w::Vector{Float64},L::Int64,N::Int64,type::String)
 
@@ -36,21 +54,28 @@ function angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{Float64}
     # Compute Legendre or real spherical harmonics
     #----
 
+    # Number of discrete directions
+    Nd = (Qdims == 1) ? length(Ω[1]) : length(w)
+
+    # For Galerkin the basis is square (Nd moments ⟺ Nd directions), so the angular order is
+    # set by the quadrature (Nd), not by L. Build the interpolation polynomials up to the order
+    # the quadrature requires (Lbasis ≥ L) so that any L runs instead of erroring; for the
+    # standard method the order is exactly L.
+    Lbasis = (type ∈ ("galerkin-m","galerkin-d")) ? max(L,galerkin_minimum_order(Nd,Qdims)) : L
+
     # Legendre polynomials
     if Qdims == 1
         μ = Ω[1]
-        Nd = length(μ)
-        Pl = [zeros(L+1) for n in range(1,Nd)]
+        Pl = [zeros(Lbasis+1) for n in range(1,Nd)]
         for n in range(1,Nd)
-            Pl[n] = legendre_polynomials_up_to_L(L,μ[n])
+            Pl[n] = legendre_polynomials_up_to_L(Lbasis,μ[n])
         end
     # Real spherical harmonics
     else
         μ = Ω[1]; η = Ω[2]; ξ = Ω[3]; ϕ = atan.(ξ,η)
-        Nd = length(w)
-        Rlm = [[zeros(2*l+1) for l in 0:L] for n in range(1,Nd)]
+        Rlm = [[zeros(2*l+1) for l in 0:Lbasis] for n in range(1,Nd)]
         for n in range(1,Nd)
-            Rlm[n] = real_spherical_harmonics_up_to_L(L,μ[n],ϕ[n])
+            Rlm[n] = real_spherical_harmonics_up_to_L(Lbasis,μ[n],ϕ[n])
         end
     end
 
@@ -132,10 +157,18 @@ function angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{Float64}
                 end
                 li += 1
             end
-        elseif type == "galerkin-d"
-            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd,L,Rlm,w,Qdims,1)
-        elseif type == "galerkin-m"
-            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd,L,Rlm,w,Qdims,2)
+        elseif type ∈ ("galerkin-d","galerkin-m")
+            # Build a square Nd×Nd Galerkin basis from the quadrature. Symmetric quadratures may
+            # alias harmonics, so retry at a higher order until Nd independent ones are found.
+            g_type = (type == "galerkin-d") ? 1 : 2
+            Lg = Lbasis
+            ok,Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd,Lg,Rlm,w,Qdims,g_type)
+            while !ok
+                Lg += 1
+                if Lg > Lbasis + Nd + 10 error("Galerkin (Qdims=$Qdims): unable to find $Nd independent spherical harmonics up to order $Lg; check the quadrature.") end
+                Rlm = [real_spherical_harmonics_up_to_L(Lg,μ[n],ϕ[n]) for n in range(1,Nd)]
+                ok,Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd,Lg,Rlm,w,Qdims,g_type)
+            end
         else
             error("Unknown method.")
         end
@@ -247,9 +280,10 @@ function surface_angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{
         end
         Nd⁺ = length(n⁺_to_n)
         w⁺ = w[n⁺_to_n]
-        Pl = [zeros(L+1) for n⁺ in range(1,Nd⁺)]
+        Lbasis = (type ∈ ("galerkin-m","galerkin-d")) ? max(L,galerkin_minimum_order(Nd⁺,Qdims)) : L
+        Pl = [zeros(Lbasis+1) for n⁺ in range(1,Nd⁺)]
         for n⁺ in range(1,Nd⁺)
-            Pl[n⁺] = half_range_legendre_polynomials_up_to_L(L,μ⁺[n⁺])
+            Pl[n⁺] = half_range_legendre_polynomials_up_to_L(Lbasis,μ⁺[n⁺])
         end
 
     # Half-range real spherical harmonics
@@ -287,9 +321,10 @@ function surface_angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{
         Nd⁺ = length(n⁺_to_n)
         ϕ⁺ = ϕ[n⁺_to_n]
         w⁺ = w[n⁺_to_n]
-        ψlm = [[zeros(2*l+1) for l in 0:L] for n⁺ in range(1,Nd⁺)]
+        Lbasis = (type ∈ ("galerkin-m","galerkin-d")) ? max(L,galerkin_minimum_order(Nd⁺,Qdims)) : L
+        ψlm = [[zeros(2*l+1) for l in 0:Lbasis] for n⁺ in range(1,Nd⁺)]
         for n⁺ in range(1,Nd⁺)
-            ψlm[n⁺] = real_half_range_spherical_harmonics_up_to_L(L,abs(μ⁺[n⁺]),ϕ⁺[n⁺])
+            ψlm[n⁺] = real_half_range_spherical_harmonics_up_to_L(Lbasis,abs(μ⁺[n⁺]),ϕ⁺[n⁺])
         end
     end
 
@@ -378,10 +413,18 @@ function surface_angular_polynomial_basis(Ω::Vector{Vector{Float64}},w::Vector{
                 end
                 li += 1
             end
-        elseif type == "galerkin-d"
-            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,L,ψlm,w⁺,Qdims,1)
-        elseif type == "galerkin-m"
-            Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,L,ψlm,w⁺,Qdims,3)
+        elseif type ∈ ("galerkin-d","galerkin-m")
+            # Square Nd⁺×Nd⁺ half-range Galerkin basis; retry at higher order if the quadrature
+            # aliases harmonics (symmetric sets), until Nd⁺ independent ones are found.
+            g_type = (type == "galerkin-d") ? 1 : 3
+            Lg = Lbasis
+            ok,Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,Lg,ψlm,w⁺,Qdims,g_type)
+            while !ok
+                Lg += 1
+                if Lg > Lbasis + Nd⁺ + 10 error("Surface Galerkin (Qdims=$Qdims): unable to find $Nd⁺ independent half-range harmonics up to order $Lg; check the quadrature.") end
+                ψlm = [real_half_range_spherical_harmonics_up_to_L(Lg,abs(μ⁺[n⁺]),ϕ⁺[n⁺]) for n⁺ in range(1,Nd⁺)]
+                ok,Np,Mn,Dn,pl,pm = angular_matrix_gram_schmidt(Nd⁺,Lg,ψlm,w⁺,Qdims,g_type)
+            end
         else
             error("Unknown method.")
         end
@@ -485,8 +528,14 @@ function angular_matrix_gram_schmidt(Nd::Int64,L::Int64,Rlm::Vector{Vector{Vecto
                 pm[i] = m
             end
             if (Nd == i) break end
-            if (l == L && m == L) error(string("The Gram-Schmidt procedure to find a suitable interpolation basis of spherical harmonics requires more of them (L should be > ",L,").")) end
         end
+        if (Nd == i) break end
+    end
+
+    # Not enough independent harmonics were found up to order L (e.g. symmetric quadratures
+    # alias many of them). Signal failure so the caller can retry at a higher order.
+    if i < Nd
+        return false,Np,zeros(Nd,Nd),zeros(Nd,Nd),pl,pm
     end
 
     if g_type == 1
@@ -495,5 +544,5 @@ function angular_matrix_gram_schmidt(Nd::Int64,L::Int64,Rlm::Vector{Vector{Vecto
         Dn = inv(Mn)
     end
 
-    return Np,Mn,Dn,pl,pm
+    return true,Np,Mn,Dn,pl,pm
 end

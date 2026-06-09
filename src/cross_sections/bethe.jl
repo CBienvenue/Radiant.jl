@@ -27,7 +27,7 @@ and heavy ions (proton, muon, alpha particle).
   particles from the corrected Bethe formula.
 
 """
-function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid";is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
+function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid",I_eff::Float64=NaN;is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
 
     #----
     # Set the minimum energy cutoff over which the corrected Bethe formula is valid. 
@@ -69,7 +69,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         # Effective density and ionization energy
         #----
         𝒩ₑ_eff = sum(ωz.*Z.*nuclei_density.(Z,ρ)) # (in cm⁻³)
-        I = effective_mean_excitation_energy(Z,ωz) # (in mₑc²)
+        I = effective_mean_excitation_energy(Z,ωz,I_eff) # (in mₑc²)
 
         #----
         # Bethe correction factor
@@ -93,7 +93,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         δF = 0
         if is_density_correction
-            δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,density_correction,ratio_mass)
+            δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,density_correction,ratio_mass,I_eff)
         end
 
         #----
@@ -164,8 +164,8 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         # Estimate parameters A and B
         #----
         h = 0.00005
-        Sc = bethe(Z,ωz,ρ,Ecut,particle)
-        Sc_plus_h = bethe(Z,ωz,ρ,Ecut+h,particle)
+        Sc = bethe(Z,ωz,ρ,Ecut,particle,density_correction,state_of_matter,I_eff)
+        Sc_plus_h = bethe(Z,ωz,ρ,Ecut+h,particle,density_correction,state_of_matter,I_eff)
         dSdE = (Sc_plus_h - Sc)/h
         A = (3*log(Sc)*Sc - 2*dSdE*Ecut*log(Ecut/Emax))/(3*Sc)
         B = -2*Ecut*dSdE/(3*Sc*sqrt(log(Ecut/Emax)))
@@ -266,7 +266,7 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
         else
             Czprime = sum(pn[iz,:] .* 2 .^(1:6))
         end
-        Cz += Z[iz]/Zeff * (Czprime + (Z[iz]-S₀[iz])/(2*Z[iz])*(log(β²/(1-β²))-β²))
+        Cz += ωz[iz]*Z[iz]/Zeff * (Czprime + (Z[iz]-S₀[iz])/(2*Z[iz])*(log(β²/(1-β²))-β²))
     end 
     return Cz
 end

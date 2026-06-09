@@ -71,10 +71,13 @@ else
     Σtot = cross_sections.get_total(part)
 end
 
-# Scattering cross sections
-Σs = zeros(Nmat,Ng,Ng,L+1)
+# Scattering cross sections (sized to the highest Legendre order actually carried by the
+# angular basis: for Galerkin this is set by the quadrature, not by L; get_scattering
+# zero-pads moments beyond the cross-section's Legendre order).
+Ls = maximum(pl)
+Σs = zeros(Nmat,Ng,Ng,Ls+1)
 if solver_type ∉ [4,5]
-    Σs = cross_sections.get_scattering(part,part,L)
+    Σs = cross_sections.get_scattering(part,part,Ls)
 end
 
 # Stopping powers

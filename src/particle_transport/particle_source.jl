@@ -262,11 +262,10 @@ else
 end
 
 # Cross-sections data
-Nmat = cross_sections.get_number_of_materials()
 Ng_in = cross_sections.get_number_of_groups(particle_in)
 Ng_out = cross_sections.get_number_of_groups(particle_out)
-Σs = zeros(Nmat,Ng_in+1,Ng_out,L_in+1)
-Σs = cross_sections.get_scattering(particle_in,particle_out,L_in)
+Ls_in = (solver_in isa SN) ? maximum(pl_in) : L_in
+Σs = cross_sections.get_scattering(particle_in,particle_out,Ls_in)
 
 # Flux data
 𝚽l = flux.get_flux()

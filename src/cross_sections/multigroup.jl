@@ -39,7 +39,7 @@ Produce the multigroup macroscopic cross sections.
   cross-sections for the Boltzmann Fokker-Planck equation.
 
 """
-function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},interactions::Vector{Interaction})
+function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},interactions::Vector{Interaction},I_eff::Float64=NaN)
 
 #----
 # Initialization
@@ -118,7 +118,7 @@ for gi in range(1,Ngi)
 
         # Stopping power
         if is_CSD && type == "S" && scattering_model != "BTE"
-            S[gi] += w[ni]/2 * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out)
+            S[gi] += w[ni]/2 * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out,I_eff)
             if is_dirac S[gi] ./= ΔEi end
         end
     end
@@ -126,10 +126,10 @@ for gi in range(1,Ngi)
     # Stopping power at energy group boundaries
     if is_CSD && type == "S" && scattering_model != "BTE"
         Ec = soft_catastrophic_cutoff(Ei⁻,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
-        Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ec,incoming_particle,E_out)
+        Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ec,incoming_particle,E_out,I_eff)
         if (gi == Ngi)
             Ec = soft_catastrophic_cutoff(Ei⁺,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
-            Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,Ec,incoming_particle,E_out)
+            Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,Ec,incoming_particle,E_out,I_eff)
         end
     end
 

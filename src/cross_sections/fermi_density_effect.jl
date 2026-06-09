@@ -21,7 +21,7 @@ Compute the Fermi density effect correction.
   Cross-Section Generating Code.
 
 """
-function fermi_density_effect(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,state_of_matter::String,type::String,ratio_mass::Float64=1.0)
+function fermi_density_effect(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,state_of_matter::String,type::String,ratio_mass::Float64=1.0,I_eff::Float64=NaN)
 
 if type == "fano"
 
@@ -30,7 +30,7 @@ if type == "fano"
     β² = (γ^2-1)/γ^2
     Ωp = plasma_energy(Z,ωz,ρ)
     Zeff = sum(ωz.*Z)
-    I = effective_mean_excitation_energy(Z,ωz)
+    I = effective_mean_excitation_energy(Z,ωz,I_eff)
 
     # Extract the subshell of all atoms of the compound
     Zi = zeros(0); Ui = zeros(0); Wi = zeros(0); Nz = length(Z)
@@ -60,7 +60,7 @@ if type == "fano"
 elseif type == "sternheimer"
 
     mₑc² = 0.510999
-    I = effective_mean_excitation_energy(Z,ωz)
+    I = effective_mean_excitation_energy(Z,ωz,I_eff)
     Ωp = plasma_energy(Z,ωz,ρ)
 
     C = -2*log(I/Ωp) - 1

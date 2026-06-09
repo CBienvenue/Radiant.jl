@@ -23,6 +23,7 @@ mutable struct Material
     elements            ::Vector{String}
     atomic_numbers      ::Vector{Int64}
     weight_fractions    ::Vector{Float64}
+    mean_excitation_energy ::Union{Missing,Float64}
 
     # Constructor(s)
     function Material(tag::String)
@@ -34,6 +35,7 @@ mutable struct Material
         this.elements           = Vector{String}()
         this.atomic_numbers     = Vector{Int64}()
         this.weight_fractions   = Vector{Float64}()
+        this.mean_excitation_energy = missing
         return this
     end
 end
@@ -79,6 +81,43 @@ julia> mat.set_density(19.3)
 function set_density(this::Material,density::Real)
     if density < 0 error("The density should be positive.") end
     this.density = density
+end
+
+"""
+    set_mean_excitation_energy(this::Material,I::Real)
+
+To override the mean excitation energy I of the material (in eV). When set, this value
+takes precedence over the internally-computed one (canonical compound table or Bragg
+additivity rule) for the collisional stopping power and density effect. Use it to match
+the ICRU-37/ESTAR/TOPAS value of a given compound (e.g. striated muscle ≈ 74.7 eV).
+
+# Input Argument(s)
+- `this::Material` : material.
+- `I::Real` : mean excitation energy [in eV].
+
+# Examples
+```jldoctest
+julia> muscle.set_mean_excitation_energy(74.7)
+```
+"""
+function set_mean_excitation_energy(this::Material,I::Real)
+    if I ≤ 0 error("The mean excitation energy should be positive.") end
+    this.mean_excitation_energy = float(I)
+end
+
+"""
+    get_mean_excitation_energy(this::Material)
+
+To get the user-defined mean excitation energy [in eV], or `missing` if it was not set.
+
+# Input Argument(s)
+- `this::Material` : material.
+
+# Output Argument(s)
+- `I::Union{Missing,Float64}` : mean excitation energy [in eV] or `missing`.
+"""
+function get_mean_excitation_energy(this::Material)
+    return this.mean_excitation_energy
 end
 
 """

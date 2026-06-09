@@ -476,12 +476,12 @@ Gives the stopping power.
 - `S::Float64` : stopping power.
 
 """
-function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Eout::Vector{Float64})
+function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Eout::Vector{Float64},I_eff::Float64=NaN)
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return sp(interaction,Z,ωz,ρ,Ei,Ec,Eout,particle)
     elseif itype == Inelastic_Collision
-        return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,particle)
+        return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,particle,I_eff)
     else
         error("Unknown interaction.")
     end
