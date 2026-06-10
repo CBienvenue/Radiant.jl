@@ -125,6 +125,7 @@ module Radiant
         "Relaxation.jl",
         "Multigroup_Cross_Sections.jl",
         "Material.jl",
+        "Material_List.jl",
         "Cross_Sections.jl",
         "Geometry.jl",
         "SN.jl",
@@ -172,6 +173,11 @@ module Radiant
     ]
     for folder in ["structures/","tools/","cross_sections/","particle_transport/"]
         for file in radiant_src[folder] include(string(folder,file)) end
+    end
+
+    # Export all generated material constructors (from structures/Material_list.jl).
+    if isdefined(@__MODULE__, :MATERIAL_CONSTRUCTORS)
+        eval(Expr(:export, getfield(@__MODULE__, :MATERIAL_CONSTRUCTORS)...))
     end
 
     #----
