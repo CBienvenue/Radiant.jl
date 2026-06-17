@@ -1,5 +1,6 @@
 """
-    plasma_energy(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64)
+    plasma_energy(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64;
+    atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
 
 Calculate the plasma energy of a free-electron gas with the electron density of the medium.
 
@@ -7,6 +8,7 @@ Calculate the plasma energy of a free-electron gas with the electron density of 
 - `Z::Vector{Int64}`: atomic number of the element(s) composing the material.
 - `ωz::Vector{Float64}`: weight fraction of the element(s) composing the material.
 - `ρ::Float64`: density of the material [in g/cm³].
+- `atomic_weights::Union{Nothing,Vector{Float64}}`: element atomic weights [u].
 
 # Output Argument(s)
 - `Ωp::Float64`: plasma energy [in mₑc²].
@@ -16,8 +18,9 @@ Calculate the plasma energy of a free-electron gas with the electron density of 
   Photon Transport.
 
 """
-function plasma_energy(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64)
-    𝒩ₑ_eff = sum(ωz.*Z.*nuclei_density.(Z,ρ)) # (cm⁻³)
+function plasma_energy(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64; atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
+    element_atomic_weights = isnothing(atomic_weights) ? standard_atomic_weight.(Z) : atomic_weights
+    𝒩ₑ_eff = sum(ωz .* Z .* nuclei_density.(element_atomic_weights, ρ)) # (cm⁻³)
     return plasma_energy(𝒩ₑ_eff)
 end
 

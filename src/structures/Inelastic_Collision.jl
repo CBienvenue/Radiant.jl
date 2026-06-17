@@ -437,31 +437,35 @@ function acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
 end
 
 """
-    sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,
-    state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle)
+    sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},
+    ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,
+    particle::Particle,I_eff::Float64,atomic_weights::Union{Nothing,Vector{Float64}})
 
 Gives the stopping power for inelastic collision interaction.
 
 # Input Argument(s)
-- `this::Inelastic_Collision` : inelastic collision structure. 
+- `this::Inelastic_Collision` : inelastic collision structure.
 - `Z::Vector{Int64}` : atomic numbers of the elements in the material.
 - `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
+- `atz::Vector{Float64}` : atomic fraction of the elements composing the material.
 - `ρ::Float64` : material density.
+- `N_density::Float64` : nuclei density of the material [in cm⁻³].
 - `state_of_matter::String` : state of matter.
 - `Ei::Float64` : incoming particle energy.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `particle::Particle` : incoming particle.
-- `Eout::Vector{Float64}` : energy boundaries associated with outgoing particles.
+- `I_eff::Float64` : effective mean excitation energy override [in mₑc²]; NaN to use tables.
+- `atomic_weights::Union{Nothing,Vector{Float64}}` : element atomic weights [u].
 
 # Output Argument(s)
 - `S::Float64` : stopping power.
 
 """
-function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,I_eff::Float64=NaN)
+function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,I_eff::Float64=NaN,atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
 
-    # Compute the total cross-section
-    Stot = bethe(Z,ωz,ρ,Ei,particle,this.density_correction,state_of_matter,I_eff)
-    
+    # Compute the total stopping power
+    Stot = bethe(Z,ωz,ρ,Ei,particle,this.density_correction,state_of_matter,I_eff; atomic_weights=atomic_weights)
+
     # Compute the catastrophic Møller- or Bhabha- derived stopping power
     Sc = 0
     Nz = length(Z)
@@ -469,11 +473,11 @@ function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},ρ::
 
         # Close collision
         if is_electron(particle)
-            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_moller(Z[i],Ei,1,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+            Sc += atz[i] * N_density * integrate_moller(Z[i],Ei,1,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
         elseif is_positron(particle)
-            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_bhabha(Z[i],Ei,1,Ei-Ec)
+            Sc += atz[i] * N_density * integrate_bhabha(Z[i],Ei,1,Ei-Ec)
         elseif is_proton(particle) || is_alpha(particle)
-            Sc += ωz[i] * nuclei_density(Z[i],ρ) * integrate_inelastic_collision_heavy_particle(Z[i],Ei,1,particle,Ei-Ec)
+            Sc += atz[i] * N_density * integrate_inelastic_collision_heavy_particle(Z[i],Ei,1,particle,Ei-Ec)
         end
     end
 

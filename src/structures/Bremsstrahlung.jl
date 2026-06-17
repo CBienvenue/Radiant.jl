@@ -335,16 +335,16 @@ function acs(this::Bremsstrahlung,Ei::Float64,Z::Int64,Ec::Float64,particle::Par
 end
 
 """
-    sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,
-    Ec::Float64,Eout::Vector{Float64},particle::Particle)
+    sp(this::Bremsstrahlung,Z::Vector{Int64},atz::Vector{Float64},N_density::Float64,
+    Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::Particle)
 
 Gives the stopping power for bremsstrahlung.
 
 # Input Argument(s)
-- `this::Bremsstrahlung` : bremsstrahlung structure. 
+- `this::Bremsstrahlung` : bremsstrahlung structure.
 - `Z::Vector{Int64}` : atomic numbers of the elements in the material.
-- `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
-- `ρ::Float64` : material density.
+- `atz::Vector{Float64}` : atomic fraction of the elements composing the material.
+- `N_density::Float64` : nuclei density of the material [in cm⁻³].
 - `Ei::Float64` : incoming particle energy.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `Eout::Vector{Float64}` : energy boundaries associated with outgoing particles.
@@ -354,16 +354,15 @@ Gives the stopping power for bremsstrahlung.
 - `S::Float64` : stopping power.
 
 """
-function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::Particle)
+function sp(this::Bremsstrahlung,Z::Vector{Int64},atz::Vector{Float64},N_density::Float64,Ei::Float64,Ec::Float64,Eout::Vector{Float64},particle::Particle)
 
     # Initialization
-    𝒩ₙ = nuclei_density.(Z,ρ)
     Nz = length(Z)
 
-    # Compute the total stopping power 
+    # Compute the total stopping power
     St = 0.0
     for iz in range(1,Nz)
-        St += ωz[iz] * 𝒩ₙ[iz] * seltzer_berger_stopping_power(Z[iz],Ei,particle)
+        St += atz[iz] * N_density * seltzer_berger_stopping_power(Z[iz],Ei,particle)
     end
 
     # Compute the catastrophic stopping power
@@ -382,7 +381,7 @@ function sp(this::Bremsstrahlung,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float
                 Ef = (u[n]*ΔEf + (Ef⁻+Ef⁺))/2
                 Eγ = Ei-Ef
                 if Ei ≥ Ef && ΔEf ≥ 0
-                    Sc += ωz[iz] * ΔEf/2 * w[n] * 𝒩ₙ[iz] * Eγ * seltzer_berger_cross_section(Z[iz],Ei,Eγ,particle)
+                    Sc += atz[iz] * N_density * ΔEf/2 * w[n] * Eγ * seltzer_berger_cross_section(Z[iz],Ei,Eγ,particle)
                 end
             end
         end

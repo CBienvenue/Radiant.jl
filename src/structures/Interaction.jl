@@ -387,7 +387,7 @@ Gives the total cross-section.
 - `σt::Float64` : total cross-section.
 
 """
-function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64})
+function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},A::Union{Nothing,Vector{Int64}}=nothing,atpercentA::Union{Nothing,Vector{Float64}}=nothing)
     itype = typeof(interaction)
     if itype == Annihilation
         return tcs(interaction,Ei,Z)
@@ -476,12 +476,13 @@ Gives the stopping power.
 - `S::Float64` : stopping power.
 
 """
-function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Eout::Vector{Float64},I_eff::Float64=NaN)
+function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Eout::Vector{Float64},I_eff::Float64=NaN,A::Union{Nothing,Vector{Vector{Int64}}}=nothing,atpercentA::Union{Nothing,Vector{Vector{Float64}}}=nothing)
     itype = typeof(interaction)
     if itype == Bremsstrahlung
-        return sp(interaction,Z,ωz,ρ,Ei,Ec,Eout,particle)
+        return sp(interaction,Z,atz,N_density,Ei,Ec,Eout,particle)
     elseif itype == Inelastic_Collision
-        return sp(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,particle,I_eff)
+        atomic_weights = [atomic_weight(Z[i], isnothing(A) ? nothing : A[i], isnothing(atpercentA) ? nothing : atpercentA[i]) for i in eachindex(Z)]
+        return sp(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei,Ec,particle,I_eff,atomic_weights)
     else
         error("Unknown interaction.")
     end
@@ -499,7 +500,7 @@ Gives the momentum transfer.
 - `T::Float64` : momentum transfer.
 
 """
-function mt_dispatch(interaction::Interaction)
+function mt_dispatch(interaction::Interaction,Z::Int64,Ei::Float64,Ec::Float64,particle::Particle,A::Union{Nothing,Vector{Int64}}=nothing,atpercentA::Union{Nothing,Vector{Float64}}=nothing)
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return mt(interaction)
