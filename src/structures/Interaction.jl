@@ -204,6 +204,8 @@ function in_distribution_dispatch(interaction::Interaction)
         return in_distribution(interaction)
     elseif itype == Elastic_Collision
         return in_distribution(interaction)
+    elseif itype == Elastic_Scattering
+        return in_distribution(interaction)
     elseif itype == Inelastic_Collision
         return in_distribution(interaction)
     elseif itype == Pair_Production
@@ -283,7 +285,7 @@ Gives the integration energy bounds for the outgoing particle.
 - `isSkip::Bool` : define if the integration is skipped or not.
 
 """
-function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Ec::Float64,particle::Particle)
+function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Ec::Float64,particle::Particle,A_target::Union{Nothing,Float64}=nothing)
     itype = typeof(interaction)
     if itype == Annihilation
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
@@ -293,6 +295,8 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
     elseif itype == Elastic_Collision
         return bounds(interaction,Ef⁻,Ef⁺,gi,gf)
+    elseif itype == Elastic_Scattering
+        return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec,particle,A_target)
     elseif itype == Inelastic_Collision
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec,Ui,particle)
     elseif itype == Pair_Production
@@ -341,7 +345,7 @@ Gives the Legendre moments of the scattering cross-sections.
 - `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,Ec::Float64,incoming_particle::Particle)
+function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,Ec::Float64,incoming_particle::Particle,A::Int64=0)
     itype = typeof(interaction)
     if itype == Annihilation
         return dcs(interaction,L,Ei,Ef,type,Z,Ein,Ec)
@@ -351,6 +355,8 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
         return dcs(interaction,L,Ei,Ef,type,Z,iz,δi,scattered_particle)
     elseif itype == Elastic_Collision
         return dcs(interaction,L,Ei,Z,incoming_particle,Ein[end])
+    elseif itype == Elastic_Scattering
+        return dcs(interaction,Z,A,L,Ei,Ef⁻,Ef⁺,type,incoming_particle)
     elseif itype == Inelastic_Collision
         return dcs(interaction,Z,L,Ei,Ef,type,incoming_particle,δi,Ui,Zi,Ti,ri)
     elseif itype == Pair_Production
@@ -397,6 +403,8 @@ function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,
         return tcs(interaction,Ei,Z,Eout)
     elseif itype == Elastic_Collision
         return tcs(interaction,Ei,Z,particle,Ecutoff)
+    elseif itype == Elastic_Scattering
+        return tcs(interaction,Ei,Ec,particle,Z; A=A, atpercentA=atpercentA)
     elseif itype == Inelastic_Collision
         return tcs(interaction,Ei,Ec,particle,Z)
     elseif itype == Pair_Production
@@ -480,6 +488,8 @@ function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return sp(interaction,Z,atz,N_density,Ei,Ec,Eout,particle)
+    elseif itype == Elastic_Scattering
+        return sp(interaction,Z,atz,N_density,Ei,Ec,particle,A,atpercentA)
     elseif itype == Inelastic_Collision
         atomic_weights = [atomic_weight(Z[i], isnothing(A) ? nothing : A[i], isnothing(atpercentA) ? nothing : atpercentA[i]) for i in eachindex(Z)]
         return sp(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei,Ec,particle,I_eff,atomic_weights)
@@ -504,9 +514,32 @@ function mt_dispatch(interaction::Interaction,Z::Int64,Ei::Float64,Ec::Float64,p
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return mt(interaction)
+    elseif itype == Elastic_Scattering
+        return mt(interaction, Z, Ei, Ec, particle, A, atpercentA)
     elseif itype == Inelastic_Collision
         return mt(interaction)
     else
         error("Unknown interaction.")
     end
+end
+
+"""
+    initialize_dispatch(interaction::Interaction, particles, isotopes::Vector{Tuple{Int,Int}})
+
+Initializes interaction-specific data needed before multigroup cross-section generation.
+Elastic scattering initializes its ENDF database; other interactions perform no initialization.
+
+# Input Argument(s)
+- `interaction::Interaction` : interaction structure.
+- `particles` : particle objects used in the simulation.
+- `isotopes::Vector{Tuple{Int,Int}}` : target isotope pairs required by initialized interactions.
+
+# Output Argument(s)
+N/A
+"""
+function initialize_dispatch(interaction::Interaction, particles, isotopes::Vector{Tuple{Int,Int}})
+    if interaction isa Elastic_Scattering
+        initialize(interaction, particles, isotopes)
+    end
+    return nothing
 end
