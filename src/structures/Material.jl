@@ -8,6 +8,8 @@ Structure used to define a material and its properties.
 - `density::Float64` : density [in g/cm³].
 - `elements::Vector{String}` : vector of the element in the composition of the material.
 - `weight_fractions::Vector{Float64}` : vector of the weight fraction for each element in the composition of the material.
+- `mass_numbers::Vector{Vector{Int64}}` : isotope mass numbers for each element, if specified.
+- `isotope_atomic_fractions::Vector{Vector{Float64}}` : isotope atomic fractions for each element, if specified.
 
 # Optional field(s) - with default values
 - `state_of_matter::String = "solid"` : state of the matter.
@@ -23,7 +25,9 @@ mutable struct Material
     elements            ::Vector{String}
     atomic_numbers      ::Vector{Int64}
     weight_fractions    ::Vector{Float64}
-    mean_excitation_energy ::Union{Missing,Float64}
+    mean_excitation_energy   ::Union{Missing,Float64}
+    mass_numbers             ::Vector{Vector{Int64}}
+    isotope_atomic_fractions ::Vector{Vector{Float64}}
 
     # Constructor(s)
     function Material(tag::String)
@@ -35,7 +39,9 @@ mutable struct Material
         this.elements           = Vector{String}()
         this.atomic_numbers     = Vector{Int64}()
         this.weight_fractions   = Vector{Float64}()
-        this.mean_excitation_energy = missing
+        this.mean_excitation_energy      = missing
+        this.mass_numbers                = Vector{Vector{Int64}}()
+        this.isotope_atomic_fractions    = Vector{Vector{Float64}}()
         return this
     end
 end
@@ -58,6 +64,10 @@ function println(this::Material)
     println("   Density (g/cm³):              $(this.density)")
     println("   Elements in the compound:     $(this.elements)")
     println("   Weight fractions:             $(this.weight_fractions)")
+    if any(!isempty.(this.mass_numbers))
+        println("   Isotope mass numbers:          $(this.mass_numbers)")
+        println("   Isotope atomic fractions:      $(this.isotope_atomic_fractions)")
+    end
     println("   State of matter:              $(this.state_of_matter)")
 end
 
@@ -166,9 +176,84 @@ function add_element(this::Material,symbol::String,weight_fraction::Real=1)
     push!(this.elements,lowercase(symbol))
     push!(this.atomic_numbers,atomic_number(lowercase(symbol)))
     push!(this.weight_fractions,weight_fraction)
+    push!(this.mass_numbers, Vector{Int64}())
+    push!(this.isotope_atomic_fractions, Vector{Float64}())
     this.number_of_elements += 1
     if sum(this.weight_fractions) > 1 error("Weight fraction exceed 1.") end
-    if (weight_fraction == 1) this.set_density(density(atomic_number(lowercase(symbol)))) end
+    if weight_fraction == 1 && ismissing(this.density)
+        this.set_density(density(atomic_number(lowercase(symbol))))
+    end
+end
+
+"""
+    add_element_isotopes(this::Material,symbol::String,weight_fraction::Real,
+    mass_numbers::Vector{Int64},isotope_atomic_fractions::Vector{Float64})
+
+To add an element and explicitly specify its isotope mass numbers and isotope atomic fractions.
+
+# Input Argument(s)
+- `this::Material` : material.
+- `symbol::String` : element symbol, with value such as "H", "He", etc.
+- `weight_fraction::Real` : weight fraction of the element in the material (between 0 and 1).
+- `mass_numbers::Vector{Int64}` : isotope mass numbers for the element.
+- `isotope_atomic_fractions::Vector{Float64}` : atomic fractions for the isotopes (should sum to 1).
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> water.add_element_isotopes("H",0.1111,[1,2],[0.999885,0.000115])
+```
+"""
+function add_element_isotopes(this::Material,symbol::String,weight_fraction::Real,mass_numbers::Vector{Int64},isotope_atomic_fractions::Vector{Float64})
+    if ~(0 ≤ weight_fraction ≤ 1) error("Weight fraction should have values between 0 and 1.") end
+    if length(mass_numbers) != length(isotope_atomic_fractions)
+        error("Mass numbers and isotope atomic fractions must have the same length.")
+    end
+    if sum(isotope_atomic_fractions) > 1 + 1e-12 || sum(isotope_atomic_fractions) < 1 - 1e-12
+        error("Isotope atomic fractions must sum to 1.")
+    end
+    push!(this.elements,lowercase(symbol))
+    push!(this.atomic_numbers,atomic_number(lowercase(symbol)))
+    push!(this.weight_fractions,weight_fraction)
+    push!(this.mass_numbers, copy(mass_numbers))
+    push!(this.isotope_atomic_fractions, copy(isotope_atomic_fractions))
+    this.number_of_elements += 1
+    if sum(this.weight_fractions) > 1 error("Weight fraction exceed 1.") end
+    if weight_fraction == 1 && ismissing(this.density)
+        this.set_density(density(atomic_number(lowercase(symbol))))
+    end
+end
+
+"""
+    set_element_isotopes(this::Material,symbol::String,
+    mass_numbers::Vector{Int64},isotope_atomic_fractions::Vector{Float64})
+
+To set isotope mass numbers and isotope atomic fractions for an existing element in the material.
+
+# Input Argument(s)
+- `this::Material` : material.
+- `symbol::String` : element symbol, with value such as "H", "He", etc.
+- `mass_numbers::Vector{Int64}` : isotope mass numbers for the element.
+- `isotope_atomic_fractions::Vector{Float64}` : atomic fractions for the isotopes (should sum to 1).
+
+# Output Argument(s)
+N/A
+"""
+function set_element_isotopes(this::Material,symbol::String,mass_numbers::Vector{Int64},isotope_atomic_fractions::Vector{Float64})
+    if length(mass_numbers) != length(isotope_atomic_fractions)
+        error("Mass numbers and isotope atomic fractions must have the same length.")
+    end
+    if sum(isotope_atomic_fractions) > 1 + 1e-12 || sum(isotope_atomic_fractions) < 1 - 1e-12
+        error("Isotope atomic fractions must sum to 1.")
+    end
+    idx = findfirst(==(lowercase(symbol)), this.elements)
+    if idx === nothing
+        error("Element $(symbol) is not defined in the material.")
+    end
+    this.mass_numbers[idx] = copy(mass_numbers)
+    this.isotope_atomic_fractions[idx] = copy(isotope_atomic_fractions)
 end
 
 """
@@ -250,6 +335,38 @@ julia> weight_fractions = mat.weight_fractions()
 """
 function get_weight_fractions(this::Material)
     return this.weight_fractions
+end
+
+"""
+    get_mass_numbers(this::Material)
+
+To get the isotope mass numbers for each element in the material composition.
+
+# Input Argument(s)
+- `this::Material` : material.
+
+# Output Argument(s)
+- `mass_numbers::Vector{Vector{Int64}}` : isotope mass numbers for each element.
+
+"""
+function get_mass_numbers(this::Material)
+    return this.mass_numbers
+end
+
+"""
+    get_isotope_atomic_fractions(this::Material)
+
+To get the isotope atomic fractions for each element in the material composition.
+
+# Input Argument(s)
+- `this::Material` : material.
+
+# Output Argument(s)
+- `isotope_atomic_fractions::Vector{Vector{Float64}}` : isotope atomic fractions for each element.
+
+"""
+function get_isotope_atomic_fractions(this::Material)
+    return this.isotope_atomic_fractions
 end
 
 """
