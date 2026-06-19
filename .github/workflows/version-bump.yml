@@ -1,0 +1,128 @@
+name: Version Bump & Register
+
+# Publishes a new version of Radiant whenever you push to `main` a commit whose
+# message contains one of these keywords:
+#
+#   [patch]   ->  X.Y.Z   becomes  X.Y.(Z+1)   (small fix)
+#   [minor]   ->  X.Y.Z   becomes  X.(Y+1).0   (new feature, backward compatible)
+#   [major]   ->  X.Y.Z   becomes  (X+1).0.0   (breaking change)
+#   [release] ->  same as [patch]
+#
+# If none of these words is present, the push does NOTHING: no version change,
+# no release. This works whether you merge a branch locally (git merge + push)
+# or through a Pull Request on github.com -- both end up as a push to `main`.
+#
+# You never edit `version = ...` in Project.toml by hand anymore. Feature
+# branches must NOT touch that line either (it avoids merge conflicts on it).
+#
+# What happens after a bump:
+#   1. this workflow writes the new version into Project.toml and pushes it,
+#   2. it asks JuliaRegistrator to register that exact commit,
+#   3. once the General registry accepts it, TagBot (TagBot.yml) creates the
+#      git tag and the GitHub release automatically.
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          # A Personal Access Token (PAT) from you (an authorized registrant) is
+          # required so that the push lands as you AND the JuliaRegistrator
+          # comment is accepted (github-actions[bot] is NOT accepted by it).
+          # Create a fine-grained PAT with "Contents: read & write" on this repo
+          # and store it as the REGISTRATOR_TOKEN secret.
+          token: ${{ secrets.REGISTRATOR_TOKEN }}
+
+      - name: Look for a version keyword in the pushed commits
+        id: detect
+        run: |
+          # Gather every commit message that was just pushed.
+          if git rev-parse --quiet --verify "${{ github.event.before }}^{commit}" >/dev/null 2>&1; then
+            msgs=$(git log --format=%B "${{ github.event.before }}..${{ github.event.after }}")
+          else
+            msgs=$(git log -1 --format=%B "${{ github.event.after }}")
+          fi
+
+          # Highest keyword wins: major > minor > patch.
+          level=""
+          if   echo "$msgs" | grep -qiE '\[major\]';            then level=major
+          elif echo "$msgs" | grep -qiE '\[minor\]';            then level=minor
+          elif echo "$msgs" | grep -qiE '\[patch\]|\[release\]'; then level=patch
+          fi
+
+          if [ -z "$level" ]; then
+            echo "No version keyword found -> nothing to publish."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version keyword found -> $level release."
+            echo "release=true"     >> "$GITHUB_OUTPUT"
+            echo "level=$level"      >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version, commit and push (with retry to stay ordered)
+        id: bump
+        if: steps.detect.outputs.release == 'true'
+        env:
+          LEVEL: ${{ steps.detect.outputs.level }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3 4 5; do
+            # Recompute from the latest main so concurrent pushes produce
+            # strictly sequential versions (no lost or duplicate numbers).
+            git fetch origin main
+            git reset --hard origin/main
+
+            current=$(grep -E '^version = ' Project.toml | sed -E 's/version = "(.*)"/\1/')
+            IFS='.' read -r major minor patch <<< "$current"
+            case "$LEVEL" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+            esac
+            new="$major.$minor.$patch"
+
+            sed -i -E "s/^version = \".*\"/version = \"$new\"/" Project.toml
+            git add Project.toml
+            # [skip ci] keeps this automated commit from re-triggering this workflow.
+            git commit -m "Release v$new [skip ci]"
+
+            if git push origin HEAD:main; then
+              echo "Bumped $current -> $new"
+              echo "new=$new"                  >> "$GITHUB_OUTPUT"
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            echo "Push rejected (main moved); retrying ($attempt/5)..."
+            sleep $((RANDOM % 5 + 1))
+          done
+
+          echo "::error::Failed to push version bump after 5 attempts." >&2
+          exit 1
+
+      - name: Trigger JuliaRegistrator on the exact bump commit
+        if: steps.detect.outputs.release == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REGISTRATOR_TOKEN }}
+          script: |
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: "${{ steps.bump.outputs.sha }}",
+              body: "@JuliaRegistrator register",
+            });
+            core.info("Registration requested for v${{ steps.bump.outputs.new }}");
