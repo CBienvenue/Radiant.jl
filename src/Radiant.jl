@@ -26,6 +26,7 @@ module Radiant
         "feed.jl",
         "mean_excitation_energy.jl",
         "atomic_weight.jl",
+        "isotopic_composition.jl",
         "density.jl",
         "nuclei_density.jl",
         "plasma_energy.jl",
