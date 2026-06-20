@@ -47,11 +47,15 @@ jobs:
       - name: Look for a version keyword in the pushed commits
         id: detect
         run: |
-          # Gather every commit message that was just pushed.
+          # Gather the SUBJECT LINE (%s) of every commit that was just pushed.
+          # We deliberately ignore commit bodies: prose in a body may mention
+          # "[patch]/[minor]/[major]" while describing the feature, which must
+          # not be mistaken for an actual bump request. Put the keyword in the
+          # commit title.
           if git rev-parse --quiet --verify "${{ github.event.before }}^{commit}" >/dev/null 2>&1; then
-            msgs=$(git log --format=%B "${{ github.event.before }}..${{ github.event.after }}")
+            msgs=$(git log --format=%s "${{ github.event.before }}..${{ github.event.after }}")
           else
-            msgs=$(git log -1 --format=%B "${{ github.event.after }}")
+            msgs=$(git log -1 --format=%s "${{ github.event.after }}")
           fi
 
           # Highest keyword wins: major > minor > patch.
