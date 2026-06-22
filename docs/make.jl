@@ -6,7 +6,10 @@ using DocumenterCitations
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"))
 
 makedocs(
-    format = Documenter.HTML(assets=String["assets/citations.css"],),
+    format = Documenter.HTML(
+        assets=String["assets/citations.css"],
+        size_threshold_ignore = ["api_material_list.md"],
+    ),
     plugins=[bib],
     sitename = "Radiant",
     pages = [
