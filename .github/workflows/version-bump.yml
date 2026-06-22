@@ -119,7 +119,7 @@ jobs:
 
       - name: Trigger JuliaRegistrator on the exact bump commit
         if: steps.detect.outputs.release == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.REGISTRATOR_TOKEN }}
           script: |
