@@ -83,3 +83,49 @@ function newton_bisection(f::Function, dfdx::Function, x₁::Real, x₂::Real, �
      # If loop exits, convergence failed
     error("Maximum number of iterations ($N_max) exceeded in newton_bisection.")
 end
+
+"""
+    find_zero_bisection(f::Function, a::Float64, b::Float64; tol=1e-12, max_iter=100)
+
+Finds a scalar root of `f` in the interval `[a, b]` using the bisection method.
+
+# Input Argument(s)
+- `f::Function` : scalar function to solve.
+- `a::Float64` : lower endpoint of the bracketing interval.
+- `b::Float64` : upper endpoint of the bracketing interval.
+- `tol::Float64` : absolute tolerance on the residual or interval width.
+- `max_iter::Int` : maximum number of bisection iterations.
+
+# Output Argument(s)
+- `x::Float64` : estimated root of `f`.
+"""
+function find_zero_bisection(f::Function, a::Float64, b::Float64;
+                             tol::Float64=1.0e-12, max_iter::Int=100)
+    fa = f(a)
+    fb = f(b)
+    if fa == 0.0
+        return a
+    elseif fb == 0.0
+        return b
+    elseif signbit(fa) == signbit(fb)
+        error("Bisection root finder requires opposite signs at the interval endpoints.")
+    end
+
+    lo = a
+    hi = b
+    for _ in 1:max_iter
+        mid = 0.5 * (lo + hi)
+        fm = f(mid)
+        if abs(fm) <= tol || (hi - lo) <= tol
+            return mid
+        end
+        if signbit(fa) == signbit(fm)
+            lo = mid
+            fa = fm
+        else
+            hi = mid
+            fb = fm
+        end
+    end
+    return 0.5 * (lo + hi)
+end

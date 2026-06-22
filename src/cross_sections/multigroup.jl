@@ -93,7 +93,11 @@ for gi in range(1,Ngi)
 
         # Scattering cross sections
         if type ∈ ["S","P"] && scattering_model != "FP"
-            𝓕, 𝓕ₑ = feed(Z,atz,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
+            if interaction isa Elastic_Scattering
+                𝓕, 𝓕ₑ = feed_elastic_scattering(Z,atz,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells,A,atpercentA)
+            else
+                𝓕, 𝓕ₑ = feed(Z,atz,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
+            end
             if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
             for gf in range(1,Ngf)
                 Σsl[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1] * N_density

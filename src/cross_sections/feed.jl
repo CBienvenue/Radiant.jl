@@ -119,3 +119,95 @@ for i in range(1,Nz)
 end
 return 𝓕, 𝓕ₑ
 end
+
+"""
+    feed_elastic_scattering(Z::Vector{Int64},atz::Vector{Float64},L::Int64,Ei::Float64,
+    Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,
+    particles::Vector{Particle},type::String,incoming_particle::Particle,
+    scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64,is_elastic::Bool,
+    is_subshells::Bool,A::Vector{Vector{Int64}},
+    atpercentA::Vector{Vector{Float64}})
+
+Calculate the elastic-scattering feed function 𝓕 from incident energy `Ei` into each
+outgoing energy group and Legendre moment up to order `L`. Also calculate the
+energy-weighted feed function 𝓕ₑ for energy-deposition cross sections, including isotope
+fractions when isotope-resolved data are provided.
+
+# Input Argument(s)
+- `Z::Vector{Int64}` : atomic number of the element(s) composing the material.
+- `atz::Vector{Float64}` : atomic percent of the element(s) composing the material.
+- `L::Int64` : Legendre truncation order.
+- `Ei::Float64` : energy of the incoming particle [in mₑc²].
+- `Eout::Vector{Float64}` : energy group boundaries [in mₑc²].
+- `Ng::Int64` : number of groups.
+- `interaction::Interaction` : interaction information.
+- `gi::Int64` : incoming particle group index.
+- `Ngi::Int64` : number of groups for the incoming particle.
+- `particles::Vector{Particle}` : list of particles involved in the interaction.
+- `type::String` : type of interaction (`"S"` for scattering or `"P"` for production).
+- `incoming_particle::Particle` : incoming particle.
+- `scattered_particle::Particle` : scattered particle.
+- `Ein::Vector{Float64}` : energy group boundaries corresponding to the incoming
+  particle [in mₑc²].
+- `Ec::Float64` : cutoff energy between soft and catastrophic interaction.
+- `is_elastic::Bool` : boolean indicating if the outgoing particle energy is equal to `Ei`.
+- `is_subshells::Bool` : boolean indicating if subshell-dependent cross sections are used.
+- `A::Vector{Vector{Int64}}` : isotope mass numbers per element.
+- `atpercentA::Vector{Vector{Float64}}` : isotope atomic fractions per element.
+
+# Output Argument(s)
+- `𝓕::Array{Float64}` : feed function.
+- `𝓕ₑ::Vector{Float64}` : energy-weighted feed function.
+
+# Reference(s)
+- MacFarlane et al. (2021) : The NJOY Nuclear Data Processing System, Version 2012.
+
+"""
+function feed_elastic_scattering(Z::Vector{Int64},atz::Vector{Float64},L::Int64,Ei::Float64,Eout::Vector{Float64},Ng::Int64,interaction::Interaction,gi::Int64,Ngi::Int64,particles::Vector{Particle},type::String,incoming_particle::Particle,scattered_particle::Particle,Ein::Vector{Float64},Ec::Float64,is_elastic::Bool,is_subshells::Bool,A::Vector{Vector{Int64}},atpercentA::Vector{Vector{Float64}})
+
+#----
+# Initialization
+#----
+𝓕 = zeros(Ng+1,L+1)
+𝓕ₑ = zeros(Ng+1)
+
+#----
+# Feed function over all groups and under the cutoff energy
+#----
+
+# Loop over the compound elements
+Nz = length(Z)
+for i in range(1,Nz)
+    # Loop over isotopes
+    for (Ai, atai) in zip(A[i], atpercentA[i])
+        if type == "P" && !(Z[i] == 1 && Ai == 1)
+            continue
+        end
+        δi = 0
+        Ui = 0.0
+        Zi = Z[i]
+        Ti = 0.0
+        ri = 0.0
+        for gf in range(1,Ng)
+
+            # Final energy group
+            Ef⁻ = Eout[gf]; Ef⁺ = Eout[gf+1]
+            M_target = get_mass(Z[i], Ai)
+            Ef⁻,Ef⁺,isSkip = bounds_dispatch(interaction,Ef⁻,Ef⁺,Ei,gi,gf,type,Ui,Ec,incoming_particle,M_target)
+            if isSkip continue end
+            ΔEf = Ef⁻ - Ef⁺
+
+            # Integration over the energy group
+            𝓕i = zeros(L+1)
+            𝓕iₑ = 0
+            Ef = is_elastic ? Ei : (Ef⁻ + Ef⁺) / 2
+            Σsᵢ = dcs_dispatch(interaction,L,Ei,Ef,Z[i],scattered_particle,type,i,particles,Ein,Ef⁻,Ef⁺,δi,Ui,Zi,Ti,ri,Ec,incoming_particle,Ai) * atz[i] * atai
+            𝓕i .+= Σsᵢ
+            𝓕iₑ += Σsᵢ[1] * Ef
+            𝓕[gf,:] .+= 𝓕i
+            𝓕ₑ[gf] += 𝓕iₑ
+        end
+    end
+end
+return 𝓕, 𝓕ₑ
+end

@@ -92,4 +92,28 @@ function half_range_legendre_polynomials_up_to_L(L::Int64,x::Float64)
     return sqrt.(2*(0:L).+1) .* legendre_polynomials_up_to_L(L,2*x-1)
 end
 
+"""
+    int_P_l(l::Int, a::Float64, b::Float64)
 
+Calculate the exact integral of the Legendre polynomial `P_l(x)` over `[a,b]`.
+
+# Input Argument(s)
+- `l::Int` : Legendre order.
+- `a::Float64` : lower integration bound.
+- `b::Float64` : upper integration bound.
+
+# Output Argument(s)
+- `I::Float64` : integral of `P_l(x)` from `a` to `b`.
+"""
+function int_P_l(l::Int, a::Float64, b::Float64)
+    if l < 0
+        error("Legendre order is greater or equal to zero.")
+    elseif l == 0
+        return b - a
+    elseif l == 1
+        return 0.5 * (b^2 - a^2)
+    else
+        return (legendre_polynomials(l + 1, b) - legendre_polynomials(l - 1, b) -
+                legendre_polynomials(l + 1, a) + legendre_polynomials(l - 1, a)) / (2.0 * l + 1.0)
+    end
+end

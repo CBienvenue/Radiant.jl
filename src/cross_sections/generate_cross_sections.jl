@@ -44,6 +44,10 @@ for n in range(1,Nmat)
     push!(state_of_matter,materials[n].get_state_of_matter())
 end
 A, atpercentA = material_isotopic_composition(materials, Z)
+isotopes = unique_isotopes(Z, A)
+for interaction in interactions
+    initialize_dispatch(interaction, particles, isotopes)
+end
 
 #----
 # Generate the group structure
