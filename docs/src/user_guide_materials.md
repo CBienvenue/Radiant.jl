@@ -12,7 +12,19 @@ unnamed = Material()               # Tag can also be set later with set_tag(...)
 unnamed.set_tag("aluminum")
 ```
 
-## 2.2 Defining the Composition
+## 2.2 Predefined Materials
+
+For convenience, Radiant ships with a large library of predefined materials based on the [NIST database](https://physics.nist.gov/PhysRefData/Star/Text/download.html) of elements, compounds and mixtures (water, air, lead, compact bone, A-150 tissue-equivalent plastic, and many more). Each one is a zero-argument constructor that returns a fully-configured `Material`, with its density, mean excitation energy, state of matter and elemental composition already set to the NIST-recommended values:
+
+```julia
+w   = Water()                       # liquid water
+air = Air_Dry_Near_Sea_Level()      # dry air near sea level
+pb  = Lead()                        # elemental lead
+```
+
+These are simply shortcuts for a material assembled by hand as in the next sections; any property can still be overridden afterwards (e.g. `w.set_density(0.998)`). The complete list of available constructors, together with the exact density, mean excitation energy and composition preset for each one, is given in the [Predefined Materials](@ref) page of the API reference.
+
+## 2.3 Defining the Composition
 
 Once a material is instantiated, elements are added with `add_element`. For each element, the chemical symbol and its mass weight fraction (between 0 and 1) are provided. The weight fractions across all the elements of a material must sum to at most 1.
 
@@ -32,7 +44,7 @@ al.add_element("Al")               # 100 % Al, density set to 2.70 g/cm³
 
 If `set_density(...)` is called later, it overrides this default value.
 
-## 2.3 State of Matter
+## 2.4 State of Matter
 
 By default a material is `"solid"`. The state of matter influences density-effect corrections in the inelastic-collision cross-sections. The accepted values are `"solid"`, `"liquid"` and `"gaz"`:
 
@@ -40,7 +52,7 @@ By default a material is `"solid"`. The state of matter influences density-effec
 water.set_state_of_matter("liquid")
 ```
 
-## 2.4 Mean Excitation Energy
+## 2.5 Mean Excitation Energy
 
 The mean excitation energy ``I`` is the key material parameter of the collisional (inelastic) stopping power. By default Radiant determines it automatically:
 
@@ -55,7 +67,7 @@ muscle.set_mean_excitation_energy(74.7)   # ICRU/ESTAR value for striated muscle
 
 A value set this way takes precedence over both the tabulated value and the additivity rule. The getter `get_mean_excitation_energy()` returns the user-defined value, or `missing` if none was set (in which case the automatic value is used internally).
 
-## 2.5 Inspecting a Material
+## 2.6 Inspecting a Material
 
 Calling `println(material)` prints a summary of the material:
 
@@ -79,7 +91,7 @@ water.get_weight_fractions()       # [0.1111, 0.8889]
 water.get_mean_excitation_energy() # missing (78 eV used internally for water)
 ```
 
-## 2.6 Summary of the Material API
+## 2.7 Summary of the Material API
 
 | Method                                   | Description                                                |
 |------------------------------------------|------------------------------------------------------------|

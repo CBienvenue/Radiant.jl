@@ -78,7 +78,10 @@ makedocs(
                 "Rayleigh"           => "api_rayleigh.md",
                 "Relaxation"         => "api_relaxation.md"
             ],
-            "Material" => "api_material.md",
+            "Material" => [
+                "Material"            => "api_material.md",
+                "Predefined Materials" => "api_material_list.md"
+            ],
             "Particle" => "api_particle.md",
             "Sources" => [
                 "Surface_Source" => "api_surface_source.md",
