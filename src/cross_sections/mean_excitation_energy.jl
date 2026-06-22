@@ -63,7 +63,8 @@ function effective_mean_excitation_energy(Z::Vector{Int64},ωz::Vector{Float64},
 
         # 3) General case : Bragg additivity rule
         else
-            Ieff = exp(  sum(ωz.*Z.*log.(mean_excitation_energy.(Z)))  /  sum(ωz.*Z)  )
+            ZoverA = ωz .* Z ./ standard_atomic_weight.(Z)
+            Ieff = exp(  sum(ZoverA .* log.(mean_excitation_energy.(Z)))  /  sum(ZoverA)  )
         end
     end
 
