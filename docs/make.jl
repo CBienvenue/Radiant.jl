@@ -6,7 +6,10 @@ using DocumenterCitations
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"))
 
 makedocs(
-    format = Documenter.HTML(assets=String["assets/citations.css"],),
+    format = Documenter.HTML(
+        assets=String["assets/citations.css"],
+        size_threshold_ignore = ["api_material_list.md"],
+    ),
     plugins=[bib],
     sitename = "Radiant",
     pages = [
@@ -78,7 +81,10 @@ makedocs(
                 "Rayleigh"           => "api_rayleigh.md",
                 "Relaxation"         => "api_relaxation.md"
             ],
-            "Material" => "api_material.md",
+            "Material" => [
+                "Material"            => "api_material.md",
+                "Predefined Materials" => "api_material_list.md"
+            ],
             "Particle" => "api_particle.md",
             "Sources" => [
                 "Surface_Source" => "api_surface_source.md",

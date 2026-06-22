@@ -1,6 +1,17 @@
 #----------------------------------------------------------------#
 #
-# This file defines functions to create materials corresponding to the NIST database of elements. Each function creates a `Material` object, sets its density and mean excitation energy, and adds the appropriate element with its weight fraction.
+# This file defines a library of predefined-material constructors based on the
+# NIST database of elements, compounds and mixtures. Each zero-argument function
+# (e.g. `Hydrogen()`, `Water()`, `Bone_Compact_Icru()`) builds and returns a
+# fully-configured `Material` object, with its mass density, mean excitation
+# energy, state of matter (when relevant) and elemental composition (mass weight
+# fractions) preset to the NIST-recommended values. They are convenience
+# shortcuts: the returned `Material` is identical to one assembled by hand with
+# `Material(...)`, `set_density`, `set_mean_excitation_energy` and `add_element`,
+# and any property can be overridden afterwards.
+#
+# All constructors listed in `MATERIAL_CONSTRUCTORS` (at the bottom of this file)
+# are exported by the Radiant module.
 #
 # References:
 # - National Institute of Standards and Technology (NIST) database: https://physics.nist.gov/PhysRefData/Star/Text/download.html.
@@ -10,7 +21,16 @@
 """
     Hydrogen()
 
-NIST material: HYDROGEN
+Build the predefined NIST material **HYDROGEN** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.3748e-05` g/cm³
+- Mean excitation energy ``I``: `19.2` eV
+- Composition (element ⇒ mass weight fraction): `H` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Hydrogen()
     mat = Material("hydrogen")
@@ -23,7 +43,16 @@ end
 """
     Helium()
 
-NIST material: HELIUM
+Build the predefined NIST material **HELIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.000166322` g/cm³
+- Mean excitation energy ``I``: `41.8` eV
+- Composition (element ⇒ mass weight fraction): `He` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Helium()
     mat = Material("helium")
@@ -36,7 +65,16 @@ end
 """
     Lithium()
 
-NIST material: LITHIUM
+Build the predefined NIST material **LITHIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.534` g/cm³
+- Mean excitation energy ``I``: `40` eV
+- Composition (element ⇒ mass weight fraction): `Li` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium()
     mat = Material("lithium")
@@ -49,7 +87,16 @@ end
 """
     Beryllium()
 
-NIST material: BERYLLIUM
+Build the predefined NIST material **BERYLLIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.848` g/cm³
+- Mean excitation energy ``I``: `63.7` eV
+- Composition (element ⇒ mass weight fraction): `Be` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Beryllium()
     mat = Material("beryllium")
@@ -62,7 +109,16 @@ end
 """
     Boron()
 
-NIST material: BORON
+Build the predefined NIST material **BORON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.37` g/cm³
+- Mean excitation energy ``I``: `76` eV
+- Composition (element ⇒ mass weight fraction): `B` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Boron()
     mat = Material("boron")
@@ -75,7 +131,16 @@ end
 """
     Amorphous_Carbon()
 
-NIST material: AMORPHOUS CARBON
+Build the predefined NIST material **AMORPHOUS CARBON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2` g/cm³
+- Mean excitation energy ``I``: `81` eV
+- Composition (element ⇒ mass weight fraction): `C` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Amorphous_Carbon()
     mat = Material("amorphous_carbon")
@@ -88,7 +153,16 @@ end
 """
     Nitrogen()
 
-NIST material: NITROGEN
+Build the predefined NIST material **NITROGEN** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00116528` g/cm³
+- Mean excitation energy ``I``: `82` eV
+- Composition (element ⇒ mass weight fraction): `N` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nitrogen()
     mat = Material("nitrogen")
@@ -101,7 +175,16 @@ end
 """
     Oxygen()
 
-NIST material: OXYGEN
+Build the predefined NIST material **OXYGEN** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00133151` g/cm³
+- Mean excitation energy ``I``: `95` eV
+- Composition (element ⇒ mass weight fraction): `O` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Oxygen()
     mat = Material("oxygen")
@@ -114,7 +197,16 @@ end
 """
     Fluorine()
 
-NIST material: FLUORINE
+Build the predefined NIST material **FLUORINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00158029` g/cm³
+- Mean excitation energy ``I``: `115` eV
+- Composition (element ⇒ mass weight fraction): `F` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Fluorine()
     mat = Material("fluorine")
@@ -127,7 +219,16 @@ end
 """
     Neon()
 
-NIST material: NEON
+Build the predefined NIST material **NEON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.000838505` g/cm³
+- Mean excitation energy ``I``: `137` eV
+- Composition (element ⇒ mass weight fraction): `Ne` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Neon()
     mat = Material("neon")
@@ -140,7 +241,16 @@ end
 """
     Sodium()
 
-NIST material: SODIUM
+Build the predefined NIST material **SODIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.971` g/cm³
+- Mean excitation energy ``I``: `149` eV
+- Composition (element ⇒ mass weight fraction): `Na` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sodium()
     mat = Material("sodium")
@@ -153,7 +263,16 @@ end
 """
     Magnesium()
 
-NIST material: MAGNESIUM
+Build the predefined NIST material **MAGNESIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.74` g/cm³
+- Mean excitation energy ``I``: `156` eV
+- Composition (element ⇒ mass weight fraction): `Mg` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Magnesium()
     mat = Material("magnesium")
@@ -166,7 +285,16 @@ end
 """
     Aluminum()
 
-NIST material: ALUMINUM
+Build the predefined NIST material **ALUMINUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.6989` g/cm³
+- Mean excitation energy ``I``: `166` eV
+- Composition (element ⇒ mass weight fraction): `Al` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Aluminum()
     mat = Material("aluminum")
@@ -179,7 +307,16 @@ end
 """
     Silicon()
 
-NIST material: SILICON
+Build the predefined NIST material **SILICON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.33` g/cm³
+- Mean excitation energy ``I``: `173` eV
+- Composition (element ⇒ mass weight fraction): `Si` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silicon()
     mat = Material("silicon")
@@ -192,7 +329,16 @@ end
 """
     Phosphorus()
 
-NIST material: PHOSPHORUS
+Build the predefined NIST material **PHOSPHORUS** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.2` g/cm³
+- Mean excitation energy ``I``: `173` eV
+- Composition (element ⇒ mass weight fraction): `P` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Phosphorus()
     mat = Material("phosphorus")
@@ -205,7 +351,16 @@ end
 """
     Sulfur()
 
-NIST material: SULFUR
+Build the predefined NIST material **SULFUR** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2` g/cm³
+- Mean excitation energy ``I``: `180` eV
+- Composition (element ⇒ mass weight fraction): `S` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sulfur()
     mat = Material("sulfur")
@@ -218,7 +373,16 @@ end
 """
     Chlorine()
 
-NIST material: CHLORINE
+Build the predefined NIST material **CHLORINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00299473` g/cm³
+- Mean excitation energy ``I``: `174` eV
+- Composition (element ⇒ mass weight fraction): `Cl` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Chlorine()
     mat = Material("chlorine")
@@ -231,7 +395,16 @@ end
 """
     Argon()
 
-NIST material: ARGON
+Build the predefined NIST material **ARGON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00166201` g/cm³
+- Mean excitation energy ``I``: `188` eV
+- Composition (element ⇒ mass weight fraction): `Ar` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Argon()
     mat = Material("argon")
@@ -244,7 +417,16 @@ end
 """
     Potassium()
 
-NIST material: POTASSIUM
+Build the predefined NIST material **POTASSIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.862` g/cm³
+- Mean excitation energy ``I``: `190` eV
+- Composition (element ⇒ mass weight fraction): `K` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Potassium()
     mat = Material("potassium")
@@ -257,7 +439,16 @@ end
 """
     Calcium()
 
-NIST material: CALCIUM
+Build the predefined NIST material **CALCIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.55` g/cm³
+- Mean excitation energy ``I``: `191` eV
+- Composition (element ⇒ mass weight fraction): `Ca` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Calcium()
     mat = Material("calcium")
@@ -270,7 +461,16 @@ end
 """
     Scandium()
 
-NIST material: SCANDIUM
+Build the predefined NIST material **SCANDIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.989` g/cm³
+- Mean excitation energy ``I``: `216` eV
+- Composition (element ⇒ mass weight fraction): `Sc` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Scandium()
     mat = Material("scandium")
@@ -283,7 +483,16 @@ end
 """
     Titanium()
 
-NIST material: TITANIUM
+Build the predefined NIST material **TITANIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.54` g/cm³
+- Mean excitation energy ``I``: `233` eV
+- Composition (element ⇒ mass weight fraction): `Ti` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Titanium()
     mat = Material("titanium")
@@ -296,7 +505,16 @@ end
 """
     Vanadium()
 
-NIST material: VANADIUM
+Build the predefined NIST material **VANADIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.11` g/cm³
+- Mean excitation energy ``I``: `245` eV
+- Composition (element ⇒ mass weight fraction): `V` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Vanadium()
     mat = Material("vanadium")
@@ -309,7 +527,16 @@ end
 """
     Chromium()
 
-NIST material: CHROMIUM
+Build the predefined NIST material **CHROMIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.18` g/cm³
+- Mean excitation energy ``I``: `257` eV
+- Composition (element ⇒ mass weight fraction): `Cr` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Chromium()
     mat = Material("chromium")
@@ -322,7 +549,16 @@ end
 """
     Manganese()
 
-NIST material: MANGANESE
+Build the predefined NIST material **MANGANESE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.44` g/cm³
+- Mean excitation energy ``I``: `272` eV
+- Composition (element ⇒ mass weight fraction): `Mn` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Manganese()
     mat = Material("manganese")
@@ -335,7 +571,16 @@ end
 """
     Iron()
 
-NIST material: IRON
+Build the predefined NIST material **IRON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.874` g/cm³
+- Mean excitation energy ``I``: `286` eV
+- Composition (element ⇒ mass weight fraction): `Fe` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Iron()
     mat = Material("iron")
@@ -348,7 +593,16 @@ end
 """
     Cobalt()
 
-NIST material: COBALT
+Build the predefined NIST material **COBALT** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.9` g/cm³
+- Mean excitation energy ``I``: `297` eV
+- Composition (element ⇒ mass weight fraction): `Co` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cobalt()
     mat = Material("cobalt")
@@ -361,7 +615,16 @@ end
 """
     Nickel()
 
-NIST material: NICKEL
+Build the predefined NIST material **NICKEL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.902` g/cm³
+- Mean excitation energy ``I``: `311` eV
+- Composition (element ⇒ mass weight fraction): `Ni` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nickel()
     mat = Material("nickel")
@@ -374,7 +637,16 @@ end
 """
     Copper()
 
-NIST material: COPPER
+Build the predefined NIST material **COPPER** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.96` g/cm³
+- Mean excitation energy ``I``: `322` eV
+- Composition (element ⇒ mass weight fraction): `Cu` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Copper()
     mat = Material("copper")
@@ -387,7 +659,16 @@ end
 """
     Zinc()
 
-NIST material: ZINC
+Build the predefined NIST material **ZINC** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.133` g/cm³
+- Mean excitation energy ``I``: `330` eV
+- Composition (element ⇒ mass weight fraction): `Zn` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Zinc()
     mat = Material("zinc")
@@ -400,7 +681,16 @@ end
 """
     Gallium()
 
-NIST material: GALLIUM
+Build the predefined NIST material **GALLIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.904` g/cm³
+- Mean excitation energy ``I``: `334` eV
+- Composition (element ⇒ mass weight fraction): `Ga` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gallium()
     mat = Material("gallium")
@@ -413,7 +703,16 @@ end
 """
     Germanium()
 
-NIST material: GERMANIUM
+Build the predefined NIST material **GERMANIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.323` g/cm³
+- Mean excitation energy ``I``: `350` eV
+- Composition (element ⇒ mass weight fraction): `Ge` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Germanium()
     mat = Material("germanium")
@@ -426,7 +725,16 @@ end
 """
     Arsenic()
 
-NIST material: ARSENIC
+Build the predefined NIST material **ARSENIC** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.73` g/cm³
+- Mean excitation energy ``I``: `347` eV
+- Composition (element ⇒ mass weight fraction): `As` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Arsenic()
     mat = Material("arsenic")
@@ -439,7 +747,16 @@ end
 """
     Selenium()
 
-NIST material: SELENIUM
+Build the predefined NIST material **SELENIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.5` g/cm³
+- Mean excitation energy ``I``: `348` eV
+- Composition (element ⇒ mass weight fraction): `Se` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Selenium()
     mat = Material("selenium")
@@ -452,7 +769,16 @@ end
 """
     Bromine()
 
-NIST material: BROMINE
+Build the predefined NIST material **BROMINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00707218` g/cm³
+- Mean excitation energy ``I``: `343` eV
+- Composition (element ⇒ mass weight fraction): `Br` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Bromine()
     mat = Material("bromine")
@@ -465,7 +791,16 @@ end
 """
     Krypton()
 
-NIST material: KRYPTON
+Build the predefined NIST material **KRYPTON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00347832` g/cm³
+- Mean excitation energy ``I``: `352` eV
+- Composition (element ⇒ mass weight fraction): `Kr` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Krypton()
     mat = Material("krypton")
@@ -478,7 +813,16 @@ end
 """
     Rubidium()
 
-NIST material: RUBIDIUM
+Build the predefined NIST material **RUBIDIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.532` g/cm³
+- Mean excitation energy ``I``: `363` eV
+- Composition (element ⇒ mass weight fraction): `Rb` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Rubidium()
     mat = Material("rubidium")
@@ -491,7 +835,16 @@ end
 """
     Strontium()
 
-NIST material: STRONTIUM
+Build the predefined NIST material **STRONTIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.54` g/cm³
+- Mean excitation energy ``I``: `366` eV
+- Composition (element ⇒ mass weight fraction): `Sr` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Strontium()
     mat = Material("strontium")
@@ -504,7 +857,16 @@ end
 """
     Yttrium()
 
-NIST material: YTTRIUM
+Build the predefined NIST material **YTTRIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.469` g/cm³
+- Mean excitation energy ``I``: `379` eV
+- Composition (element ⇒ mass weight fraction): `Y` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Yttrium()
     mat = Material("yttrium")
@@ -517,7 +879,16 @@ end
 """
     Zirconium()
 
-NIST material: ZIRCONIUM
+Build the predefined NIST material **ZIRCONIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.506` g/cm³
+- Mean excitation energy ``I``: `393` eV
+- Composition (element ⇒ mass weight fraction): `Zr` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Zirconium()
     mat = Material("zirconium")
@@ -530,7 +901,16 @@ end
 """
     Niobium()
 
-NIST material: NIOBIUM
+Build the predefined NIST material **NIOBIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.57` g/cm³
+- Mean excitation energy ``I``: `417` eV
+- Composition (element ⇒ mass weight fraction): `Nb` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Niobium()
     mat = Material("niobium")
@@ -543,7 +923,16 @@ end
 """
     Molybdenum()
 
-NIST material: MOLYBDENUM
+Build the predefined NIST material **MOLYBDENUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `10.22` g/cm³
+- Mean excitation energy ``I``: `424` eV
+- Composition (element ⇒ mass weight fraction): `Mo` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Molybdenum()
     mat = Material("molybdenum")
@@ -556,7 +945,16 @@ end
 """
     Technetium()
 
-NIST material: TECHNETIUM
+Build the predefined NIST material **TECHNETIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `11.5` g/cm³
+- Mean excitation energy ``I``: `428` eV
+- Composition (element ⇒ mass weight fraction): `Tc` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Technetium()
     mat = Material("technetium")
@@ -569,7 +967,16 @@ end
 """
     Ruthenium()
 
-NIST material: RUTHENIUM
+Build the predefined NIST material **RUTHENIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `12.41` g/cm³
+- Mean excitation energy ``I``: `441` eV
+- Composition (element ⇒ mass weight fraction): `Ru` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ruthenium()
     mat = Material("ruthenium")
@@ -582,7 +989,16 @@ end
 """
     Rhodium()
 
-NIST material: RHODIUM
+Build the predefined NIST material **RHODIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `12.41` g/cm³
+- Mean excitation energy ``I``: `449` eV
+- Composition (element ⇒ mass weight fraction): `Rh` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Rhodium()
     mat = Material("rhodium")
@@ -595,7 +1011,16 @@ end
 """
     Palladium()
 
-NIST material: PALLADIUM
+Build the predefined NIST material **PALLADIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `12.02` g/cm³
+- Mean excitation energy ``I``: `470` eV
+- Composition (element ⇒ mass weight fraction): `Pd` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Palladium()
     mat = Material("palladium")
@@ -608,7 +1033,16 @@ end
 """
     Silver()
 
-NIST material: SILVER
+Build the predefined NIST material **SILVER** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `10.5` g/cm³
+- Mean excitation energy ``I``: `470` eV
+- Composition (element ⇒ mass weight fraction): `Ag` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silver()
     mat = Material("silver")
@@ -621,7 +1055,16 @@ end
 """
     Cadmium()
 
-NIST material: CADMIUM
+Build the predefined NIST material **CADMIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.65` g/cm³
+- Mean excitation energy ``I``: `469` eV
+- Composition (element ⇒ mass weight fraction): `Cd` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cadmium()
     mat = Material("cadmium")
@@ -634,7 +1077,16 @@ end
 """
     Indium()
 
-NIST material: INDIUM
+Build the predefined NIST material **INDIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.31` g/cm³
+- Mean excitation energy ``I``: `488` eV
+- Composition (element ⇒ mass weight fraction): `In` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Indium()
     mat = Material("indium")
@@ -647,7 +1099,16 @@ end
 """
     Tin()
 
-NIST material: TIN
+Build the predefined NIST material **TIN** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.31` g/cm³
+- Mean excitation energy ``I``: `488` eV
+- Composition (element ⇒ mass weight fraction): `Sn` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tin()
     mat = Material("tin")
@@ -660,7 +1121,16 @@ end
 """
     Antimony()
 
-NIST material: ANTIMONY
+Build the predefined NIST material **ANTIMONY** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.691` g/cm³
+- Mean excitation energy ``I``: `487` eV
+- Composition (element ⇒ mass weight fraction): `Sb` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Antimony()
     mat = Material("antimony")
@@ -673,7 +1143,16 @@ end
 """
     Tellurium()
 
-NIST material: TELLURIUM
+Build the predefined NIST material **TELLURIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.24` g/cm³
+- Mean excitation energy ``I``: `485` eV
+- Composition (element ⇒ mass weight fraction): `Te` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tellurium()
     mat = Material("tellurium")
@@ -686,7 +1165,16 @@ end
 """
     Iodine()
 
-NIST material: IODINE
+Build the predefined NIST material **IODINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.93` g/cm³
+- Mean excitation energy ``I``: `491` eV
+- Composition (element ⇒ mass weight fraction): `I` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Iodine()
     mat = Material("iodine")
@@ -699,7 +1187,16 @@ end
 """
     Xenon()
 
-NIST material: XENON
+Build the predefined NIST material **XENON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00548536` g/cm³
+- Mean excitation energy ``I``: `482` eV
+- Composition (element ⇒ mass weight fraction): `Xe` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Xenon()
     mat = Material("xenon")
@@ -712,7 +1209,16 @@ end
 """
     Cesium()
 
-NIST material: CESIUM
+Build the predefined NIST material **CESIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.873` g/cm³
+- Mean excitation energy ``I``: `488` eV
+- Composition (element ⇒ mass weight fraction): `Cs` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cesium()
     mat = Material("cesium")
@@ -725,7 +1231,16 @@ end
 """
     Barium()
 
-NIST material: BARIUM
+Build the predefined NIST material **BARIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.5` g/cm³
+- Mean excitation energy ``I``: `491` eV
+- Composition (element ⇒ mass weight fraction): `Ba` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Barium()
     mat = Material("barium")
@@ -738,7 +1253,16 @@ end
 """
     Lanthanum()
 
-NIST material: LANTHANUM
+Build the predefined NIST material **LANTHANUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.154` g/cm³
+- Mean excitation energy ``I``: `501` eV
+- Composition (element ⇒ mass weight fraction): `La` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lanthanum()
     mat = Material("lanthanum")
@@ -751,7 +1275,16 @@ end
 """
     Cerium()
 
-NIST material: CERIUM
+Build the predefined NIST material **CERIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.657` g/cm³
+- Mean excitation energy ``I``: `523` eV
+- Composition (element ⇒ mass weight fraction): `Ce` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cerium()
     mat = Material("cerium")
@@ -764,7 +1297,16 @@ end
 """
     Praseodymium()
 
-NIST material: PRASEODYMIUM
+Build the predefined NIST material **PRASEODYMIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.71` g/cm³
+- Mean excitation energy ``I``: `535` eV
+- Composition (element ⇒ mass weight fraction): `Pr` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Praseodymium()
     mat = Material("praseodymium")
@@ -777,7 +1319,16 @@ end
 """
     Neodymium()
 
-NIST material: NEODYMIUM
+Build the predefined NIST material **NEODYMIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.9` g/cm³
+- Mean excitation energy ``I``: `546` eV
+- Composition (element ⇒ mass weight fraction): `Nd` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Neodymium()
     mat = Material("neodymium")
@@ -790,7 +1341,16 @@ end
 """
     Promethium()
 
-NIST material: PROMETHIUM
+Build the predefined NIST material **PROMETHIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.22` g/cm³
+- Mean excitation energy ``I``: `560` eV
+- Composition (element ⇒ mass weight fraction): `Pm` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Promethium()
     mat = Material("promethium")
@@ -803,7 +1363,16 @@ end
 """
     Samarium()
 
-NIST material: SAMARIUM
+Build the predefined NIST material **SAMARIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.46` g/cm³
+- Mean excitation energy ``I``: `574` eV
+- Composition (element ⇒ mass weight fraction): `Sm` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Samarium()
     mat = Material("samarium")
@@ -816,7 +1385,16 @@ end
 """
     Europium()
 
-NIST material: EUROPIUM
+Build the predefined NIST material **EUROPIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.243` g/cm³
+- Mean excitation energy ``I``: `580` eV
+- Composition (element ⇒ mass weight fraction): `Eu` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Europium()
     mat = Material("europium")
@@ -829,7 +1407,16 @@ end
 """
     Gadolinium()
 
-NIST material: GADOLINIUM
+Build the predefined NIST material **GADOLINIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.9004` g/cm³
+- Mean excitation energy ``I``: `591` eV
+- Composition (element ⇒ mass weight fraction): `Gd` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gadolinium()
     mat = Material("gadolinium")
@@ -842,7 +1429,16 @@ end
 """
     Terbium()
 
-NIST material: TERBIUM
+Build the predefined NIST material **TERBIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.229` g/cm³
+- Mean excitation energy ``I``: `614` eV
+- Composition (element ⇒ mass weight fraction): `Tb` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Terbium()
     mat = Material("terbium")
@@ -855,7 +1451,16 @@ end
 """
     Dysprosium()
 
-NIST material: DYSPROSIUM
+Build the predefined NIST material **DYSPROSIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.55` g/cm³
+- Mean excitation energy ``I``: `628` eV
+- Composition (element ⇒ mass weight fraction): `Dy` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Dysprosium()
     mat = Material("dysprosium")
@@ -868,7 +1473,16 @@ end
 """
     Holmium()
 
-NIST material: HOLMIUM
+Build the predefined NIST material **HOLMIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `8.795` g/cm³
+- Mean excitation energy ``I``: `650` eV
+- Composition (element ⇒ mass weight fraction): `Ho` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Holmium()
     mat = Material("holmium")
@@ -881,7 +1495,16 @@ end
 """
     Erbium()
 
-NIST material: ERBIUM
+Build the predefined NIST material **ERBIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.066` g/cm³
+- Mean excitation energy ``I``: `658` eV
+- Composition (element ⇒ mass weight fraction): `Er` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Erbium()
     mat = Material("erbium")
@@ -894,7 +1517,16 @@ end
 """
     Thulium()
 
-NIST material: THULIUM
+Build the predefined NIST material **THULIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.321` g/cm³
+- Mean excitation energy ``I``: `674` eV
+- Composition (element ⇒ mass weight fraction): `Tm` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Thulium()
     mat = Material("thulium")
@@ -907,7 +1539,16 @@ end
 """
     Ytterbium()
 
-NIST material: YTTERBIUM
+Build the predefined NIST material **YTTERBIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.73` g/cm³
+- Mean excitation energy ``I``: `684` eV
+- Composition (element ⇒ mass weight fraction): `Yb` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ytterbium()
     mat = Material("ytterbium")
@@ -920,7 +1561,16 @@ end
 """
     Lutetium()
 
-NIST material: LUTETIUM
+Build the predefined NIST material **LUTETIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.84` g/cm³
+- Mean excitation energy ``I``: `694` eV
+- Composition (element ⇒ mass weight fraction): `Lu` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lutetium()
     mat = Material("lutetium")
@@ -933,7 +1583,16 @@ end
 """
     Hafnium()
 
-NIST material: HAFNIUM
+Build the predefined NIST material **HAFNIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `13.31` g/cm³
+- Mean excitation energy ``I``: `705` eV
+- Composition (element ⇒ mass weight fraction): `Hf` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Hafnium()
     mat = Material("hafnium")
@@ -946,7 +1605,16 @@ end
 """
     Tantalum()
 
-NIST material: TANTALUM
+Build the predefined NIST material **TANTALUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `16.654` g/cm³
+- Mean excitation energy ``I``: `718` eV
+- Composition (element ⇒ mass weight fraction): `Ta` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tantalum()
     mat = Material("tantalum")
@@ -959,7 +1627,16 @@ end
 """
     Tungsten()
 
-NIST material: TUNGSTEN
+Build the predefined NIST material **TUNGSTEN** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `19.3` g/cm³
+- Mean excitation energy ``I``: `727` eV
+- Composition (element ⇒ mass weight fraction): `W` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tungsten()
     mat = Material("tungsten")
@@ -972,7 +1649,16 @@ end
 """
     Rhenium()
 
-NIST material: RHENIUM
+Build the predefined NIST material **RHENIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `21.02` g/cm³
+- Mean excitation energy ``I``: `736` eV
+- Composition (element ⇒ mass weight fraction): `Re` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Rhenium()
     mat = Material("rhenium")
@@ -985,7 +1671,16 @@ end
 """
     Osmium()
 
-NIST material: OSMIUM
+Build the predefined NIST material **OSMIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `22.57` g/cm³
+- Mean excitation energy ``I``: `746` eV
+- Composition (element ⇒ mass weight fraction): `Os` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Osmium()
     mat = Material("osmium")
@@ -998,7 +1693,16 @@ end
 """
     Iridium()
 
-NIST material: IRIDIUM
+Build the predefined NIST material **IRIDIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `22.42` g/cm³
+- Mean excitation energy ``I``: `757` eV
+- Composition (element ⇒ mass weight fraction): `Ir` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Iridium()
     mat = Material("iridium")
@@ -1011,7 +1715,16 @@ end
 """
     Platinum()
 
-NIST material: PLATINUM
+Build the predefined NIST material **PLATINUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `21.45` g/cm³
+- Mean excitation energy ``I``: `790` eV
+- Composition (element ⇒ mass weight fraction): `Pt` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Platinum()
     mat = Material("platinum")
@@ -1024,7 +1737,16 @@ end
 """
     Gold()
 
-NIST material: GOLD
+Build the predefined NIST material **GOLD** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `19.32` g/cm³
+- Mean excitation energy ``I``: `790` eV
+- Composition (element ⇒ mass weight fraction): `Au` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gold()
     mat = Material("gold")
@@ -1037,7 +1759,16 @@ end
 """
     Mercury()
 
-NIST material: MERCURY
+Build the predefined NIST material **MERCURY** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `13.546` g/cm³
+- Mean excitation energy ``I``: `800` eV
+- Composition (element ⇒ mass weight fraction): `Hg` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Mercury()
     mat = Material("mercury")
@@ -1050,7 +1781,16 @@ end
 """
     Thallium()
 
-NIST material: THALLIUM
+Build the predefined NIST material **THALLIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `11.72` g/cm³
+- Mean excitation energy ``I``: `810` eV
+- Composition (element ⇒ mass weight fraction): `Tl` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Thallium()
     mat = Material("thallium")
@@ -1063,7 +1803,16 @@ end
 """
     Lead()
 
-NIST material: LEAD
+Build the predefined NIST material **LEAD** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `11.35` g/cm³
+- Mean excitation energy ``I``: `823` eV
+- Composition (element ⇒ mass weight fraction): `Pb` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lead()
     mat = Material("lead")
@@ -1076,7 +1825,16 @@ end
 """
     Bismuth()
 
-NIST material: BISMUTH
+Build the predefined NIST material **BISMUTH** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.747` g/cm³
+- Mean excitation energy ``I``: `823` eV
+- Composition (element ⇒ mass weight fraction): `Bi` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Bismuth()
     mat = Material("bismuth")
@@ -1089,7 +1847,16 @@ end
 """
     Polonium()
 
-NIST material: POLONIUM
+Build the predefined NIST material **POLONIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.32` g/cm³
+- Mean excitation energy ``I``: `830` eV
+- Composition (element ⇒ mass weight fraction): `Po` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polonium()
     mat = Material("polonium")
@@ -1102,7 +1869,16 @@ end
 """
     Astatine()
 
-NIST material: ASTATINE
+Build the predefined NIST material **ASTATINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.32` g/cm³
+- Mean excitation energy ``I``: `825` eV
+- Composition (element ⇒ mass weight fraction): `At` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Astatine()
     mat = Material("astatine")
@@ -1115,7 +1891,16 @@ end
 """
     Radon()
 
-NIST material: RADON
+Build the predefined NIST material **RADON** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00906618` g/cm³
+- Mean excitation energy ``I``: `794` eV
+- Composition (element ⇒ mass weight fraction): `Rn` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Radon()
     mat = Material("radon")
@@ -1128,7 +1913,16 @@ end
 """
     Francium()
 
-NIST material: FRANCIUM
+Build the predefined NIST material **FRANCIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1` g/cm³
+- Mean excitation energy ``I``: `827` eV
+- Composition (element ⇒ mass weight fraction): `Fr` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Francium()
     mat = Material("francium")
@@ -1141,7 +1935,16 @@ end
 """
     Radium()
 
-NIST material: RADIUM
+Build the predefined NIST material **RADIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5` g/cm³
+- Mean excitation energy ``I``: `826` eV
+- Composition (element ⇒ mass weight fraction): `Ra` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Radium()
     mat = Material("radium")
@@ -1154,7 +1957,16 @@ end
 """
     Actinium()
 
-NIST material: ACTINIUM
+Build the predefined NIST material **ACTINIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `10.07` g/cm³
+- Mean excitation energy ``I``: `841` eV
+- Composition (element ⇒ mass weight fraction): `Ac` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Actinium()
     mat = Material("actinium")
@@ -1167,7 +1979,16 @@ end
 """
     Thorium()
 
-NIST material: THORIUM
+Build the predefined NIST material **THORIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `11.72` g/cm³
+- Mean excitation energy ``I``: `847` eV
+- Composition (element ⇒ mass weight fraction): `Th` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Thorium()
     mat = Material("thorium")
@@ -1180,7 +2001,16 @@ end
 """
     Protactinium()
 
-NIST material: PROTACTINIUM
+Build the predefined NIST material **PROTACTINIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `15.37` g/cm³
+- Mean excitation energy ``I``: `878` eV
+- Composition (element ⇒ mass weight fraction): `Pa` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Protactinium()
     mat = Material("protactinium")
@@ -1193,7 +2023,16 @@ end
 """
     Uranium()
 
-NIST material: URANIUM
+Build the predefined NIST material **URANIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `18.95` g/cm³
+- Mean excitation energy ``I``: `890` eV
+- Composition (element ⇒ mass weight fraction): `U` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Uranium()
     mat = Material("uranium")
@@ -1206,7 +2045,16 @@ end
 """
     Neptunium()
 
-NIST material: NEPTUNIUM
+Build the predefined NIST material **NEPTUNIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `20.25` g/cm³
+- Mean excitation energy ``I``: `902` eV
+- Composition (element ⇒ mass weight fraction): `Np` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Neptunium()
     mat = Material("neptunium")
@@ -1219,7 +2067,16 @@ end
 """
     Plutonium()
 
-NIST material: PLUTONIUM
+Build the predefined NIST material **PLUTONIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `19.84` g/cm³
+- Mean excitation energy ``I``: `921` eV
+- Composition (element ⇒ mass weight fraction): `Pu` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Plutonium()
     mat = Material("plutonium")
@@ -1232,7 +2089,16 @@ end
 """
     Americium()
 
-NIST material: AMERICIUM
+Build the predefined NIST material **AMERICIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `13.67` g/cm³
+- Mean excitation energy ``I``: `934` eV
+- Composition (element ⇒ mass weight fraction): `Am` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Americium()
     mat = Material("americium")
@@ -1245,7 +2111,16 @@ end
 """
     Curium()
 
-NIST material: CURIUM
+Build the predefined NIST material **CURIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `13.51` g/cm³
+- Mean excitation energy ``I``: `939` eV
+- Composition (element ⇒ mass weight fraction): `Cm` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Curium()
     mat = Material("curium")
@@ -1258,7 +2133,16 @@ end
 """
     Berkelium()
 
-NIST material: BERKELIUM
+Build the predefined NIST material **BERKELIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `14` g/cm³
+- Mean excitation energy ``I``: `952` eV
+- Composition (element ⇒ mass weight fraction): `Bk` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Berkelium()
     mat = Material("berkelium")
@@ -1271,7 +2155,16 @@ end
 """
     Californium()
 
-NIST material: CALIFORNIUM
+Build the predefined NIST material **CALIFORNIUM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `10` g/cm³
+- Mean excitation energy ``I``: `966` eV
+- Composition (element ⇒ mass weight fraction): `Cf` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Californium()
     mat = Material("californium")
@@ -1284,7 +2177,22 @@ end
 """
     A_150_Tissue_Equivalent_Plastic()
 
-NIST material: A-150 TISSUE-EQUIVALENT PLASTIC
+Build the predefined NIST material **A-150 TISSUE-EQUIVALENT PLASTIC** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.127` g/cm³
+- Mean excitation energy ``I``: `65.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101327`
+    - `C` ⇒ `0.775501`
+    - `N` ⇒ `0.035057`
+    - `O` ⇒ `0.052316`
+    - `F` ⇒ `0.017422`
+    - `Ca` ⇒ `0.018378`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function A_150_Tissue_Equivalent_Plastic()
     mat = Material("a_150_tissue_equivalent_plastic")
@@ -1302,7 +2210,19 @@ end
 """
     Acetone()
 
-NIST material: ACETONE
+Build the predefined NIST material **ACETONE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.7899` g/cm³
+- Mean excitation energy ``I``: `64.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.104122`
+    - `C` ⇒ `0.620405`
+    - `O` ⇒ `0.275473`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Acetone()
     mat = Material("acetone")
@@ -1317,7 +2237,18 @@ end
 """
     Acetylene()
 
-NIST material: ACETYLENE
+Build the predefined NIST material **ACETYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.0010967` g/cm³
+- Mean excitation energy ``I``: `58.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.077418`
+    - `C` ⇒ `0.922582`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Acetylene()
     mat = Material("acetylene")
@@ -1331,7 +2262,19 @@ end
 """
     Adenine()
 
-NIST material: ADENINE
+Build the predefined NIST material **ADENINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.35` g/cm³
+- Mean excitation energy ``I``: `71.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.037294`
+    - `C` ⇒ `0.444430`
+    - `N` ⇒ `0.518275`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Adenine()
     mat = Material("adenine")
@@ -1346,7 +2289,29 @@ end
 """
     Adipose_Tissue_Icrp()
 
-NIST material: ADIPOSE TISSUE (ICRP)
+Build the predefined NIST material **ADIPOSE TISSUE (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.92` g/cm³
+- Mean excitation energy ``I``: `63.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.119477`
+    - `C` ⇒ `0.637240`
+    - `N` ⇒ `0.007970`
+    - `O` ⇒ `0.232333`
+    - `Na` ⇒ `0.000500`
+    - `Mg` ⇒ `0.000020`
+    - `P` ⇒ `0.000160`
+    - `S` ⇒ `0.000730`
+    - `Cl` ⇒ `0.001190`
+    - `K` ⇒ `0.000320`
+    - `Ca` ⇒ `0.000020`
+    - `Fe` ⇒ `0.000020`
+    - `Zn` ⇒ `0.000020`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Adipose_Tissue_Icrp()
     mat = Material("adipose_tissue_icrp")
@@ -1371,7 +2336,20 @@ end
 """
     Air_Dry_Near_Sea_Level()
 
-NIST material: AIR, DRY (NEAR SEA LEVEL)
+Build the predefined NIST material **AIR, DRY (NEAR SEA LEVEL)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00120479` g/cm³
+- Mean excitation energy ``I``: `85.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.000124`
+    - `N` ⇒ `0.755267`
+    - `O` ⇒ `0.231781`
+    - `Ar` ⇒ `0.012827`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Air_Dry_Near_Sea_Level()
     mat = Material("air_dry_near_sea_level")
@@ -1387,7 +2365,20 @@ end
 """
     Alanine()
 
-NIST material: ALANINE
+Build the predefined NIST material **ALANINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.42` g/cm³
+- Mean excitation energy ``I``: `71.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.079190`
+    - `C` ⇒ `0.404439`
+    - `N` ⇒ `0.157213`
+    - `O` ⇒ `0.359159`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Alanine()
     mat = Material("alanine")
@@ -1403,7 +2394,18 @@ end
 """
     Aluminum_Oxide()
 
-NIST material: ALUMINUM OXIDE
+Build the predefined NIST material **ALUMINUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.97` g/cm³
+- Mean excitation energy ``I``: `145.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.470749`
+    - `Al` ⇒ `0.529251`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Aluminum_Oxide()
     mat = Material("aluminum_oxide")
@@ -1417,7 +2419,19 @@ end
 """
     Amber()
 
-NIST material: AMBER
+Build the predefined NIST material **AMBER** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.1` g/cm³
+- Mean excitation energy ``I``: `63.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.105930`
+    - `C` ⇒ `0.788973`
+    - `O` ⇒ `0.105096`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Amber()
     mat = Material("amber")
@@ -1432,7 +2446,18 @@ end
 """
     Ammonia()
 
-NIST material: AMMONIA
+Build the predefined NIST material **AMMONIA** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.000826019` g/cm³
+- Mean excitation energy ``I``: `53.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.177547`
+    - `N` ⇒ `0.822453`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ammonia()
     mat = Material("ammonia")
@@ -1446,7 +2471,19 @@ end
 """
     Aniline()
 
-NIST material: ANILINE
+Build the predefined NIST material **ANILINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.0235` g/cm³
+- Mean excitation energy ``I``: `66.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.075759`
+    - `C` ⇒ `0.773838`
+    - `N` ⇒ `0.150403`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Aniline()
     mat = Material("aniline")
@@ -1461,7 +2498,18 @@ end
 """
     Anthracene()
 
-NIST material: ANTHRACENE
+Build the predefined NIST material **ANTHRACENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.283` g/cm³
+- Mean excitation energy ``I``: `69.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.056550`
+    - `C` ⇒ `0.943450`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Anthracene()
     mat = Material("anthracene")
@@ -1475,7 +2523,22 @@ end
 """
     B_100_Bone_Equivalent_Plastic()
 
-NIST material: B-100 BONE-EQUIVALENT PLASTIC
+Build the predefined NIST material **B-100 BONE-EQUIVALENT PLASTIC** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.45` g/cm³
+- Mean excitation energy ``I``: `85.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.065471`
+    - `C` ⇒ `0.536945`
+    - `N` ⇒ `0.021500`
+    - `O` ⇒ `0.032085`
+    - `F` ⇒ `0.167411`
+    - `Ca` ⇒ `0.176589`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function B_100_Bone_Equivalent_Plastic()
     mat = Material("b_100_bone_equivalent_plastic")
@@ -1493,7 +2556,19 @@ end
 """
     Bakelite()
 
-NIST material: BAKELITE
+Build the predefined NIST material **BAKELITE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.25` g/cm³
+- Mean excitation energy ``I``: `72.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.057441`
+    - `C` ⇒ `0.774591`
+    - `O` ⇒ `0.167968`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Bakelite()
     mat = Material("bakelite")
@@ -1508,7 +2583,18 @@ end
 """
     Barium_Fluoride()
 
-NIST material: BARIUM FLUORIDE
+Build the predefined NIST material **BARIUM FLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.89` g/cm³
+- Mean excitation energy ``I``: `375.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `F` ⇒ `0.216720`
+    - `Ba` ⇒ `0.783280`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Barium_Fluoride()
     mat = Material("barium_fluoride")
@@ -1522,7 +2608,19 @@ end
 """
     Barium_Sulfate()
 
-NIST material: BARIUM SULFATE
+Build the predefined NIST material **BARIUM SULFATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.5` g/cm³
+- Mean excitation energy ``I``: `285.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.274212`
+    - `S` ⇒ `0.137368`
+    - `Ba` ⇒ `0.588420`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Barium_Sulfate()
     mat = Material("barium_sulfate")
@@ -1537,7 +2635,18 @@ end
 """
     Benzene()
 
-NIST material: BENZENE
+Build the predefined NIST material **BENZENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.87865` g/cm³
+- Mean excitation energy ``I``: `63.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.077418`
+    - `C` ⇒ `0.922582`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Benzene()
     mat = Material("benzene")
@@ -1551,7 +2660,18 @@ end
 """
     Beryllium_Oxide()
 
-NIST material: BERYLLIUM OXIDE
+Build the predefined NIST material **BERYLLIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.01` g/cm³
+- Mean excitation energy ``I``: `93.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Be` ⇒ `0.360320`
+    - `O` ⇒ `0.639680`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Beryllium_Oxide()
     mat = Material("beryllium_oxide")
@@ -1565,7 +2685,19 @@ end
 """
     Bismuth_Germanium_Oxide()
 
-NIST material: BISMUTH GERMANIUM OXIDE
+Build the predefined NIST material **BISMUTH GERMANIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.13` g/cm³
+- Mean excitation energy ``I``: `534.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.154126`
+    - `Ge` ⇒ `0.174820`
+    - `Bi` ⇒ `0.671054`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Bismuth_Germanium_Oxide()
     mat = Material("bismuth_germanium_oxide")
@@ -1580,7 +2712,30 @@ end
 """
     Blood_Icrp()
 
-NIST material: BLOOD (ICRP)
+Build the predefined NIST material **BLOOD (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.06` g/cm³
+- Mean excitation energy ``I``: `75.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101866`
+    - `C` ⇒ `0.100020`
+    - `N` ⇒ `0.029640`
+    - `O` ⇒ `0.759414`
+    - `Na` ⇒ `0.001850`
+    - `Mg` ⇒ `0.000040`
+    - `Si` ⇒ `0.000030`
+    - `P` ⇒ `0.000350`
+    - `S` ⇒ `0.001850`
+    - `Cl` ⇒ `0.002780`
+    - `K` ⇒ `0.001630`
+    - `Ca` ⇒ `0.000060`
+    - `Fe` ⇒ `0.000460`
+    - `Zn` ⇒ `0.000010`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Blood_Icrp()
     mat = Material("blood_icrp")
@@ -1606,7 +2761,24 @@ end
 """
     Bone_Compact_Icru()
 
-NIST material: BONE, COMPACT (ICRU)
+Build the predefined NIST material **BONE, COMPACT (ICRU)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.85` g/cm³
+- Mean excitation energy ``I``: `91.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.063984`
+    - `C` ⇒ `0.278000`
+    - `N` ⇒ `0.027000`
+    - `O` ⇒ `0.410016`
+    - `Mg` ⇒ `0.002000`
+    - `P` ⇒ `0.070000`
+    - `S` ⇒ `0.002000`
+    - `Ca` ⇒ `0.147000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Bone_Compact_Icru()
     mat = Material("bone_compact_icru")
@@ -1626,7 +2798,25 @@ end
 """
     Bone_Cortical_Icrp()
 
-NIST material: BONE, CORTICAL (ICRP)
+Build the predefined NIST material **BONE, CORTICAL (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.85` g/cm³
+- Mean excitation energy ``I``: `106.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.047234`
+    - `C` ⇒ `0.144330`
+    - `N` ⇒ `0.041990`
+    - `O` ⇒ `0.446096`
+    - `Mg` ⇒ `0.002200`
+    - `P` ⇒ `0.104970`
+    - `S` ⇒ `0.003150`
+    - `Ca` ⇒ `0.209930`
+    - `Zn` ⇒ `0.000100`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Bone_Cortical_Icrp()
     mat = Material("bone_cortical_icrp")
@@ -1647,7 +2837,18 @@ end
 """
     Boron_Carbide()
 
-NIST material: BORON CARBIDE
+Build the predefined NIST material **BORON CARBIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.52` g/cm³
+- Mean excitation energy ``I``: `84.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `B` ⇒ `0.782610`
+    - `C` ⇒ `0.217390`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Boron_Carbide()
     mat = Material("boron_carbide")
@@ -1661,7 +2862,18 @@ end
 """
     Boron_Oxide()
 
-NIST material: BORON OXIDE
+Build the predefined NIST material **BORON OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.812` g/cm³
+- Mean excitation energy ``I``: `99.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `B` ⇒ `0.310551`
+    - `O` ⇒ `0.689449`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Boron_Oxide()
     mat = Material("boron_oxide")
@@ -1675,7 +2887,29 @@ end
 """
     Brain_Icrp()
 
-NIST material: BRAIN (ICRP)
+Build the predefined NIST material **BRAIN (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.03` g/cm³
+- Mean excitation energy ``I``: `73.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.110667`
+    - `C` ⇒ `0.125420`
+    - `N` ⇒ `0.013280`
+    - `O` ⇒ `0.737723`
+    - `Na` ⇒ `0.001840`
+    - `Mg` ⇒ `0.000150`
+    - `P` ⇒ `0.003540`
+    - `S` ⇒ `0.001770`
+    - `Cl` ⇒ `0.002360`
+    - `K` ⇒ `0.003100`
+    - `Ca` ⇒ `0.000090`
+    - `Fe` ⇒ `0.000050`
+    - `Zn` ⇒ `0.000010`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Brain_Icrp()
     mat = Material("brain_icrp")
@@ -1700,7 +2934,18 @@ end
 """
     Butane()
 
-NIST material: BUTANE
+Build the predefined NIST material **BUTANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00249343` g/cm³
+- Mean excitation energy ``I``: `48.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.173408`
+    - `C` ⇒ `0.826592`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Butane()
     mat = Material("butane")
@@ -1714,7 +2959,19 @@ end
 """
     N_Butyl_Alcohol()
 
-NIST material: N-BUTYL ALCOHOL
+Build the predefined NIST material **N-BUTYL ALCOHOL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.8098` g/cm³
+- Mean excitation energy ``I``: `59.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.135978`
+    - `C` ⇒ `0.648171`
+    - `O` ⇒ `0.215851`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function N_Butyl_Alcohol()
     mat = Material("n_butyl_alcohol")
@@ -1729,7 +2986,21 @@ end
 """
     C_552_Air_Equivalent_Plastic()
 
-NIST material: C-552 AIR-EQUIVALENT PLASTIC
+Build the predefined NIST material **C-552 AIR-EQUIVALENT PLASTIC** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.76` g/cm³
+- Mean excitation energy ``I``: `86.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.024680`
+    - `C` ⇒ `0.501610`
+    - `O` ⇒ `0.004527`
+    - `F` ⇒ `0.465209`
+    - `Si` ⇒ `0.003973`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function C_552_Air_Equivalent_Plastic()
     mat = Material("c_552_air_equivalent_plastic")
@@ -1746,7 +3017,18 @@ end
 """
     Cadmium_Telluride()
 
-NIST material: CADMIUM TELLURIDE
+Build the predefined NIST material **CADMIUM TELLURIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.2` g/cm³
+- Mean excitation energy ``I``: `539.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Cd` ⇒ `0.468355`
+    - `Te` ⇒ `0.531645`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cadmium_Telluride()
     mat = Material("cadmium_telluride")
@@ -1760,7 +3042,19 @@ end
 """
     Cadmium_Tungstate()
 
-NIST material: CADMIUM TUNGSTATE
+Build the predefined NIST material **CADMIUM TUNGSTATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.9` g/cm³
+- Mean excitation energy ``I``: `468.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.177644`
+    - `Cd` ⇒ `0.312027`
+    - `W` ⇒ `0.510329`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cadmium_Tungstate()
     mat = Material("cadmium_tungstate")
@@ -1775,7 +3069,19 @@ end
 """
     Calcium_Carbonate()
 
-NIST material: CALCIUM CARBONATE
+Build the predefined NIST material **CALCIUM CARBONATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.8` g/cm³
+- Mean excitation energy ``I``: `136.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.120003`
+    - `O` ⇒ `0.479554`
+    - `Ca` ⇒ `0.400443`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Calcium_Carbonate()
     mat = Material("calcium_carbonate")
@@ -1790,7 +3096,18 @@ end
 """
     Calcium_Fluoride()
 
-NIST material: CALCIUM FLUORIDE
+Build the predefined NIST material **CALCIUM FLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.18` g/cm³
+- Mean excitation energy ``I``: `166` eV
+- Composition (element ⇒ mass weight fraction):
+    - `F` ⇒ `0.486659`
+    - `Ca` ⇒ `0.513341`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Calcium_Fluoride()
     mat = Material("calcium_fluoride")
@@ -1804,7 +3121,18 @@ end
 """
     Calcium_Oxide()
 
-NIST material: CALCIUM OXIDE
+Build the predefined NIST material **CALCIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.3` g/cm³
+- Mean excitation energy ``I``: `176.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.285299`
+    - `Ca` ⇒ `0.714701`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Calcium_Oxide()
     mat = Material("calcium_oxide")
@@ -1818,7 +3146,19 @@ end
 """
     Calcium_Sulfate()
 
-NIST material: CALCIUM SULFATE
+Build the predefined NIST material **CALCIUM SULFATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.96` g/cm³
+- Mean excitation energy ``I``: `152.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.470095`
+    - `S` ⇒ `0.235497`
+    - `Ca` ⇒ `0.294408`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Calcium_Sulfate()
     mat = Material("calcium_sulfate")
@@ -1833,7 +3173,19 @@ end
 """
     Calcium_Tungstate()
 
-NIST material: CALCIUM TUNGSTATE
+Build the predefined NIST material **CALCIUM TUNGSTATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.062` g/cm³
+- Mean excitation energy ``I``: `395` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.222270`
+    - `Ca` ⇒ `0.139202`
+    - `W` ⇒ `0.638529`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Calcium_Tungstate()
     mat = Material("calcium_tungstate")
@@ -1848,7 +3200,18 @@ end
 """
     Carbon_Dioxide()
 
-NIST material: CARBON DIOXIDE
+Build the predefined NIST material **CARBON DIOXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00184212` g/cm³
+- Mean excitation energy ``I``: `85` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.272916`
+    - `O` ⇒ `0.727084`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Carbon_Dioxide()
     mat = Material("carbon_dioxide")
@@ -1862,7 +3225,18 @@ end
 """
     Carbon_Tetrachloride()
 
-NIST material: CARBON TETRACHLORIDE
+Build the predefined NIST material **CARBON TETRACHLORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.594` g/cm³
+- Mean excitation energy ``I``: `166.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.078083`
+    - `Cl` ⇒ `0.921917`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Carbon_Tetrachloride()
     mat = Material("carbon_tetrachloride")
@@ -1876,7 +3250,19 @@ end
 """
     Cellulose_Acetate_Cellophane()
 
-NIST material: CELLULOSE ACETATE, CELLOPHANE
+Build the predefined NIST material **CELLULOSE ACETATE, CELLOPHANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.42` g/cm³
+- Mean excitation energy ``I``: `77.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.062162`
+    - `C` ⇒ `0.444462`
+    - `O` ⇒ `0.493376`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cellulose_Acetate_Cellophane()
     mat = Material("cellulose_acetate_cellophane")
@@ -1891,7 +3277,19 @@ end
 """
     Cellulose_Acetate_Butyrate()
 
-NIST material: CELLULOSE ACETATE BUTYRATE
+Build the predefined NIST material **CELLULOSE ACETATE BUTYRATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.2` g/cm³
+- Mean excitation energy ``I``: `74.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.067125`
+    - `C` ⇒ `0.545403`
+    - `O` ⇒ `0.387472`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cellulose_Acetate_Butyrate()
     mat = Material("cellulose_acetate_butyrate")
@@ -1906,7 +3304,20 @@ end
 """
     Cellulose_Nitrate()
 
-NIST material: CELLULOSE NITRATE
+Build the predefined NIST material **CELLULOSE NITRATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.49` g/cm³
+- Mean excitation energy ``I``: `87` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.029216`
+    - `C` ⇒ `0.271296`
+    - `N` ⇒ `0.121276`
+    - `O` ⇒ `0.578212`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cellulose_Nitrate()
     mat = Material("cellulose_nitrate")
@@ -1922,7 +3333,21 @@ end
 """
     Ceric_Sulfate_Dosimeter_Solution()
 
-NIST material: CERIC SULFATE DOSIMETER SOLUTION
+Build the predefined NIST material **CERIC SULFATE DOSIMETER SOLUTION** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.03` g/cm³
+- Mean excitation energy ``I``: `76.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.107596`
+    - `N` ⇒ `0.000800`
+    - `O` ⇒ `0.874976`
+    - `S` ⇒ `0.014627`
+    - `Ce` ⇒ `0.002001`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ceric_Sulfate_Dosimeter_Solution()
     mat = Material("ceric_sulfate_dosimeter_solution")
@@ -1939,7 +3364,18 @@ end
 """
     Cesium_Fluoride()
 
-NIST material: CESIUM FLUORIDE
+Build the predefined NIST material **CESIUM FLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.115` g/cm³
+- Mean excitation energy ``I``: `440.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `F` ⇒ `0.125069`
+    - `Cs` ⇒ `0.874931`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cesium_Fluoride()
     mat = Material("cesium_fluoride")
@@ -1953,7 +3389,18 @@ end
 """
     Cesium_Iodide()
 
-NIST material: CESIUM IODIDE
+Build the predefined NIST material **CESIUM IODIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.51` g/cm³
+- Mean excitation energy ``I``: `553.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `I` ⇒ `0.488451`
+    - `Cs` ⇒ `0.511549`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cesium_Iodide()
     mat = Material("cesium_iodide")
@@ -1967,7 +3414,19 @@ end
 """
     Chlorobenzene()
 
-NIST material: CHLOROBENZENE
+Build the predefined NIST material **CHLOROBENZENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.1058` g/cm³
+- Mean excitation energy ``I``: `89.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.044772`
+    - `C` ⇒ `0.640254`
+    - `Cl` ⇒ `0.314974`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Chlorobenzene()
     mat = Material("chlorobenzene")
@@ -1982,7 +3441,19 @@ end
 """
     Chloroform()
 
-NIST material: CHLOROFORM
+Build the predefined NIST material **CHLOROFORM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.4832` g/cm³
+- Mean excitation energy ``I``: `156` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.008443`
+    - `C` ⇒ `0.100613`
+    - `Cl` ⇒ `0.890944`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Chloroform()
     mat = Material("chloroform")
@@ -1997,7 +3468,26 @@ end
 """
     Concrete_Portland()
 
-NIST material: CONCRETE, PORTLAND
+Build the predefined NIST material **CONCRETE, PORTLAND** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.3` g/cm³
+- Mean excitation energy ``I``: `135.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.010000`
+    - `C` ⇒ `0.001000`
+    - `O` ⇒ `0.529107`
+    - `Na` ⇒ `0.016000`
+    - `Mg` ⇒ `0.002000`
+    - `Al` ⇒ `0.033872`
+    - `Si` ⇒ `0.337021`
+    - `K` ⇒ `0.013000`
+    - `Ca` ⇒ `0.044000`
+    - `Fe` ⇒ `0.014000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Concrete_Portland()
     mat = Material("concrete_portland")
@@ -2019,7 +3509,18 @@ end
 """
     Cyclohexane()
 
-NIST material: CYCLOHEXANE
+Build the predefined NIST material **CYCLOHEXANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.779` g/cm³
+- Mean excitation energy ``I``: `56.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.143711`
+    - `C` ⇒ `0.856289`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Cyclohexane()
     mat = Material("cyclohexane")
@@ -2033,7 +3534,19 @@ end
 """
     M1_2_Dichlorobenzene()
 
-NIST material: 1,2-DICHLOROBENZENE
+Build the predefined NIST material **1,2-DICHLOROBENZENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.3048` g/cm³
+- Mean excitation energy ``I``: `106.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.027425`
+    - `C` ⇒ `0.490233`
+    - `Cl` ⇒ `0.482342`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function M1_2_Dichlorobenzene()
     mat = Material("1_2_dichlorobenzene")
@@ -2048,7 +3561,20 @@ end
 """
     Dichlorodiethyl_Ether()
 
-NIST material: DICHLORODIETHYL ETHER
+Build the predefined NIST material **DICHLORODIETHYL ETHER** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.2199` g/cm³
+- Mean excitation energy ``I``: `103.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.056381`
+    - `C` ⇒ `0.335942`
+    - `O` ⇒ `0.111874`
+    - `Cl` ⇒ `0.495802`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Dichlorodiethyl_Ether()
     mat = Material("dichlorodiethyl_ether")
@@ -2064,7 +3590,19 @@ end
 """
     M1_2_Dichloroethane()
 
-NIST material: 1,2-DICHLOROETHANE
+Build the predefined NIST material **1,2-DICHLOROETHANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.2351` g/cm³
+- Mean excitation energy ``I``: `111.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.040740`
+    - `C` ⇒ `0.242746`
+    - `Cl` ⇒ `0.716515`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function M1_2_Dichloroethane()
     mat = Material("1_2_dichloroethane")
@@ -2079,7 +3617,19 @@ end
 """
     Diethyl_Ether()
 
-NIST material: DIETHYL ETHER
+Build the predefined NIST material **DIETHYL ETHER** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.71378` g/cm³
+- Mean excitation energy ``I``: `60` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.135978`
+    - `C` ⇒ `0.648171`
+    - `O` ⇒ `0.215851`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Diethyl_Ether()
     mat = Material("diethyl_ether")
@@ -2094,7 +3644,20 @@ end
 """
     N_N_Dimethyl_Formamide()
 
-NIST material: N,N-DIMETHYL FORMAMIDE
+Build the predefined NIST material **N,N-DIMETHYL FORMAMIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.9487` g/cm³
+- Mean excitation energy ``I``: `66.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.096523`
+    - `C` ⇒ `0.492965`
+    - `N` ⇒ `0.191625`
+    - `O` ⇒ `0.218887`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function N_N_Dimethyl_Formamide()
     mat = Material("n_n_dimethyl_formamide")
@@ -2110,7 +3673,20 @@ end
 """
     Dimethyl_Sulfoxide()
 
-NIST material: DIMETHYL SULFOXIDE
+Build the predefined NIST material **DIMETHYL SULFOXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.1014` g/cm³
+- Mean excitation energy ``I``: `98.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.077403`
+    - `C` ⇒ `0.307467`
+    - `O` ⇒ `0.204782`
+    - `S` ⇒ `0.410348`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Dimethyl_Sulfoxide()
     mat = Material("dimethyl_sulfoxide")
@@ -2126,7 +3702,18 @@ end
 """
     Ethane()
 
-NIST material: ETHANE
+Build the predefined NIST material **ETHANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00125324` g/cm³
+- Mean excitation energy ``I``: `45.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.201115`
+    - `C` ⇒ `0.798885`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ethane()
     mat = Material("ethane")
@@ -2140,7 +3727,19 @@ end
 """
     Ethyl_Alcohol()
 
-NIST material: ETHYL ALCOHOL
+Build the predefined NIST material **ETHYL ALCOHOL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.7893` g/cm³
+- Mean excitation energy ``I``: `62.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.131269`
+    - `C` ⇒ `0.521438`
+    - `O` ⇒ `0.347294`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ethyl_Alcohol()
     mat = Material("ethyl_alcohol")
@@ -2155,7 +3754,19 @@ end
 """
     Ethyl_Cellulose()
 
-NIST material: ETHYL CELLULOSE
+Build the predefined NIST material **ETHYL CELLULOSE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.13` g/cm³
+- Mean excitation energy ``I``: `69.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.090027`
+    - `C` ⇒ `0.585182`
+    - `O` ⇒ `0.324791`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ethyl_Cellulose()
     mat = Material("ethyl_cellulose")
@@ -2170,7 +3781,18 @@ end
 """
     Ethylene()
 
-NIST material: ETHYLENE
+Build the predefined NIST material **ETHYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00117497` g/cm³
+- Mean excitation energy ``I``: `50.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.143711`
+    - `C` ⇒ `0.856289`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ethylene()
     mat = Material("ethylene")
@@ -2184,7 +3806,20 @@ end
 """
     Eye_Lens_Icrp()
 
-NIST material: EYE LENS (ICRP)
+Build the predefined NIST material **EYE LENS (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.1` g/cm³
+- Mean excitation energy ``I``: `73.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.099269`
+    - `C` ⇒ `0.193710`
+    - `N` ⇒ `0.053270`
+    - `O` ⇒ `0.653751`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Eye_Lens_Icrp()
     mat = Material("eye_lens_icrp")
@@ -2200,7 +3835,18 @@ end
 """
     Ferric_Oxide()
 
-NIST material: FERRIC OXIDE
+Build the predefined NIST material **FERRIC OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.2` g/cm³
+- Mean excitation energy ``I``: `227.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.300567`
+    - `Fe` ⇒ `0.699433`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ferric_Oxide()
     mat = Material("ferric_oxide")
@@ -2214,7 +3860,18 @@ end
 """
     Ferroboride()
 
-NIST material: FERROBORIDE
+Build the predefined NIST material **FERROBORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.15` g/cm³
+- Mean excitation energy ``I``: `261` eV
+- Composition (element ⇒ mass weight fraction):
+    - `B` ⇒ `0.162174`
+    - `Fe` ⇒ `0.837826`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ferroboride()
     mat = Material("ferroboride")
@@ -2228,7 +3885,18 @@ end
 """
     Ferrous_Oxide()
 
-NIST material: FERROUS OXIDE
+Build the predefined NIST material **FERROUS OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.7` g/cm³
+- Mean excitation energy ``I``: `248.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.222689`
+    - `Fe` ⇒ `0.777311`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ferrous_Oxide()
     mat = Material("ferrous_oxide")
@@ -2242,7 +3910,23 @@ end
 """
     Ferrous_Sulfate_Dosimeter_Solution()
 
-NIST material: FERROUS SULFATE DOSIMETER SOLUTION
+Build the predefined NIST material **FERROUS SULFATE DOSIMETER SOLUTION** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.024` g/cm³
+- Mean excitation energy ``I``: `76.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.108259`
+    - `N` ⇒ `0.000027`
+    - `O` ⇒ `0.878636`
+    - `Na` ⇒ `0.000022`
+    - `S` ⇒ `0.012968`
+    - `Cl` ⇒ `0.000034`
+    - `Fe` ⇒ `0.000054`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ferrous_Sulfate_Dosimeter_Solution()
     mat = Material("ferrous_sulfate_dosimeter_solution")
@@ -2261,7 +3945,19 @@ end
 """
     Freon_12()
 
-NIST material: FREON-12
+Build the predefined NIST material **FREON-12** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.12` g/cm³
+- Mean excitation energy ``I``: `143` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.099335`
+    - `F` ⇒ `0.314247`
+    - `Cl` ⇒ `0.586418`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Freon_12()
     mat = Material("freon_12")
@@ -2276,7 +3972,19 @@ end
 """
     Freon_12b2()
 
-NIST material: FREON-12B2
+Build the predefined NIST material **FREON-12B2** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.8` g/cm³
+- Mean excitation energy ``I``: `284.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.057245`
+    - `F` ⇒ `0.181096`
+    - `Br` ⇒ `0.761659`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Freon_12b2()
     mat = Material("freon_12b2")
@@ -2291,7 +3999,19 @@ end
 """
     Freon_13()
 
-NIST material: FREON-13
+Build the predefined NIST material **FREON-13** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.95` g/cm³
+- Mean excitation energy ``I``: `126.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.114983`
+    - `F` ⇒ `0.545622`
+    - `Cl` ⇒ `0.339396`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Freon_13()
     mat = Material("freon_13")
@@ -2306,7 +4026,19 @@ end
 """
     Freon_13b1()
 
-NIST material: FREON-13B1
+Build the predefined NIST material **FREON-13B1** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.5` g/cm³
+- Mean excitation energy ``I``: `210.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.080659`
+    - `F` ⇒ `0.382749`
+    - `Br` ⇒ `0.536592`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Freon_13b1()
     mat = Material("freon_13b1")
@@ -2321,7 +4053,19 @@ end
 """
     Freon_13i1()
 
-NIST material: FREON-13I1
+Build the predefined NIST material **FREON-13I1** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.8` g/cm³
+- Mean excitation energy ``I``: `293.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.061309`
+    - `F` ⇒ `0.290924`
+    - `I` ⇒ `0.647767`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Freon_13i1()
     mat = Material("freon_13i1")
@@ -2336,7 +4080,19 @@ end
 """
     Gadolinium_Oxysulfide()
 
-NIST material: GADOLINIUM OXYSULFIDE
+Build the predefined NIST material **GADOLINIUM OXYSULFIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.44` g/cm³
+- Mean excitation energy ``I``: `493.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.084528`
+    - `S` ⇒ `0.084690`
+    - `Gd` ⇒ `0.830782`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gadolinium_Oxysulfide()
     mat = Material("gadolinium_oxysulfide")
@@ -2351,7 +4107,18 @@ end
 """
     Gallium_Arsenide()
 
-NIST material: GALLIUM ARSENIDE
+Build the predefined NIST material **GALLIUM ARSENIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.31` g/cm³
+- Mean excitation energy ``I``: `384.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Ga` ⇒ `0.482019`
+    - `As` ⇒ `0.517981`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gallium_Arsenide()
     mat = Material("gallium_arsenide")
@@ -2365,7 +4132,21 @@ end
 """
     Gel_In_Photographic_Emulsion()
 
-NIST material: GEL IN PHOTOGRAPHIC EMULSION
+Build the predefined NIST material **GEL IN PHOTOGRAPHIC EMULSION** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.2914` g/cm³
+- Mean excitation energy ``I``: `74.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.081180`
+    - `C` ⇒ `0.416060`
+    - `N` ⇒ `0.111240`
+    - `O` ⇒ `0.380640`
+    - `S` ⇒ `0.010880`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gel_In_Photographic_Emulsion()
     mat = Material("gel_in_photographic_emulsion")
@@ -2382,7 +4163,22 @@ end
 """
     Pyrex_Glass()
 
-NIST material: Pyrex Glass
+Build the predefined NIST material **Pyrex Glass** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.23` g/cm³
+- Mean excitation energy ``I``: `134` eV
+- Composition (element ⇒ mass weight fraction):
+    - `B` ⇒ `0.040064`
+    - `O` ⇒ `0.539562`
+    - `Na` ⇒ `0.028191`
+    - `Al` ⇒ `0.011644`
+    - `Si` ⇒ `0.377220`
+    - `K` ⇒ `0.003321`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Pyrex_Glass()
     mat = Material("pyrex_glass")
@@ -2400,7 +4196,21 @@ end
 """
     Glass_Lead()
 
-NIST material: GLASS, LEAD
+Build the predefined NIST material **GLASS, LEAD** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.22` g/cm³
+- Mean excitation energy ``I``: `526.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.156453`
+    - `Si` ⇒ `0.080866`
+    - `Ti` ⇒ `0.008092`
+    - `As` ⇒ `0.002651`
+    - `Pb` ⇒ `0.751938`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Glass_Lead()
     mat = Material("glass_lead")
@@ -2417,7 +4227,20 @@ end
 """
     Glass_Plate()
 
-NIST material: GLASS, PLATE
+Build the predefined NIST material **GLASS, PLATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.4` g/cm³
+- Mean excitation energy ``I``: `145.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.459800`
+    - `Na` ⇒ `0.096441`
+    - `Si` ⇒ `0.336553`
+    - `Ca` ⇒ `0.107205`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Glass_Plate()
     mat = Material("glass_plate")
@@ -2433,7 +4256,19 @@ end
 """
     Glucose()
 
-NIST material: GLUCOSE
+Build the predefined NIST material **GLUCOSE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.54` g/cm³
+- Mean excitation energy ``I``: `77.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.071204`
+    - `C` ⇒ `0.363652`
+    - `O` ⇒ `0.565144`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Glucose()
     mat = Material("glucose")
@@ -2448,7 +4283,20 @@ end
 """
     Glutamine()
 
-NIST material: GLUTAMINE
+Build the predefined NIST material **GLUTAMINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.46` g/cm³
+- Mean excitation energy ``I``: `73.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.068965`
+    - `C` ⇒ `0.410926`
+    - `N` ⇒ `0.191681`
+    - `O` ⇒ `0.328427`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Glutamine()
     mat = Material("glutamine")
@@ -2464,7 +4312,19 @@ end
 """
     Glycerol()
 
-NIST material: GLYCEROL
+Build the predefined NIST material **GLYCEROL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.2613` g/cm³
+- Mean excitation energy ``I``: `72.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.087554`
+    - `C` ⇒ `0.391262`
+    - `O` ⇒ `0.521185`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Glycerol()
     mat = Material("glycerol")
@@ -2479,7 +4339,20 @@ end
 """
     Guanine()
 
-NIST material: GUANINE
+Build the predefined NIST material **GUANINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.58` g/cm³
+- Mean excitation energy ``I``: `75` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.033346`
+    - `C` ⇒ `0.397380`
+    - `N` ⇒ `0.463407`
+    - `O` ⇒ `0.105867`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Guanine()
     mat = Material("guanine")
@@ -2495,7 +4368,20 @@ end
 """
     Gypsum_Plaster_Of_Paris()
 
-NIST material: GYPSUM, PLASTER OF PARIS
+Build the predefined NIST material **GYPSUM, PLASTER OF PARIS** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.32` g/cm³
+- Mean excitation energy ``I``: `129.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.023416`
+    - `O` ⇒ `0.557572`
+    - `S` ⇒ `0.186215`
+    - `Ca` ⇒ `0.232797`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Gypsum_Plaster_Of_Paris()
     mat = Material("gypsum_plaster_of_paris")
@@ -2511,7 +4397,18 @@ end
 """
     N_Heptane()
 
-NIST material: N-HEPTANE
+Build the predefined NIST material **N-HEPTANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.68376` g/cm³
+- Mean excitation energy ``I``: `54.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.160937`
+    - `C` ⇒ `0.839063`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function N_Heptane()
     mat = Material("n_heptane")
@@ -2525,7 +4422,18 @@ end
 """
     N_Hexane()
 
-NIST material: N-HEXANE
+Build the predefined NIST material **N-HEXANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.6603` g/cm³
+- Mean excitation energy ``I``: `54` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.163741`
+    - `C` ⇒ `0.836259`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function N_Hexane()
     mat = Material("n_hexane")
@@ -2539,7 +4447,20 @@ end
 """
     Kapton_Polyimide_Film()
 
-NIST material: KAPTON POLYIMIDE FILM
+Build the predefined NIST material **KAPTON POLYIMIDE FILM** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.42` g/cm³
+- Mean excitation energy ``I``: `79.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.026362`
+    - `C` ⇒ `0.691133`
+    - `N` ⇒ `0.073270`
+    - `O` ⇒ `0.209235`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Kapton_Polyimide_Film()
     mat = Material("kapton_polyimide_film")
@@ -2555,7 +4476,19 @@ end
 """
     Lanthanum_Oxybromide()
 
-NIST material: LANTHANUM OXYBROMIDE
+Build the predefined NIST material **LANTHANUM OXYBROMIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.28` g/cm³
+- Mean excitation energy ``I``: `439.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.068138`
+    - `Br` ⇒ `0.340294`
+    - `La` ⇒ `0.591568`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lanthanum_Oxybromide()
     mat = Material("lanthanum_oxybromide")
@@ -2570,7 +4503,19 @@ end
 """
     Lanthanum_Oxysulfide()
 
-NIST material: LANTHANUM OXYSULFIDE
+Build the predefined NIST material **LANTHANUM OXYSULFIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.86` g/cm³
+- Mean excitation energy ``I``: `421.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.093600`
+    - `S` ⇒ `0.093778`
+    - `La` ⇒ `0.812622`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lanthanum_Oxysulfide()
     mat = Material("lanthanum_oxysulfide")
@@ -2585,7 +4530,18 @@ end
 """
     Lead_Oxide()
 
-NIST material: LEAD OXIDE
+Build the predefined NIST material **LEAD OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `9.53` g/cm³
+- Mean excitation energy ``I``: `766.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.071682`
+    - `Pb` ⇒ `0.928318`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lead_Oxide()
     mat = Material("lead_oxide")
@@ -2599,7 +4555,19 @@ end
 """
     Lithium_Amide()
 
-NIST material: LITHIUM AMIDE
+Build the predefined NIST material **LITHIUM AMIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.178` g/cm³
+- Mean excitation energy ``I``: `55.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.087783`
+    - `Li` ⇒ `0.302262`
+    - `N` ⇒ `0.609955`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Amide()
     mat = Material("lithium_amide")
@@ -2614,7 +4582,19 @@ end
 """
     Lithium_Carbonate()
 
-NIST material: LITHIUM CARBONATE
+Build the predefined NIST material **LITHIUM CARBONATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.11` g/cm³
+- Mean excitation energy ``I``: `87.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Li` ⇒ `0.187871`
+    - `C` ⇒ `0.162550`
+    - `O` ⇒ `0.649579`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Carbonate()
     mat = Material("lithium_carbonate")
@@ -2629,7 +4609,18 @@ end
 """
     Lithium_Fluoride()
 
-NIST material: LITHIUM FLUORIDE
+Build the predefined NIST material **LITHIUM FLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.635` g/cm³
+- Mean excitation energy ``I``: `94` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Li` ⇒ `0.267585`
+    - `F` ⇒ `0.732415`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Fluoride()
     mat = Material("lithium_fluoride")
@@ -2643,7 +4634,18 @@ end
 """
     Lithium_Hydride()
 
-NIST material: LITHIUM HYDRIDE
+Build the predefined NIST material **LITHIUM HYDRIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.82` g/cm³
+- Mean excitation energy ``I``: `36.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.126797`
+    - `Li` ⇒ `0.873203`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Hydride()
     mat = Material("lithium_hydride")
@@ -2657,7 +4659,18 @@ end
 """
     Lithium_Iodide()
 
-NIST material: LITHIUM IODIDE
+Build the predefined NIST material **LITHIUM IODIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.494` g/cm³
+- Mean excitation energy ``I``: `485.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Li` ⇒ `0.051858`
+    - `I` ⇒ `0.948142`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Iodide()
     mat = Material("lithium_iodide")
@@ -2671,7 +4684,18 @@ end
 """
     Lithium_Oxide()
 
-NIST material: LITHIUM OXIDE
+Build the predefined NIST material **LITHIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.013` g/cm³
+- Mean excitation energy ``I``: `73.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Li` ⇒ `0.464570`
+    - `O` ⇒ `0.535430`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Oxide()
     mat = Material("lithium_oxide")
@@ -2685,7 +4709,19 @@ end
 """
     Lithium_Tetraborate()
 
-NIST material: LITHIUM TETRABORATE
+Build the predefined NIST material **LITHIUM TETRABORATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.44` g/cm³
+- Mean excitation energy ``I``: `94.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Li` ⇒ `0.082085`
+    - `B` ⇒ `0.255680`
+    - `O` ⇒ `0.662235`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lithium_Tetraborate()
     mat = Material("lithium_tetraborate")
@@ -2700,7 +4736,29 @@ end
 """
     Lung_Icrp()
 
-NIST material: LUNG (ICRP)
+Build the predefined NIST material **LUNG (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.05` g/cm³
+- Mean excitation energy ``I``: `75.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101278`
+    - `C` ⇒ `0.102310`
+    - `N` ⇒ `0.028650`
+    - `O` ⇒ `0.757072`
+    - `Na` ⇒ `0.001840`
+    - `Mg` ⇒ `0.000730`
+    - `P` ⇒ `0.000800`
+    - `S` ⇒ `0.002250`
+    - `Cl` ⇒ `0.002660`
+    - `K` ⇒ `0.001940`
+    - `Ca` ⇒ `0.000090`
+    - `Fe` ⇒ `0.000370`
+    - `Zn` ⇒ `0.000010`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Lung_Icrp()
     mat = Material("lung_icrp")
@@ -2725,7 +4783,21 @@ end
 """
     M3_Wax()
 
-NIST material: M3 WAX
+Build the predefined NIST material **M3 WAX** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.05` g/cm³
+- Mean excitation energy ``I``: `67.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.114318`
+    - `C` ⇒ `0.655823`
+    - `O` ⇒ `0.092183`
+    - `Mg` ⇒ `0.134792`
+    - `Ca` ⇒ `0.002883`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function M3_Wax()
     mat = Material("m3_wax")
@@ -2742,7 +4814,19 @@ end
 """
     Magnesium_Carbonate()
 
-NIST material: MAGNESIUM CARBONATE
+Build the predefined NIST material **MAGNESIUM CARBONATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.958` g/cm³
+- Mean excitation energy ``I``: `118` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.142455`
+    - `O` ⇒ `0.569278`
+    - `Mg` ⇒ `0.288267`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Magnesium_Carbonate()
     mat = Material("magnesium_carbonate")
@@ -2757,7 +4841,18 @@ end
 """
     Magnesium_Fluoride()
 
-NIST material: MAGNESIUM FLUORIDE
+Build the predefined NIST material **MAGNESIUM FLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3` g/cm³
+- Mean excitation energy ``I``: `134.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `F` ⇒ `0.609883`
+    - `Mg` ⇒ `0.390117`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Magnesium_Fluoride()
     mat = Material("magnesium_fluoride")
@@ -2771,7 +4866,18 @@ end
 """
     Magnesium_Oxide()
 
-NIST material: MAGNESIUM OXIDE
+Build the predefined NIST material **MAGNESIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.58` g/cm³
+- Mean excitation energy ``I``: `143.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.396964`
+    - `Mg` ⇒ `0.603036`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Magnesium_Oxide()
     mat = Material("magnesium_oxide")
@@ -2785,7 +4891,19 @@ end
 """
     Magnesium_Tetraborate()
 
-NIST material: MAGNESIUM TETRABORATE
+Build the predefined NIST material **MAGNESIUM TETRABORATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.53` g/cm³
+- Mean excitation energy ``I``: `108.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `B` ⇒ `0.240837`
+    - `O` ⇒ `0.623790`
+    - `Mg` ⇒ `0.135373`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Magnesium_Tetraborate()
     mat = Material("magnesium_tetraborate")
@@ -2800,7 +4918,18 @@ end
 """
     Mercuric_Iodide()
 
-NIST material: MERCURIC IODIDE
+Build the predefined NIST material **MERCURIC IODIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.36` g/cm³
+- Mean excitation energy ``I``: `684.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `I` ⇒ `0.558560`
+    - `Hg` ⇒ `0.441440`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Mercuric_Iodide()
     mat = Material("mercuric_iodide")
@@ -2814,7 +4943,18 @@ end
 """
     Methane()
 
-NIST material: METHANE
+Build the predefined NIST material **METHANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.000667151` g/cm³
+- Mean excitation energy ``I``: `41.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.251306`
+    - `C` ⇒ `0.748694`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Methane()
     mat = Material("methane")
@@ -2828,7 +4968,19 @@ end
 """
     Methanol()
 
-NIST material: METHANOL
+Build the predefined NIST material **METHANOL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.7914` g/cm³
+- Mean excitation energy ``I``: `67.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.125822`
+    - `C` ⇒ `0.374852`
+    - `O` ⇒ `0.499326`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Methanol()
     mat = Material("methanol")
@@ -2843,7 +4995,21 @@ end
 """
     Mix_D_Wax()
 
-NIST material: MIX D WAX
+Build the predefined NIST material **MIX D WAX** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.99` g/cm³
+- Mean excitation energy ``I``: `60.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.134040`
+    - `C` ⇒ `0.777960`
+    - `O` ⇒ `0.035020`
+    - `Mg` ⇒ `0.038594`
+    - `Ti` ⇒ `0.014386`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Mix_D_Wax()
     mat = Material("mix_d_wax")
@@ -2860,7 +5026,22 @@ end
 """
     Ms20_Tissue_Substitute()
 
-NIST material: MS20 TISSUE SUBSTITUTE
+Build the predefined NIST material **MS20 TISSUE SUBSTITUTE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1` g/cm³
+- Mean excitation energy ``I``: `75.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.081192`
+    - `C` ⇒ `0.583442`
+    - `N` ⇒ `0.017798`
+    - `O` ⇒ `0.186381`
+    - `Mg` ⇒ `0.130287`
+    - `Cl` ⇒ `0.000900`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Ms20_Tissue_Substitute()
     mat = Material("ms20_tissue_substitute")
@@ -2878,7 +5059,29 @@ end
 """
     Muscle_Skeletal_Icrp()
 
-NIST material: MUSCLE, SKELETAL (ICRP)
+Build the predefined NIST material **MUSCLE, SKELETAL (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.04` g/cm³
+- Mean excitation energy ``I``: `75.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.100637`
+    - `C` ⇒ `0.107830`
+    - `N` ⇒ `0.027680`
+    - `O` ⇒ `0.754773`
+    - `Na` ⇒ `0.000750`
+    - `Mg` ⇒ `0.000190`
+    - `P` ⇒ `0.001800`
+    - `S` ⇒ `0.002410`
+    - `Cl` ⇒ `0.000790`
+    - `K` ⇒ `0.003020`
+    - `Ca` ⇒ `0.000030`
+    - `Fe` ⇒ `0.000040`
+    - `Zn` ⇒ `0.000050`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Muscle_Skeletal_Icrp()
     mat = Material("muscle_skeletal_icrp")
@@ -2903,7 +5106,25 @@ end
 """
     Muscle_Striated_Icru()
 
-NIST material: MUSCLE, STRIATED (ICRU)
+Build the predefined NIST material **MUSCLE, STRIATED (ICRU)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.04` g/cm³
+- Mean excitation energy ``I``: `74.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101997`
+    - `C` ⇒ `0.123000`
+    - `N` ⇒ `0.035000`
+    - `O` ⇒ `0.729003`
+    - `Na` ⇒ `0.000800`
+    - `Mg` ⇒ `0.000200`
+    - `P` ⇒ `0.002000`
+    - `S` ⇒ `0.005000`
+    - `K` ⇒ `0.003000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Muscle_Striated_Icru()
     mat = Material("muscle_striated_icru")
@@ -2924,7 +5145,21 @@ end
 """
     Muscle_Equivalent_Liquid_With_Sucrose()
 
-NIST material: MUSCLE-EQUIVALENT LIQUID, WITH SUCROSE
+Build the predefined NIST material **MUSCLE-EQUIVALENT LIQUID, WITH SUCROSE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.11` g/cm³
+- Mean excitation energy ``I``: `74.3` eV
+- State of matter: `liquid`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.098234`
+    - `C` ⇒ `0.156214`
+    - `N` ⇒ `0.035451`
+    - `O` ⇒ `0.710100`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Muscle_Equivalent_Liquid_With_Sucrose()
     mat = Material("muscle_equivalent_liquid_with_sucrose")
@@ -2941,7 +5176,21 @@ end
 """
     Muscle_Equivalent_Liquid_Without_Sucrose()
 
-NIST material: MUSCLE-EQUIVALENT LIQUID, WITHOUT SUCROSE
+Build the predefined NIST material **MUSCLE-EQUIVALENT LIQUID, WITHOUT SUCROSE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.07` g/cm³
+- Mean excitation energy ``I``: `74.2` eV
+- State of matter: `liquid`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101969`
+    - `C` ⇒ `0.120058`
+    - `N` ⇒ `0.035451`
+    - `O` ⇒ `0.742522`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Muscle_Equivalent_Liquid_Without_Sucrose()
     mat = Material("muscle_equivalent_liquid_without_sucrose")
@@ -2958,7 +5207,18 @@ end
 """
     Naphthalene()
 
-NIST material: NAPHTHALENE
+Build the predefined NIST material **NAPHTHALENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.145` g/cm³
+- Mean excitation energy ``I``: `68.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.062909`
+    - `C` ⇒ `0.937091`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Naphthalene()
     mat = Material("naphthalene")
@@ -2972,7 +5232,20 @@ end
 """
     Nitrobenzene()
 
-NIST material: NITROBENZENE
+Build the predefined NIST material **NITROBENZENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.19867` g/cm³
+- Mean excitation energy ``I``: `75.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.040935`
+    - `C` ⇒ `0.585374`
+    - `N` ⇒ `0.113773`
+    - `O` ⇒ `0.259918`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nitrobenzene()
     mat = Material("nitrobenzene")
@@ -2988,7 +5261,18 @@ end
 """
     Nitrous_Oxide()
 
-NIST material: NITROUS OXIDE
+Build the predefined NIST material **NITROUS OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00183094` g/cm³
+- Mean excitation energy ``I``: `84.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `N` ⇒ `0.636483`
+    - `O` ⇒ `0.363517`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nitrous_Oxide()
     mat = Material("nitrous_oxide")
@@ -3002,7 +5286,20 @@ end
 """
     Nylon_Du_Pont_Elvamide_8062()
 
-NIST material: NYLON, DU PONT ELVAMIDE 8062
+Build the predefined NIST material **NYLON, DU PONT ELVAMIDE 8062** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.08` g/cm³
+- Mean excitation energy ``I``: `64.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.103509`
+    - `C` ⇒ `0.648415`
+    - `N` ⇒ `0.099536`
+    - `O` ⇒ `0.148539`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nylon_Du_Pont_Elvamide_8062()
     mat = Material("nylon_du_pont_elvamide_8062")
@@ -3018,7 +5315,20 @@ end
 """
     Nylon_Type_6_And_Type_6_6()
 
-NIST material: NYLON, TYPE 6 AND TYPE 6/6
+Build the predefined NIST material **NYLON, TYPE 6 AND TYPE 6/6** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.14` g/cm³
+- Mean excitation energy ``I``: `63.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.097976`
+    - `C` ⇒ `0.636856`
+    - `N` ⇒ `0.123779`
+    - `O` ⇒ `0.141389`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nylon_Type_6_And_Type_6_6()
     mat = Material("nylon_type_6_and_type_6_6")
@@ -3034,7 +5344,20 @@ end
 """
     Nylon_Type_6_10()
 
-NIST material: NYLON, TYPE 6/10
+Build the predefined NIST material **NYLON, TYPE 6/10** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.14` g/cm³
+- Mean excitation energy ``I``: `63.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.107062`
+    - `C` ⇒ `0.680449`
+    - `N` ⇒ `0.099189`
+    - `O` ⇒ `0.113300`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nylon_Type_6_10()
     mat = Material("nylon_type_6_10")
@@ -3050,7 +5373,20 @@ end
 """
     Nylon_Type_11_Rilsan()
 
-NIST material: NYLON, TYPE 11 (RILSAN)
+Build the predefined NIST material **NYLON, TYPE 11 (RILSAN)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.425` g/cm³
+- Mean excitation energy ``I``: `61.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.115476`
+    - `C` ⇒ `0.720819`
+    - `N` ⇒ `0.076417`
+    - `O` ⇒ `0.087289`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Nylon_Type_11_Rilsan()
     mat = Material("nylon_type_11_rilsan")
@@ -3066,7 +5402,19 @@ end
 """
     Octane_Liquid()
 
-NIST material: OCTANE, LIQUID
+Build the predefined NIST material **OCTANE, LIQUID** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.7026` g/cm³
+- Mean excitation energy ``I``: `54.7` eV
+- State of matter: `liquid`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.158821`
+    - `C` ⇒ `0.841179`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Octane_Liquid()
     mat = Material("octane_liquid")
@@ -3081,7 +5429,18 @@ end
 """
     Paraffin_Wax()
 
-NIST material: PARAFFIN WAX
+Build the predefined NIST material **PARAFFIN WAX** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.93` g/cm³
+- Mean excitation energy ``I``: `55.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.148605`
+    - `C` ⇒ `0.851395`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Paraffin_Wax()
     mat = Material("paraffin_wax")
@@ -3095,7 +5454,18 @@ end
 """
     N_Pentane()
 
-NIST material: N-PENTANE
+Build the predefined NIST material **N-PENTANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.6262` g/cm³
+- Mean excitation energy ``I``: `53.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.167635`
+    - `C` ⇒ `0.832365`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function N_Pentane()
     mat = Material("n_pentane")
@@ -3109,7 +5479,24 @@ end
 """
     Photographic_Emulsion()
 
-NIST material: PHOTOGRAPHIC EMULSION
+Build the predefined NIST material **PHOTOGRAPHIC EMULSION** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.815` g/cm³
+- Mean excitation energy ``I``: `331` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.014100`
+    - `C` ⇒ `0.072261`
+    - `N` ⇒ `0.019320`
+    - `O` ⇒ `0.066101`
+    - `S` ⇒ `0.001890`
+    - `Br` ⇒ `0.349103`
+    - `Ag` ⇒ `0.474105`
+    - `I` ⇒ `0.003120`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Photographic_Emulsion()
     mat = Material("photographic_emulsion")
@@ -3129,7 +5516,18 @@ end
 """
     Plastic_Scintillator_Vinyltoluene_Based()
 
-NIST material: PLASTIC SCINTILLATOR (VINYLTOLUENE BASED)
+Build the predefined NIST material **PLASTIC SCINTILLATOR (VINYLTOLUENE BASED)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.032` g/cm³
+- Mean excitation energy ``I``: `64.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.085000`
+    - `C` ⇒ `0.915000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Plastic_Scintillator_Vinyltoluene_Based()
     mat = Material("plastic_scintillator_vinyltoluene_based")
@@ -3143,7 +5541,18 @@ end
 """
     Plutonium_Dioxide()
 
-NIST material: PLUTONIUM DIOXIDE
+Build the predefined NIST material **PLUTONIUM DIOXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `11.46` g/cm³
+- Mean excitation energy ``I``: `746.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.118055`
+    - `Pu` ⇒ `0.881945`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Plutonium_Dioxide()
     mat = Material("plutonium_dioxide")
@@ -3157,7 +5566,19 @@ end
 """
     Polyacrylonitrile()
 
-NIST material: POLYACRYLONITRILE
+Build the predefined NIST material **POLYACRYLONITRILE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.17` g/cm³
+- Mean excitation energy ``I``: `69.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.056983`
+    - `C` ⇒ `0.679056`
+    - `N` ⇒ `0.263962`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyacrylonitrile()
     mat = Material("polyacrylonitrile")
@@ -3172,7 +5593,19 @@ end
 """
     Polycarbonate_Makrolon_Lexan()
 
-NIST material: POLYCARBONATE (MAKROLON, LEXAN)
+Build the predefined NIST material **POLYCARBONATE (MAKROLON, LEXAN)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.2` g/cm³
+- Mean excitation energy ``I``: `73.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.055491`
+    - `C` ⇒ `0.755751`
+    - `O` ⇒ `0.188758`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polycarbonate_Makrolon_Lexan()
     mat = Material("polycarbonate_makrolon_lexan")
@@ -3187,7 +5620,19 @@ end
 """
     Polychlorostyrene()
 
-NIST material: POLYCHLOROSTYRENE
+Build the predefined NIST material **POLYCHLOROSTYRENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.3` g/cm³
+- Mean excitation energy ``I``: `81.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.061869`
+    - `C` ⇒ `0.696325`
+    - `Cl` ⇒ `0.241806`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polychlorostyrene()
     mat = Material("polychlorostyrene")
@@ -3202,7 +5647,18 @@ end
 """
     Polyethylene()
 
-NIST material: POLYETHYLENE
+Build the predefined NIST material **POLYETHYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.94` g/cm³
+- Mean excitation energy ``I``: `57.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.143711`
+    - `C` ⇒ `0.856289`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyethylene()
     mat = Material("polyethylene")
@@ -3216,7 +5672,19 @@ end
 """
     Polyethylene_Terephthalate_Mylar()
 
-NIST material: POLYETHYLENE TEREPHTHALATE (MYLAR)
+Build the predefined NIST material **POLYETHYLENE TEREPHTHALATE (MYLAR)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.4` g/cm³
+- Mean excitation energy ``I``: `78.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.041959`
+    - `C` ⇒ `0.625017`
+    - `O` ⇒ `0.333025`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyethylene_Terephthalate_Mylar()
     mat = Material("polyethylene_terephthalate_mylar")
@@ -3231,7 +5699,19 @@ end
 """
     Polymethyl_Methacralate_Lucite_Perspex_Plexiglass()
 
-NIST material: POLYMETHYL METHACRALATE (LUCITE, PERSPEX, PLEXIGLASS)
+Build the predefined NIST material **POLYMETHYL METHACRALATE (LUCITE, PERSPEX, PLEXIGLASS)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.19` g/cm³
+- Mean excitation energy ``I``: `74` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.080538`
+    - `C` ⇒ `0.599848`
+    - `O` ⇒ `0.319614`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polymethyl_Methacralate_Lucite_Perspex_Plexiglass()
     mat = Material("polymethyl_methacralate_lucite_perspex_plexiglass")
@@ -3246,7 +5726,19 @@ end
 """
     Polyoxymethylene()
 
-NIST material: POLYOXYMETHYLENE
+Build the predefined NIST material **POLYOXYMETHYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.425` g/cm³
+- Mean excitation energy ``I``: `77.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.067135`
+    - `C` ⇒ `0.400017`
+    - `O` ⇒ `0.532848`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyoxymethylene()
     mat = Material("polyoxymethylene")
@@ -3261,7 +5753,18 @@ end
 """
     Polypropylene()
 
-NIST material: POLYPROPYLENE
+Build the predefined NIST material **POLYPROPYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.9` g/cm³
+- Mean excitation energy ``I``: `56.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.143711`
+    - `C` ⇒ `0.856289`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polypropylene()
     mat = Material("polypropylene")
@@ -3275,7 +5778,18 @@ end
 """
     Polystyrene()
 
-NIST material: POLYSTYRENE
+Build the predefined NIST material **POLYSTYRENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.06` g/cm³
+- Mean excitation energy ``I``: `68.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.077418`
+    - `C` ⇒ `0.922582`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polystyrene()
     mat = Material("polystyrene")
@@ -3289,7 +5803,18 @@ end
 """
     Polytetrafluoroethylene_Teflon()
 
-NIST material: POLYTETRAFLUOROETHYLENE (TEFLON)
+Build the predefined NIST material **POLYTETRAFLUOROETHYLENE (TEFLON)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.2` g/cm³
+- Mean excitation energy ``I``: `99.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.240183`
+    - `F` ⇒ `0.759817`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polytetrafluoroethylene_Teflon()
     mat = Material("polytetrafluoroethylene_teflon")
@@ -3303,7 +5828,19 @@ end
 """
     Polytrifluorochloroethylene()
 
-NIST material: POLYTRIFLUOROCHLOROETHYLENE
+Build the predefined NIST material **POLYTRIFLUOROCHLOROETHYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.1` g/cm³
+- Mean excitation energy ``I``: `120.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.206250`
+    - `F` ⇒ `0.489354`
+    - `Cl` ⇒ `0.304395`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polytrifluorochloroethylene()
     mat = Material("polytrifluorochloroethylene")
@@ -3318,7 +5855,19 @@ end
 """
     Polyvinyl_Acetate()
 
-NIST material: POLYVINYL ACETATE
+Build the predefined NIST material **POLYVINYL ACETATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.19` g/cm³
+- Mean excitation energy ``I``: `73.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.070245`
+    - `C` ⇒ `0.558066`
+    - `O` ⇒ `0.371689`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinyl_Acetate()
     mat = Material("polyvinyl_acetate")
@@ -3333,7 +5882,19 @@ end
 """
     Polyvinyl_Alcohol()
 
-NIST material: POLYVINYL ALCOHOL
+Build the predefined NIST material **POLYVINYL ALCOHOL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.3` g/cm³
+- Mean excitation energy ``I``: `69.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.091517`
+    - `C` ⇒ `0.545298`
+    - `O` ⇒ `0.363185`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinyl_Alcohol()
     mat = Material("polyvinyl_alcohol")
@@ -3348,7 +5909,19 @@ end
 """
     Polyvinyl_Butyral()
 
-NIST material: POLYVINYL BUTYRAL
+Build the predefined NIST material **POLYVINYL BUTYRAL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.12` g/cm³
+- Mean excitation energy ``I``: `67.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.092802`
+    - `C` ⇒ `0.680561`
+    - `O` ⇒ `0.226637`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinyl_Butyral()
     mat = Material("polyvinyl_butyral")
@@ -3363,7 +5936,19 @@ end
 """
     Polyvinyl_Chloride()
 
-NIST material: POLYVINYL CHLORIDE
+Build the predefined NIST material **POLYVINYL CHLORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.3` g/cm³
+- Mean excitation energy ``I``: `108.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.048380`
+    - `C` ⇒ `0.384360`
+    - `Cl` ⇒ `0.567260`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinyl_Chloride()
     mat = Material("polyvinyl_chloride")
@@ -3378,7 +5963,19 @@ end
 """
     Polyvinylidene_Chloride_Saran()
 
-NIST material: POLYVINYLIDENE CHLORIDE, SARAN
+Build the predefined NIST material **POLYVINYLIDENE CHLORIDE, SARAN** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.7` g/cm³
+- Mean excitation energy ``I``: `134.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.020793`
+    - `C` ⇒ `0.247793`
+    - `Cl` ⇒ `0.731413`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinylidene_Chloride_Saran()
     mat = Material("polyvinylidene_chloride_saran")
@@ -3393,7 +5990,19 @@ end
 """
     Polyvinylidene_Fluoride()
 
-NIST material: POLYVINYLIDENE FLUORIDE
+Build the predefined NIST material **POLYVINYLIDENE FLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.76` g/cm³
+- Mean excitation energy ``I``: `88.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.031480`
+    - `C` ⇒ `0.375141`
+    - `F` ⇒ `0.593379`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinylidene_Fluoride()
     mat = Material("polyvinylidene_fluoride")
@@ -3408,7 +6017,20 @@ end
 """
     Polyvinyl_Pyrrolidone()
 
-NIST material: POLYVINYL PYRROLIDONE
+Build the predefined NIST material **POLYVINYL PYRROLIDONE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.25` g/cm³
+- Mean excitation energy ``I``: `67.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.081616`
+    - `C` ⇒ `0.648407`
+    - `N` ⇒ `0.126024`
+    - `O` ⇒ `0.143953`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Polyvinyl_Pyrrolidone()
     mat = Material("polyvinyl_pyrrolidone")
@@ -3424,7 +6046,18 @@ end
 """
     Potassium_Iodide()
 
-NIST material: POTASSIUM IODIDE
+Build the predefined NIST material **POTASSIUM IODIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.13` g/cm³
+- Mean excitation energy ``I``: `431.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `K` ⇒ `0.235528`
+    - `I` ⇒ `0.764472`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Potassium_Iodide()
     mat = Material("potassium_iodide")
@@ -3438,7 +6071,18 @@ end
 """
     Potassium_Oxide()
 
-NIST material: POTASSIUM OXIDE
+Build the predefined NIST material **POTASSIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.32` g/cm³
+- Mean excitation energy ``I``: `189.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.169852`
+    - `K` ⇒ `0.830148`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Potassium_Oxide()
     mat = Material("potassium_oxide")
@@ -3452,7 +6096,18 @@ end
 """
     Propane()
 
-NIST material: PROPANE
+Build the predefined NIST material **PROPANE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00187939` g/cm³
+- Mean excitation energy ``I``: `47.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.182855`
+    - `C` ⇒ `0.817145`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Propane()
     mat = Material("propane")
@@ -3466,7 +6121,19 @@ end
 """
     Propane_Liquid()
 
-NIST material: PROPANE, LIQUID
+Build the predefined NIST material **PROPANE, LIQUID** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.43` g/cm³
+- Mean excitation energy ``I``: `52` eV
+- State of matter: `liquid`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.182855`
+    - `C` ⇒ `0.817145`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Propane_Liquid()
     mat = Material("propane_liquid")
@@ -3481,7 +6148,19 @@ end
 """
     N_Propyl_Alcohol()
 
-NIST material: N-PROPYL ALCOHOL
+Build the predefined NIST material **N-PROPYL ALCOHOL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.8035` g/cm³
+- Mean excitation energy ``I``: `61.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.134173`
+    - `C` ⇒ `0.599595`
+    - `O` ⇒ `0.266232`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function N_Propyl_Alcohol()
     mat = Material("n_propyl_alcohol")
@@ -3496,7 +6175,19 @@ end
 """
     Pyridine()
 
-NIST material: PYRIDINE
+Build the predefined NIST material **PYRIDINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.9819` g/cm³
+- Mean excitation energy ``I``: `66.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.063710`
+    - `C` ⇒ `0.759217`
+    - `N` ⇒ `0.177073`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Pyridine()
     mat = Material("pyridine")
@@ -3511,7 +6202,18 @@ end
 """
     Rubber_Butyl()
 
-NIST material: RUBBER, BUTYL
+Build the predefined NIST material **RUBBER, BUTYL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.92` g/cm³
+- Mean excitation energy ``I``: `56.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.143711`
+    - `C` ⇒ `0.856289`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Rubber_Butyl()
     mat = Material("rubber_butyl")
@@ -3525,7 +6227,18 @@ end
 """
     Rubber_Natural()
 
-NIST material: RUBBER, NATURAL
+Build the predefined NIST material **RUBBER, NATURAL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.92` g/cm³
+- Mean excitation energy ``I``: `59.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.118371`
+    - `C` ⇒ `0.881629`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Rubber_Natural()
     mat = Material("rubber_natural")
@@ -3539,7 +6252,19 @@ end
 """
     Rubber_Neoprene()
 
-NIST material: RUBBER, NEOPRENE
+Build the predefined NIST material **RUBBER, NEOPRENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.23` g/cm³
+- Mean excitation energy ``I``: `93` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.056920`
+    - `C` ⇒ `0.542646`
+    - `Cl` ⇒ `0.400434`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Rubber_Neoprene()
     mat = Material("rubber_neoprene")
@@ -3554,7 +6279,18 @@ end
 """
     Silicon_Dioxide()
 
-NIST material: SILICON DIOXIDE
+Build the predefined NIST material **SILICON DIOXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.32` g/cm³
+- Mean excitation energy ``I``: `139.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.532565`
+    - `Si` ⇒ `0.467435`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silicon_Dioxide()
     mat = Material("silicon_dioxide")
@@ -3568,7 +6304,18 @@ end
 """
     Silver_Bromide()
 
-NIST material: SILVER BROMIDE
+Build the predefined NIST material **SILVER BROMIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.473` g/cm³
+- Mean excitation energy ``I``: `486.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Br` ⇒ `0.425537`
+    - `Ag` ⇒ `0.574463`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silver_Bromide()
     mat = Material("silver_bromide")
@@ -3582,7 +6329,18 @@ end
 """
     Silver_Chloride()
 
-NIST material: SILVER CHLORIDE
+Build the predefined NIST material **SILVER CHLORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `5.56` g/cm³
+- Mean excitation energy ``I``: `398.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Cl` ⇒ `0.247368`
+    - `Ag` ⇒ `0.752632`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silver_Chloride()
     mat = Material("silver_chloride")
@@ -3596,7 +6354,19 @@ end
 """
     Silver_Halides_In_Photographic_Emulsion()
 
-NIST material: SILVER HALIDES IN PHOTOGRAPHIC EMULSION
+Build the predefined NIST material **SILVER HALIDES IN PHOTOGRAPHIC EMULSION** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.47` g/cm³
+- Mean excitation energy ``I``: `487.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Br` ⇒ `0.422895`
+    - `Ag` ⇒ `0.573748`
+    - `I` ⇒ `0.003357`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silver_Halides_In_Photographic_Emulsion()
     mat = Material("silver_halides_in_photographic_emulsion")
@@ -3611,7 +6381,18 @@ end
 """
     Silver_Iodide()
 
-NIST material: SILVER IODIDE
+Build the predefined NIST material **SILVER IODIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `6.01` g/cm³
+- Mean excitation energy ``I``: `543.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Ag` ⇒ `0.459458`
+    - `I` ⇒ `0.540542`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Silver_Iodide()
     mat = Material("silver_iodide")
@@ -3625,7 +6406,29 @@ end
 """
     Skin_Icrp()
 
-NIST material: SKIN (ICRP)
+Build the predefined NIST material **SKIN (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.1` g/cm³
+- Mean excitation energy ``I``: `72.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.100588`
+    - `C` ⇒ `0.228250`
+    - `N` ⇒ `0.046420`
+    - `O` ⇒ `0.619002`
+    - `Na` ⇒ `0.000070`
+    - `Mg` ⇒ `0.000060`
+    - `P` ⇒ `0.000330`
+    - `S` ⇒ `0.001590`
+    - `Cl` ⇒ `0.002670`
+    - `K` ⇒ `0.000850`
+    - `Ca` ⇒ `0.000150`
+    - `Fe` ⇒ `0.000010`
+    - `Zn` ⇒ `0.000010`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Skin_Icrp()
     mat = Material("skin_icrp")
@@ -3650,7 +6453,19 @@ end
 """
     Sodium_Carbonate()
 
-NIST material: SODIUM CARBONATE
+Build the predefined NIST material **SODIUM CARBONATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.532` g/cm³
+- Mean excitation energy ``I``: `125` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.113323`
+    - `O` ⇒ `0.452861`
+    - `Na` ⇒ `0.433815`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sodium_Carbonate()
     mat = Material("sodium_carbonate")
@@ -3665,7 +6480,18 @@ end
 """
     Sodium_Iodide()
 
-NIST material: SODIUM IODIDE
+Build the predefined NIST material **SODIUM IODIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `3.667` g/cm³
+- Mean excitation energy ``I``: `452` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Na` ⇒ `0.153373`
+    - `I` ⇒ `0.846627`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sodium_Iodide()
     mat = Material("sodium_iodide")
@@ -3679,7 +6505,18 @@ end
 """
     Sodium_Monoxide()
 
-NIST material: SODIUM MONOXIDE
+Build the predefined NIST material **SODIUM MONOXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.27` g/cm³
+- Mean excitation energy ``I``: `148.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.258143`
+    - `Na` ⇒ `0.741857`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sodium_Monoxide()
     mat = Material("sodium_monoxide")
@@ -3693,7 +6530,19 @@ end
 """
     Sodium_Nitrate()
 
-NIST material: SODIUM NITRATE
+Build the predefined NIST material **SODIUM NITRATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.261` g/cm³
+- Mean excitation energy ``I``: `114.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `N` ⇒ `0.164795`
+    - `O` ⇒ `0.564720`
+    - `Na` ⇒ `0.270485`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sodium_Nitrate()
     mat = Material("sodium_nitrate")
@@ -3708,7 +6557,18 @@ end
 """
     Stilbene()
 
-NIST material: STILBENE
+Build the predefined NIST material **STILBENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.9707` g/cm³
+- Mean excitation energy ``I``: `67.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.067101`
+    - `C` ⇒ `0.932899`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Stilbene()
     mat = Material("stilbene")
@@ -3722,7 +6582,19 @@ end
 """
     Sucrose()
 
-NIST material: SUCROSE
+Build the predefined NIST material **SUCROSE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.5805` g/cm³
+- Mean excitation energy ``I``: `77.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.064779`
+    - `C` ⇒ `0.421070`
+    - `O` ⇒ `0.514151`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Sucrose()
     mat = Material("sucrose")
@@ -3737,7 +6609,18 @@ end
 """
     Terphenyl()
 
-NIST material: TERPHENYL
+Build the predefined NIST material **TERPHENYL** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.234` g/cm³
+- Mean excitation energy ``I``: `71.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.044543`
+    - `C` ⇒ `0.955457`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Terphenyl()
     mat = Material("terphenyl")
@@ -3751,7 +6634,29 @@ end
 """
     Testes_Icrp()
 
-NIST material: TESTES (ICRP)
+Build the predefined NIST material **TESTES (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.04` g/cm³
+- Mean excitation energy ``I``: `75` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.104166`
+    - `C` ⇒ `0.092270`
+    - `N` ⇒ `0.019940`
+    - `O` ⇒ `0.773884`
+    - `Na` ⇒ `0.002260`
+    - `Mg` ⇒ `0.000110`
+    - `P` ⇒ `0.001250`
+    - `S` ⇒ `0.001460`
+    - `Cl` ⇒ `0.002440`
+    - `K` ⇒ `0.002080`
+    - `Ca` ⇒ `0.000100`
+    - `Fe` ⇒ `0.000020`
+    - `Zn` ⇒ `0.000020`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Testes_Icrp()
     mat = Material("testes_icrp")
@@ -3776,7 +6681,18 @@ end
 """
     Tetrachloroethylene()
 
-NIST material: TETRACHLOROETHYLENE
+Build the predefined NIST material **TETRACHLOROETHYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.625` g/cm³
+- Mean excitation energy ``I``: `159.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.144856`
+    - `Cl` ⇒ `0.855144`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tetrachloroethylene()
     mat = Material("tetrachloroethylene")
@@ -3790,7 +6706,18 @@ end
 """
     Thallium_Chloride()
 
-NIST material: THALLIUM CHLORIDE
+Build the predefined NIST material **THALLIUM CHLORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `7.004` g/cm³
+- Mean excitation energy ``I``: `690.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `Cl` ⇒ `0.147822`
+    - `Tl` ⇒ `0.852178`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Thallium_Chloride()
     mat = Material("thallium_chloride")
@@ -3804,7 +6731,29 @@ end
 """
     Tissue_Soft_Icrp()
 
-NIST material: TISSUE, SOFT (ICRP)
+Build the predefined NIST material **TISSUE, SOFT (ICRP)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1` g/cm³
+- Mean excitation energy ``I``: `72.3` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.104472`
+    - `C` ⇒ `0.232190`
+    - `N` ⇒ `0.024880`
+    - `O` ⇒ `0.630238`
+    - `Na` ⇒ `0.001130`
+    - `Mg` ⇒ `0.000130`
+    - `P` ⇒ `0.001330`
+    - `S` ⇒ `0.001990`
+    - `Cl` ⇒ `0.001340`
+    - `K` ⇒ `0.001990`
+    - `Ca` ⇒ `0.000230`
+    - `Fe` ⇒ `0.000050`
+    - `Zn` ⇒ `0.000030`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tissue_Soft_Icrp()
     mat = Material("tissue_soft_icrp")
@@ -3829,7 +6778,20 @@ end
 """
     Tissue_Soft_Icru_Four_Component()
 
-NIST material: TISSUE, SOFT (ICRU FOUR-COMPONENT)
+Build the predefined NIST material **TISSUE, SOFT (ICRU FOUR-COMPONENT)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1` g/cm³
+- Mean excitation energy ``I``: `74.9` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101172`
+    - `C` ⇒ `0.111000`
+    - `N` ⇒ `0.026000`
+    - `O` ⇒ `0.761828`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tissue_Soft_Icru_Four_Component()
     mat = Material("tissue_soft_icru_four_component")
@@ -3845,7 +6807,21 @@ end
 """
     Tissue_Equivalent_Gas_Methane_Based()
 
-NIST material: TISSUE-EQUIVALENT GAS (METHANE BASED)
+Build the predefined NIST material **TISSUE-EQUIVALENT GAS (METHANE BASED)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00106409` g/cm³
+- Mean excitation energy ``I``: `61.2` eV
+- State of matter: `gaz`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.101869`
+    - `C` ⇒ `0.456179`
+    - `N` ⇒ `0.035172`
+    - `O` ⇒ `0.406780`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tissue_Equivalent_Gas_Methane_Based()
     mat = Material("tissue_equivalent_gas_methane_based")
@@ -3862,7 +6838,21 @@ end
 """
     Tissue_Equivalent_Gas_Propane_Based()
 
-NIST material: TISSUE-EQUIVALENT GAS (PROPANE BASED)
+Build the predefined NIST material **TISSUE-EQUIVALENT GAS (PROPANE BASED)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.00182628` g/cm³
+- Mean excitation energy ``I``: `59.5` eV
+- State of matter: `gaz`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.102672`
+    - `C` ⇒ `0.568940`
+    - `N` ⇒ `0.035022`
+    - `O` ⇒ `0.293366`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tissue_Equivalent_Gas_Propane_Based()
     mat = Material("tissue_equivalent_gas_propane_based")
@@ -3879,7 +6869,18 @@ end
 """
     Titanium_Dioxide()
 
-NIST material: TITANIUM DIOXIDE
+Build the predefined NIST material **TITANIUM DIOXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `4.26` g/cm³
+- Mean excitation energy ``I``: `179.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.400592`
+    - `Ti` ⇒ `0.599408`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Titanium_Dioxide()
     mat = Material("titanium_dioxide")
@@ -3893,7 +6894,18 @@ end
 """
     Toluene()
 
-NIST material: TOLUENE
+Build the predefined NIST material **TOLUENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.8669` g/cm³
+- Mean excitation energy ``I``: `62.5` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.087510`
+    - `C` ⇒ `0.912490`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Toluene()
     mat = Material("toluene")
@@ -3907,7 +6919,19 @@ end
 """
     Trichloroethylene()
 
-NIST material: TRICHLOROETHYLENE
+Build the predefined NIST material **TRICHLOROETHYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.46` g/cm³
+- Mean excitation energy ``I``: `148.1` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.007671`
+    - `C` ⇒ `0.182831`
+    - `Cl` ⇒ `0.809498`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Trichloroethylene()
     mat = Material("trichloroethylene")
@@ -3922,7 +6946,20 @@ end
 """
     Triethyl_Phosphate()
 
-NIST material: TRIETHYL PHOSPHATE
+Build the predefined NIST material **TRIETHYL PHOSPHATE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.07` g/cm³
+- Mean excitation energy ``I``: `81.2` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.082998`
+    - `C` ⇒ `0.395628`
+    - `O` ⇒ `0.351334`
+    - `P` ⇒ `0.170040`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Triethyl_Phosphate()
     mat = Material("triethyl_phosphate")
@@ -3938,7 +6975,18 @@ end
 """
     Tungsten_Hexafluoride()
 
-NIST material: TUNGSTEN HEXAFLUORIDE
+Build the predefined NIST material **TUNGSTEN HEXAFLUORIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `2.4` g/cm³
+- Mean excitation energy ``I``: `354.4` eV
+- Composition (element ⇒ mass weight fraction):
+    - `F` ⇒ `0.382723`
+    - `W` ⇒ `0.617277`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Tungsten_Hexafluoride()
     mat = Material("tungsten_hexafluoride")
@@ -3952,7 +7000,18 @@ end
 """
     Uranium_Dicarbide()
 
-NIST material: URANIUM DICARBIDE
+Build the predefined NIST material **URANIUM DICARBIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `11.28` g/cm³
+- Mean excitation energy ``I``: `752` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.091669`
+    - `U` ⇒ `0.908331`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Uranium_Dicarbide()
     mat = Material("uranium_dicarbide")
@@ -3966,7 +7025,18 @@ end
 """
     Uranium_Monocarbide()
 
-NIST material: URANIUM MONOCARBIDE
+Build the predefined NIST material **URANIUM MONOCARBIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `13.63` g/cm³
+- Mean excitation energy ``I``: `862` eV
+- Composition (element ⇒ mass weight fraction):
+    - `C` ⇒ `0.048036`
+    - `U` ⇒ `0.951964`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Uranium_Monocarbide()
     mat = Material("uranium_monocarbide")
@@ -3980,7 +7050,18 @@ end
 """
     Uranium_Oxide()
 
-NIST material: URANIUM OXIDE
+Build the predefined NIST material **URANIUM OXIDE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `10.96` g/cm³
+- Mean excitation energy ``I``: `720.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `O` ⇒ `0.118502`
+    - `U` ⇒ `0.881498`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Uranium_Oxide()
     mat = Material("uranium_oxide")
@@ -3994,7 +7075,20 @@ end
 """
     Urea()
 
-NIST material: UREA
+Build the predefined NIST material **UREA** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.323` g/cm³
+- Mean excitation energy ``I``: `72.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.067131`
+    - `C` ⇒ `0.199999`
+    - `N` ⇒ `0.466459`
+    - `O` ⇒ `0.266411`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Urea()
     mat = Material("urea")
@@ -4010,7 +7104,20 @@ end
 """
     Valine()
 
-NIST material: VALINE
+Build the predefined NIST material **VALINE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.23` g/cm³
+- Mean excitation energy ``I``: `67.7` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.094641`
+    - `C` ⇒ `0.512645`
+    - `N` ⇒ `0.119565`
+    - `O` ⇒ `0.273150`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Valine()
     mat = Material("valine")
@@ -4026,7 +7133,19 @@ end
 """
     Viton_Fluoroelastomer()
 
-NIST material: VITON FLUOROELASTOMER
+Build the predefined NIST material **VITON FLUOROELASTOMER** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.8` g/cm³
+- Mean excitation energy ``I``: `98.6` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.009417`
+    - `C` ⇒ `0.280555`
+    - `F` ⇒ `0.710028`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Viton_Fluoroelastomer()
     mat = Material("viton_fluoroelastomer")
@@ -4041,7 +7160,19 @@ end
 """
     Water()
 
-NIST material: WATER, LIQUID
+Build the predefined NIST material **WATER, LIQUID** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1` g/cm³
+- Mean excitation energy ``I``: `75` eV
+- State of matter: `liquid`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.111894`
+    - `O` ⇒ `0.888106`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Water()
     mat = Material("water")
@@ -4056,7 +7187,19 @@ end
 """
     Water_Vapor()
 
-NIST material: WATER VAPOR
+Build the predefined NIST material **WATER VAPOR** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.000756182` g/cm³
+- Mean excitation energy ``I``: `71.6` eV
+- State of matter: `gaz`
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.111894`
+    - `O` ⇒ `0.888106`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Water_Vapor()
     mat = Material("water_vapor")
@@ -4071,7 +7214,18 @@ end
 """
     Xylene()
 
-NIST material: XYLENE
+Build the predefined NIST material **XYLENE** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `0.87` g/cm³
+- Mean excitation energy ``I``: `61.8` eV
+- Composition (element ⇒ mass weight fraction):
+    - `H` ⇒ `0.094935`
+    - `C` ⇒ `0.905065`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Xylene()
     mat = Material("xylene")
@@ -4085,7 +7239,16 @@ end
 """
     Carbon_Graphite()
 
-NIST material: CARBON (GRAPHITE)
+Build the predefined NIST material **CARBON (GRAPHITE)** and return it as a ready-to-use
+`Material` object with the following preset properties:
+
+- Mass density: `1.7` g/cm³
+- Mean excitation energy ``I``: `78` eV
+- Composition (element ⇒ mass weight fraction): `C` ⇒ `1.000000`
+
+Any property can be overridden after construction (for instance with
+`set_density`, `set_mean_excitation_energy`, `set_state_of_matter` or
+`add_element`).
 """
 function Carbon_Graphite()
     mat = Material("carbon_graphite")
