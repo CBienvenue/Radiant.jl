@@ -40,7 +40,8 @@ function flux_1D_BFP(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},�
     
 # Initialization
 sx = sign(μ)
-if (sx == 0.0) sx = 1.0; μ = 1e-12 end
+isTangential = (abs(μ) ≤ 1e-10)
+if isTangential sx = 1.0; μ = 0.0 end
 hx = abs(μ)/Δx
 if isFC Nm = 𝒪x*𝒪E else Nm = 𝒪x+𝒪E-1 end
 𝒮 = zeros(Nm,Nm)
@@ -48,7 +49,7 @@ Q = zeros(Nm)
 𝚽n = Q
 
 # Adaptive weight calculations
-if isAdapt ωx,ωE = adaptive(𝒪x,𝒪E,ωx,ωE,hx,1/ΔE,sx,-1,𝚽x12,𝚽E12,Qn,Σt,isFC) end
+if isAdapt && !isTangential ωx,ωE = adaptive(𝒪x,𝒪E,ωx,ωE,hx,1/ΔE,sx,-1,𝚽x12,𝚽E12,Qn,Σt,isFC) end
 
 # Matrix of Legendre moment coefficients of the flux
 for ix in range(1,𝒪x), jx in range(1,𝒪x), iE in range(1,𝒪E), jE in range(1,𝒪E)
@@ -108,11 +109,13 @@ for jx in range(1,𝒪x), jE in range(1,𝒪E)
         j = 1 + (jE-1) + (jx-1)
         if jx > 1 j += 𝒪E-1 end
     end
-    if (jx == 1) 𝚽x12[jE] = ωx[1,jE,jE] * 𝚽x12[jE] end
-    if (jE == 1) 𝚽E12[jx] = ωE[1,jx,jx] * 𝚽E12[jx] end
-    for iE in range(1,𝒪E)
-        𝚽x12[jE] += C[jx] * sx^(jx-1) * ωx[jx+1,jE,iE] * 𝚽n[j]
+    if !isTangential
+        if (jx == 1) 𝚽x12[jE] = ωx[1,jE,jE] * 𝚽x12[jE] end
+        for iE in range(1,𝒪E)
+            𝚽x12[jE] += C[jx] * sx^(jx-1) * ωx[jx+1,jE,iE] * 𝚽n[j]
+        end
     end
+    if (jE == 1) 𝚽E12[jx] = ωE[1,jx,jx] * 𝚽E12[jx] end
     for ix in range(1,𝒪x)
         𝚽E12[jx] += C[jE] * (-1)^(jE-1) * ωE[jE+1,jx,ix] * 𝚽n[j]
     end
