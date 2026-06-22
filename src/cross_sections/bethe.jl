@@ -1,5 +1,7 @@
 """
     bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,
+    density_correction::String,state_of_matter::String,I_eff::Float64;
+    atomic_weights::Union{Nothing,Vector{Float64}}=nothing,
     is_bethe_correction::Bool=true,is_density_correction::Bool=true,
     is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
 
@@ -12,6 +14,10 @@ and heavy ions (proton, muon, alpha particle).
 - `ρ::Float64` : material density.
 - `Ei::Float64` : incoming particle energy.
 - `particle::Particle` : incoming particle.
+- `density_correction::String` : density-effect correction type.
+- `state_of_matter::String` : material state.
+- `I_eff::Float64` : user-defined mean excitation energy override [in mₑc²]; NaN ⟹ table/additivity.
+- `atomic_weights::Union{Nothing,Vector{Float64}}` : element atomic weights [u].
 - `is_bethe_correction::Bool` : boolean to enable or not the Bethe correction.
 - `is_density_correction::Bool` : boolean to enable or not the density correction.
 - `is_shell_correction::Bool` : boolean to enable or not the shell correction.
@@ -27,10 +33,10 @@ and heavy ions (proton, muon, alpha particle).
   particles from the corrected Bethe formula.
 
 """
-function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid",I_eff::Float64=NaN;is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
+function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid",I_eff::Float64=NaN; atomic_weights::Union{Nothing,Vector{Float64}}=nothing,is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
 
     #----
-    # Set the minimum energy cutoff over which the corrected Bethe formula is valid. 
+    # Set the minimum energy cutoff over which the corrected Bethe formula is valid.
     #----
     mₑ = 0.51099895069
     if is_electron(particle) || is_positron(particle)
@@ -66,9 +72,10 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         is_heavy = get_mass(particle) > 10*mₑ # (Is particle much heavier than the electron?)
 
         #----
-        # Effective density and ionization energy
+        # Effective electron density and ionization energy
         #----
-        𝒩ₑ_eff = sum(ωz.*Z.*nuclei_density.(Z,ρ)) # (in cm⁻³)
+        element_atomic_weights = isnothing(atomic_weights) ? standard_atomic_weight.(Z) : atomic_weights
+        𝒩ₑ_eff = sum(ωz .* Z .* nuclei_density.(element_atomic_weights, ρ)) # (in cm⁻³)
         I = effective_mean_excitation_energy(Z,ωz,I_eff) # (in mₑc²)
 
         #----
@@ -93,14 +100,14 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         δF = 0
         if is_density_correction
-            δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,density_correction,ratio_mass,I_eff)
+            δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,density_correction,ratio_mass,I_eff; atomic_weights=atomic_weights)
         end
 
         #----
         # Shell correction
         #----
         Cz = 0
-        if is_shell_correction 
+        if is_shell_correction
             Cz = shell_correction(Z,ωz,γ,particle)
         end
 
@@ -139,7 +146,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         ΔL_B = 0
         if is_barkas && is_heavy
-            ΔL_B = barkas_correction(Z,ωz,ρ,γ,particle)
+            ΔL_B = barkas_correction(Z,ωz,ρ,γ,particle; atomic_weights=atomic_weights)
         end
 
         #----
@@ -164,8 +171,20 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         # Estimate parameters A and B
         #----
         h = 0.00005
-        Sc = bethe(Z,ωz,ρ,Ecut,particle,density_correction,state_of_matter,I_eff)
-        Sc_plus_h = bethe(Z,ωz,ρ,Ecut+h,particle,density_correction,state_of_matter,I_eff)
+        Sc = bethe(Z,ωz,ρ,Ecut,particle,density_correction,state_of_matter,I_eff;
+            atomic_weights=atomic_weights,
+            is_bethe_correction=is_bethe_correction,
+            is_density_correction=is_density_correction,
+            is_shell_correction=is_shell_correction,
+            is_lindhard_sorensen=is_lindhard_sorensen,
+            is_barkas=is_barkas)
+        Sc_plus_h = bethe(Z,ωz,ρ,Ecut+h,particle,density_correction,state_of_matter,I_eff;
+            atomic_weights=atomic_weights,
+            is_bethe_correction=is_bethe_correction,
+            is_density_correction=is_density_correction,
+            is_shell_correction=is_shell_correction,
+            is_lindhard_sorensen=is_lindhard_sorensen,
+            is_barkas=is_barkas)
         dSdE = (Sc_plus_h - Sc)/h
         A = (3*log(Sc)*Sc - 2*dSdE*Ecut*log(Ecut/Emax))/(3*Sc)
         B = -2*Ecut*dSdE/(3*Sc*sqrt(log(Ecut/Emax)))
@@ -250,14 +269,14 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
         S₀[iz] = datai["integrated_gos"]
         spline_Cz[iz] = cubic_hermite_spline(γ[iz,:],Cz_prime[iz,:])
     end
-    
+
     #----
     # Compute the shell correction
     #----
     Cz = 0.0
     β² = (γi^2-1)/γi^2
     Nz = length(Z)
-    Zeff = sum(ωz.*Z) 
+    Zeff = sum(ωz.*Z)
     for iz in range(1,Nz)
         if γi < maximum(γ[iz,:])
             Czprime = spline_Cz[iz](γi)
@@ -267,7 +286,7 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
             Czprime = sum(pn[iz,:] .* 2 .^(1:6))
         end
         Cz += ωz[iz]*Z[iz]/Zeff * (Czprime + (Z[iz]-S₀[iz])/(2*Z[iz])*(log(β²/(1-β²))-β²))
-    end 
+    end
     return Cz
 end
 
@@ -293,7 +312,7 @@ Gives the Barkas correction to the Bethe formula.
   particles from the corrected Bethe formula.
 
 """
-function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ::Float64,particle::Particle)
+function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ::Float64,particle::Particle; atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
 
     #----
     # Initialization
@@ -304,7 +323,7 @@ function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ:
     Zeff = sum(ωz.*Z)
     CB = max(1,Zeff/10)
     charge = get_charge(particle)
-    Ωp = plasma_energy(Z,ωz,ρ)
+    Ωp = plasma_energy(Z,ωz,ρ; atomic_weights=atomic_weights)
     I = effective_mean_excitation_energy(Z,ωz)
 
     #----

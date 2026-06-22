@@ -2,7 +2,8 @@
     multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,
     Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,
     full_type::String,incoming_particle::Particle,scattered_particle::Particle,
-    particles::Vector{Particle},interactions::Vector{Interaction})
+    particles::Vector{Particle},interactions::Vector{Interaction},I_eff::Float64,
+    A::Union{Nothing,Vector{Vector{Int64}}},atpercentA::Union{Nothing,Vector{Vector{Float64}}})
 
 Produce the multigroup macroscopic cross sections.
 
@@ -21,6 +22,9 @@ Produce the multigroup macroscopic cross sections.
 - `particles::Vector{Particle}` : list of particles involved in the interaction.
 - `interactions::Vector{Interaction}` : list of all interactions that are taken into
   account for the cross-sections library.
+- `I_eff::Float64` : effective mean excitation energy override [in mₑc²]; NaN ⟹ tables.
+- `A::Union{Nothing,Vector{Vector{Int64}}}` : isotope mass numbers per element.
+- `atpercentA::Union{Nothing,Vector{Vector{Float64}}}` : isotope atomic fractions per element.
 
 # Output Argument(s)
 - `Σsl::Array{Float64,3}`: Legendre moments of the differential cross section [in cm⁻¹].
@@ -39,7 +43,7 @@ Produce the multigroup macroscopic cross sections.
   cross-sections for the Boltzmann Fokker-Planck equation.
 
 """
-function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},interactions::Vector{Interaction},I_eff::Float64=NaN)
+function multigroup(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,state_of_matter::String,Eiᵇ::Vector{Float64},Efᵇ::Vector{Float64},L::Int64,interaction::Interaction,full_type::String,incoming_particle::Particle,scattered_particle::Particle,particles::Vector{Particle},interactions::Vector{Interaction},I_eff::Float64=NaN,A::Union{Nothing,Vector{Vector{Int64}}}=nothing,atpercentA::Union{Nothing,Vector{Vector{Float64}}}=nothing)
 
 #----
 # Initialization
@@ -59,6 +63,8 @@ is_elastic = is_elastic_scattering(interaction)
 ΔQ = get_mass_energy_variation(interaction,type,false)
 is_subshells = interaction.get_is_subshells_dependant()
 E_in = Eiᵇ./mₑc²; E_out = Efᵇ./mₑc²; # Change of units (MeV → mₑc²)
+atz = atomic_percent_elements(Z,ωz,A,atpercentA)
+N_density = nuclei_density(molar_mass(Z,ωz,A,atpercentA),ρ)
 
 #----
 # Multigroup cross sections preparation
@@ -87,11 +93,11 @@ for gi in range(1,Ngi)
 
         # Scattering cross sections
         if type ∈ ["S","P"] && scattering_model != "FP"
-            𝓕, 𝓕ₑ = feed(Z,ωz,ρ,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
+            𝓕, 𝓕ₑ = feed(Z,atz,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
             if is_dirac 𝓕 ./= ΔEi; 𝓕ₑ ./= ΔEi end
             for gf in range(1,Ngf)
-                Σsl[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1]
-                Σsₑ[gi,gf] += w[ni]/2 * 𝓕ₑ[gf] 
+                Σsl[gi,gf,1:L+1] += w[ni]/2 * 𝓕[gf,1:L+1] * N_density
+                Σsₑ[gi,gf] += w[ni]/2 * 𝓕ₑ[gf] * N_density
             end
         end
 
@@ -99,26 +105,32 @@ for gi in range(1,Ngi)
         if type ∈ ["S","A"] && scattering_model != "FP"
             Σtᵢ = 0.0
             for i in range(1,Nz)
-                Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out) * nuclei_density(Z[i],ρ) * ωz[i]
+                Ai = isnothing(A) ? nothing : A[i]
+                atpercentAi = isnothing(atpercentA) ? nothing : atpercentA[i]
+                Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out,Ai,atpercentAi) * atz[i] * N_density
             end
             if is_dirac Σtᵢ /= ΔEi end
             Σt[gi] += Σtᵢ
             Σtₑ[gi] += Σtᵢ * (Ei-ΔQ)
-            Σa[gi] = Σtᵢ - w[ni]/2 * sum(𝓕[:,1])
+            Σaᵢ = Σtᵢ - w[ni]/2 * sum(𝓕[:,1]) * N_density
+            if Σaᵢ > 0
+                Σa[gi] += Σaᵢ
+            end
         end
 
         # Momentum transfer
         if is_AFP && type == "S" && scattering_model != "BTE"
-            T[gi] = 0.0
             for i in range(1,Nz)
-                T[gi] += w[ni]/2 * mt_dispatch(interaction) * nuclei_density(Z[i],ρ) * ωz[i]
+                Ai = isnothing(A) ? nothing : A[i]
+                atpercentAi = isnothing(atpercentA) ? nothing : atpercentA[i]
+                T[gi] += w[ni]/2 * mt_dispatch(interaction,Z[i],Ei,Ec,incoming_particle,Ai,atpercentAi) * atz[i] * N_density
             end
             if is_dirac T[gi] ./= ΔEi end
         end
 
         # Stopping power
         if is_CSD && type == "S" && scattering_model != "BTE"
-            S[gi] += w[ni]/2 * sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei,Ec,incoming_particle,E_out,I_eff)
+            S[gi] += w[ni]/2 * sp_dispatch(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei,Ec,incoming_particle,E_out,I_eff,A,atpercentA)
             if is_dirac S[gi] ./= ΔEi end
         end
     end
@@ -126,10 +138,10 @@ for gi in range(1,Ngi)
     # Stopping power at energy group boundaries
     if is_CSD && type == "S" && scattering_model != "BTE"
         Ec = soft_catastrophic_cutoff(Ei⁻,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
-        Sb[gi] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁻,Ec,incoming_particle,E_out,I_eff)
+        Sb[gi] = sp_dispatch(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei⁻,Ec,incoming_particle,E_out,I_eff,A,atpercentA)
         if (gi == Ngi)
             Ec = soft_catastrophic_cutoff(Ei⁺,Ei⁻,Ei⁺,Ei²⁺,scattering_model)
-            Sb[gi+1] = sp_dispatch(interaction,Z,ωz,ρ,state_of_matter,Ei⁺,Ec,incoming_particle,E_out,I_eff)
+            Sb[gi+1] = sp_dispatch(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei⁺,Ec,incoming_particle,E_out,I_eff,A,atpercentA)
         end
     end
 
