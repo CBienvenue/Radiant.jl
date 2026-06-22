@@ -341,12 +341,19 @@ function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64
     #----
     # Close collisions
     #----
+    is_heavy = false
+    sigma_reg = 0.0
+    A_over_W2 = 0.0
+    cache = nothing
     if is_electron(particle)
         σs += moller(Zi,Ei,W,Ui,Ti,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
     elseif is_positron(particle)
         σs += bhabha(Zi,Ei,W)
     elseif is_proton(particle) || is_alpha(particle)
-        σs += inelastic_collision_heavy_particle(Zi,Ei,W,particle)
+        is_heavy = true
+        # Create cache once for all Legendre orders
+        cache = HeavyInelasticCache(Zi, Ei, particle)
+        sigma_reg, A_over_W2 = heavy_sigma_components(cache, W)
     else
         error("Unknown particle")
     end
@@ -354,12 +361,29 @@ function dcs(this::Inelastic_Collision,Z::Int64,L::Int64,Ei::Float64,Ef::Float64
     #----
     # Compute the angular distribution
     #----
-    Wl = angular_moller(Ei,Ef,L)
+    if is_heavy
+        Wl = angular_inelastic_collision_heavy_particle(Ei,Ef,L,particle)
+    else
+        Wl = angular_moller(Ei,Ef,L)
+    end
 
     #----
     # Compute the Legendre moments of the cross-section
     #----
-    for l in range(0,L) σl[l+1] += Wl[l+1] * σs end
+    if is_heavy
+        for l in range(0,L)
+            # Subtract analytic leading 1/W piece to regularize the numeric integrand
+            if W > 0
+                coef = heavy_leading_1overW_coeff(cache, l)
+                leading_term = coef / W
+            else
+                leading_term = 0.0
+            end
+            σl[l+1] += Wl[l+1] * sigma_reg + (Wl[l+1] - 1.0) * A_over_W2 - leading_term
+        end
+    else
+        for l in range(0,L) σl[l+1] += Wl[l+1] * σs end
+    end
     return σl
 end
 
