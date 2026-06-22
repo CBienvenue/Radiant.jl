@@ -5,3 +5,6 @@ src/.DS_Store
 /docs/Manifest.toml
 /docs/build/
 /docs/.vscode/
+
+# ENDF libraries built locally by data/create_radiant_endf_library.jl
+/data/TENDL2023/
