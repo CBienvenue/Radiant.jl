@@ -28,14 +28,15 @@ function flux_1D_BTE(μ::Float64,Σt::Float64,Δx::Float64,Qn::Vector{Float64},�
 
 # Initialization
 sx = sign(μ)
-if (sx == 0.0) sx = 1.0; μ = 1e-12 end
+isTangential = (abs(μ) ≤ 1e-10)
+if isTangential sx = 1.0; μ = 0.0 end
 hx = abs(μ)/Δx
 𝒮 = zeros(𝒪x,𝒪x)
 Q = zeros(𝒪x)
 𝚽n = Q
 
 # Adaptive weight calculations
-if isAdapt ωx = adaptive(𝒪x,ωx,hx,sx,𝚽x12,Qn,Σt) end
+if isAdapt && !isTangential ωx = adaptive(𝒪x,ωx,hx,sx,𝚽x12,Qn,Σt) end
 
 # Matrix of Legendre moment coefficients of the flux
 for ix in range(1,𝒪x), jx in range(1,𝒪x)
@@ -52,11 +53,11 @@ end
 
 # Solve the equation system
 𝚽n = 𝒮\Q
-
-# Closure relation
-𝚽x12 = ωx[1] * 𝚽x12
-for jx in range(1,𝒪x)
-    𝚽x12 += C[jx] * sx^(jx-1) * ωx[jx+1] * 𝚽n[jx]
+if !isTangential
+    𝚽x12 = ωx[1] * 𝚽x12
+    for jx in range(1,𝒪x)
+        𝚽x12 += C[jx] * sx^(jx-1) * ωx[jx+1] * 𝚽n[jx]
+    end
 end
 
 # Returning solutions

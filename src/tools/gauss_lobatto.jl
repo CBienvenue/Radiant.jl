@@ -60,6 +60,9 @@ for i in range(2,N-1)
     
 end
 
+# For odd N, the central node is exactly μ = 0 by symmetry
+if isodd(N) x[(N+1)÷2] = 0.0 end
+
 # Verify if all roots are unique
 seen = Vector{Float64}()
 for i in x
