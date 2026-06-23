@@ -42,16 +42,18 @@ end
     endf_path_for_isotope(db_name::String,Z::Int,A::Int,particle::Particle;
     data_root::Union{Nothing,String}=nothing)
 
-Builds the ENDF file path for a target isotope in a Radiant ENDF database directory.
-Files for different incident particles are kept in their own subdirectory, named after
-the particle tag, within the database directory.
+Builds the ENDF file path for a target isotope in a Radiant ENDF database directory. All
+ENDF databases are kept under a common `ENDF/` subdirectory of the data root, with files
+for different incident particles further split into their own subdirectory, named after
+the particle tag.
 
 # Input Argument(s)
 - `db_name::String` : ENDF database directory name.
 - `Z::Int` : target atomic number.
 - `A::Int` : target mass number.
 - `particle::Particle` : incident particle.
-- `data_root::Union{Nothing,String}` : optional root directory containing ENDF databases.
+- `data_root::Union{Nothing,String}` : optional root directory containing ENDF databases
+  (the `ENDF/` subdirectory is appended to it).
 
 # Output Argument(s)
 - `path::String` : expected ENDF file path for isotope `(Z, A)`.
@@ -63,7 +65,7 @@ function endf_path_for_isotope(db_name::String,Z::Int,A::Int,particle::Particle;
     root = isnothing(data_root) ? normpath(joinpath(@__DIR__, "..", "..", "data")) : data_root
     symbol = atomic_symbol(Z)
     filename = @sprintf("p_%03d-%s-%03d.endf", Z, symbol, A)
-    return joinpath(root, db_name, get_tag(particle), filename)
+    return joinpath(root, "ENDF", db_name, get_tag(particle), filename)
 end
 
 """

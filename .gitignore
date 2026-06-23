@@ -7,4 +7,4 @@ src/.DS_Store
 /docs/.vscode/
 
 # ENDF libraries built locally by data/create_radiant_endf_library.jl
-/data/TENDL2023/
+/data/ENDF/

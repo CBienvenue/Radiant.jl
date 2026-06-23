@@ -2,13 +2,13 @@
     create_radiant_endf_library.jl
 
 Organizes a directory of raw ENDF-6 files into a Radiant ENDF database under
-`data/`. Every file found under `source_path` is probed for an ENDF-6 MF=1,
+`data/ENDF/`. Every file found under `source_path` is probed for an ENDF-6 MF=1,
 MT=451 header (regardless of its extension); files without one are skipped.
 The target isotope and incident particle are read directly from that header
 (no reliance on the source filename), using Radiant's own ENDF line parser.
 Recognized files are copied (not modified) into
-`data/<library_name>/<particle_tag>/`, renamed to match Radiant's ENDF naming
-convention (`Radiant.endf_path_for_isotope`).
+`data/ENDF/<library_name>/<particle_tag>/`, renamed to match Radiant's ENDF
+naming convention (`Radiant.endf_path_for_isotope`).
 
 Run this script once to prepare an ENDF library before using it in a
 simulation (e.g. via `init_elastic_scattering_endf_db`).
@@ -17,8 +17,8 @@ simulation (e.g. via `init_elastic_scattering_endf_db`).
     julia --project=. create_radiant_endf_library.jl <library_name> <source_path>
 
 # Argument(s)
-- `library_name` : name of the ENDF database directory to create under `data/`
-  (e.g. `"TENDL2023"`).
+- `library_name` : name of the ENDF database directory to create under
+  `data/ENDF/` (e.g. `"TENDL2023"`).
 - `source_path` : directory to search (recursively) for ENDF-structured files.
 """
 
