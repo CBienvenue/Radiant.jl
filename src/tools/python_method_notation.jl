@@ -33,9 +33,9 @@ function Base.getproperty(object::RadiantObject, s::Symbol)
         # Check if the function is defined in the Radiant module
         if isdefined(Radiant, s) && getproperty(Radiant, s) isa Function
             try
-                return function(x...; kw...)
+                return function(x...)
                     func = getproperty(Radiant, s)
-                    return func(object, x...; kw...)
+                    return func(object, x...)
                 end
             catch e
                 # Log the original error and rethrow it

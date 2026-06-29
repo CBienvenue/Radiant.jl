@@ -177,7 +177,7 @@ mutable struct Elastic_Scattering <: Interaction
         this.set_coulomb_kinematics("standard")
         this.set_screening(true)
         this.set_fp_tol(1.0e-10)
-        this.set_fp_tanh_sinh(h=0.03, n=240, max_iter=12)
+        this.set_fp_tanh_sinh(0.03, 240, 12)
         this.set_fp_quadgk_split_points([0.99, 0.9999, 0.999999])
         return this
     end
@@ -553,11 +553,11 @@ function get_fp_tol(this::Elastic_Scattering)
 end
 
 """
-    set_fp_tanh_sinh(this::Elastic_Scattering; h::Float64=0.03, n::Int=240, max_iter::Int=12)
+    set_fp_tanh_sinh(this::Elastic_Scattering, h::Float64=0.03, n::Int=240, max_iter::Int=12)
 
 Set tanh-sinh quadrature controls used for Fokker-Planck integrals.
 """
-function set_fp_tanh_sinh(this::Elastic_Scattering; h::Float64=0.03, n::Int=240, max_iter::Int=12)
+function set_fp_tanh_sinh(this::Elastic_Scattering, h::Float64=0.03, n::Int=240, max_iter::Int=12)
     if h <= 0.0
         error("Tanh-sinh step h must be positive.")
     end
