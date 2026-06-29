@@ -493,7 +493,7 @@ end
 
 """
     get_dcs_cache(this::Elastic_Scattering, ptype::Type, db::ElasticScatteringENDFDB,
-    Z::Int, A::Int, E_in_mev::Float64; source::Union{Nothing,String}=nothing)
+    Z::Int, A::Int, E_in_mev::Float64, source::Union{Nothing,String}=nothing)
 
 Gets or builds the cached DCS interpolation data for one particle, isotope, and incident
 energy.
@@ -511,7 +511,7 @@ energy.
 - `cache::ElasticDCSCache` : cached DCS interpolation data.
 """
 function get_dcs_cache(this::Elastic_Scattering,ptype::Type,db::ElasticScatteringENDFDB,
-                       Z::Int,A::Int,E_in_mev::Float64; source::Union{Nothing,String}=nothing)
+                       Z::Int,A::Int,E_in_mev::Float64,source::Union{Nothing,String}=nothing)
     if !isnothing(source) && lowercase(source) != db.dcs_source
         error("Requested DCS source $(source), but the ENDF database was initialized with dcs_source=$(db.dcs_source).")
     end
@@ -933,7 +933,7 @@ function tcs(this::Elastic_Scattering,Ei::Float64,Ec::Float64,particle::Particle
 
     σt = 0.0
     for (Ai, atai) in zip(A, atpercentA)
-        cache = this.get_dcs_cache(ptype, db, Z, Ai, E_in_mev; source=cache_source)
+        cache = this.get_dcs_cache(ptype, db, Z, Ai, E_in_mev, cache_source)
         σt += atai * integrate_tcs(cache)
     end
 
