@@ -144,6 +144,7 @@ module Radiant
         "Fixed_Sources.jl",
         "Flux_Per_Particle.jl",
         "Flux.jl",
+        "Electromagnetic_Field.jl",
         "Computation_Unit.jl"
     ]
     radiant_src["tools/"] = [
@@ -191,7 +192,7 @@ module Radiant
     #----
     export Particle, Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon, Antimuon
     export Elastic_Collision,Elastic_Scattering,Inelastic_Collision,Bremsstrahlung,Compton,Pair_Production,Photoelectric,Annihilation,Rayleigh,Relaxation,Fluorescence,Auger
-    export Material,Cross_Sections,Geometry,SN,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,DPN,GN
+    export Material,Cross_Sections,Geometry,SN,Solvers,Surface_Source,Volume_Source,Fixed_Sources,Computation_Unit,DPN,GN,Electromagnetic_Field
     export Discrete_Ordinates  # backward-compatible alias for SN
 
     #----

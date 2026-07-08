@@ -9,6 +9,8 @@ Solve the transport equation using the discrete ordinates (SN) method for a give
 - `geometry::Geometry` : geometry informations.
 - `solver::SN` : Discrete ordinates informations.
 - `source::Source` : source informations.
+- `electromagnetic_field::Electromagnetic_Field` : external electromagnetic field (optional,
+  defaults to no field).
 
 # Output Argument(s)
 - `flux::Flux_Per_Particle`: flux informations.
@@ -17,7 +19,7 @@ Solve the transport equation using the discrete ordinates (SN) method for a give
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::SN,source::Source)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::SN,source::Source,electromagnetic_field::Electromagnetic_Field=Electromagnetic_Field())
 
 #----
 # Geometry data
@@ -111,11 +113,12 @@ if solver_type == 6
 end
 
 # External electro-magnetic fields
-𝓔 = [0.0,0.0,0.0]; 𝓑 = [0.0,0.0,0.0]
-is_EM = false
+is_EM,𝓔,𝓑 = electromagnetic_field.get_electromagnetic_field()
 if is_EM
-    q = part.get_charge()
-    ℳ_EM = electromagnetic_scattering_matrix(𝓔,𝓑,q,Ω,w,Ndims,Mn,Dn,pl,pm,Np,Ng,Eb,ΔE,Qdims)
+    if any(𝓔 .!= 0) error("Electric-field transport not yet implemented; only magnetic fields are supported.") end
+    charge = part.get_charge()
+    ℳ_EM,λ₀_EM = electromagnetic_scattering_matrix(𝓔,𝓑,charge,Ω,w,Ndims,Mn,Dn,pl,pm,Np,Ng,Eb,ΔE,Qdims)
+    for ig in range(1,Ng) Σtot[ig,:] .+= λ₀_EM[ig] end
 else
     ℳ_EM = zeros(Ng,Np,Np);
 end

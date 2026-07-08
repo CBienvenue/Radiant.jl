@@ -9,6 +9,8 @@ Solve the transport equation using the spherical Galerkin harmonics (GN) method 
 - `geometry::Geometry` : geometry informations.
 - `solver::GN` : spherical Galerkin harmonics informations.
 - `source::Source` : source informations.
+- `electromagnetic_field::Electromagnetic_Field` : external electromagnetic field (optional,
+  defaults to no field; external fields are not supported with the GN solver).
 
 # Output Argument(s)
 - `flux::Flux_Per_Particle`: flux informations.
@@ -17,7 +19,10 @@ Solve the transport equation using the spherical Galerkin harmonics (GN) method 
 N/A
 
 """
-function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::GN,source::Source)
+function compute_flux(cross_sections::Cross_Sections,geometry::Geometry,solver::GN,source::Source,electromagnetic_field::Electromagnetic_Field=Electromagnetic_Field())
+
+# External electromagnetic fields are only implemented for the SN solver.
+if electromagnetic_field.get_electromagnetic_field()[1] error("External electromagnetic fields are not supported with the GN solver.") end
 
 #----
 # Geometry data

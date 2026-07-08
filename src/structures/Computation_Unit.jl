@@ -20,6 +20,7 @@ mutable struct Computation_Unit
     geometry                  ::Union{Missing,Geometry}
     solvers                   ::Union{Missing,Solvers}
     sources                   ::Union{Missing,Fixed_Sources}
+    electromagnetic_field     ::Union{Missing,Electromagnetic_Field}
     flux                      ::Union{Missing,Flux}
 
     # Constructor(s)
@@ -31,6 +32,7 @@ mutable struct Computation_Unit
         this.geometry = missing
         this.solvers = missing
         this.sources = missing
+        this.electromagnetic_field = missing
         this.flux = missing
 
         return this
@@ -135,6 +137,32 @@ function set_sources(this::Computation_Unit,sources::Fixed_Sources)
 end
 
 """
+    set_electromagnetic_field(this::Computation_Unit,electromagnetic_field::Electromagnetic_Field)
+
+Assigns an external electromagnetic field to the computation unit. The field is constant over the
+geometry and acts on charged particles through the Lorentz force. It is optional: if no field is
+assigned, transport proceeds without one.
+
+# Input Argument(s)
+- `this::Computation_Unit` : computation unit.
+- `electromagnetic_field::Electromagnetic_Field` : external electromagnetic field.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> emf = Electromagnetic_Field()
+julia> emf.set_magnetic_field([0.0,0.0,1.5])
+julia> cu = Computation_Unit()
+julia> cu.set_electromagnetic_field(emf)
+```
+"""
+function set_electromagnetic_field(this::Computation_Unit,electromagnetic_field::Electromagnetic_Field)
+    this.electromagnetic_field = electromagnetic_field
+end
+
+"""
     run(this::Computation_Unit)
 
 Execute transport calculations and obtain the flux solution.
@@ -163,8 +191,11 @@ function run(this::Computation_Unit)
     # Build the fixed sources if it is not done yet.
     if ~this.sources.is_build this.sources.build() end
 
+    # Resolve the (optional) external electromagnetic field.
+    electromagnetic_field = ismissing(this.electromagnetic_field) ? Electromagnetic_Field() : this.electromagnetic_field
+
     # Run transport calculations
-    this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources)
+    this.flux = transport(this.cross_sections,this.geometry,this.solvers,this.sources,electromagnetic_field)
 end
 
 """

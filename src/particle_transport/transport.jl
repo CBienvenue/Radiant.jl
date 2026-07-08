@@ -9,6 +9,8 @@ Solve transport calculations.
 - `geometry::Geometry`: geometry informations.
 - `solvers::Solvers`: solvers informations.
 - `sources::Fixed_Sources`: sources informations.
+- `electromagnetic_field::Electromagnetic_Field`: external electromagnetic field (optional,
+  defaults to no field).
 
 # Output Argument(s)
 - `flux::Flux`: flux solution.
@@ -17,7 +19,7 @@ Solve transport calculations.
 N/A
 
 """
-function transport(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources)
+function transport(cross_sections::Cross_Sections,geometry::Geometry,solvers::Solvers,sources::Fixed_Sources,electromagnetic_field::Electromagnetic_Field=Electromagnetic_Field())
 
 #----
 # Initialization
@@ -37,7 +39,7 @@ if Npart == 1
     method = solvers.get_method(particle)
     fixed_source = sources.get_source(particle)
 
-    particle_flux = compute_flux(cross_sections,geometry,method,fixed_source)
+    particle_flux = compute_flux(cross_sections,geometry,method,fixed_source,electromagnetic_field)
     flux.add_flux(particle_flux)
 
 #----
@@ -89,7 +91,7 @@ else
             if n == 1 source += fixed_source[i] end
 
             # Transport
-            particle_flux = compute_flux(cross_sections,geometry,method[i],source)
+            particle_flux = compute_flux(cross_sections,geometry,method[i],source,electromagnetic_field)
             flux.add_flux(particle_flux)
 
             # Compute scattered particles sources
