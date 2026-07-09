@@ -11,6 +11,7 @@ Radiant.set_cross_sections(this::Radiant.Computation_Unit,cross_sections::Radian
 Radiant.set_geometry(this::Radiant.Computation_Unit,geometry::Radiant.Geometry)
 Radiant.set_solvers(this::Radiant.Computation_Unit,solvers::Radiant.Solvers)
 Radiant.set_sources(this::Radiant.Computation_Unit,sources::Radiant.Fixed_Sources)
+Radiant.set_electromagnetic_field(this::Radiant.Computation_Unit,electromagnetic_field::Radiant.Electromagnetic_Field)
 ```
 
 ## Execution

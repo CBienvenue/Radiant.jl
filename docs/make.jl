@@ -56,7 +56,8 @@ makedocs(
             "5 Geometry"                     => "user_guide_geometry.md",
             "6 Solvers"                      => "user_guide_solvers.md",
             "7 Fixed External Sources"       => "user_guide_fixed_external_sources.md",
-            "8 Transport Calculations"       => "user_guide_transport_calculations.md",
+            "8 Electromagnetic Fields"       => "user_guide_electromagnetic_fields.md",
+            "9 Transport Calculations"       => "user_guide_transport_calculations.md",
         ],
 
         #"Examples" => [],
@@ -70,6 +71,7 @@ makedocs(
                 "GN"      => "api_gn.md"
             ],
             "Geometry"     => "api_geometry.md",
+            "Electromagnetic_Field" => "api_electromagnetic_field.md",
             "Interactions" => [
                 "Annihilation"       => "api_annihilation.md",
                 "Bremsstrahlung"     => "api_bremsstrahlung.md",
