@@ -77,8 +77,26 @@ It can be appreciated that the BFP can be seen as a generalization of both BTE a
 
 ## 1.1.4 The Lorentz Force in Presence of External Electromagnetic Fields
 
+Charged particles travelling through external electric and magnetic fields experience the Lorentz force
+
+$$\mathbf{F} = q_{p}\left(\vec{\mathcal{E}} + \mathbf{v}\times\vec{\mathcal{B}}\right) \,,$$
+
+where $q_{p}$ is the charge of particle $p$, $\vec{\mathcal{E}}$ is the electric field and $\vec{\mathcal{B}}$ is the magnetic field. This force continuously deflects the particles and must be added to the transport equation. A static magnetic field is always perpendicular to the velocity, so it does no work: it leaves the particle energy unchanged and only rotates its direction of motion on the unit sphere. Radiant accounts for such a static, spatially-uniform magnetic field by adding an angular term $Q_{p}^{\texttt{EM}}$ to the (BFP) transport equation [fan2013modeling,st2015deterministic](@cite),
+
+$$\mathbf{\Omega} \cdot \nabla \Phi_{p}(\mathbf{r},\mathbf{\Omega},E) + \Sigma_{t}^{p}(\mathbf{r},E) \Phi_{p}(\mathbf{r},\mathbf{\Omega},E) + Q_{p}^{\texttt{EM}}(\mathbf{r},\mathbf{\Omega},E) = Q_{p}^{\texttt{B}}(\mathbf{r},\mathbf{\Omega},E) + Q_{p}^{\texttt{FP}}(\mathbf{r},\mathbf{\Omega},E) + Q_{p}^{\texttt{ext}}(\mathbf{r},\mathbf{\Omega},E) \,.$$
+
+Let $\dot{\mathbf{\Omega}} = \frac{q_{p}}{\left|\mathbf{p}_{p}(E)\right|}\,\mathbf{\Omega}\times\vec{\mathcal{B}}$ be the rate of change of the direction along the trajectory, where $\left|\mathbf{p}_{p}(E)\right| = \frac{1}{c}\sqrt{E\left(E+2m_{p}c^{2}\right)}$ is the relativistic momentum and $m_{p}$ the rest mass of particle $p$. The magnetic term is then the advection (i.e. the transport in angle) of the angular flux by this rotation,
+
+$$Q_{p}^{\texttt{EM}}(\mathbf{r},\mathbf{\Omega},E) = \nabla_{\mathbf{\Omega}}\cdot\left[\dot{\mathbf{\Omega}}\,\Phi_{p}(\mathbf{r},\mathbf{\Omega},E)\right] \,.$$
+
+Since $\dot{\mathbf{\Omega}}$ is tangent to the unit sphere and divergence-free, this operator describes a rigid rotation of the angular flux about the axis of $\vec{\mathcal{B}}$. Expressed in terms of the principal direction cosine $\mu$ and the azimuthal angle $\phi$, it reads
+
+$$Q_{p}^{\texttt{EM}}(\mathbf{r},\mathbf{\Omega},E) = \frac{q_{p}}{\left|\mathbf{p}_{p}(E)\right|}\left[\left(\mathbf{\Omega}\times\vec{\mathcal{B}}\right)_{x}\frac{\partial \Phi_{p}}{\partial \mu} + \frac{\left(\mathbf{\Omega}\times\left(\mathbf{\Omega}\times\vec{\mathcal{B}}\right)\right)_{x}}{1-\mu^2}\frac{\partial \Phi_{p}}{\partial \phi}\right] \,,$$
+
+where the subscript $x$ denotes the component along the principal axis (aligned with $\mu$). Because the magnetic field does no work, this operator neither creates nor destroys particles and does not change their energy; it only redistributes the angular flux over the unit sphere.
+
 !!! note
-    Radiant does not have any capabilities for external electromagnetic fields yet.
+    Radiant currently supports static, spatially-uniform magnetic fields with the `SN` solver. External electric fields are not available yet.
 
 ## 1.1.5 The Adjoint Linear Transport Equation
 

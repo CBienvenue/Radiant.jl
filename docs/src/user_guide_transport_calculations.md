@@ -1,8 +1,8 @@
-# 8 Transport Calculations
+# 9 Transport Calculations
 
 The `Radiant.Computation_Unit` object brings together the cross-sections, geometry, solvers and sources defined in the previous chapters, executes the transport calculation, and exposes its results.
 
-## 8.1 Assembling the Calculation
+## 9.1 Assembling the Calculation
 
 ```julia
 c = Computation_Unit()
@@ -12,9 +12,9 @@ c.set_solvers(solvers)               # solvers :: Solvers
 c.set_sources(s)                     # s       :: Fixed_Sources
 ```
 
-Each call assigns one of the four required components. The `Computation_Unit` ensures that they are consistent and complete before launching the calculation.
+Each call assigns one of the four required components. The `Computation_Unit` ensures that they are consistent and complete before launching the calculation. An external magnetic field can optionally be attached as well with `c.set_electromagnetic_field(emf)` (see Section 8).
 
-## 8.2 Running the Calculation
+## 9.2 Running the Calculation
 
 ```julia
 c.run()
@@ -33,11 +33,11 @@ Wrapping the call with Julia's `@time` macro provides timing information:
 @time c.run()
 ```
 
-## 8.3 Retrieving Results
+## 9.3 Retrieving Results
 
 After `run()` completes, several getter methods give access to the computed quantities.
 
-### 8.3.1 Spatial and Energy Axes
+### 9.3.1 Spatial and Energy Axes
 
 ```julia
 x = c.get_voxels_position("x")       # Midpoint position of each voxel along x (cm)
@@ -47,7 +47,7 @@ E_electron = c.get_energies(electron) # Midpoint energy of each electron group (
 E_photon   = c.get_energies(photon)
 ```
 
-### 8.3.2 Energy and Charge Deposition
+### 9.3.2 Energy and Charge Deposition
 
 `get_energy_deposition` and `get_charge_deposition` return arrays whose shape matches the geometry voxelization. Without argument they return the total deposition over all particles; with a particle argument they return the contribution of that particle alone.
 
@@ -60,7 +60,7 @@ dq_electron = c.get_charge_deposition(electron)
 
 Energy deposition is given in MeV/g × cm² when the source intensity is unity, and charge deposition in cm²/g — they are normalized per source particle.
 
-### 8.3.3 Angular-Flux Solution
+### 9.3.3 Angular-Flux Solution
 
 The scalar flux per energy group and per voxel for a given particle is obtained with:
 
@@ -71,7 +71,7 @@ The scalar flux per energy group and per voxel for a given particle is obtained 
 
 The returned array has the structure `(Ng, Nx, Ny, Nz)` (with `Ny = Nz = 1` in lower dimensions).
 
-### 8.3.4 In-Group Spectral Radius
+### 9.3.4 In-Group Spectral Radius
 
 `get_spectral_radius` returns the estimated in-group spectral radius of the source iteration, per energy group, for a given particle:
 
@@ -81,7 +81,7 @@ The returned array has the structure `(Ng, Nx, Ny, Nz)` (with `Ny = Nz = 1` in l
 
 The estimate is the geometric-average relative-residual reduction per transport pass over the converged in-group solve (see the convergence-acceleration discussion in the theory manual). It is close to the within-group scattering ratio for unaccelerated source iteration (`set_acceleration("none")`) and substantially smaller for the acceleration methods, so it is a convenient diagnostic of how effective the chosen accelerator is. Groups that converge without iterating (e.g. with no in-group source) report `NaN`.
 
-## 8.4 Plotting Results
+## 9.4 Plotting Results
 
 The results returned by `get_*` are standard Julia arrays and can be visualized with any plotting library (e.g. `Plots`, `PyPlot`, `Makie`). A typical 1D depth/dose plot is built as:
 
@@ -97,7 +97,7 @@ subplot(121); plot(x,de); xlabel("Depth (cm)"); ylabel("Energy deposition (MeV/g
 subplot(122); plot(x,dq); xlabel("Depth (cm)"); ylabel("Charge deposition (cm²/g)")
 ```
 
-## 8.5 Reusing a Calculation
+## 9.5 Reusing a Calculation
 
 The `Computation_Unit` does not store a deep copy of its inputs; modifying the cross-section, geometry, solver or source objects after a calculation will affect subsequent calls to `run()`. To run several variants of a calculation, instantiate a separate `Computation_Unit` per case or use deep copies of the input objects.
 
@@ -114,7 +114,7 @@ cs2.set_particles([electron,photon])
 cs2.build()                           # Reload without recomputation
 ```
 
-## 8.6 Summary of the Computation_Unit API
+## 9.6 Summary of the Computation_Unit API
 
 | Method                                       | Description                                                  |
 |----------------------------------------------|--------------------------------------------------------------|
