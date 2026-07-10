@@ -1,7 +1,7 @@
 """
-    CPM
+    CP
 
-Structure used to define the collision-probability method (CPM) for the transport of a
+Structure used to define the collision-probability method (CP) for the transport of a
 particle. The volumetric and surface fluxes are expanded in spherical harmonics of arbitrary
 order; in one-dimensional Cartesian geometry the azimuthal symmetry reduces the expansion to
 Legendre polynomials of degree up to `legendre_order` (see the TR-02 technical report). The
@@ -19,7 +19,7 @@ resulting linear system directly, as an alternative to the `SN` and `GN` solvers
 - `maximum_iteration::Int64 = 300` : maximum number of group iterations.
 
 """
-mutable struct CPM
+mutable struct CP
 
     # Variable(s)
     particle                   ::Union{Missing,Particle}
@@ -35,7 +35,7 @@ mutable struct CPM
     isFC                       ::Bool
 
     # Constructor(s)
-    function CPM()
+    function CP()
         this = new()
         this.particle = missing
         this.solver_type = missing
@@ -54,12 +54,12 @@ end
 
 # Method(s)
 """
-    set_particle(this::CPM,particle::Particle)
+    set_particle(this::CP,particle::Particle)
 
 To set the particle for which the transport discretization method is for.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `particle::Particle` : particle.
 
 # Output Argument(s)
@@ -67,21 +67,21 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = CPM()
+julia> m = CP()
 julia> m.set_particle(electron)
 ```
 """
-function set_particle(this::CPM,particle::Particle)
+function set_particle(this::CP,particle::Particle)
     this.particle = particle
 end
 
 """
-    set_solver_type(this::CPM,solver_type::String)
+    set_solver_type(this::CP,solver_type::String)
 
 To set the solver for the particle transport.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `solver_type::String` : solver type, which can take the following value:
     - `solver_type = "BTE"` : Boltzmann transport equation.
 
@@ -90,25 +90,25 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = CPM()
+julia> m = CP()
 julia> m.set_solver_type("BTE")
 ```
 """
-function set_solver_type(this::CPM,solver_type::String)
-    if uppercase(solver_type) ∉ ["BTE"] error("The CPM solver only supports the BTE solver type.") end
+function set_solver_type(this::CP,solver_type::String)
+    if uppercase(solver_type) ∉ ["BTE"] error("The CP solver only supports the BTE solver type.") end
     this.solver_type = uppercase(solver_type)
 end
 
 """
-    set_legendre_order(this::CPM,legendre_order::Int64)
-    set_legendre_order(this::CPM,volume_order::Int64,surface_order::Int64)
+    set_legendre_order(this::CP,legendre_order::Int64)
+    set_legendre_order(this::CP,volume_order::Int64,surface_order::Int64)
 
 To set the Legendre order of the volumetric and surface flux expansions. The single-argument
 form sets both the volumetric and the surface order to the same value; the two-argument form
 sets them independently.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `legendre_order::Int64` : Legendre order of both the volumetric and surface flux expansions.
 - `volume_order::Int64` : Legendre order of the volumetric flux expansion.
 - `surface_order::Int64` : Legendre order of the surface (half-range) flux expansion.
@@ -118,47 +118,47 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = CPM()
+julia> m = CP()
 julia> m.set_legendre_order(2)      # volume = surface = 2
 julia> m.set_legendre_order(2,4)    # volume = 2, surface = 4
 ```
 """
-function set_legendre_order(this::CPM,volume_order::Int64,surface_order::Int64)
+function set_legendre_order(this::CP,volume_order::Int64,surface_order::Int64)
     if volume_order < 0 || surface_order < 0 error("Legendre order should be at least 0.") end
     this.legendre_order = volume_order
     this.surface_order = surface_order
 end
 
-function set_legendre_order(this::CPM,legendre_order::Int64)
+function set_legendre_order(this::CP,legendre_order::Int64)
     set_legendre_order(this,legendre_order,legendre_order)
 end
 
 """
-    set_surface_order(this::CPM,surface_order::Int64)
+    set_surface_order(this::CP,surface_order::Int64)
 
 To set the order of the surface (half-range) flux expansion used by the boundary-coupling
 probabilities.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `surface_order::Int64` : order of the surface flux expansion.
 
 # Output Argument(s)
 N/A
 
 """
-function set_surface_order(this::CPM,surface_order::Int64)
+function set_surface_order(this::CP,surface_order::Int64)
     if surface_order < 0 error("Surface order should be at least 0.") end
     this.surface_order = surface_order
 end
 
 """
-    set_mode(this::CPM,mode::String)
+    set_mode(this::CP,mode::String)
 
 To set the solution mode of the collision-probability method.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `mode::String` : solution mode, which can take the following values:
     - `mode = "global"` : finite-domain method. The collision-probability matrices couple all
       regions and surfaces directly and the resulting linear system is solved by a direct
@@ -172,146 +172,146 @@ N/A
 
 # Examples
 ```jldoctest
-julia> m = CPM()
+julia> m = CP()
 julia> m.set_mode("sweeping")
 ```
 """
-function set_mode(this::CPM,mode::String)
-    if lowercase(mode) ∉ ["global","sweeping"] error("Unknown CPM mode (use \"global\" or \"sweeping\").") end
+function set_mode(this::CP,mode::String)
+    if lowercase(mode) ∉ ["global","sweeping"] error("Unknown CP mode (use \"global\" or \"sweeping\").") end
     this.mode = lowercase(mode)
 end
 
 """
-    get_mode(this::CPM)
+    get_mode(this::CP)
 
 Get the solution mode of the collision-probability method.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `mode::String` : solution mode (`"global"` or `"sweeping"`).
 
 """
-function get_mode(this::CPM)
+function get_mode(this::CP)
     return this.mode
 end
 
 """
-    set_convergence_criterion(this::CPM,convergence_criterion::Float64)
+    set_convergence_criterion(this::CP,convergence_criterion::Float64)
 
 To set the convergence criterion for the group iterations.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `convergence_criterion::Float64` : convergence criterion.
 
 # Output Argument(s)
 N/A
 
 """
-function set_convergence_criterion(this::CPM,convergence_criterion::Float64)
+function set_convergence_criterion(this::CP,convergence_criterion::Float64)
     if convergence_criterion ≤ 0 error("Convergence criterion has to be greater than 0.") end
     this.convergence_criterion = convergence_criterion
 end
 
 """
-    set_maximum_iteration(this::CPM,maximum_iteration::Int64)
+    set_maximum_iteration(this::CP,maximum_iteration::Int64)
 
 To set the maximum number of group iterations.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `maximum_iteration::Int64` : maximum number of group iterations.
 
 # Output Argument(s)
 N/A
 
 """
-function set_maximum_iteration(this::CPM,maximum_iteration::Int64)
+function set_maximum_iteration(this::CP,maximum_iteration::Int64)
     if maximum_iteration < 1 error("Maximum iteration has to be at least 1.") end
     this.maximum_iteration = maximum_iteration
 end
 
 """
-    get_particle(this::CPM)
+    get_particle(this::CP)
 
 Get the particle associated with the discretization method.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `particle::Particle` : particle.
 
 """
-function get_particle(this::CPM)
+function get_particle(this::CP)
     if ismissing(this.particle) error("Unable to get particle. Missing data.") end
     return this.particle
 end
 
 """
-    get_solver_type(this::CPM)
+    get_solver_type(this::CP)
 
 Get the type of solver for transport calculations.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `solver::Int64` : type of solver for transport calculations.
 - `isCSD::Bool` : indicate if the continuous slowing-down term is used or not.
 
 """
-function get_solver_type(this::CPM)
+function get_solver_type(this::CP)
     if ismissing(this.solver_type) error("Unable to get solver type. Missing data.") end
     if this.solver_type == "BTE"
         return 1, false
     else
-        error("The CPM solver only supports the BTE solver type.")
+        error("The CP solver only supports the BTE solver type.")
     end
 end
 
 """
-    get_legendre_order(this::CPM)
+    get_legendre_order(this::CP)
 
 Get the Legendre order of the volumetric flux expansion.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `legendre_order::Int64` : Legendre order.
 
 """
-function get_legendre_order(this::CPM)
+function get_legendre_order(this::CP)
     return this.legendre_order
 end
 
 """
-    get_surface_order(this::CPM)
+    get_surface_order(this::CP)
 
 Get the order of the surface (half-range) flux expansion.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `surface_order::Int64` : surface order.
 
 """
-function get_surface_order(this::CPM)
+function get_surface_order(this::CP)
     return this.surface_order
 end
 
 """
-    get_schemes(this::CPM,geometry::Geometry,isFC::Bool)
+    get_schemes(this::CP,geometry::Geometry,isFC::Bool)
 
-Get the space and/or energy schemes informations. The CPM assumes a flat (region-averaged)
+Get the space and/or energy schemes informations. The CP assumes a flat (region-averaged)
 flux, so a single spatial/energy moment is carried per region.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `geometry::Geometry` : geometry.
 - `isFC::Bool` : boolean indicating if the high-order moments are fully coupled.
 
@@ -321,7 +321,7 @@ flux, so a single spatial/energy moment is carried per region.
 - `Nm::Vector{Int64}` : numbers of moments.
 
 """
-function get_schemes(this::CPM,geometry::Geometry,isFC::Bool)
+function get_schemes(this::CP,geometry::Geometry,isFC::Bool)
     schemes = ["DD","DD","DD","DD"]
     𝒪 = [1,1,1,1]
     Nm = [1,1,1,1,1]
@@ -329,61 +329,61 @@ function get_schemes(this::CPM,geometry::Geometry,isFC::Bool)
 end
 
 """
-    get_is_full_coupling(this::CPM)
+    get_is_full_coupling(this::CP)
 
 Get whether the high-order moments are fully coupled or not.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `isFC::Bool` : boolean indicating if the high-order moments are fully coupled or not.
 
 """
-function get_is_full_coupling(this::CPM)
+function get_is_full_coupling(this::CP)
     return this.isFC
 end
 
 """
-    get_convergence_criterion(this::CPM)
+    get_convergence_criterion(this::CP)
 
 Get the convergence criterion for the group iterations.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `convergence_criterion::Float64` : convergence criterion.
 
 """
-function get_convergence_criterion(this::CPM)
+function get_convergence_criterion(this::CP)
     return this.convergence_criterion
 end
 
 """
-    get_maximum_iteration(this::CPM)
+    get_maximum_iteration(this::CP)
 
 Get the maximum number of group iterations.
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `maximum_iteration::Int64` : maximum number of group iterations.
 
 """
-function get_maximum_iteration(this::CPM)
+function get_maximum_iteration(this::CP)
     return this.maximum_iteration
 end
 
 """
-    set_acceleration(this::CPM,acceleration::String,parameter::Int64=0)
+    set_acceleration(this::CP,acceleration::String,parameter::Int64=0)
 
 To set the acceleration method for the in-group source iteration of the sweeping mode (unused by
 the direct `"global"` solve).
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 - `acceleration::String` : acceleration method, which takes the following values:
     - `acceleration = "none"` : plain source iteration.
     - `acceleration = "livolant"` : Livolant two-point extrapolation.
@@ -397,7 +397,7 @@ the direct `"global"` solve).
 N/A
 
 """
-function set_acceleration(this::CPM,acceleration::String,parameter::Int64=0)
+function set_acceleration(this::CP,acceleration::String,parameter::Int64=0)
     accel = lowercase(acceleration)
     if accel ∉ ["none","livolant","anderson","gmres","bicgstab"] error("Unkown acceleration method.") end
     this.acceleration = accel
@@ -412,35 +412,35 @@ function set_acceleration(this::CPM,acceleration::String,parameter::Int64=0)
 end
 
 """
-    get_acceleration(this::CPM)
+    get_acceleration(this::CP)
 
 Get the acceleration method (used only by the sweeping mode's in-group source iteration).
 
 # Input Argument(s)
-- `this::CPM` : collision-probability method.
+- `this::CP` : collision-probability method.
 
 # Output Argument(s)
 - `acceleration::String` : acceleration method.
 
 """
-function get_acceleration(this::CPM)
+function get_acceleration(this::CP)
     return this.acceleration
 end
 
 """
-    get_gmres_restart(this::CPM)
+    get_gmres_restart(this::CP)
 
 Get the GMRES restart parameter (sweeping mode).
 """
-function get_gmres_restart(this::CPM)
+function get_gmres_restart(this::CP)
     return this.gmres_restart
 end
 
 """
-    get_anderson_depth(this::CPM)
+    get_anderson_depth(this::CP)
 
 Get the Anderson acceleration memory depth (sweeping mode).
 """
-function get_anderson_depth(this::CPM)
+function get_anderson_depth(this::CP)
     return this.anderson_depth
 end

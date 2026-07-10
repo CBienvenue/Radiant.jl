@@ -61,8 +61,19 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
             pl,pm = spherical_harmonics_indices(L)
             Lmax = maximum(pl)
         end
+    elseif solver isa CP
+        # Azimuthally-symmetric (m = 0) half-range Legendre surface expansion, truncated at the
+        # solver's surface order Nν. The incoming boundary flux is represented by its moments in
+        # the same basis R̄_ℓ(μ̂) = √(2ℓ+1) P_ℓ(2μ̂-1) used by the CP boundary-coupling matrices.
+        if Ndims != 1 error("The CP solver only supports surface sources in 1D Cartesian geometry.") end
+        L = min(source.get_legendre_order(),solver.get_surface_order())
+        Qdims = 1
+        Np = L+1
+        pl = collect(0:L)
+        pm = zeros(Int64,Np)
+        Lmax = L
     else
-        error("Surface sources are only available with Discrete Ordinates and Spherical Harmonics methods.")
+        error("Surface sources are only available with Discrete Ordinates, Spherical Harmonics and Collision Probability methods.")
     end
 
     #----

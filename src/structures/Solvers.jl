@@ -1,4 +1,4 @@
-const Solver = Union{SN, GN, CPM}
+const Solver = Union{SN, GN, CP}
 """
     Solvers
 

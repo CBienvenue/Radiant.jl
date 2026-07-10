@@ -1,5 +1,5 @@
 """
-    cpm_exponential_integral(n::Int64,x::T) where {T<:AbstractFloat}
+    cp_exponential_integral(n::Int64,x::T) where {T<:AbstractFloat}
 
 Generalized exponential integral of order `n`,
 ``E_n(x) = \\int_0^1 \\mu^{n-2} e^{-x/\\mu}\\,d\\mu = \\int_1^\\infty t^{-n} e^{-xt}\\,dt``,
@@ -16,7 +16,7 @@ is returned at the origin. The argument type is preserved (`Float64` on the fast
 - `En::T` : value of `E_n(x)`.
 
 """
-function cpm_exponential_integral(n::Int64,x::T) where {T<:AbstractFloat}
+function cp_exponential_integral(n::Int64,x::T) where {T<:AbstractFloat}
     if x ≤ 0
         return n > 1 ? one(T)/(n-1) : T(Inf)
     end
@@ -24,7 +24,7 @@ function cpm_exponential_integral(n::Int64,x::T) where {T<:AbstractFloat}
 end
 
 """
-    cpm_optical_thickness(Σ::Vector{Float64},Δx::Vector{Float64},i::Int64,j::Int64)
+    cp_optical_thickness(Σ::Vector{Float64},Δx::Vector{Float64},i::Int64,j::Int64)
 
 Accumulated optical thickness ``F_{i,j} = \\sum_{k=i}^{j} \\Delta x_k \\Sigma_k`` between
 regions `i` and `j` (`0` when `j < i`).
@@ -38,7 +38,7 @@ regions `i` and `j` (`0` when `j < i`).
 - `F::Float64` : accumulated optical thickness.
 
 """
-function cpm_optical_thickness(Σ::Vector{Float64},Δx::Vector{Float64},i::Int64,j::Int64)
+function cp_optical_thickness(Σ::Vector{Float64},Δx::Vector{Float64},i::Int64,j::Int64)
     if j < i return 0.0 end
     F = 0.0
     for k in range(i,j) F += Δx[k]*Σ[k] end
@@ -46,7 +46,7 @@ function cpm_optical_thickness(Σ::Vector{Float64},Δx::Vector{Float64},i::Int64
 end
 
 """
-    cpm_collision_coefficient(ℓp::Int64,ℓq::Int64,k₁::Int64,k₂::Int64)
+    cp_collision_coefficient(ℓp::Int64,ℓq::Int64,k₁::Int64,k₂::Int64)
 
 Reduction coefficient ``C^{0,k_1,k_2}_{\\ell_p,\\ell_q,0}`` of the azimuthally-symmetric
 (`m = 0`) volume--volume collision probability (TR-02, Eq. for ``C^{k_0,k_1,k_2}`` with
@@ -61,12 +61,12 @@ Reduction coefficient ``C^{0,k_1,k_2}_{\\ell_p,\\ell_q,0}`` of the azimuthally-s
 - `C::Float64` : reduction coefficient.
 
 """
-function cpm_collision_coefficient(ℓp::Int64,ℓq::Int64,k₁::Int64,k₂::Int64)
+function cp_collision_coefficient(ℓp::Int64,ℓq::Int64,k₁::Int64,k₂::Int64)
     return (-1)^(k₁+k₂)/2.0^(ℓp+ℓq+1) * binomial(ℓp,k₁)*binomial(ℓq,k₂)*binomial(2ℓp-2k₁,ℓp)*binomial(2ℓq-2k₂,ℓq)
 end
 
 """
-    cpm_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::Int64,
+    cp_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::Int64,
     Σ::Vector{Float64},Δx::Vector{Float64})
 
 Geometry-reduced volume--volume collision probability ``\\tilde{p}^{(p,q)}_{i,j}`` for the
@@ -85,9 +85,9 @@ regions and reciprocity for `i > j`) are handled in terms of the exponential int
 - `p̃::Float64` : reduced collision probability ``\\tilde{p}^{(p,q)}_{i,j}``.
 
 """
-function cpm_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::Int64,Σ::Vector{Float64},Δx::Vector{Float64})
+function cp_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::Int64,Σ::Vector{Float64},Δx::Vector{Float64})
 
-    F(a,b) = cpm_optical_thickness(Σ,Δx,a,b)
+    F(a,b) = cp_optical_thickness(Σ,Δx,a,b)
     s = 0.0
 
     if i != j
@@ -99,27 +99,27 @@ function cpm_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::I
         if Σ[lo] != 0.0 && Σ[hi] != 0.0
             for k₁ in range(0,ℓp÷2), k₂ in range(0,ℓq÷2)
                 κ = ℓp+ℓq-2k₁-2k₂
-                s += cpm_collision_coefficient(ℓp,ℓq,k₁,k₂)*(cpm_exponential_integral(κ+3,F(lo+1,hi-1))
-                     - cpm_exponential_integral(κ+3,F(lo+1,hi)) - cpm_exponential_integral(κ+3,F(lo,hi-1))
-                     + cpm_exponential_integral(κ+3,F(lo,hi)))
+                s += cp_collision_coefficient(ℓp,ℓq,k₁,k₂)*(cp_exponential_integral(κ+3,F(lo+1,hi-1))
+                     - cp_exponential_integral(κ+3,F(lo+1,hi)) - cp_exponential_integral(κ+3,F(lo,hi-1))
+                     + cp_exponential_integral(κ+3,F(lo,hi)))
             end
             s /= (Σ[lo]*Σ[hi])
         elseif Σ[lo] != 0.0 && Σ[hi] == 0.0
             for k₁ in range(0,ℓp÷2), k₂ in range(0,ℓq÷2)
                 κ = ℓp+ℓq-2k₁-2k₂
-                s += cpm_collision_coefficient(ℓp,ℓq,k₁,k₂)*(cpm_exponential_integral(κ+2,F(lo+1,hi-1)) - cpm_exponential_integral(κ+2,F(lo,hi-1)))
+                s += cp_collision_coefficient(ℓp,ℓq,k₁,k₂)*(cp_exponential_integral(κ+2,F(lo+1,hi-1)) - cp_exponential_integral(κ+2,F(lo,hi-1)))
             end
             s *= Δx[hi]/Σ[lo]
         elseif Σ[lo] == 0.0 && Σ[hi] != 0.0
             for k₁ in range(0,ℓp÷2), k₂ in range(0,ℓq÷2)
                 κ = ℓp+ℓq-2k₁-2k₂
-                s += cpm_collision_coefficient(ℓp,ℓq,k₁,k₂)*(cpm_exponential_integral(κ+2,F(lo+1,hi-1)) - cpm_exponential_integral(κ+2,F(lo+1,hi)))
+                s += cp_collision_coefficient(ℓp,ℓq,k₁,k₂)*(cp_exponential_integral(κ+2,F(lo+1,hi-1)) - cp_exponential_integral(κ+2,F(lo+1,hi)))
             end
             s *= Δx[lo]/Σ[hi]
         else
             for k₁ in range(0,ℓp÷2), k₂ in range(0,ℓq÷2)
                 κ = ℓp+ℓq-2k₁-2k₂
-                s += cpm_collision_coefficient(ℓp,ℓq,k₁,k₂)*cpm_exponential_integral(κ+1,F(lo+1,hi-1))
+                s += cp_collision_coefficient(ℓp,ℓq,k₁,k₂)*cp_exponential_integral(κ+1,F(lo+1,hi-1))
             end
             s *= Δx[lo]*Δx[hi]
         end
@@ -129,8 +129,8 @@ function cpm_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::I
         if Σ[i] != 0.0
             for k₁ in range(0,ℓp÷2), k₂ in range(0,ℓq÷2)
                 κ = ℓp+ℓq-2k₁-2k₂
-                s += (1+(-1)^κ)*cpm_collision_coefficient(ℓp,ℓq,k₁,k₂)*(
-                        (1/(κ+1))*(Δx[i]/Σ[i]) - (1/(κ+2))/Σ[i]^2 + cpm_exponential_integral(κ+3,Δx[i]*Σ[i])/Σ[i]^2)
+                s += (1+(-1)^κ)*cp_collision_coefficient(ℓp,ℓq,k₁,k₂)*(
+                        (1/(κ+1))*(Δx[i]/Σ[i]) - (1/(κ+2))/Σ[i]^2 + cp_exponential_integral(κ+3,Δx[i]*Σ[i])/Σ[i]^2)
             end
             return s
         else
@@ -141,10 +141,10 @@ function cpm_reduced_collision_probability(ℓp::Int64,ℓq::Int64,i::Int64,j::I
 end
 
 """
-    cpm_collision_matrix(Σ::Vector{Float64},Δx::Vector{Float64},Lp::Int64)
+    cp_collision_matrix(Σ::Vector{Float64},Δx::Vector{Float64},Lp::Int64)
 
 Assemble the (un-normalized) volume--volume collision-probability matrix ``P_{vv}`` coupling
-the flux moments to the source moments for the azimuthally-symmetric (`m = 0`) 1D CPM. The
+the flux moments to the source moments for the azimuthally-symmetric (`m = 0`) 1D CP. The
 matrix has size ``(N_x P) \\times (N_x P)`` with `P = Lp+1` Legendre moments per region and is
 indexed so that the flux relation reads ``\\vec{\\phi} = P_{vv}\\,\\vec{Q}`` (before the
 boundary and scattering closures). The un-normalized probability is recovered from the
@@ -160,7 +160,7 @@ reduced one through ``p^{(p,q)}_{i,j} = \\frac{2\\ell_q+1}{\\Delta x_i}\\tilde{p
 - `Pvv::Matrix{Float64}` : collision-probability matrix, size `(Nx*(Lp+1), Nx*(Lp+1))`.
 
 """
-function cpm_collision_matrix(Σ::Vector{Float64},Δx::Vector{Float64},Lp::Int64)
+function cp_collision_matrix(Σ::Vector{Float64},Δx::Vector{Float64},Lp::Int64)
     Nx = length(Σ)
     P = Lp+1
     Pvv = zeros(Nx*P,Nx*P)
@@ -171,7 +171,7 @@ function cpm_collision_matrix(Σ::Vector{Float64},Δx::Vector{Float64},Lp::Int64
         # The source expansion Q(Ω) = Σ_q (2ℓ_q+1)/4π R_q(Ω) Q^{(q)} carries the (2ℓ_q+1) factor
         # of the *source* moment order q (not the flux moment order p); this is what makes the
         # anisotropic (p ≠ q) couplings and the particle balance correct.
-        Pvv[row,col] = (2ℓq+1)/Δx[i] * cpm_reduced_collision_probability(ℓp,ℓq,i,j,Σ,Δx)
+        Pvv[row,col] = (2ℓq+1)/Δx[i] * cp_reduced_collision_probability(ℓp,ℓq,i,j,Σ,Δx)
     end
     return Pvv
 end

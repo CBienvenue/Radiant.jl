@@ -73,7 +73,7 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
         else
             P = (Lp+1)^2
         end
-    elseif solver isa CPM
+    elseif solver isa CP
         # Azimuthally-symmetric (m = 0) Legendre expansion of the volume flux.
         P = solver.get_legendre_order()+1
     else
