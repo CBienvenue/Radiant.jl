@@ -466,10 +466,12 @@ function gn_weights_spherical_harmonics_1D(L_elem::Int64, Nv::Int64)
         end
     end
     pref = π / 8
+    denom = Float64(Nv * (Nv + 1))
+    mu_of_v(s::Int, v::Int) = (s == 1) ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) : (-1.0 + ((v - 1) * v) / denom)
     for u in (1, 5), v in 1:Nv
         su = _GN_SX[u]
         Psign = (su == 1) ? P_pos : P_neg
-        μ0, μ1 = _gn_legendre_band(u, v, Nv)
+        μ0 = mu_of_v(su, v); μ1 = mu_of_v(su, v + 1)
         Δμ = μ1 - μ0
         for p in 1:Nq
             mp = pm[p]
