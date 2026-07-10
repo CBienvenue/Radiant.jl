@@ -11,12 +11,15 @@ record structure, the reaction-name keywords and the particle codes used by Radi
 the files can be inspected or exchanged with other tools.
 
 !!! note "Interoperability and round-trip"
-    Radiant writes two layers of reactions. A *standard* interop layer uses recognized MATXS
-    reaction names (`*tot0`, `*heat`, `*scat`) so that NJOY/TRANSX-style tooling can read the
-    main quantities. An *extension* layer (`*edep`, `*abs`, `*momt`, `*stpw`, `*cdep`) carries
-    the Radiant-specific quantities that have no standard MATXS slot; tools that do not
-    recognize these names simply skip them. Reading a Radiant-written MATXS file back therefore
-    reproduces the original `Cross_Sections` exactly.
+    Radiant writes a standard subset (`*tot0`, `*heat`, `*char`, `*scat`) plus
+    Radiant-specific vectors required for lossless reconstruction (`*abs`, `*edep`, and the
+    charged-particle `EMOMTR`/`BSTC`/`PSTC` vectors). NJOY/TRANSX-style tooling may consume
+    the standard subset, while `read_matxs` requires the full Radiant vector set. Standard-only
+    MATXS input is rejected because the missing vectors cannot be reconstructed reliably.
+
+    Radiant stores cross-section quantities internally as macroscopic values. When writing
+    MATXS, vector and matrix values are divided by the supplied material density; when reading,
+    they are multiplied by that density again.
 
 ## File structure
 
@@ -82,24 +85,25 @@ Each reaction name is the incident-particle code followed by a reaction suffix. 
 reactions (record ` 6d `/` 7d `) are written only on the self pairs; the matrix reaction
 (record ` 8d `/` 9d `) is written for every pair. Using the photon prefix `g` as an example:
 
-| Keyword   | Layer     | Length  | Radiant quantity                                       |
-|-----------|-----------|---------|--------------------------------------------------------|
-| `gtot0`   | standard  | `Ng`    | `get_total` — total cross-section (P₀).                |
-| `gheat`   | standard  | `Ng`    | Heating / energy deposition (the per-group part of `get_energy_deposition`). |
-| `gscat`   | standard  | banded  | `get_scattering` — group-to-group transfer matrix, Legendre orders `0…L`. |
-| `gedep`   | extension | `Ng+1`  | `get_energy_deposition` (authoritative; supersedes `gheat` on read). |
-| `gabs`    | extension | `Ng`    | `get_absorption`.                                      |
-| `gmomt`   | extension | `Ng`    | `get_momentum_transfer`.                               |
-| `gstpw`   | extension | `Ng+1`  | `get_boundary_stopping_powers`.                        |
-| `gcdep`   | extension | `Ng+1`  | `get_charge_deposition`.                               |
+| Particle | Vector names |
+|----------|--------------|
+| photon | `gtot0`, `gheat`, `gchar`, `gabs`, `gedep` |
+| electron | `btot0`, `bheat`, `bchar`, `babs`, `EMOMTR`, `BSTC`, `bedep` |
+| positron | `ptot0`, `pheat`, `pchar`, `pabs`, `PSTC`, `pedep` |
 
-The same suffixes apply with the `b` (electron) and `p` (positron) prefixes. On reading,
-`*heat` is ignored because the full `Ng+1` energy-deposition vector is recovered from `*edep`.
+For every incident particle, `*tot0` has length `Ng`, `*abs` has length `Ng`, and `*edep`
+has length `Ng+1`. Charge deposition is represented by either `*cdep` with length `Ng+1`
+or `*char` with length `Ng`; the latter receives a zero appended at the lower boundary.
+`*momt` and `*stpw` are optional and default to zero vectors when absent. The legacy private
+names `*momt`, `*stpw`, and `*cdep` remain accepted on input but are not emitted.
+
+On reading, `*heat` is ignored as an authoritative value because the full `Ng+1` energy-
+deposition vector is recovered from `*edep`.
 
 ### Scattering-matrix banding
 
 The transfer matrix is stored in the compact banded form used by MATXS. For each outgoing
-group, `jband` gives the number of contributing incident groups and `ijj` the lowest incident
+group, `jband` gives the number of contributing incident groups and `ijj` the highest incident
 group number of the band. Within a band the data are ordered by Legendre moment (`P₀` band,
 then `P₁` band, …), and the incident groups within each moment are listed in descending order.
 
@@ -111,6 +115,8 @@ auto-detects the encoding from the first bytes of the file.
 - **BCD / ASCII** (`binary = false`, default) — tagged text records. Reals are written as
   fixed-width `e12.5` fields (6 per line), integers as `i6` (12 per line) and hollerith
   identifiers as `a8` (8 per line).
+- **Energy units** — Radiant group boundaries are stored internally in MeV; MATXS group
+  boundaries are written and read in eV, with a factor of `10⁶` applied at the format boundary.
 - **Binary** (`binary = true`) — each record is written as a single FORTRAN-style unformatted
   record: a 4-byte `Int32` length marker, a payload of native-endian `Int32` integers,
   `Float64` reals and 8-byte hollerith fields, and a trailing length marker.
@@ -119,8 +125,8 @@ auto-detects the encoding from the first bytes of the file.
     - The binary encoding is a **Radiant variant** (`Int32`/`Float64` payloads); it is not
       guaranteed byte-compatible with NJOY's own binary MATXS files. Validate against a
       reference file if true binary interoperability with NJOY is required.
-    - The exact standard reaction-name strings and the positron code are provisional. Confirm
-      them against the specific TRANSX/MATXS naming of your toolchain when exchanging files.
+    - Reaction-name conventions and the positron code should be validated against the specific
+      TRANSX/MATXS naming expected by your toolchain when exchanging files.
 
 ## Example
 

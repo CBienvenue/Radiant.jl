@@ -6,15 +6,22 @@ Write a MATXS-format (NJOY/CCCC) cross-sections file from a Cross_Sections struc
 The file follows the CCCC MATXS record structure produced by NJOY's `matxsr` module
 (file identification → file control → set hollerith id → file data → group structures →
 material control → vector control/blocks → matrix control/sub-blocks). To round-trip the
-full Radiant data set without loss, two layers of reactions are written:
+full Radiant data set without loss, standard and Radiant-specific reactions are written:
 
-- a *standard* interop layer using recognized MATXS reaction names so that NJOY/TRANSX-style
-  tooling can read the leading total (`*tot0`) and heating (`*heat`) vectors and the banded
-  group-to-group transfer matrices (`*scat`);
-- an *extension* layer of Radiant-private vector reactions (`*edep`, `*abs`, `*momt`,
-  `*stpw`, `*cdep`) carrying the quantities that have no standard MATXS slot. Tools that do
-  not recognize these names simply skip them; `read_matxs` keys on them to rebuild the exact
-  Cross_Sections.
+- standard vectors use the recognized total (`*tot0`), heating (`*heat`), charge (`*char`),
+  and scattering (`*scat`) names;
+- Radiant-specific vectors use `*abs` and `*edep`, plus `EMOMTR`/`BSTC`/`PSTC` for charged
+  particles. These vectors carry the data required to reconstruct the exact
+  `Cross_Sections`; tools that do not recognize them may consume only the standard subset.
+
+The emitted vector names are `gtot0`, `gheat`, `gchar`, `gabs`, `gedep` for photons;
+`btot0`, `bheat`, `bchar`, `babs`, `EMOMTR`, `BSTC`, `bedep` for electrons; and
+`ptot0`, `pheat`, `pchar`, `pabs`, `PSTC`, `pedep` for positrons. Legacy Radiant-private
+names are accepted by `read_matxs` but are not emitted.
+
+Radiant stores energy boundaries internally in MeV and writes them in MATXS eV. Vector and
+matrix values are divided by material density when written; `read_matxs` multiplies them by
+the supplied material density when rebuilding the library.
 
 Two encodings are supported and share the same record content: the BCD (ASCII) encoding
 (`binary=false`, tagged text records with `e12.5`/`i6`/`a8` fields) and a binary encoding
@@ -45,19 +52,28 @@ Npart = cross_sections.get_number_of_particles()
 Nmat = cross_sections.get_number_of_materials()
 L = cross_sections.get_legendre_order()
 lord = L + 1
+densities = [materials[m].density for m in range(1,Nmat)]
+if any(ismissing.(densities)) || any(densities .<= 0.0)
+    error("MATXS output requires strictly positive material densities.")
+end
+densities = Float64.(densities)
 
 Ng = [cross_sections.get_number_of_groups(particles[i]) for i in range(1,Npart)]
 codes = [matxs_particle_code(particles[i]) for i in range(1,Npart)]
 
-# Suffixes of the vector reactions written for each incident particle (fixed order, shared
-# by read_matxs).
-vector_suffixes = ["tot0","heat","edep","abs","momt","stpw","cdep"]
+# Vector reactions written for each incident particle (fixed order, shared by read_matxs).
+vector_names_by_particle = [matxs_vector_names(codes[i]) for i in range(1,Npart)]
 
 #----
 # File-level data type table : one type per ordered (incident,outgoing) particle pair.
 # Self pairs (jinp==joutp) additionally carry the vector reactions of the incident particle.
 #----
 ntype,htype,jinp,joutp = matxs_type_table(Npart,codes)
+n1d_by_type = [(jinp[t] == joutp[t]) ? length(vector_names_by_particle[jinp[t]]) : 0 for t in range(1,ntype)]
+n2d_by_type = ones(Int64,ntype)
+type_record_counts = [(n1d_by_type[t] > 0 ? 2 : 0) + 2*n2d_by_type[t] for t in range(1,ntype)]
+submaterial_locs = vcat([0],cumsum(type_record_counts)[1:end-1])
+material_record_count = 1 + sum(type_record_counts)
 
 #----
 # Write the MATXS file
@@ -82,13 +98,14 @@ try
     hprt  = [codes[i] for i in range(1,Npart)]
     hmatn = [string(first(materials[m].tag,8)) for m in range(1,Nmat)]
     nsubm = fill(ntype,Nmat)
-    locm  = zeros(Int64,Nmat)
+    locm  = [(m-1)*material_record_count for m in range(1,Nmat)]
     matxs_emit(io,binary," 3d ",[(:holl,vcat(hprt,htype,hmatn)),
                                  (:int,vcat(Ng,jinp,joutp,nsubm,locm))])
 
-    # Record 4 : group structures (per particle, descending bounds + emin)
+    # Record 4 : group structures (per particle, descending bounds + emin).
+    # MATXS stores energy boundaries in eV; Radiant keeps its internal energy grid in MeV.
     for i in range(1,Npart)
-        eb = cross_sections.get_energy_boundaries(particles[i])  # length Ng+1, descending
+        eb = 1.0e6 .* cross_sections.get_energy_boundaries(particles[i])
         matxs_emit(io,binary," 4d ",[(:real,collect(Float64,eb))])
     end
 
@@ -111,9 +128,10 @@ try
         reals5 = Float64[0.0]   # amass
         ints5  = Int64[]
         for t in range(1,ntype)
-            n1d = (jinp[t] == joutp[t]) ? length(vector_suffixes) : 0
+            n1d = n1d_by_type[t]
+            n2d = n2d_by_type[t]
             append!(reals5,[0.0,0.0])              # temp, sigz
-            append!(ints5,[t,n1d,1,0])             # itype, n1d, n2d, locs
+            append!(ints5,[t,n1d,n2d,submaterial_locs[t]]) # itype, n1d, n2d, locs
         end
         matxs_emit(io,binary," 5d ",[(:holl,[string(first(materials[m].tag,8))]),
                                      (:real,reals5),(:int,ints5)])
@@ -125,19 +143,31 @@ try
 
             # Vector control + block (self pairs only)
             if i == o
-                hvps = [codes[i]*sfx for sfx in vector_suffixes]
+                hvps = vector_names_by_particle[i]
                 nfg  = ones(Int64,length(hvps))
-                nlg  = [sfx in ("edep","stpw","cdep") ? Ngi+1 : Ngi for sfx in vector_suffixes]
+                nlg  = [name in ("BSTC","CSTC","PSTC") || endswith(name,"edep") ? Ngi+1 : Ngi for name in hvps]
                 matxs_emit(io,binary," 6d ",[(:holl,hvps),(:int,vcat(nfg,nlg))])
 
                 vps = Float64[]
-                append!(vps,total[i][:,m])           # tot0  (Ng)
-                append!(vps,edep[i][1:Ngi,m])         # heat  (Ng)   interop
-                append!(vps,edep[i][:,m])             # edep  (Ng+1) extension (authoritative)
-                append!(vps,absor[i][:,m])            # abs   (Ng)
-                append!(vps,momt[i][:,m])             # momt  (Ng)
-                append!(vps,stpw[i][:,m])             # stpw  (Ng+1)
-                append!(vps,cdep[i][:,m])             # cdep  (Ng+1)
+                for name in hvps
+                    if endswith(name,"tot0")
+                        append!(vps,total[i][:,m] ./ densities[m])
+                    elseif endswith(name,"heat")
+                        append!(vps,edep[i][1:Ngi,m] ./ densities[m])
+                    elseif endswith(name,"char")
+                        append!(vps,cdep[i][1:Ngi,m] ./ densities[m])
+                    elseif endswith(name,"abs")
+                        append!(vps,absor[i][:,m] ./ densities[m])
+                    elseif name == "EMOMTR"
+                        append!(vps,momt[i][:,m] ./ densities[m])
+                    elseif name in ("BSTC","CSTC","PSTC")
+                        append!(vps,stpw[i][:,m] ./ densities[m])
+                    elseif endswith(name,"edep")
+                        append!(vps,edep[i][:,m] ./ densities[m])
+                    else
+                        error("Unsupported MATXS vector name '$name'.")
+                    end
+                end
                 matxs_emit(io,binary," 7d ",[(:real,vps)])
             end
 
@@ -151,8 +181,8 @@ try
             for gf in range(1,Ngo)
                 jb = jband[gf]; ij = ijj[gf]
                 if jb == 0 continue end
-                for l in range(1,lord), gi in (ij+jb-1):-1:ij
-                    push!(mdat,matview[gi,gf,l])
+                for l in range(1,lord), gi in ij:-1:(ij-jb+1)
+                    push!(mdat,matview[gi,gf,l] / densities[m])
                 end
             end
             matxs_emit(io,binary," 9d ",[(:real,mdat)])
@@ -190,8 +220,8 @@ end
     matxs_band(matview,Ngi::Int64,Ngo::Int64)
 
 Compute the MATXS banding arrays `(jband,ijj)` of a `(Ngi,Ngo,L+1)` scattering matrix view :
-for each final group, `jband` is the number of contributing initial groups and `ijj` the
-lowest initial-group number in the band.
+for each final group, `jband` is the number of contributing initial groups and `ijj` is
+the highest initial-group number in the band.
 
 """
 function matxs_band(matview,Ngi::Int64,Ngo::Int64)
@@ -207,7 +237,7 @@ function matxs_band(matview,Ngi::Int64,Ngo::Int64)
         end
         if gmin != 0
             jband[gf] = gmax - gmin + 1
-            ijj[gf]   = gmin
+            ijj[gf]   = gmax
         end
     end
     return jband,ijj
@@ -228,6 +258,24 @@ function matxs_particle_code(particle::Particle)
 end
 
 """
+    matxs_vector_names(code::String)
+
+Return Dragon-facing MATXS vector names for an incident particle code. Records 35 and 36
+of FMAC-M are charged-particle quantities; keep them out of photon data.
+
+"""
+function matxs_vector_names(code::String)
+    if code == "b"
+        return ["btot0","bheat","bchar","babs","EMOMTR","BSTC","bedep"]
+    elseif code == "g"
+        return ["gtot0","gheat","gchar","gabs","gedep"]
+    elseif code == "p"
+        return ["ptot0","pheat","pchar","pabs","PSTC","pedep"]
+    end
+    error("Unsupported MATXS particle code '$code'.")
+end
+
+"""
     matxs_holl_words(str::String,nwords::Int64)
 
 Split a string into `nwords` fixed `a8` hollerith words (right-padded with spaces).
@@ -242,9 +290,9 @@ end
     matxs_emit(io::IO,binary::Bool,tag::String,segments)
 
 Write one MATXS record. `segments` is an ordered list of `(:int|:real|:holl, values)` pairs.
-In BCD mode the record is written as a tag line followed by fixed-width field lines (one
-segment per line group); in binary mode it is written as a single FORTRAN-style unformatted
-record (`Int32` length marker, payload of `Int32`/`Float64`/8-byte hollerith, length marker).
+In BCD mode the record tag and first payload fields are written on the same
+fixed-format line, following the CCCC/Dragon text reader conventions; in binary mode it
+is written as a single FORTRAN-style unformatted record (`Int32` length marker, payload of `Int32`/`Float64`/8-byte hollerith, length marker).
 
 """
 function matxs_emit(io::IO,binary::Bool,tag::String,segments)
@@ -265,16 +313,66 @@ function matxs_emit(io::IO,binary::Bool,tag::String,segments)
         marker = Int32(length(bytes))
         Base.write(io,marker); Base.write(io,bytes); Base.write(io,marker)
     else
-        println(io,tag)
-        for (kind,vals) in segments
-            if kind === :int
-                _matxs_write_ints(io,vals)
-            elseif kind === :real
-                _matxs_write_reals(io,vals)
-            elseif kind === :holl
-                _matxs_write_holl(io,vals)
-            end
+        _matxs_emit_bcd(io,tag,segments)
+    end
+end
+
+"""
+    _matxs_emit_bcd(io::IO,tag::String,segments)
+
+Write one BCD MATXS record using the fixed-column layout expected by the CCCC/Dragon
+reader.  The record tag occupies the first columns of the first payload line; continuation
+lines are untagged.
+
+"""
+function _matxs_emit_bcd(io::IO,tag::String,segments)
+    stag = rpad(tag,4)
+    if tag == " 0v "
+        holl = String.(segments[1][2])
+        ints = Int.(segments[2][2])
+        println(io,stag,rpad(first(holl[1],8),8)," ",rpad(first(holl[2],8),8),
+                rpad("",8)," ",@sprintf("%6d",ints[1]))
+    elseif tag == " 1d "
+        print(io,stag,"  ")
+        _matxs_write_ints(io,segments[1][2]; first_line=6, cont_line=12)
+    elseif tag == " 2d "
+        print(io,stag)
+        _matxs_write_holl(io,segments[1][2]; first_prefix="    ", first_line=8,
+                          cont_line=9)
+    elseif tag == " 3d "
+        print(io,stag)
+        _matxs_write_holl(io,segments[1][2]; first_prefix="    ", first_line=8,
+                          cont_line=9)
+        _matxs_write_ints(io,segments[2][2])
+    elseif tag == " 4d " || tag == " 7d " || tag == " 9d " || tag == "10d "
+        print(io,stag)
+        _matxs_write_reals(io,segments[1][2]; first_prefix="        ", first_line=5,
+                           cont_line=6)
+    elseif tag == " 5d "
+        holl = String.(segments[1][2])
+        reals = Float64.(segments[2][2])
+        ints = Int.(segments[3][2])
+        println(io,stag,rpad(first(holl[1],8),8),@sprintf("%12.5E",reals[1]))
+        nsub = length(ints) ÷ 4
+        for i in 1:nsub
+            rbase = 2 + 2*(i-1)
+            ibase = 1 + 4*(i-1)
+            println(io,@sprintf("%12.5E",reals[rbase]),@sprintf("%12.5E",reals[rbase+1]),
+                    @sprintf("%6d",ints[ibase]),@sprintf("%6d",ints[ibase+1]),
+                    @sprintf("%6d",ints[ibase+2]),@sprintf("%6d",ints[ibase+3]))
         end
+    elseif tag == " 6d "
+        print(io,stag)
+        _matxs_write_holl(io,segments[1][2]; first_prefix="    ", first_line=8,
+                          cont_line=9)
+        _matxs_write_ints(io,segments[2][2])
+    elseif tag == " 8d "
+        holl = String.(segments[1][2])
+        ints = Int.(segments[2][2])
+        println(io,stag,"    ",rpad(first(holl[1],8),8))
+        _matxs_write_ints(io,ints)
+    else
+        error("Unsupported MATXS BCD record tag '$tag'.")
     end
 end
 
@@ -284,10 +382,17 @@ end
 Write a sequence of reals as fixed-width `e12.5` fields, 6 per line.
 
 """
-function _matxs_write_reals(io::IO,vals)
+function _matxs_write_reals(io::IO,vals; first_prefix::String="", first_line::Int64=6,
+                            cont_line::Int64=6)
     fields = [@sprintf("%12.5E",Float64(v)) for v in vals]
-    for i in 1:6:length(fields)
-        println(io,join(fields[i:min(i+5,length(fields))]))
+    i = 1
+    nfirst = min(first_line,length(fields))
+    println(io,first_prefix*join(fields[i:i+nfirst-1]))
+    i += nfirst
+    while i <= length(fields)
+        n = min(cont_line,length(fields)-i+1)
+        println(io,join(fields[i:i+n-1]))
+        i += n
     end
 end
 
@@ -297,10 +402,16 @@ end
 Write a sequence of integers as fixed-width `i6` fields, 12 per line.
 
 """
-function _matxs_write_ints(io::IO,vals)
+function _matxs_write_ints(io::IO,vals; first_line::Int64=12, cont_line::Int64=12)
     fields = [@sprintf("%6d",Int(v)) for v in vals]
-    for i in 1:12:length(fields)
-        println(io,join(fields[i:min(i+11,length(fields))]))
+    i = 1
+    nfirst = min(first_line,length(fields))
+    println(io,join(fields[i:i+nfirst-1]))
+    i += nfirst
+    while i <= length(fields)
+        n = min(cont_line,length(fields)-i+1)
+        println(io,join(fields[i:i+n-1]))
+        i += n
     end
 end
 
@@ -310,9 +421,16 @@ end
 Write a sequence of hollerith identifiers as fixed-width `a8` fields, 8 per line.
 
 """
-function _matxs_write_holl(io::IO,names)
+function _matxs_write_holl(io::IO,names; first_prefix::String="", first_line::Int64=8,
+                           cont_line::Int64=8)
     fields = [rpad(first(n,8),8) for n in names]
-    for i in 1:8:length(fields)
-        println(io,join(fields[i:min(i+7,length(fields))]))
+    i = 1
+    nfirst = min(first_line,length(fields))
+    println(io,first_prefix*join(fields[i:i+nfirst-1]))
+    i += nfirst
+    while i <= length(fields)
+        n = min(cont_line,length(fields)-i+1)
+        println(io,join(fields[i:i+n-1]))
+        i += n
     end
 end
