@@ -17,6 +17,7 @@ RadiantObject = Union{
     Interaction,
     Particle,
     GN,
+    CP,
     Electromagnetic_Field
 }
 

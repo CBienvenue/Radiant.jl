@@ -37,6 +37,7 @@ For a detailed account of the theory and the features of the Radiant package, pl
   - Double Spherical Harmonics (DPN) method
   - Discontinuous Galerkin (GN) method
     - Angular meshes: polar-anchored, symmetric
+  - Collision Probability (CP) method (1D slab geometry, BTE only)
 - **Spatial discretization** : Generalized diamond difference schemes | Generalized discontinuous Galerkin schemes | Adaptive weighted schemes (SN only)
 - **Energy discretization** : Multigroup method | Continuous slowing-down discretization (same as spatial)
 - **Angular Fokker-Planck discretization** : Moment-preserving | Finite-difference
