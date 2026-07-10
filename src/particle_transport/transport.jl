@@ -51,7 +51,7 @@ else
     particles = solvers.get_particles()
     fixed_source = Vector{Source}(undef,Npart)
     particle_sources = Vector{Source}(undef,Npart)
-    method = Vector{Union{SN,GN}}(undef,Npart) 
+    method = Vector{Solver}(undef,Npart)
     for i in range(1,Npart)
         method[i] = solvers.get_method(particles[i])
         fixed_source[i] = sources.get_source(particles[i])
