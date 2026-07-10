@@ -1,6 +1,6 @@
 # 6 Solvers
 
-In Radiant, the discretization method used to transport a particle is described by a *solver* object. Radiant currently provides three solver types — `SN`, `DPN` and `GN` — each addressing a different angular-discretization paradigm. A `Solvers` object groups one solver per particle and controls the coupling between them.
+In Radiant, the discretization method used to transport a particle is described by a *solver* object. Radiant currently provides four solver types — `SN`, `DPN`, `GN` and `CP` — each addressing a different angular-discretization paradigm. A `Solvers` object groups one solver per particle and controls the coupling between them.
 
 ## 6.1 The `Solvers` Object
 
@@ -235,7 +235,28 @@ For the `GN` solver in 1D, the `"legendre"` basis subdivides `μ ∈ [-1,1]` int
 !!! note
     The `GN` solver supports the same in-group acceleration methods as `SN` — `"none"`, `"livolant"`, `"anderson"`, `"gmres"` and `"bicgstab"`, with the same optional `set_acceleration` tuning parameter (see Section 6.2.6). The `DPN` solver currently supports only `"none"` and `"livolant"`.
 
-## 6.4 Mixing Solvers for Different Particles
+## 6.4 Collision-Probability (`CP`) Solver
+
+The `CP` solver implements the collision-probability method. Instead of sweeping the angular flux, it assembles the region-to-region collision, leakage and transmission probability matrices and solves the resulting linear system for the region-averaged flux moments. The volumetric flux is expanded in Legendre polynomials of the polar cosine `μ` and the boundary flux in a half-range Legendre basis. It is currently available in **one-dimensional Cartesian geometry** for the **Boltzmann transport equation** (`"BTE"`), with vacuum, reflective and surface-source boundaries.
+
+```julia
+cp = CP()
+cp.set_particle(electron)
+cp.set_solver_type("BTE")
+cp.set_legendre_order(3)          # volume = surface order (or set_legendre_order(Lv,Ls))
+cp.set_surface_order(6)           # order of the half-range boundary-flux expansion
+cp.set_mode("global")             # "global" (direct solve) or "sweeping" (interface currents)
+cp.set_acceleration("livolant")   # sweeping mode only
+cp.set_convergence_criterion(1e-7)
+cp.set_maximum_iteration(300)
+```
+
+`set_legendre_order(L)` sets the volumetric and surface orders to the same value; the two-argument form `set_legendre_order(Lv, Ls)` (or `set_surface_order`) sets them independently. Two solution modes are available: `"global"` couples all regions and surfaces and factorizes the system directly, while `"sweeping"` propagates the interface currents cell by cell and resolves the within-group scattering by source iteration (accelerated with the same methods as `SN`).
+
+!!! note
+    The `CP` solver assembles region-averaged flux moments; it does not use the `set_scheme` spatial/energy schemes of the other solvers. Surface (boundary) sources are supported and are expanded in the same half-range Legendre basis as the boundary flux.
+
+## 6.5 Mixing Solvers for Different Particles
 
 A single calculation can mix solver types — for example using an `SN` solver for photons and a `GN` solver for electrons:
 
@@ -248,7 +269,7 @@ solvers.set_maximum_number_of_generations(10)
 
 The `Solvers` object dispatches each particle to its associated method during coupled iterations.
 
-## 6.5 Summary of the Solver API
+## 6.6 Summary of the Solver API
 
 ### `Solvers`
 
@@ -289,3 +310,14 @@ Same interface as `SN` for `set_particle`, `set_solver_type`, `set_legendre_orde
 | `set_angular_fokker_planck("galerkin")`      | Currently the only available choice.                       |
 | `set_subdivision(n)` *(GN only)*             | Number of angular subdivisions.                            |
 | `set_legendre_order(L_g,L_l)` *(GN only)*    | Global and local Legendre orders.                          |
+
+### `CP`
+
+1D Cartesian, Boltzmann transport equation. Shares `set_particle`, `set_solver_type` (`"BTE"`), `set_acceleration`, `set_convergence_criterion`, `set_maximum_iteration` with `SN`, plus:
+
+| Method                                       | Description                                                |
+|----------------------------------------------|------------------------------------------------------------|
+| `CP()`                                       | Constructor.                                               |
+| `set_legendre_order(L)` / `(Lv,Ls)`          | Volumetric (and surface) Legendre order.                   |
+| `set_surface_order(N)`                       | Order of the half-range boundary-flux expansion.           |
+| `set_mode(m)`                                | `"global"` (direct solve) or `"sweeping"` (interface currents). |

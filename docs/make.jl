@@ -68,7 +68,8 @@ makedocs(
             "Solvers" => [
                 "Solvers" => "api_solvers.md",
                 "SN"      => "api_sn.md",
-                "GN"      => "api_gn.md"
+                "GN"      => "api_gn.md",
+                "CP"      => "api_cp.md"
             ],
             "Geometry"     => "api_geometry.md",
             "Electromagnetic_Field" => "api_electromagnetic_field.md",
