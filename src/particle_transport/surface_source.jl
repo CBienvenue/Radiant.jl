@@ -31,7 +31,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     geometry_type = geometry.get_type()
     norm = 0.0
     surface = uppercase(source.location)
-    if ~ismissing(source.angular_moments) && Ndims != 1 error("Distributed surface sources (set_angular_moments) are only available in 1D.") end
+    if ~ismissing(source.angular_moments) && Ndims != 1 && surface ∉ ["X-","X+"]
+        error("Distributed surface sources (set_angular_moments) are only available on the X- and X+ faces in 2D/3D.")
+    end
 
     if solver isa SN
 
@@ -147,12 +149,16 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                     # Distributed (azimuthally-symmetric) source: the m = 0 half-range
                     # spherical harmonics are R̄ₗ(μ̂)/√(2π) on the x-faces, so the surface
                     # moments are the user-provided half-range Legendre moments ÷ √(2π).
+                    # The GN boundary basis (boundary_real_half_range_...) maps the face
+                    # box with the REVERSED argument μ̂ → 1-μ̂, so its odd-ℓ members carry
+                    # an extra (-1)^ℓ.
                     g_mom = source.angular_moments
                     norm = intensity * g_mom[1]
                     ib = surface == "X-" ? 1 : 2
                     for ig in range(1,Ng), p in range(1,Np)
                         if ig == source.energy_group && pm[p] == 0 && pl[p] ≤ length(g_mom)-1
-                            Q[ig,p,ib] = intensity * g_mom[pl[p]+1] / sqrt(2*π)
+                            sgn = (solver isa GN && isodd(pl[p])) ? -1.0 : 1.0
+                            Q[ig,p,ib] = sgn * intensity * g_mom[pl[p]+1] / sqrt(2*π)
                         end
                     end
                 else
@@ -202,11 +208,14 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
             # Extract source informations
             intensity = source.intensity
-            Ωs = source.direction
-            μs = Ωs[1]
-            ηs = Ωs[2]
-            ξs = Ωs[3]
-            ϕs = atan(ξs,ηs)
+            is_distributed = ~ismissing(source.angular_moments)
+            if ~is_distributed
+                Ωs = source.direction
+                μs = Ωs[1]
+                ηs = Ωs[2]
+                ξs = Ωs[3]
+                ϕs = atan(ξs,ηs)
+            end
 
             # Matrix Initialization
             Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,4)
@@ -219,37 +228,62 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 end
             end
 
+            # Angular value per moment slot: half-range harmonics at the δ direction,
+            # or the m = 0 collapse of the user moments (÷√(2π), x-faces span the full
+            # azimuth) for a distributed source.
+            aval = zeros(Np)
+            if is_distributed
+                # The GN boundary basis (boundary_real_half_range_...) maps the face
+                # box with the REVERSED argument μ̂ → 1-μ̂ on the x-faces, so its odd-ℓ
+                # members carry an extra (-1)^ℓ; the SN basis is unreversed.
+                g_mom = source.angular_moments
+                for p in range(1,Np)
+                    if pm[p] == 0 && pl[p] ≤ length(g_mom)-1
+                        sgn = (solver isa GN && isodd(pl[p])) ? -1.0 : 1.0
+                        aval[p] = sgn*g_mom[pl[p]+1]/sqrt(2*π)
+                    end
+                end
+            else
+                if solver isa SN
+                    ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                else
+                    b = cartesian_boundary_index(surface)
+                    ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
+                end
+                for p in range(1,Np)
+                    aval[p] = ψlms[pl[p]+1][pl[p]+pm[p]+1]
+                end
+            end
+            g0fac = is_distributed ? source.angular_moments[1] : 1.0
+            in_xm = is_distributed || μs > 0
+            in_xp = is_distributed || μs < 0
+
             # Calculation of the source moments
             norm = 0.0
-            if solver isa SN
-                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
-            else
-                b = cartesian_boundary_index(surface)
-                ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
-            end
             for ig in range(1,Ng)
                 if ~(ig == source.energy_group) continue end
                 for p in range(1,Np)
-                    l = pl[p]
-                    m = pm[p]
+                    # The boundary moments are angular-flux VALUES on each face cell
+                    # (the sweeps consume them as incoming cell-edge fluxes); the
+                    # transverse widths enter only the source normalization.
                     if surface ∈ ["X-","X+"]
                         for iy in range(1,Ny)
                             if y[iy] < ymin || y[iy] > ymax continue end
-                            if surface == "X-" && μs > 0
-                                Q[ig,p,1][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
-                            elseif surface == "X+" && μs < 0
-                                Q[ig,p,2][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
+                            if surface == "X-" && in_xm
+                                Q[ig,p,1][iy] = intensity * aval[p]
+                            elseif surface == "X+" && in_xp
+                                Q[ig,p,2][iy] = intensity * aval[p]
                             end
-                            if p == 1 norm += intensity * Δy[iy] end
+                            if p == 1 norm += intensity * g0fac * Δy[iy] end
                         end
                     end
                     if surface ∈ ["Y-","Y+"]
                         for ix in range(1,Nx)
                             if x[ix] < xmin || x[ix] > xmax continue end
                             if surface == "Y-" && ηs > 0
-                                Q[ig,p,3][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
+                                Q[ig,p,3][ix] = intensity * aval[p]
                             elseif surface == "Y+" && ηs < 0
-                                Q[ig,p,4][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
+                                Q[ig,p,4][ix] = intensity * aval[p]
                             end
                             if p == 1 norm += intensity * Δx[ix] end
                         end
@@ -288,11 +322,14 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
             # Extract source informations
             intensity = source.intensity
-            Ωs = source.direction
-            μs = Ωs[1]
-            ηs = Ωs[2]
-            ξs = Ωs[3]
-            ϕs = atan(ξs,ηs)
+            is_distributed = ~ismissing(source.angular_moments)
+            if ~is_distributed
+                Ωs = source.direction
+                μs = Ωs[1]
+                ηs = Ωs[2]
+                ξs = Ωs[3]
+                ϕs = atan(ξs,ηs)
+            end
 
             # Matrix Initialization
             Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,6)
@@ -308,29 +345,54 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 end
             end
 
+            # Angular value per moment slot: half-range harmonics at the δ direction,
+            # or the m = 0 collapse of the user moments (÷√(2π), x-faces span the full
+            # azimuth) for a distributed source.
+            aval = zeros(Np)
+            if is_distributed
+                # The GN boundary basis (boundary_real_half_range_...) maps the face
+                # box with the REVERSED argument μ̂ → 1-μ̂ on the x-faces, so its odd-ℓ
+                # members carry an extra (-1)^ℓ; the SN basis is unreversed.
+                g_mom = source.angular_moments
+                for p in range(1,Np)
+                    if pm[p] == 0 && pl[p] ≤ length(g_mom)-1
+                        sgn = (solver isa GN && isodd(pl[p])) ? -1.0 : 1.0
+                        aval[p] = sgn*g_mom[pl[p]+1]/sqrt(2*π)
+                    end
+                end
+            else
+                if solver isa SN
+                    ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                else
+                    b = cartesian_boundary_index(surface)
+                    ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
+                end
+                for p in range(1,Np)
+                    aval[p] = ψlms[pl[p]+1][pl[p]+pm[p]+1]
+                end
+            end
+            g0fac = is_distributed ? source.angular_moments[1] : 1.0
+            in_xm = is_distributed || μs > 0
+            in_xp = is_distributed || μs < 0
+
             # Calculation of the source moments
             norm = 0.0
-            if solver isa SN
-                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
-            else
-                b = cartesian_boundary_index(surface)
-                ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
-            end
             for ig in range(1,Ng)
                 if ~(ig == source.energy_group) continue end
                 for p in range(1,Np)
-                    l = pl[p]
-                    m = pm[p]
+                    # The boundary moments are angular-flux VALUES on each face cell
+                    # (the sweeps consume them as incoming cell-edge fluxes); the
+                    # transverse widths enter only the source normalization.
                     if surface ∈ ["X-","X+"]
                         for iy in range(1,Ny), iz in range(1,Nz)
                             if y[iy] < ymin || y[iy] > ymax continue end
                             if z[iz] < zmin || z[iz] > zmax continue end
-                            if surface == "X-" && μs > 0
-                                Q[ig,p,1][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
-                            elseif surface == "X+" && μs < 0
-                                Q[ig,p,2][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
+                            if surface == "X-" && in_xm
+                                Q[ig,p,1][iy,iz] = intensity * aval[p]
+                            elseif surface == "X+" && in_xp
+                                Q[ig,p,2][iy,iz] = intensity * aval[p]
                             end
-                            if p == 1 norm += intensity * Δy[iy] * Δz[iz] end
+                            if p == 1 norm += intensity * g0fac * Δy[iy] * Δz[iz] end
                         end
                     end
                     if surface ∈ ["Y-","Y+"]
@@ -338,9 +400,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             if x[ix] < xmin || x[ix] > xmax continue end
                             if z[iz] < zmin || z[iz] > zmax continue end
                             if surface == "Y-" && ηs > 0
-                                Q[ig,p,3][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
+                                Q[ig,p,3][ix,iz] = intensity * aval[p]
                             elseif surface == "Y+" && ηs < 0
-                                Q[ig,p,4][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
+                                Q[ig,p,4][ix,iz] = intensity * aval[p]
                             end
                             if p == 1 norm += intensity * Δx[ix] * Δz[iz] end
                         end
@@ -350,9 +412,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             if x[ix] < xmin || x[ix] > xmax continue end
                             if y[iy] < ymin || y[iy] > ymax continue end
                             if surface == "Z-" && ξs > 0
-                                Q[ig,p,5][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
+                                Q[ig,p,5][ix,iy] = intensity * aval[p]
                             elseif surface == "Z+" && ξs < 0
-                                Q[ig,p,6][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
+                                Q[ig,p,6][ix,iy] = intensity * aval[p]
                             end
                             if p == 1 norm += intensity * Δx[ix] * Δy[iy] end
                         end

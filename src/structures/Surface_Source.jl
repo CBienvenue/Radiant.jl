@@ -36,6 +36,8 @@ mutable struct Surface_Source
     legendre_order             ::Int64
     beam_treatment             ::String
     uncollided_model           ::String
+    ray_refinement             ::Int64
+    uncollided_angular_order   ::Tuple{Int64,Int64}
 
     # Constructor(s)
     function Surface_Source()
@@ -56,6 +58,8 @@ mutable struct Surface_Source
         this.legendre_order = 64
         this.beam_treatment = "boundary"
         this.uncollided_model = "goudsmit-saunderson"
+        this.ray_refinement = 1
+        this.uncollided_angular_order = (16,32)
 
         return this
     end
@@ -219,8 +223,10 @@ To set the model of the uncollided component in the first-collision treatment
 (BFP solvers only; for BTE/BCSD both models coincide):
 - `"goudsmit-saunderson"` (default) : the uncollided column carries the exact
   Fokker-Planck angular redistribution along its pathlength (order-ℓ moments
-  damped as e^(-ℓ(ℓ+1)·∫T ds), mean-depth advance ⟨μ⟩ = μ₀·e^(-2∫T ds)), with
-  only the longitudinal straggling neglected.
+  damped as e^(-ℓ(ℓ+1)·∫T ds), mean-depth advance ⟨μ⟩ = μ₀·e^(-2∫T ds)); in 2D/3D
+  each deposit is spread by a Gaussian kernel carrying the exact Lewis second
+  moments (longitudinal straggling and transverse spread), while in 1D the
+  column deposits at its mean depth.
 - `"straight"` : the column travels straight with no Fokker-Planck broadening
   (δ-pure model), kept for comparison; it displaces the dose of FP-dominated
   problems toward depth.
@@ -259,6 +265,68 @@ Get the model of the uncollided component in the first-collision treatment.
 """
 function get_uncollided_model(this::Surface_Source)
     return this.uncollided_model
+end
+
+"""
+    set_ray_refinement(this::Surface_Source,ray_refinement::Int64)
+
+To set the ray refinement of the multi-dimensional first-collision treatment: each
+illuminated source face cell is subdivided into `ray_refinement^(Ndims-1)`
+sub-elements (launch points). `1` (default) is exact for axis-aligned normal
+beams; oblique beams and distributed sources converge as the refinement grows.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+- `ray_refinement::Int64` : number of sub-elements per face cell and tangent axis.
+
+# Output Argument(s)
+N/A
+
+"""
+function set_ray_refinement(this::Surface_Source,ray_refinement::Int64)
+    if ray_refinement < 1 error("Ray refinement must be at least 1.") end
+    this.ray_refinement = ray_refinement
+end
+
+"""
+    get_ray_refinement(this::Surface_Source)
+
+Get the ray refinement of the multi-dimensional first-collision treatment.
+
+"""
+function get_ray_refinement(this::Surface_Source)
+    return this.ray_refinement
+end
+
+"""
+    set_uncollided_angular_order(this::Surface_Source,Nμ::Int64,Nφ::Int64)
+
+To set the incoming-hemisphere quadrature order used by the multi-dimensional
+first-collision treatment of a distributed source: `Nμ` Gauss nodes in the polar
+cosine and `Nφ` uniform azimuthal nodes about the face normal.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+- `Nμ::Int64`, `Nφ::Int64` : polar and azimuthal quadrature orders.
+
+# Output Argument(s)
+N/A
+
+"""
+function set_uncollided_angular_order(this::Surface_Source,Nμ::Int64,Nφ::Int64)
+    if Nμ < 1 || Nφ < 1 error("Angular quadrature orders must be at least 1.") end
+    this.uncollided_angular_order = (Nμ,Nφ)
+end
+
+"""
+    get_uncollided_angular_order(this::Surface_Source)
+
+Get the incoming-hemisphere quadrature order (`Nμ`,`Nφ`) of the multi-dimensional
+first-collision treatment.
+
+"""
+function get_uncollided_angular_order(this::Surface_Source)
+    return this.uncollided_angular_order
 end
 
 """

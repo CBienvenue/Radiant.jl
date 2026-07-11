@@ -168,8 +168,7 @@ function add_source(this::Source,surface_sources::Surface_Source)
     # the source enters the solve as a smooth first-collision volume source; the
     # source never touches the truncated half-range boundary-moment path below.
     if lowercase(surface_sources.beam_treatment) == "first-collision"
-        first_collision_source!(this,surface_sources)
-        surface_sources.normalization_factor += ismissing(surface_sources.angular_moments) ? surface_sources.intensity : surface_sources.intensity*surface_sources.angular_moments[1]
+        first_collision_source!(this,surface_sources)   # accumulates the source normalization factor
         return
     end
 
