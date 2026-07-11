@@ -15,8 +15,9 @@ Structure used to define a directionnal boundary source and its properties.
 - `intensity::Float64=1.0` : intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
 - `angular_moments::Vector{Float64}` : half-range moments of the incident angular flux
   (alternative to `direction` for a distributed angular source).
-- `beam_treatment::String="boundary"` : treatment of the source in the transport solve
-  (`"boundary"` or `"first-collision"`).
+- `fcs::Bool=false` : whether the source is treated by the first-collision method
+  (the uncollided flux is computed analytically and split from the transport solve);
+  the default `false` keeps the ordinary boundary treatment.
 
 """
 mutable struct Surface_Source
@@ -34,7 +35,7 @@ mutable struct Surface_Source
     surface_sources            ::Union{Missing,Vector{Array{Float64}}}
     normalization_factor       ::Float64
     legendre_order             ::Int64
-    beam_treatment             ::String
+    fcs                        ::Bool
     uncollided_model           ::String
     ray_refinement             ::Int64
     uncollided_angular_order   ::Tuple{Int64,Int64}
@@ -56,7 +57,7 @@ mutable struct Surface_Source
         this.normalization_factor = 0.0
         this.surface_sources = missing
         this.legendre_order = 64
-        this.beam_treatment = "boundary"
+        this.fcs = false
         this.uncollided_model = "goudsmit-saunderson"
         this.ray_refinement = 1
         this.uncollided_angular_order = (16,32)
@@ -188,19 +189,18 @@ function set_angular_moments(this::Surface_Source,angular_moments::Vector{Float6
 end
 
 """
-    set_beam_treatment(this::Surface_Source,beam_treatment::String)
+    set_fcs(this::Surface_Source,fcs::Bool)
 
-To set the treatment of the surface source in the transport solve:
-- `"boundary"` (default) : the source enters as an incoming boundary condition
-  through its truncated half-range moment expansion.
-- `"first-collision"` : the uncollided flux is computed analytically outside the
-  solver, which then only transports the smooth first-collision volume source
-  (`first_collision_source!`). Available in 1D Cartesian geometry with void
-  x-boundaries, for the GN and SN solvers (BTE/BFP/BCSD).
+To enable the first-collision treatment of the surface source. When `false`
+(default), the source enters as an ordinary incoming boundary condition through
+its truncated half-range moment expansion. When `true`, the uncollided flux is
+computed analytically outside the solver, which then only transports the smooth
+first-collision volume source (`first_collision_source!`). Available in 1D/2D/3D
+Cartesian geometry with void boundaries, for the GN and SN solvers (BTE/BFP/BCSD).
 
 # Input Argument(s)
 - `this::Surface_Source` : surface source.
-- `beam_treatment::String` : treatment of the source.
+- `fcs::Bool` : whether to use the first-collision treatment.
 
 # Output Argument(s)
 N/A
@@ -208,12 +208,11 @@ N/A
 # Examples
 ```jldoctest
 julia> ss = Surface_Source()
-julia> ss.set_beam_treatment("first-collision")
+julia> ss.set_fcs(true)
 ```
 """
-function set_beam_treatment(this::Surface_Source,beam_treatment::String)
-    if lowercase(beam_treatment) ∉ ["boundary","first-collision"] error("Unknown beam treatment.") end
-    this.beam_treatment = lowercase(beam_treatment)
+function set_fcs(this::Surface_Source,fcs::Bool)
+    this.fcs = fcs
 end
 
 """
@@ -472,17 +471,17 @@ function get_angular_moments(this::Surface_Source)
 end
 
 """
-    get_beam_treatment(this::Surface_Source)
+    get_fcs(this::Surface_Source)
 
-Get the treatment of the surface source in the transport solve.
+Get whether the surface source is treated by the first-collision method.
 
 # Input Argument(s)
 - `this::Surface_Source` : surface source.
 
 # Output Argument(s)
-- `beam_treatment::String` : treatment of the source (`"boundary"` or `"first-collision"`).
+- `fcs::Bool` : whether the first-collision treatment is used.
 
 """
-function get_beam_treatment(this::Surface_Source)
-    return this.beam_treatment
+function get_fcs(this::Surface_Source)
+    return this.fcs
 end

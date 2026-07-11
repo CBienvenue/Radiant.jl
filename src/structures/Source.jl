@@ -167,7 +167,7 @@ function add_source(this::Source,surface_sources::Surface_Source)
     # First-collision treatment: the uncollided flux is computed analytically and
     # the source enters the solve as a smooth first-collision volume source; the
     # source never touches the truncated half-range boundary-moment path below.
-    if lowercase(surface_sources.beam_treatment) == "first-collision"
+    if surface_sources.fcs
         first_collision_source!(this,surface_sources)   # accumulates the source normalization factor
         return
     end

@@ -15,7 +15,7 @@ solvers (BTE/BFP/BCSD) and the X-/X+ faces.
 
 # Input Argument(s)
 - `source::Source` : source structure (updated in place).
-- `ss::Surface_Source` : surface source with `beam_treatment = "first-collision"`.
+- `ss::Surface_Source` : surface source with `fcs = true`.
 
 # Output Argument(s)
 N/A
