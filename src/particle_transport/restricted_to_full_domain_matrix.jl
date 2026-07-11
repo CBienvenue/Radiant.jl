@@ -321,17 +321,20 @@ function patch_to_full_range_matrix_legendre(L::Int64, L_elem::Int64, Nv::Int64)
     x, weight = gauss_legendre(N)
     t = 0.5 .* (x .+ 1.0)
     Ploc = [legendre_polynomials_up_to_L(L_elem, x[n]) for n in 1:N]
-    for u in (1, 5), v in 1:Nv
-        μ0, μ1 = _gn_legendre_band(u, v, Nv)
-        Δ = μ1 - μ0
-        for n in 1:N
-            μ = μ0 + Δ * t[n]
-            Pfull = legendre_polynomials_up_to_L(L, μ)
-            wn = weight[n] * (Δ / 2)
-            for q in 1:Nq
-                ψq = sqrt((2 * (q - 1) + 1) / Δ) * Ploc[n][q]
-                for p in 1:Np
-                    Mll[p, q, u, v, 1] += wn * Pfull[p] * ψq
+    for u in (1, 5)
+        edges = gn_1D_band_edges(u, Nv, :legendre)
+        for v in 1:Nv
+            μ0 = edges[v]; μ1 = edges[v + 1]
+            Δ = μ1 - μ0
+            for n in 1:N
+                μ = μ0 + Δ * t[n]
+                Pfull = legendre_polynomials_up_to_L(L, μ)
+                wn = weight[n] * (Δ / 2)
+                for q in 1:Nq
+                    ψq = sqrt((2 * (q - 1) + 1) / Δ) * Ploc[n][q]
+                    for p in 1:Np
+                        Mll[p, q, u, v, 1] += wn * Pfull[p] * ψq
+                    end
                 end
             end
         end
@@ -380,25 +383,26 @@ function patch_to_full_range_matrix_spherical_harmonics_1D(L::Int64, Lq::Int64, 
         lq = pl_q[q]; mq = pm_q[q]
         Cq[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
     end
-    denom = Float64(Nv * (Nv + 1))
-    mu_of_v(s::Int, v::Int) = (s == 1) ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) : (-1.0 + ((v - 1) * v) / denom)
-    for u in (1, 5), v in 1:Nv
+    for u in (1, 5)
         su = _GN_SX[u]
-        μ0 = mu_of_v(su, v); μ1 = mu_of_v(su, v + 1); Δμ = μ1 - μ0
-        Δϕ = 2π
-        scale_uv = 0.25 * sqrt((π / 2) * (Δμ * Δϕ))
-        for p in 1:Np
-            lp = pl_p[p]; mp = pm_p[p]; amp = abs(mp)
-            scale_p = scale_uv * Cp[p]
-            for q in 1:Nq
-                if pm_q[q] != mp continue end   # azimuthal orthogonality (full 2π)
-                az = 1.0 + (mp == 0)            # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
-                cos_int = 0.0
-                for n in 1:N
-                    μp = μ0 + Δμ * t[n]
-                    cos_int += weight[n] * Pnm(lp, amp, μp) * Pnm(pl_q[q], abs(pm_q[q]), su == 1 ? x[n] : -x[n])
+        edges = gn_1D_band_edges(u, Nv, :spherical)
+        for v in 1:Nv
+            μ0 = edges[v]; μ1 = edges[v + 1]; Δμ = μ1 - μ0
+            Δϕ = 2π
+            scale_uv = 0.25 * sqrt((π / 2) * (Δμ * Δϕ))
+            for p in 1:Np
+                lp = pl_p[p]; mp = pm_p[p]; amp = abs(mp)
+                scale_p = scale_uv * Cp[p]
+                for q in 1:Nq
+                    if pm_q[q] != mp continue end   # azimuthal orthogonality (full 2π)
+                    az = 1.0 + (mp == 0)            # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
+                    cos_int = 0.0
+                    for n in 1:N
+                        μp = μ0 + Δμ * t[n]
+                        cos_int += weight[n] * Pnm(lp, amp, μp) * Pnm(pl_q[q], abs(pm_q[q]), su == 1 ? x[n] : -x[n])
+                    end
+                    Mll[p, q, u, v, 1] += scale_p * Cq[q] * az * cos_int
                 end
-                Mll[p, q, u, v, 1] += scale_p * Cq[q] * az * cos_int
             end
         end
     end
@@ -715,8 +719,9 @@ function patch_to_half_range_matrix_legendre(L_surf::Int64, L_elem::Int64, Nv::I
             for u in (1, 5)
                 σ = _GN_SX[u]
                 if σ != sb * s continue end
+                edges = gn_1D_band_edges(u, Nv, :legendre)
                 for v in 1:Nv
-                    μ0, μ1 = _gn_legendre_band(u, v, Nv)
+                    μ0 = edges[v]; μ1 = edges[v + 1]
                     Δ = μ1 - μ0
                     for n in 1:N
                         μ = μ0 + Δ * t[n]
@@ -769,8 +774,6 @@ function patch_to_half_range_matrix_spherical_harmonics_1D(L_surf::Int64, L_elem
         lq = pl_q[q]; mq = pm_q[q]
         Cq[q] = sqrt(2 * (2 - (mq == 0)) / π * (2 * lq + 1) * factorial_factor([lq - abs(mq)], [lq + abs(mq)]))
     end
-    denom = Float64(Nv * (Nv + 1))
-    mu_of_v(s::Int, v::Int) = (s == 1) ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) : (-1.0 + ((v - 1) * v) / denom)
     for is in 1:2
         s = (is == 1) ? -1 : 1
         for b in 1:2
@@ -781,8 +784,9 @@ function patch_to_half_range_matrix_spherical_harmonics_1D(L_surf::Int64, L_elem
             for u in (1, 5)
                 if _GN_SX[u] != sb * s continue end
                 su = _GN_SX[u]
+                edges = gn_1D_band_edges(u, Nv, :spherical)
                 for v in 1:Nv
-                    μ0 = mu_of_v(su, v); μ1 = mu_of_v(su, v + 1); Δμ_uv = μ1 - μ0
+                    μ0 = edges[v]; μ1 = edges[v + 1]; Δμ_uv = μ1 - μ0
                     Δϕ_uw = 2π
                     scale_uv = boundary_scale * 0.25 * sqrt((π / 2) * (Δμ_uv * Δϕ_uw))
                     for p in 1:Np

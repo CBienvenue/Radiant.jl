@@ -76,6 +76,28 @@ function _gn_legendre_band(u::Int64, v::Int64, Nv::Int64)
     end
 end
 
+# Ascending μ band edges for the 1D GN tilings (hemispheres u ∈ {1, 5}). The edges
+# reproduce verbatim `_gn_legendre_band` (`basis = :legendre`, equal-width) or the
+# polar-anchored `_gn_mu_of_v` formula of the 1D SH builders (`basis = :spherical`).
+function gn_1D_band_edges(u::Int64, Nv::Int64, basis::Symbol)
+    sx = _GN_SX[u]
+    edges = Vector{Float64}(undef, Nv + 1)
+    if basis == :legendre
+        for v in 1:(Nv + 1)
+            edges[v] = sx == 1 ? (v - 1) / Nv : (v - 1) / Nv - 1.0
+        end
+    elseif basis == :spherical
+        denom = Float64(Nv * (Nv + 1))
+        for v in 1:(Nv + 1)
+            edges[v] = sx == 1 ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) :
+                                 (-1.0 + ((v - 1) * v) / denom)
+        end
+    else
+        error("Unknown 1D band basis \"$basis\"; expected :legendre or :spherical.")
+    end
+    return edges
+end
+
 # Antiderivative G(μ) = ∫ √(1-μ²) dμ = (μ √(1-μ²) + asin μ) / 2.
 function _gn_G(μ::Float64)
     return 0.5 * (μ * sqrt(max(0.0, 1.0 - μ * μ)) + asin(clamp(μ, -1.0, 1.0)))

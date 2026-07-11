@@ -399,17 +399,20 @@ function gn_weights_legendre_1D(L_elem::Int64, Nv::Int64)
     t = 0.5 .* (x .+ 1.0)
     # Local orthonormal Legendre at the (band-independent) reference points ξ = x.
     Pξ = [legendre_polynomials_up_to_L(L_elem, x[n]) for n in 1:N]
-    for u in (1, 5), v in 1:Nv
-        μ0, μ1 = _gn_legendre_band(u, v, Nv)
-        Δ = μ1 - μ0
-        for n in 1:N
-            μ = μ0 + Δ * t[n]
-            wn = weight[n] * (Δ / 2)
-            for p in 1:Nq
-                ψp = sqrt((2 * (p - 1) + 1) / Δ) * Pξ[n][p]
-                for q in 1:Nq
-                    ψq = sqrt((2 * (q - 1) + 1) / Δ) * Pξ[n][q]
-                    𝒩[p, q, 1, u, v, 1] += wn * μ * ψp * ψq
+    for u in (1, 5)
+        edges = gn_1D_band_edges(u, Nv, :legendre)
+        for v in 1:Nv
+            μ0 = edges[v]; μ1 = edges[v + 1]
+            Δ = μ1 - μ0
+            for n in 1:N
+                μ = μ0 + Δ * t[n]
+                wn = weight[n] * (Δ / 2)
+                for p in 1:Nq
+                    ψp = sqrt((2 * (p - 1) + 1) / Δ) * Pξ[n][p]
+                    for q in 1:Nq
+                        ψq = sqrt((2 * (q - 1) + 1) / Δ) * Pξ[n][q]
+                        𝒩[p, q, 1, u, v, 1] += wn * μ * ψp * ψq
+                    end
                 end
             end
         end
@@ -466,25 +469,26 @@ function gn_weights_spherical_harmonics_1D(L_elem::Int64, Nv::Int64)
         end
     end
     pref = π / 8
-    denom = Float64(Nv * (Nv + 1))
-    mu_of_v(s::Int, v::Int) = (s == 1) ? (1.0 - ((Nv + 1 - v) * (Nv + 2 - v)) / denom) : (-1.0 + ((v - 1) * v) / denom)
-    for u in (1, 5), v in 1:Nv
+    for u in (1, 5)
         su = _GN_SX[u]
         Psign = (su == 1) ? P_pos : P_neg
-        μ0 = mu_of_v(su, v); μ1 = mu_of_v(su, v + 1)
-        Δμ = μ1 - μ0
-        for p in 1:Nq
-            mp = pm[p]
-            sp = pref * C[p]
-            for q in 1:Nq
-                if pm[q] != mp continue end   # azimuthal orthogonality (full 2π)
-                az = 1.0 + (mp == 0)          # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
-                cos_int = 0.0
-                for n in 1:N
-                    μi = μ0 + Δμ * t[n]
-                    cos_int += weight[n] * μi * Psign[p, n] * Psign[q, n]
+        edges = gn_1D_band_edges(u, Nv, :spherical)
+        for v in 1:Nv
+            μ0 = edges[v]; μ1 = edges[v + 1]
+            Δμ = μ1 - μ0
+            for p in 1:Nq
+                mp = pm[p]
+                sp = pref * C[p]
+                for q in 1:Nq
+                    if pm[q] != mp continue end   # azimuthal orthogonality (full 2π)
+                    az = 1.0 + (mp == 0)          # ∫_{-1}^1 𝒯m(m,π(x+1))² dx
+                    cos_int = 0.0
+                    for n in 1:N
+                        μi = μ0 + Δμ * t[n]
+                        cos_int += weight[n] * μi * Psign[p, n] * Psign[q, n]
+                    end
+                    𝒩[p, q, 1, u, v, 1] += sp * C[q] * az * cos_int
                 end
-                𝒩[p, q, 1, u, v, 1] += sp * C[q] * az * cos_int
             end
         end
     end

@@ -223,6 +223,15 @@ while ~(is_outer_convergence)
     
 end
 
+# Add the analytically-computed uncollided flux moments from first-collision
+# surface sources (zero otherwise), so that dose, charge deposition and
+# secondary-particle sources see the total flux.
+𝚽_u = source.get_uncollided_flux()
+if any(x->x!=0,𝚽_u)
+    𝚽l .+= 𝚽_u
+    if is_CSD 𝚽cutoff .+= source.get_uncollided_flux_cutoff() end
+end
+
 # Save flux
 flux = Flux_Per_Particle(part)
 flux.add_flux(𝚽l)

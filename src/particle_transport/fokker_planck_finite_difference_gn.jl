@@ -123,6 +123,7 @@ value-space measure is the band width `ω_k = Δμ_k`.
 function fokker_planck_finite_difference_gn_legendre_1D(L::Int64, _L_elem::Int64, Nv::Int64, Mll::Array{Float64,5})
 
     # 1. μ-band chain ordered from μ = -1 to μ = +1.
+    edges_of_u = Dict(u => gn_1D_band_edges(u, Nv, :legendre) for u in (1, 5))
     patches = NTuple{2,Int64}[]
     for v in 1:Nv push!(patches, (5, v)) end   # μ ∈ [-1, 0]
     for v in 1:Nv push!(patches, (1, v)) end   # μ ∈ [0, 1]
@@ -130,7 +131,8 @@ function fokker_planck_finite_difference_gn_legendre_1D(L::Int64, _L_elem::Int64
     μ0k = zeros(Nk); μ1k = zeros(Nk); μc = zeros(Nk); ω = zeros(Nk)
     for k in 1:Nk
         u, v = patches[k]
-        a, b = _gn_legendre_band(u, v, Nv)
+        edges = edges_of_u[u]
+        a, b = edges[v], edges[v + 1]
         μ0k[k] = a; μ1k[k] = b; μc[k] = 0.5 * (a + b); ω[k] = b - a
     end
 

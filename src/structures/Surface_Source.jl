@@ -13,6 +13,10 @@ Structure used to define a directionnal boundary source and its properties.
 
 # Optional field(s) - with default values
 - `intensity::Float64=1.0` : intensity [# particles/cm⁽ᴺ⁻¹⁾, where N is the geometry dimension].
+- `angular_moments::Vector{Float64}` : half-range moments of the incident angular flux
+  (alternative to `direction` for a distributed angular source).
+- `beam_treatment::String="boundary"` : treatment of the source in the transport solve
+  (`"boundary"` or `"first-collision"`).
 
 """
 mutable struct Surface_Source
@@ -23,12 +27,15 @@ mutable struct Surface_Source
     intensity                  ::Union{Missing,Float64}
     energy_group               ::Union{Missing,Int64}
     direction                  ::Union{Missing,Vector{Float64}}
+    angular_moments            ::Union{Missing,Vector{Float64}}
     location                   ::Union{Missing,String}
     boundaries                 ::Dict{String,Vector{Float64}}
     is_build                   ::Bool
     surface_sources            ::Union{Missing,Vector{Array{Float64}}}
     normalization_factor       ::Float64
     legendre_order             ::Int64
+    beam_treatment             ::String
+    uncollided_model           ::String
 
     # Constructor(s)
     function Surface_Source()
@@ -40,12 +47,15 @@ mutable struct Surface_Source
         this.intensity = 1.0
         this.energy_group = missing
         this.direction = missing
+        this.angular_moments = missing
         this.location = missing
         this.boundaries = Dict{String,Vector{Float64}}()
         this.is_build = false
         this.normalization_factor = 0.0
         this.surface_sources = missing
         this.legendre_order = 64
+        this.beam_treatment = "boundary"
+        this.uncollided_model = "goudsmit-saunderson"
 
         return this
     end
@@ -141,7 +151,114 @@ julia> ss.set_direction([1.0,0.0,0.0])
 function set_direction(this::Surface_Source,direction::Vector{Float64})
     if length(direction) != 3 error("Three director cosines has to be provided.") end
     if abs(sum(direction.^2)-1) > 1e-3 error("The sum of the squared three director cosines is not equal to 1.") end
+    if ~ismissing(this.angular_moments) error("A surface source is either monodirectional (set_direction) or distributed (set_angular_moments), not both.") end
     this.direction = direction
+end
+
+"""
+    set_angular_moments(this::Surface_Source,angular_moments::Vector{Float64})
+
+To set a distributed angular source, given by the half-range moments
+`g[p+1] = ∫₀¹ R̄ₚ(μ̂) ψ_inc(μ̂) dμ̂` of the incident angular flux in the orthonormal
+half-range Legendre basis `R̄ₚ(μ̂) = √(2p+1)·Pₚ(2μ̂-1)` (`μ̂ = |Ω⋅n̂|`, the basis of
+`half_range_legendre_polynomials_up_to_L`). Alternative to `set_direction` and
+mutually exclusive with it; available in 1D only.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+- `angular_moments::Vector{Float64}` : half-range moments (order 0 to L_src).
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ss = Surface_Source()
+julia> ss.set_angular_moments([0.5,1/(2*sqrt(3))])  # ψ_inc(μ̂) = μ̂
+```
+"""
+function set_angular_moments(this::Surface_Source,angular_moments::Vector{Float64})
+    if length(angular_moments) == 0 error("At least the zeroth half-range moment has to be provided.") end
+    if ~ismissing(this.direction) error("A surface source is either monodirectional (set_direction) or distributed (set_angular_moments), not both.") end
+    this.angular_moments = angular_moments
+end
+
+"""
+    set_beam_treatment(this::Surface_Source,beam_treatment::String)
+
+To set the treatment of the surface source in the transport solve:
+- `"boundary"` (default) : the source enters as an incoming boundary condition
+  through its truncated half-range moment expansion.
+- `"first-collision"` : the uncollided flux is computed analytically outside the
+  solver, which then only transports the smooth first-collision volume source
+  (`first_collision_source!`). Available in 1D Cartesian geometry with void
+  x-boundaries, for the GN and SN solvers (BTE/BFP/BCSD).
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+- `beam_treatment::String` : treatment of the source.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ss = Surface_Source()
+julia> ss.set_beam_treatment("first-collision")
+```
+"""
+function set_beam_treatment(this::Surface_Source,beam_treatment::String)
+    if lowercase(beam_treatment) ∉ ["boundary","first-collision"] error("Unknown beam treatment.") end
+    this.beam_treatment = lowercase(beam_treatment)
+end
+
+"""
+    set_uncollided_model(this::Surface_Source,uncollided_model::String)
+
+To set the model of the uncollided component in the first-collision treatment
+(BFP solvers only; for BTE/BCSD both models coincide):
+- `"goudsmit-saunderson"` (default) : the uncollided column carries the exact
+  Fokker-Planck angular redistribution along its pathlength (order-ℓ moments
+  damped as e^(-ℓ(ℓ+1)·∫T ds), mean-depth advance ⟨μ⟩ = μ₀·e^(-2∫T ds)), with
+  only the longitudinal straggling neglected.
+- `"straight"` : the column travels straight with no Fokker-Planck broadening
+  (δ-pure model), kept for comparison; it displaces the dose of FP-dominated
+  problems toward depth.
+
+See TR-09 for the derivation.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+- `uncollided_model::String` : model of the uncollided component.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> ss = Surface_Source()
+julia> ss.set_uncollided_model("straight")
+```
+"""
+function set_uncollided_model(this::Surface_Source,uncollided_model::String)
+    if lowercase(uncollided_model) ∉ ["goudsmit-saunderson","straight"] error("Unknown uncollided model.") end
+    this.uncollided_model = lowercase(uncollided_model)
+end
+
+"""
+    get_uncollided_model(this::Surface_Source)
+
+Get the model of the uncollided component in the first-collision treatment.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+
+# Output Argument(s)
+- `uncollided_model::String` : model (`"goudsmit-saunderson"` or `"straight"`).
+
+"""
+function get_uncollided_model(this::Surface_Source)
+    return this.uncollided_model
 end
 
 """
@@ -267,4 +384,37 @@ To get the Legendre order of the polynomial expansion of the boundary flux.
 """
 function get_legendre_order(this::Surface_Source)
     return this.legendre_order
+end
+
+"""
+    get_angular_moments(this::Surface_Source)
+
+Get the half-range moments of the incident angular flux (or `missing` if the
+source is monodirectional).
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+
+# Output Argument(s)
+- `angular_moments::Union{Missing,Vector{Float64}}` : half-range moments.
+
+"""
+function get_angular_moments(this::Surface_Source)
+    return this.angular_moments
+end
+
+"""
+    get_beam_treatment(this::Surface_Source)
+
+Get the treatment of the surface source in the transport solve.
+
+# Input Argument(s)
+- `this::Surface_Source` : surface source.
+
+# Output Argument(s)
+- `beam_treatment::String` : treatment of the source (`"boundary"` or `"first-collision"`).
+
+"""
+function get_beam_treatment(this::Surface_Source)
+    return this.beam_treatment
 end

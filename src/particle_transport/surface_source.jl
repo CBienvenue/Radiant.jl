@@ -31,6 +31,7 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     geometry_type = geometry.get_type()
     norm = 0.0
     surface = uppercase(source.location)
+    if ~ismissing(source.angular_moments) && Ndims != 1 error("Distributed surface sources (set_angular_moments) are only available in 1D.") end
 
     if solver isa SN
 
@@ -79,8 +80,11 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
     #----
     # Cartesian 1D geometry
     #----
-    if geometry_type == "cartesian" 
+    if geometry_type == "cartesian"
         if Ndims == 1
+
+            is_distributed = ~ismissing(source.angular_moments)
+            if is_distributed && surface ∉ ["X-","X+"] error("Distributed surface sources (set_angular_moments) are only available on the X- and X+ faces.") end
 
             #----
             # Shifted Legendre polynomials
@@ -89,8 +93,6 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
                 # Extract source informations
                 intensity = source.intensity
-                Ωs = source.direction
-                μs = Ωs[1]
 
                 # Matrix Initialization
                 Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,2)
@@ -99,15 +101,29 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 end
 
                 # Calculation of the source moments
-                norm = intensity
-                Pls = half_range_legendre_polynomials_up_to_L(Lmax,abs(μs))
-                for ig in range(1,Ng), p in range(1,Np)
-                    if ig == source.energy_group
-                        l = pl[p]
-                        if surface == "X-"
-                            if (μs > 0) Q[ig,p,1] = intensity * Pls[l+1] end
-                        elseif surface == "X+"
-                            if (μs < 0) Q[ig,p,2] = intensity * Pls[l+1] end
+                if is_distributed
+                    # Distributed source: the user-provided half-range moments of the
+                    # incident angular flux are already in the surface basis R̄ₚ(μ̂).
+                    g_mom = source.angular_moments
+                    norm = intensity * g_mom[1]
+                    ib = surface == "X-" ? 1 : 2
+                    for ig in range(1,Ng), p in range(1,Np)
+                        if ig == source.energy_group && pl[p] ≤ length(g_mom)-1
+                            Q[ig,p,ib] = intensity * g_mom[pl[p]+1]
+                        end
+                    end
+                else
+                    μs = source.direction[1]
+                    norm = intensity
+                    Pls = half_range_legendre_polynomials_up_to_L(Lmax,abs(μs))
+                    for ig in range(1,Ng), p in range(1,Np)
+                        if ig == source.energy_group
+                            l = pl[p]
+                            if surface == "X-"
+                                if (μs > 0) Q[ig,p,1] = intensity * Pls[l+1] end
+                            elseif surface == "X+"
+                                if (μs < 0) Q[ig,p,2] = intensity * Pls[l+1] end
+                            end
                         end
                     end
                 end
@@ -119,11 +135,6 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
 
                 # Extract source informations
                 intensity = source.intensity
-                Ωs = source.direction
-                μs = Ωs[1]
-                ηs = Ωs[2]
-                ξs = Ωs[3]
-                ϕs = atan(ξs,ηs)
 
                 # Matrix Initialization
                 Q = Array{Union{Array{Float64},Float64}}(undef,Ng,Np,2)
@@ -132,22 +143,41 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                 end
 
                 # Calculation of the source moments
-                norm = intensity
-                if solver isa SN
-                    ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                if is_distributed
+                    # Distributed (azimuthally-symmetric) source: the m = 0 half-range
+                    # spherical harmonics are R̄ₗ(μ̂)/√(2π) on the x-faces, so the surface
+                    # moments are the user-provided half-range Legendre moments ÷ √(2π).
+                    g_mom = source.angular_moments
+                    norm = intensity * g_mom[1]
+                    ib = surface == "X-" ? 1 : 2
+                    for ig in range(1,Ng), p in range(1,Np)
+                        if ig == source.energy_group && pm[p] == 0 && pl[p] ≤ length(g_mom)-1
+                            Q[ig,p,ib] = intensity * g_mom[pl[p]+1] / sqrt(2*π)
+                        end
+                    end
                 else
-                    b = cartesian_boundary_index(surface)
-                    ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
-                end
-                for ig in range(1,Ng)
-                    if ~(ig == source.energy_group) continue end
-                    for p in range(1,Np)
-                        l = pl[p]
-                        m = pm[p]
-                        if surface == "X-"
-                            if (μs > 0) Q[ig,p,1] = intensity * ψlms[l+1][l+m+1] end
-                        elseif surface == "X+"
-                            if (μs < 0) Q[ig,p,2] = intensity * ψlms[l+1][l+m+1] end
+                    Ωs = source.direction
+                    μs = Ωs[1]
+                    ηs = Ωs[2]
+                    ξs = Ωs[3]
+                    ϕs = atan(ξs,ηs)
+                    norm = intensity
+                    if solver isa SN
+                        ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                    else
+                        b = cartesian_boundary_index(surface)
+                        ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
+                    end
+                    for ig in range(1,Ng)
+                        if ~(ig == source.energy_group) continue end
+                        for p in range(1,Np)
+                            l = pl[p]
+                            m = pm[p]
+                            if surface == "X-"
+                                if (μs > 0) Q[ig,p,1] = intensity * ψlms[l+1][l+m+1] end
+                            elseif surface == "X+"
+                                if (μs < 0) Q[ig,p,2] = intensity * ψlms[l+1][l+m+1] end
+                            end
                         end
                     end
                 end

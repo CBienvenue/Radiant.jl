@@ -11,6 +11,8 @@ mutable struct Source
     particle                   ::Union{Missing,Particle}
     volume_sources             ::Array{Float64}
     surface_sources            ::Array{Union{Array{Float64},Float64}}
+    uncollided_flux            ::Array{Float64}
+    uncollided_flux_cutoff     ::Array{Float64}
     normalization_factor       ::Float64
     cross_sections             ::Cross_Sections
     geometry                   ::Geometry
@@ -81,8 +83,10 @@ function initalize_sources(this::Source,cross_sections::Cross_Sections,geometry:
     end
 
     # Initialize sources
-    L = 0 
+    L = 0
     this.volume_sources = zeros(Ng,P,Nm[5],Nx,Ny,Nz)
+    this.uncollided_flux = zeros(Ng,P,Nm[5],Nx,Ny,Nz)
+    this.uncollided_flux_cutoff = zeros(P,Nm[5],Nx,Ny,Nz)
     this.surface_sources = Array{Union{Array{Float64},Float64}}(undef,Ng,L+1,2*Ndims)
     for ig in range(1,Ng), l in range(0,L)
         if Ndims == 1
@@ -159,6 +163,15 @@ function add_source(this::Source,surface_sources::Surface_Source)
     if Ndims ≥ 2 Ny = this.geometry.number_of_voxels["y"] else Ny = 1 end
     if Ndims ≥ 3 Nz = this.geometry.number_of_voxels["z"] else Nz = 1 end
     if get_tag(particle) != get_tag(this.solver.particle) error(string("No methods available for ",get_type(particle)," particle.")) end
+
+    # First-collision treatment: the uncollided flux is computed analytically and
+    # the source enters the solve as a smooth first-collision volume source; the
+    # source never touches the truncated half-range boundary-moment path below.
+    if lowercase(surface_sources.beam_treatment) == "first-collision"
+        first_collision_source!(this,surface_sources)
+        surface_sources.normalization_factor += ismissing(surface_sources.angular_moments) ? surface_sources.intensity : surface_sources.intensity*surface_sources.angular_moments[1]
+        return
+    end
 
     # Compute and format the surface source for transport solver
     Q_old = this.surface_sources
@@ -244,6 +257,41 @@ function get_volume_sources(this::Source)
 end
 
 """
+    get_uncollided_flux(this::Source)
+
+Get the moments of the analytically-computed uncollided flux from the surface
+sources with first-collision treatment (zero otherwise). Added to the solver flux
+after the solve.
+
+# Input Argument(s)
+- `this::Source` : source structure.
+
+# Output Argument(s)
+- `uncollided_flux::Array{Float64}` : uncollided flux moments `[Ng,P,Nm,Nx,Ny,Nz]`.
+
+"""
+function get_uncollided_flux(this::Source)
+    return this.uncollided_flux
+end
+
+"""
+    get_uncollided_flux_cutoff(this::Source)
+
+Get the moments of the uncollided flux crossing the cutoff energy (CSD solvers),
+in the solver's `𝚽cutoff` convention (energy flux density × last group width).
+
+# Input Argument(s)
+- `this::Source` : source structure.
+
+# Output Argument(s)
+- `uncollided_flux_cutoff::Array{Float64}` : cutoff flux moments `[P,Nm,Nx,Ny,Nz]`.
+
+"""
+function get_uncollided_flux_cutoff(this::Source)
+    return this.uncollided_flux_cutoff
+end
+
+"""
     get_normalization_factor(this::Source)
 
 Get the source normalization factor.
@@ -291,6 +339,8 @@ Combination of two sources.
 function Base.:+(source1::Source,source2::Source)
     if get_tag(source1.get_particle()) != get_tag(source2.get_particle()) error("Forbitten addition of different particle sources.") end
     source1.volume_sources += source2.volume_sources
+    source1.uncollided_flux += source2.uncollided_flux
+    source1.uncollided_flux_cutoff += source2.uncollided_flux_cutoff
     Ndims = source1.geometry.dimension
     Nx = source1.geometry.number_of_voxels["x"]
     if Ndims ≥ 2 Ny = source1.geometry.number_of_voxels["y"] else Ny = 1 end

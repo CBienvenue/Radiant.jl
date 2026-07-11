@@ -69,6 +69,7 @@ module Radiant
         "geometry.jl",
         "volume_source.jl",
         "surface_source.jl",
+        "first_collision_source.jl",
         "scattering_source.jl",
         "particle_source.jl",
         "fokker_planck_source.jl",
