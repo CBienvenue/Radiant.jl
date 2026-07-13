@@ -273,7 +273,7 @@ julia> density = mat.get_density()
 ```
 """
 function get_density(this::Material)
-    if ismissing(density) error("Density is missing.") end
+    if ismissing(this.density) error("Density is missing.") end
     return this.density
 end
 
