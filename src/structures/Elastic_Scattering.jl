@@ -177,7 +177,7 @@ mutable struct Elastic_Scattering <: Interaction
         this.set_coulomb_kinematics("standard")
         this.set_screening(true)
         this.set_fp_tol(1.0e-10)
-        this.set_fp_tanh_sinh(h=0.03, n=240, max_iter=12)
+        this.set_fp_tanh_sinh(0.03, 240, 12)
         this.set_fp_quadgk_split_points([0.99, 0.9999, 0.999999])
         return this
     end
@@ -493,7 +493,7 @@ end
 
 """
     get_dcs_cache(this::Elastic_Scattering, ptype::Type, db::ElasticScatteringENDFDB,
-    Z::Int, A::Int, E_in_mev::Float64; source::Union{Nothing,String}=nothing)
+    Z::Int, A::Int, E_in_mev::Float64, source::Union{Nothing,String}=nothing)
 
 Gets or builds the cached DCS interpolation data for one particle, isotope, and incident
 energy.
@@ -511,7 +511,7 @@ energy.
 - `cache::ElasticDCSCache` : cached DCS interpolation data.
 """
 function get_dcs_cache(this::Elastic_Scattering,ptype::Type,db::ElasticScatteringENDFDB,
-                       Z::Int,A::Int,E_in_mev::Float64; source::Union{Nothing,String}=nothing)
+                       Z::Int,A::Int,E_in_mev::Float64,source::Union{Nothing,String}=nothing)
     if !isnothing(source) && lowercase(source) != db.dcs_source
         error("Requested DCS source $(source), but the ENDF database was initialized with dcs_source=$(db.dcs_source).")
     end
@@ -553,11 +553,11 @@ function get_fp_tol(this::Elastic_Scattering)
 end
 
 """
-    set_fp_tanh_sinh(this::Elastic_Scattering; h::Float64=0.03, n::Int=240, max_iter::Int=12)
+    set_fp_tanh_sinh(this::Elastic_Scattering, h::Float64=0.03, n::Int=240, max_iter::Int=12)
 
 Set tanh-sinh quadrature controls used for Fokker-Planck integrals.
 """
-function set_fp_tanh_sinh(this::Elastic_Scattering; h::Float64=0.03, n::Int=240, max_iter::Int=12)
+function set_fp_tanh_sinh(this::Elastic_Scattering, h::Float64=0.03, n::Int=240, max_iter::Int=12)
     if h <= 0.0
         error("Tanh-sinh step h must be positive.")
     end
@@ -933,7 +933,7 @@ function tcs(this::Elastic_Scattering,Ei::Float64,Ec::Float64,particle::Particle
 
     σt = 0.0
     for (Ai, atai) in zip(A, atpercentA)
-        cache = this.get_dcs_cache(ptype, db, Z, Ai, E_in_mev; source=cache_source)
+        cache = this.get_dcs_cache(ptype, db, Z, Ai, E_in_mev, cache_source)
         σt += atai * integrate_tcs(cache)
     end
 

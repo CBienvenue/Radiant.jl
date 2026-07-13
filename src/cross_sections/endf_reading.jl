@@ -39,6 +39,36 @@ function ZAP(particle::Particle)::Union{Nothing,Int}
 end
 
 """
+    endf_path_for_isotope(db_name::String,Z::Int,A::Int,particle::Particle;
+    data_root::Union{Nothing,String}=nothing)
+
+Builds the ENDF file path for a target isotope in a Radiant ENDF database directory. All
+ENDF databases are kept under a common `ENDF/` subdirectory of the data root, with files
+for different incident particles further split into their own subdirectory, named after
+the particle tag.
+
+# Input Argument(s)
+- `db_name::String` : ENDF database directory name.
+- `Z::Int` : target atomic number.
+- `A::Int` : target mass number.
+- `particle::Particle` : incident particle.
+- `data_root::Union{Nothing,String}` : optional root directory containing ENDF databases
+  (the `ENDF/` subdirectory is appended to it).
+
+# Output Argument(s)
+- `path::String` : expected ENDF file path for isotope `(Z, A)`.
+
+# Reference(s)
+- ENDF database file naming convention used by Radiant.
+"""
+function endf_path_for_isotope(db_name::String,Z::Int,A::Int,particle::Particle; data_root::Union{Nothing,String}=nothing)
+    root = isnothing(data_root) ? normpath(joinpath(@__DIR__, "..", "..", "data")) : data_root
+    symbol = atomic_symbol(Z)
+    filename = @sprintf("p_%03d-%s-%03d.endf", Z, symbol, A)
+    return joinpath(root, "ENDF", db_name, get_tag(particle), filename)
+end
+
+"""
     interpret_law5_list_record(E::Float64, LTP::Int, NW::Int, NL::Int,
     A::Vector{Float64}, LIDP::Int=-1)
 

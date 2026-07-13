@@ -1268,29 +1268,6 @@ end
 
 
 """
-    endf_path_for_isotope(db_name::String,Z::Int,A::Int; data_root::Union{Nothing,String}=nothing)
-
-Builds the ENDF file path for a target isotope in a Radiant ENDF database directory.
-
-# Input Argument(s)
-- `db_name::String` : ENDF database directory name.
-- `Z::Int` : target atomic number.
-- `A::Int` : target mass number.
-- `data_root::Union{Nothing,String}` : optional root directory containing ENDF databases.
-
-# Output Argument(s)
-- `path::String` : expected ENDF file path for isotope `(Z, A)`.
-
-# Reference(s)
-- ENDF database file naming convention used by Radiant.
-"""
-function endf_path_for_isotope(db_name::String,Z::Int,A::Int; data_root::Union{Nothing,String}=nothing)
-    root = isnothing(data_root) ? normpath(joinpath(@__DIR__, "..", "..", "data")) : data_root
-    symbol = atomic_symbol(Z)
-    filename = @sprintf("p_%03d-%s-%03d.endf", Z, symbol, A)
-    return joinpath(root, db_name, filename)
-end
-"""
     init_elastic_scattering_endf_db(db_name::String, isotopes::Vector{Tuple{Int,Int}},
     particle::Particle; data_root::Union{Nothing,String}=nothing, analytical::Bool=false,
     dcs_source::String="database", coulomb_kinematics::String="standard",
@@ -1329,9 +1306,11 @@ function init_elastic_scattering_endf_db(db_name::String,isotopes::Vector{Tuple{
     coulomb_kinematics_lc = lowercase(coulomb_kinematics)
     db = Dict{Tuple{Int,Int},IsotopeElasticDB}()
     for (Z, A) in isotopes
-        endf_path = endf_path_for_isotope(db_name, Z, A; data_root=root)
+        endf_path = endf_path_for_isotope(db_name, Z, A, particle; data_root=root)
         if !isfile(endf_path)
-            error("ENDF file not found: $(endf_path)")
+            error("ENDF file not found: $(endf_path). Prepare the \"$(db_name)\" ENDF "*
+                  "library first by running data/create_radiant_endf_library.jl on your "*
+                  "raw ENDF files before starting this simulation.")
         end
         data = load_elastic_scattering_endf(endf_path, Z, A, particle;
                     analytical=analytical, dcs_source=dcs_source_lc,
