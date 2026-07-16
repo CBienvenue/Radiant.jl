@@ -4,7 +4,7 @@
     solver_out::Solver)
 
 Compute the source of particle produced by interaction of another type of particle with
-matter.
+matter, for any pair of solvers.
 
 # Input Argument(s)
 - `flux::Flux_Per_Particle`: flux informations of the incoming particle.
@@ -23,258 +23,38 @@ N/A
 function particle_source(flux::Flux_Per_Particle,cross_sections::Cross_Sections,geometry::Geometry,solver_in::Solver,solver_out::Solver)
 
 # Geometry data
-Ndims = geometry.get_dimension()
 Ns = geometry.get_number_of_voxels()
 mat = geometry.get_material_per_voxel()
 
-# Discrete ordinates data
-_,isCSD = solver_in.get_solver_type()
+# Solver data
 particle_in = solver_in.get_particle()
 particle_out = solver_out.get_particle()
-L_in = solver_in.get_legendre_order()
-L_out = solver_out.get_legendre_order()
 isFC_in = solver_in.get_is_full_coupling()
 isFC_out = solver_out.get_is_full_coupling()
 _,𝒪_in,Nm_in = solver_in.get_schemes(geometry,isFC_in)
 _,𝒪_out,Nm_out = solver_out.get_schemes(geometry,isFC_out)
-if solver_in isa GN polynomial_basis_in = solver_in.get_polynomial_basis(Ndims) end
-if solver_out isa GN polynomial_basis_out = solver_out.get_polynomial_basis(Ndims) end 
 Nm_in = Nm_in[5]
 Nm_out = Nm_out[5]
-if solver_in isa SN
-    Qdims_in = solver_in.get_quadrature_dimension(Ndims)
-    Ω_in,w_in = quadrature(solver_in.get_quadrature_order(),solver_in.get_quadrature_type(),Ndims,Qdims_in)
-    if typeof(Ω_in) == Vector{Float64} Ω_in = [Ω_in,0*Ω_in,0*Ω_in] end
-    P_in,_,_,pl_in,pm_in = angular_polynomial_basis(Ω_in,w_in,L_in,solver_in.get_angular_boltzmann(),Qdims_in)
-elseif solver_in isa GN
-    if Ndims != 1
-        error("Unsupported spatial dimension.")
-    end
-    if polynomial_basis_in == "legendre"
-        P_in = L_in+1
-        pl_in = collect(0:L_in)
-        pm_in = zeros(Int64,P_in)
-    elseif polynomial_basis_in == "spherical-harmonics"
-        P_in = (L_in+1)^2
-        pl_in = zeros(Int64,P_in)
-        pm_in = zeros(Int64,P_in)
-        p = 1
-        for l in 0:L_in
-            for m in -l:l
-                pl_in[p] = l
-                pm_in[p] = m
-                p += 1
-            end
-        end
-    else
-        error("Unknown polynomial basis for incoming SH: " * String(polynomial_basis_in))
-    end
-else
-    error("Unknown angular discretization method for the incoming particle.")
-end
 
-if solver_out isa SN
-    Qdims_out = solver_out.get_quadrature_dimension(Ndims)
-    Ω_out,w_out = quadrature(solver_out.get_quadrature_order(),solver_out.get_quadrature_type(),Ndims,Qdims_out)
-    if typeof(Ω_out) == Vector{Float64} Ω_out = [Ω_out,0*Ω_out,0*Ω_out] end
-    P_out,_,Dn_out,_,_ = angular_polynomial_basis(Ω_out,w_out,L_out,solver_out.get_angular_boltzmann(),Qdims_out)
-elseif solver_out isa GN
-    if Ndims != 1
-        error("Unsupported spatial dimension.")
-    end
-    if polynomial_basis_out == "legendre"
-        P_out = L_out+1
-        pl_out = collect(0:L_out)
-        pm_out = zeros(Int64,P_out)
-    elseif polynomial_basis_out == "spherical-harmonics"
-        P_out = (L_out+1)^2
-        pl_out = zeros(Int64,P_out)
-        pm_out = zeros(Int64,P_out)
-        p = 1
-        for l in 0:L_out
-            for m in -l:l
-                pl_out[p] = l
-                pm_out[p] = m
-                p += 1
-            end
-        end
-    else
-        error("Unknown polynomial basis for outgoing SH: " * String(polynomial_basis_out))
-    end
-else
-    error("Unknown angular discretization method for the outgoing particle.")
-end
-
-# Build the transfer matrix T between the two angular discretizations
-if solver_in isa SN && solver_out isa SN
-
-    if solver_in.get_angular_boltzmann() == solver_out.get_angular_boltzmann() && length(w_out) == length(w_in) && w_out == w_in
-        type_scat = solver_in.get_angular_boltzmann()
-    else
-        type_scat = "standard"
-    end
-
-    if (Qdims_in == 1 && Qdims_out ∈ [2,3]) || (Qdims_in ∈ [2,3] && Qdims_out == 1)
-        Nd = length(w_out)
-        μ = Ω_out[1]
-        Pl = zeros(Nd,maximum(pl_in)+1,1)
-        for n in range(1,Nd)
-            Pl[n,:] = legendre_polynomials_up_to_L(maximum(pl_in),μ[n])
-        end
-        P = length(pl_in)
-        Mn_tr = zeros(Nd,P)
-        for p in range(1,P)
-            for n in range(1,Nd)
-                if pm_in[p] == 0 || Qdims_in == 1
-                    Mn_tr[n,pl_in[p]+1] = (2*pl_in[p]+1)/2 * Pl[n,pl_in[p]+1]
-                end
-            end
-        end
-    elseif Qdims_in == Qdims_out
-        _,Mn_tr,_,_,_ = angular_polynomial_basis(Ω_out,w_out,L_in,type_scat,Qdims_out)
-    else
-        error("Unknown particle transfer.")
-    end
-    T = Dn_out*Mn_tr
-
-elseif solver_in isa GN && solver_out isa GN
-    # Build mapping depending on SH bases
-    T = zeros(P_out,P_in)
-    if polynomial_basis_in == "legendre" && polynomial_basis_out == "legendre"
-        for l in 0:min(L_in,L_out)
-            T[l+1,l+1] = 1.0
-        end
-    elseif polynomial_basis_in == "legendre" && polynomial_basis_out == "spherical-harmonics"
-        # map each Legendre l to SH (l, m=0)
-        # create out index for (l,m)
-        out_index = Dict{Tuple{Int,Int},Int}()
-        for p in 1:P_out
-            out_index[(pl_out[p], pm_out[p])] = p
-        end
-        for l in 0:min(L_in,L_out)
-            po = get(out_index, (l,0), 0)
-            if po != 0
-                T[po, l+1] = 1.0
-            end
-        end
-    elseif polynomial_basis_in == "spherical-harmonics" && polynomial_basis_out == "legendre"
-        # take only m=0 from SH to Legendre
-        in_index = Dict{Tuple{Int,Int},Int}()
-        for p in 1:P_in
-            in_index[(pl_in[p], pm_in[p])] = p
-        end
-        for l in 0:min(L_in,L_out)
-            pi = get(in_index, (l,0), 0)
-            if pi != 0
-                T[l+1, pi] = 1.0
-            end
-        end
-    elseif polynomial_basis_in == "spherical-harmonics" && polynomial_basis_out == "spherical-harmonics"
-        # identity on all (l,m) up to min L
-        in_index = Dict{Tuple{Int,Int},Int}()
-        for p in 1:P_in
-            in_index[(pl_in[p], pm_in[p])] = p
-        end
-        for p in 1:P_out
-            l = pl_out[p]; m = pm_out[p]
-            if l <= L_in
-                pi = get(in_index, (l,m), 0)
-                if pi != 0
-                    T[p, pi] = 1.0
-                end
-            end
-        end
-    else
-        error("Unsupported SH polynomial basis combination")
-    end
-
-elseif solver_in isa SN && solver_out isa GN
-    if Ndims != 1
-        error("Spherical Harmonics transfer currently supports 1D (m=0) only.")
-    end
-    T = zeros(P_out, P_in)
-    if polynomial_basis_out == "legendre"
-        for p in 1:P_in
-            l = pl_in[p]
-            m = pm_in[p]
-            if m == 0 && l <= L_out
-                T[l+1, p] = 1.0
-            end
-        end
-    elseif polynomial_basis_out == "spherical-harmonics"
-        # map DO m=0 to SH (l,0)
-        out_index = Dict{Tuple{Int,Int},Int}()
-        for po in 1:P_out
-            out_index[(pl_out[po], pm_out[po])] = po
-        end
-        for p in 1:P_in
-            l = pl_in[p]
-            m = pm_in[p]
-            if m == 0 && l <= L_out
-                po = get(out_index, (l,0), 0)
-                if po != 0
-                    T[po, p] = 1.0
-                end
-            end
-        end
-    else
-        error("Unknown polynomial basis for outgoing SH: " * String(polynomial_basis_out))
-    end
-
-elseif solver_in isa GN && solver_out isa SN
-    if Ndims != 1
-        error("Spherical Harmonics transfer currently supports 1D (m=0) only.")
-    end
-    Qdims_out = solver_out.get_quadrature_dimension(Ndims)
-    Ω_out,w_out = quadrature(solver_out.get_quadrature_order(),solver_out.get_quadrature_type(),Ndims,Qdims_out)
-    if typeof(Ω_out) == Vector{Float64} Ω_out = [Ω_out,0*Ω_out,0*Ω_out] end
-    _,_,Dn_out,pl_do_out,pm_do_out = angular_polynomial_basis(Ω_out,w_out,L_out,solver_out.get_angular_boltzmann(),Qdims_out)
-    T = zeros(P_out, P_in)
-    if polynomial_basis_in == "legendre"
-        for p in 1:P_out
-            l = pl_do_out[p]
-            m = pm_do_out[p]
-            if m == 0 && l <= L_in
-                T[p, l+1] = 1.0
-            end
-        end
-    elseif polynomial_basis_in == "spherical-harmonics"
-        # map SH (l,0) to DO with pm==0
-        in_index = Dict{Tuple{Int,Int},Int}()
-        for pi in 1:P_in
-            in_index[(pl_in[pi], pm_in[pi])] = pi
-        end
-        for p in 1:P_out
-            l = pl_do_out[p]
-            m = pm_do_out[p]
-            if m == 0 && l <= L_in
-                pi = get(in_index, (l,0), 0)
-                if pi != 0
-                    T[p, pi] = 1.0
-                end
-            end
-        end
-    else
-        error("Unknown polynomial basis for incoming SH: " * String(polynomial_basis_in))
-    end
-else
-    error("Unknown angular discretization method for particle transfer.")
-end
+# Transfer between the two angular discretizations
+basis_in = angular_basis(solver_in,geometry)
+basis_out = angular_basis(solver_out,geometry)
+T = angular_transfer_matrix(basis_in,basis_out)
+P_in = basis_in.P
+P_out = basis_out.P
 
 # Cross-sections data
 Ng_in = cross_sections.get_number_of_groups(particle_in)
 Ng_out = cross_sections.get_number_of_groups(particle_out)
-Ls_in = (solver_in isa SN) ? maximum(pl_in) : L_in
-Σs = cross_sections.get_scattering(particle_in,particle_out,Ls_in)
+Σs = cross_sections.get_scattering(particle_in,particle_out,maximum(basis_in.pl))
 
 # Flux data
 𝚽l = flux.get_flux()
-if isCSD 𝚽cutoff = flux.get_flux_cutoff() else 𝚽cutoff = zeros(P_in,Nm_in,Ns[1],Ns[2],Ns[3]) end
 
 # Compute the scattered particle source
 Ql_in = zeros(Ng_out,P_in,Nm_in,Ns[1],Ns[2],Ns[3])
 Ql_out = zeros(Ng_out,P_out,Nm_out,Ns[1],Ns[2],Ns[3])
-particle_sources(Ql_in,𝚽l,Σs,mat,P_in,pl_in,Nm_in,Ns,Ng_in,Ng_out)
+particle_sources(Ql_in,𝚽l,Σs,mat,P_in,basis_in.pl,Nm_in,Ns,Ng_in,Ng_out)
 
 # Adapt the source to the new particle flux expansions
 map = map_moments(𝒪_in,𝒪_out,isFC_in,isFC_out)
@@ -282,7 +62,9 @@ for i in range(1,length(map))
     m = map[i]
     if m != 0
         for p_in in range(1,P_in), p_out in range(1,P_out)
-            Ql_out[:,p_out,i,:,:,:] .+= T[p_out,p_in] .* Ql_in[:,p_in,m,:,:,:]
+            if T[p_out,p_in] != 0.0
+                Ql_out[:,p_out,i,:,:,:] .+= T[p_out,p_in] .* Ql_in[:,p_in,m,:,:,:]
+            end
         end
     end
 end
@@ -291,5 +73,186 @@ end
 ps = Source(particle_out,cross_sections,geometry,solver_out)
 ps.add_volume_source(Ql_out)
 return ps
+
+end
+
+"""
+    Angular_Basis
+
+Solver-agnostic description of the angular representation in which a solver stores its flux
+and expects its source.
+
+# Field(s)
+- `is_discrete::Bool` : true if the flux is collocated on a quadrature (`SN`).
+- `P::Int64` : number of angular basis functions.
+- `pl::Vector{Int64}` : Legendre order associated with each basis function.
+- `pm::Vector{Int64}` : spherical-harmonics order associated with each basis function.
+- `Qdims::Int64` : dimension of the angular domain.
+- `Ω::Vector{Vector{Float64}}` : director cosines (collocated bases only).
+- `w::Vector{Float64}` : quadrature weights (collocated bases only).
+- `Dn::Array{Float64}` : discrete-to-moment matrix (collocated bases only).
+- `type::String` : type of scattering source treatment (collocated bases only).
+
+"""
+struct Angular_Basis
+    is_discrete ::Bool
+    P           ::Int64
+    pl          ::Vector{Int64}
+    pm          ::Vector{Int64}
+    Qdims       ::Int64
+    Ω           ::Vector{Vector{Float64}}
+    w           ::Vector{Float64}
+    Dn          ::Array{Float64}
+    type        ::String
+end
+
+"""
+    angular_basis(solver::Solver,geometry::Geometry)
+
+Describe the angular representation of any solver in the uniform form of an
+[`Angular_Basis`](@ref), so that the coupling between two particles is built from the pair of
+descriptions.
+
+# Input Argument(s)
+- `solver::Solver`: method informations of the particle.
+- `geometry::Geometry`: geometry informations.
+
+# Output Argument(s)
+- `basis::Angular_Basis`: description of the angular representation.
+
+# Reference(s)
+N/A
+
+"""
+function angular_basis(solver::Solver,geometry::Geometry)
+
+Ndims = geometry.get_dimension()
+L = solver.get_legendre_order()
+no_Ω = Vector{Vector{Float64}}()
+no_w = Vector{Float64}()
+no_Dn = Array{Float64}(undef,0,0)
+
+if solver isa SN
+
+    Qdims = solver.get_quadrature_dimension(Ndims)
+    Ω,w = quadrature(solver.get_quadrature_order(),solver.get_quadrature_type(),Ndims,Qdims)
+    if typeof(Ω) == Vector{Float64} Ω = [Ω,0*Ω,0*Ω] end
+    type = solver.get_angular_boltzmann()
+    P,_,Dn,pl,pm = angular_polynomial_basis(Ω,w,L,type,Qdims)
+    return Angular_Basis(true,P,pl,pm,Qdims,Ω,w,Dn,type)
+
+elseif solver isa GN
+
+    polynomial_basis = solver.get_polynomial_basis(Ndims)
+    if polynomial_basis == "legendre"
+        if Ndims != 1 error("The GN Legendre basis is only available in 1D.") end
+        P = L+1
+        pl = collect(0:L)
+        pm = zeros(Int64,P)
+        Qdims = 1
+    elseif polynomial_basis == "spherical-harmonics"
+        pl,pm = spherical_harmonics_indices(L)
+        P = length(pl)
+        Qdims = (Ndims == 1) ? 1 : 3
+    else
+        error("Unknown polynomial basis for the GN solver: " * String(polynomial_basis))
+    end
+    return Angular_Basis(false,P,pl,pm,Qdims,no_Ω,no_w,no_Dn,"")
+
+elseif solver isa CP
+
+    if Ndims != 1 error("The CP solver is only available in 1D.") end
+    P = L+1
+    pl = collect(0:L)
+    pm = zeros(Int64,P)
+    return Angular_Basis(false,P,pl,pm,1,no_Ω,no_w,no_Dn,"")
+
+else
+    error("Unknown angular discretization method.")
+end
+
+end
+
+"""
+    moments_to_directions(pl::Vector{Int64},pm::Vector{Int64},
+    Ω::Vector{Vector{Float64}},Qdims::Int64)
+
+Produce the matrix reconstructing the angular flux at the directions `Ω` from its
+spherical-harmonics moments, in the convention set by `Qdims`.
+
+# Input Argument(s)
+- `pl::Vector{Int64}`: Legendre order associated with each moment.
+- `pm::Vector{Int64}`: spherical-harmonics order associated with each moment.
+- `Ω::Vector{Vector{Float64}}`: director cosines at which the flux is reconstructed.
+- `Qdims::Int64`: dimension of the angular domain of the reconstructed flux.
+
+# Output Argument(s)
+- `M::Array{Float64}`: moment-to-discrete matrix.
+
+# Reference(s)
+- Lewis (1984), Computational Methods of Neutron Transport.
+
+"""
+function moments_to_directions(pl::Vector{Int64},pm::Vector{Int64},Ω::Vector{Vector{Float64}},Qdims::Int64)
+
+P = length(pl)
+Nd = length(Ω[1])
+Lmax = maximum(pl)
+M = zeros(Nd,P)
+
+if Qdims == 1
+    for n in range(1,Nd)
+        Pl = legendre_polynomials_up_to_L(Lmax,Ω[1][n])
+        for p in range(1,P)
+            if pm[p] == 0 M[n,p] = (2*pl[p]+1)/2 * Pl[pl[p]+1] end
+        end
+    end
+else
+    for n in range(1,Nd)
+        Rlm = real_spherical_harmonics_up_to_L(Lmax,Ω[1][n],atan(Ω[3][n],Ω[2][n]))
+        for p in range(1,P)
+            M[n,p] = (2*pl[p]+1)/(4*π) * Rlm[pl[p]+1][pl[p]+pm[p]+1]
+        end
+    end
+end
+return M
+
+end
+
+"""
+    angular_transfer_matrix(basis_in::Angular_Basis,basis_out::Angular_Basis)
+
+Produce the matrix transferring angular moments from the basis of an incoming particle to the
+basis of an outgoing one, for any pair of solvers.
+
+# Input Argument(s)
+- `basis_in::Angular_Basis`: angular basis of the incoming particle.
+- `basis_out::Angular_Basis`: angular basis of the outgoing particle.
+
+# Output Argument(s)
+- `T::Array{Float64}`: transfer matrix.
+
+# Reference(s)
+N/A
+
+"""
+function angular_transfer_matrix(basis_in::Angular_Basis,basis_out::Angular_Basis)
+
+is_same_quadrature = basis_in.is_discrete && basis_out.is_discrete && basis_in.type == basis_out.type && basis_in.Qdims == basis_out.Qdims && length(basis_in.w) == length(basis_out.w) && basis_in.w == basis_out.w && basis_in.Ω == basis_out.Ω
+
+if basis_out.is_discrete && ~is_same_quadrature
+    return basis_out.Dn * moments_to_directions(basis_in.pl,basis_in.pm,basis_out.Ω,basis_out.Qdims)
+else
+    T = zeros(basis_out.P,basis_in.P)
+    index_in = Dict{Tuple{Int64,Int64},Int64}()
+    for p in range(1,basis_in.P)
+        index_in[(basis_in.pl[p],basis_in.pm[p])] = p
+    end
+    for p_out in range(1,basis_out.P)
+        p_in = get(index_in,(basis_out.pl[p_out],basis_out.pm[p_out]),0)
+        if p_in != 0 T[p_out,p_in] = 1.0 end
+    end
+    return T
+end
 
 end
