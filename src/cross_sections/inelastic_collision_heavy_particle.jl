@@ -282,7 +282,7 @@ end
 
 """
     integrate_inelastic_collision_heavy_particle(Z::Int64, Ei::Float64, n::Int64,
-    particle::Particle, E⁻min::Float64=0.0)
+    particle::Particle, W⁻min::Float64=0.0, is_subshells::Bool=true)
 
 Computes the subshell-summed analytical energy-loss moment of the heavy-particle
 inelastic collision cross-section for one element.
@@ -292,23 +292,24 @@ inelastic collision cross-section for one element.
 - `Ei::Float64` : incoming particle energy [in m_e*c^2].
 - `n::Int64` : energy-loss moment order, either 0 or 1.
 - `particle::Particle` : incoming heavy charged particle.
-- `E⁻min::Float64=0.0` : lower cutoff for the transferred energy [in m_e*c^2].
+- `W⁻min::Float64=0.0` : minimum energy loss W of the incoming particle [in m_e*c^2].
+- `is_subshells::Bool=true` : boolean indicating if bounded subshells are resolved.
 
 # Output Argument(s)
 - `σn::Float64` : analytical moment summed over all subshells.
 """
-function integrate_inelastic_collision_heavy_particle(Z::Int64,Ei::Float64,n::Int64,particle::Particle,E⁻min::Float64=0.0)
-    Nshells,Zi,Ui,_,_,_ = electron_subshells(Z)
+function integrate_inelastic_collision_heavy_particle(Z::Int64,Ei::Float64,n::Int64,particle::Particle,W⁻min::Float64=0.0,is_subshells::Bool=true)
+    Nshells,Zi,Ui,_,_,_ = electron_subshells(Z,~is_subshells)
     σn = 0
     for δi in range(1,Nshells)
-        σn += Zi[δi] * integrate_inelastic_collision_heavy_particle_per_subshell(Ei,n,Ui[δi],particle,E⁻min)
+        σn += Zi[δi] * integrate_inelastic_collision_heavy_particle_per_subshell(Ei,n,Ui[δi],particle,W⁻min)
     end
     return σn
 end
 
 """
     integrate_inelastic_collision_heavy_particle_per_subshell(Ei::Float64, n::Int64,
-    Ui::Float64, particle::Particle, E⁻min::Float64=0.0)
+    Ui::Float64, particle::Particle, W⁻min::Float64=0.0)
 
 Computes the analytical energy-loss moment of the heavy-particle inelastic collision
 cross-section for one subshell.
@@ -318,12 +319,12 @@ cross-section for one subshell.
 - `n::Int64` : energy-loss moment order, either 0 or 1.
 - `Ui::Float64` : subshell binding energy [in m_e*c^2].
 - `particle::Particle` : incoming heavy charged particle.
-- `E⁻min::Float64=0.0` : lower cutoff for the transferred energy [in m_e*c^2].
+- `W⁻min::Float64=0.0` : minimum energy loss W of the incoming particle [in m_e*c^2].
 
 # Output Argument(s)
 - `σni::Float64` : analytical moment for the subshell.
 """
-function integrate_inelastic_collision_heavy_particle_per_subshell(Ei::Float64,n::Int64,Ui::Float64,particle::Particle,E⁻min::Float64=0.0)
+function integrate_inelastic_collision_heavy_particle_per_subshell(Ei::Float64,n::Int64,Ui::Float64,particle::Particle,W⁻min::Float64=0.0)
 
     #----
     # Initialization
@@ -342,7 +343,7 @@ function integrate_inelastic_collision_heavy_particle_per_subshell(Ei::Float64,n
     #----
     σni = 0
     W⁺ = min(Ei,W_ridge)
-    W⁻ = max(E⁻min,Ui)
+    W⁻ = max(W⁻min,Ui)
     if W⁺ > W⁻
         ΔW = W⁺ - W⁻
         if n == 0

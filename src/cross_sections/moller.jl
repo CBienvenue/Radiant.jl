@@ -41,8 +41,9 @@ function moller(Zi::Real,Ei::Float64,W::Float64,Ui::Float64=0.0,Ti::Float64=0.0,
 end
 
 """
-    integrate_moller(Z::Int64,Ei::Float64,n::Int64,Wmin::Float64=1e-5,Wmax::Float64=Ei,
-    is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
+    integrate_moller(Z::Int64,Ei::Float64,n::Int64,W⁻min::Float64=0.0,
+    is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false,
+    is_subshells::Bool=true)
 
 Gives the integration of the Møller differential cross-sections multiplied by Wⁿ.
 
@@ -50,10 +51,11 @@ Gives the integration of the Møller differential cross-sections multiplied by W
 - `Zi::Real` : number of electron(s).
 - `Ei::Float64` : incoming particle energy.
 - `n::Int64` : order of the energy-loss factor.
-- `E⁻min::Float64` : minimum energy of the knock-on electron.
+- `W⁻min::Float64` : minimum energy loss W of the incoming electron.
 - `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 - `is_hydrogenic_distribution_term::Bool`: boolean to enable or not the hydrogenic
   distribution term.
+- `is_subshells::Bool` : boolean indicating if bounded subshells are resolved.
 
 # Output Argument(s)
 - `σn::Float64` : integrated Møller cross-sections.
@@ -67,21 +69,22 @@ Gives the integration of the Møller differential cross-sections multiplied by W
   electron transport used in Monte Carlo codes.
 
 """
-function integrate_moller(Z::Int64,Ei::Float64,n::Int64,E⁻min::Float64=0.0,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
-    Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z)
+function integrate_moller(Z::Int64,Ei::Float64,n::Int64,W⁻min::Float64=0.0,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false,is_subshells::Bool=true)
+    Nshells,Zi,Ui,Ti,_,_ = electron_subshells(Z,~is_subshells)
     σn = 0
     for δi in range(1,Nshells)
-        σn += Zi[δi] * integrate_moller_per_subshell(Ei,n,Ui[δi],Ti[δi],E⁻min,is_focusing_møller,is_hydrogenic_distribution_term)
+        σn += Zi[δi] * integrate_moller_per_subshell(Ei,n,Ui[δi],Ti[δi],W⁻min,is_focusing_møller,is_hydrogenic_distribution_term)
     end
     return σn
 end
 
 """
     integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,
-    Wmin::Float64=Ui,Wmax::Float64=Ei/2,is_focusing_møller::Bool=false)
+    W⁻min::Float64=0.0,is_focusing_møller::Bool=false,
+    is_hydrogenic_distribution_term::Bool=false)
 
 Gives the integration of the Møller differential cross-sections for an electron with a given
-binding energy, multiplied by (W+Ui)ⁿ.
+binding energy, multiplied by Wⁿ, over W ∈ [max(W⁻min,Ui),(Ei+Ui)/2].
 
 # Input Argument(s)
 - `Zi::Real` : number of electron(s).
@@ -89,7 +92,7 @@ binding energy, multiplied by (W+Ui)ⁿ.
 - `n::Int64` : order of the energy-loss factor.
 - `Ui::Float64` : binding energy of the subshell.
 - `Ti::Vector{Float64}`: mean kinetic energy per subshell.
-- `E⁻min::Float64` : minimum energy of the knock-on electron.
+- `W⁻min::Float64` : minimum energy loss W of the incoming electron.
 - `is_focusing_møller::Bool` : boolean to enable or not the focusing term.
 - `is_hydrogenic_distribution_term::Bool`: boolean to enable or not the hydrogenic
   distribution term.
@@ -106,7 +109,7 @@ binding energy, multiplied by (W+Ui)ⁿ.
   electron transport used in Monte Carlo codes.
 
 """
-function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,E⁻min::Float64=0.0,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
+function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::Float64=0.0,W⁻min::Float64=0.0,is_focusing_møller::Bool=false,is_hydrogenic_distribution_term::Bool=false)
 
     # Varibles
     rₑ = 2.81794092E-13       # (in cm)
@@ -116,9 +119,9 @@ function integrate_moller_per_subshell(Ei::Float64,n::Int64,Ui::Float64=0.0,Ti::
     # Compute the Møller cross-section per subshell
     σni = 0
     W⁺ = (Ei+Ui)/2
-    W⁻ = E⁻min+Ui
+    W⁻ = max(W⁻min,Ui)
     if W⁺ > W⁻
-        if (is_hydrogenic_distribution_term) G = integrate_moller_hydrogenic_distribution_term(n,Ei,Ui,Ti,E⁻min) else G = 0 end
+        if (is_hydrogenic_distribution_term) G = integrate_moller_hydrogenic_distribution_term(n,Ei,Ui,Ti,W⁻min) else G = 0 end
         if n == 0
             J₀(W) = -1/W + 1/(Ei-W+Ui) +  W/(Ei+1)^2 + (2*Ei+1)/((Ei+1)^2*(Ei+Ui))*(log(Ei-W+Ui)-log(W))
             σni += (J₀(W⁺) - J₀(W⁻)) + G
@@ -219,9 +222,9 @@ end
 
 """
     integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,
-    Ti::Float64,E⁻min::Float64=0.0)
+    Ti::Float64,W⁻min::Float64=0.0)
 
-Gives the integrated Møller term accounting for the isotropic hydrogenic distribution of 
+Gives the integrated Møller term accounting for the isotropic hydrogenic distribution of
 orbital electron velocities, multiplied by Wⁿ.
 
 # Input Argument(s)
@@ -229,7 +232,7 @@ orbital electron velocities, multiplied by Wⁿ.
 - `W::Float64` : energy lost by the incoming electron.
 - `Ui::Float64`: binding energy per subshell.
 - `Ti::Float64`: mean kinetic energy per subshell.
-- `E⁻min::Float64` : minimum energy of the knock-on electron.
+- `W⁻min::Float64` : minimum energy loss W of the incoming electron.
 
 # Output Argument(s)
 - `Gi::Float64` : integrated Møller term accounting for the isotropic hydrogenic
@@ -241,10 +244,10 @@ orbital electron velocities, multiplied by Wⁿ.
 - Perkins (1989), The Livermore electron impact ionization data base.
 
 """
-function integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,Ti::Float64,E⁻min::Float64=0.0)
+function integrate_moller_hydrogenic_distribution_term(n::Int64,Ei::Float64,Ui::Float64,Ti::Float64,W⁻min::Float64=0.0)
 	Gi = 0
 	W⁺ = (Ei+Ui)/2
-    W⁻ = E⁻min+Ui
+    W⁻ = max(W⁻min,Ui)
     if W⁺ > W⁻
 		if n == 0
             if abs(Ui-Ti) ≤ 1e-7
