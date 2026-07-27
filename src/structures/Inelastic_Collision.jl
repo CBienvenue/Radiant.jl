@@ -415,11 +415,11 @@ function tcs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
     # Close collisions
     #----
     if is_electron(particle)
-        σt += integrate_moller(Z,Ei,0,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+        σt += integrate_moller(Z,Ei,0,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term,this.is_subshells_dependant)
     elseif is_positron(particle)
-        σt += integrate_bhabha(Z,Ei,0,Ei-Ec)
+        σt += integrate_bhabha(Z,Ei,0,Ei-Ec,this.is_subshells_dependant)
     elseif is_proton(particle) || is_alpha(particle)
-        σt += integrate_inelastic_collision_heavy_particle(Z,Ei,0,particle,Ei-Ec)
+        σt += integrate_inelastic_collision_heavy_particle(Z,Ei,0,particle,Ei-Ec,this.is_subshells_dependant)
     else
         error("Unknown particle")
     end
@@ -450,9 +450,9 @@ function acs(this::Inelastic_Collision,Ei::Float64,Ec::Float64,particle::Particl
     # Close collisions
     #----
     if is_electron(particle)
-        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+        σa = integrate_moller(Z,Ei,0,Ei-min(Ec,Ecutoff),this.is_focusing_møller,this.is_hydrogenic_distribution_term,this.is_subshells_dependant)
     elseif is_positron(particle)
-        σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff))
+        σa = integrate_bhabha(Z,Ei,0,Ei-min(Ec,Ecutoff),this.is_subshells_dependant)
     else
         error("Unknown particle")
     end
@@ -488,7 +488,7 @@ Gives the stopping power for inelastic collision interaction.
 function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,I_eff::Float64=NaN,atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
 
     # Compute the total stopping power
-    Stot = bethe(Z,ωz,ρ,Ei,particle,this.density_correction,state_of_matter,I_eff; atomic_weights=atomic_weights)
+    Stot = bethe(Z,ωz,ρ,Ei,particle,this.density_correction,state_of_matter,I_eff; atomic_weights=atomic_weights,is_shell_correction=this.is_shell_correction)
 
     # Compute the catastrophic Møller- or Bhabha- derived stopping power
     Sc = 0
@@ -497,11 +497,11 @@ function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz:
 
         # Close collision
         if is_electron(particle)
-            Sc += atz[i] * N_density * integrate_moller(Z[i],Ei,1,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term)
+            Sc += atz[i] * N_density * integrate_moller(Z[i],Ei,1,Ei-Ec,this.is_focusing_møller,this.is_hydrogenic_distribution_term,this.is_subshells_dependant)
         elseif is_positron(particle)
-            Sc += atz[i] * N_density * integrate_bhabha(Z[i],Ei,1,Ei-Ec)
+            Sc += atz[i] * N_density * integrate_bhabha(Z[i],Ei,1,Ei-Ec,this.is_subshells_dependant)
         elseif is_proton(particle) || is_alpha(particle)
-            Sc += atz[i] * N_density * integrate_inelastic_collision_heavy_particle(Z[i],Ei,1,particle,Ei-Ec)
+            Sc += atz[i] * N_density * integrate_inelastic_collision_heavy_particle(Z[i],Ei,1,particle,Ei-Ec,this.is_subshells_dependant)
         end
     end
 
