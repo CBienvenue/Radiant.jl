@@ -325,3 +325,231 @@ function gn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
     end
     return 𝚽l,𝚽E12_temp,ρ_in,Ntot
 end
+
+"""
+    gn_patch_list(Ndims,Nv,tiling,is_SPH,fold)
+
+Flat list of the `(u,v,w)` triples carrying an angular patch, in the order the reference
+`gn_inner_pass!` visits them.
+
+The reference dimensions its per-patch arrays on the full `(8,Nv,Nw_max)` box even though
+only `4·Nv·(Nv+1)` of those slots hold a patch (48 of 72 at `Nv = 3`, with the
+polar-anchored tiling). Enumerating them once here lets the fast chain allocate exactly the
+patches it sweeps, and gives each patch the linear id used to index the context and the
+per-patch workspaces.
+"""
+function gn_patch_list(Ndims::Int64,Nv::Int64,tiling::String,is_SPH::Bool,fold::Bool)
+    sx = [1,1,1,1,-1,-1,-1,-1]
+    azim_collapsed = (Ndims == 1) && (!is_SPH || fold)
+    z_fold_2D = (Ndims == 2) && (Nv == 1) && fold
+    Nw_of(u,v) = azim_collapsed ? ((u == 1 || u == 5) ? 1 : 0) :
+                 (z_fold_2D && iseven(u)) ? 0 :
+                 ((tiling == "symmetric") ? (2*v - 1) : ((sx[u] == 1) ? (Nv + 1 - v) : v))
+    list = NTuple{3,Int64}[]
+    for u in 1:8, v in 1:Nv, w in 1:Nw_of(u,v)
+        push!(list,(u,v,w))
+    end
+    return list
+end
+
+"""
+    gn_one_speed_fast(...)
+
+Optimized counterpart of `gn_one_speed`, restricted to 3D. Solves the one-speed transport
+equation for one energy group, with the same arguments, the same acceleration schemes and
+the same return values as the reference.
+
+Three things change, all of them organizational:
+
+- the cell systems are assembled and factorized once per (material, mesh-width triple,
+  angular patch) in `gn_fast_context`, instead of once per voxel per patch per pass;
+- the per-patch arrays are dimensioned on the flat patch list (`gn_patch_list`) rather than
+  the `(8,Nv,Nw_max)` box, and each patch gets its own `GNFastWorkspace` so the sweeps can
+  be threaded;
+- the boundary sources are folded onto the patches once, into concrete arrays.
+
+The workspaces the reference reallocates for every energy group are the caller's
+responsibility here — `compute_flux` hoists them out of the group loop and passes them in.
+
+See `set_fast_path`.
+"""
+function gn_one_speed_fast(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},Ndims::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Np::Int64,Nq::Int64,pl::Vector{Int64},Np_surf::Int64,𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Vector{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,𝒲::Array{Float64},Mll::Array{Float64},is_SPH::Bool,𝒩::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,Nv::Int64,Mll_surf::Array{Float64},Rpq::Array{Float64},need_boundary_flux::Bool,has_surface::Bool,tiling::String="polar-anchored",gmres_restart::Int64=30,anderson_depth::Int64=3,fold::Bool=false)
+
+    Nmat  = length(Σt)
+    plist = gn_patch_list(Ndims,Nv,tiling,is_SPH,fold)
+    Npatch = length(plist)
+
+    # Flux Initialization
+    𝚽E12_temp = Array{Float64}(undef)
+    if isCSD
+        𝚽E12_temp = zeros(Np,Nm[4],Ns[1],Ns[2],Ns[3])
+    end
+    sxs = [1,1,1,1,-1,-1,-1,-1]
+    sys = [1,1,-1,-1,1,1,-1,-1]
+    szs = [1,-1,1,-1,1,-1,1,-1]
+
+    # Precomputed cell systems and index tables for this group
+    ctx = gn_fast_context(Ndims,Δs,Nmat,Σt,S⁻,S⁺,S,𝒪,isFC,isCSD,C,ω,𝒲,Nq,𝒩,plist)
+
+    # Fixed boundary sources, folded onto the patches. Only the incoming face of each axis
+    # is ever read by the sweep, so one array per axis is enough (the reference carries all
+    # six and selects at every voxel column).
+    srcx = zeros(Nq,Ns[2],Ns[3],Npatch)
+    srcy = zeros(Nq,Ns[1],Ns[3],Npatch)
+    srcz = zeros(Nq,Ns[1],Ns[2],Npatch)
+    for (k,(u,v,w)) in enumerate(plist)
+        has_surface || break
+        fx = sxs[u] > 0 ? 1 : 2
+        fy = sys[u] > 0 ? 3 : 4
+        fz = szs[u] > 0 ? 5 : 6
+        for p in range(1,Np_source), q in range(1,Nq)
+            # A geometry has 2·Ndims faces, so the y and z slots do not exist below 3D.
+            ax = Mll_surf[p,q,u,v,w,fx,1]
+            Sx = sources[p,fx]
+            if Ndims == 3
+                ay = Mll_surf[p,q,u,v,w,fy,1]; Sy = sources[p,fy]
+                az = Mll_surf[p,q,u,v,w,fz,1]; Sz = sources[p,fz]
+                for iz in range(1,Ns[3]), iy in range(1,Ns[2])
+                    srcx[q,iy,iz,k] += Sx[iy,iz] * ax
+                end
+                for iz in range(1,Ns[3]), ix in range(1,Ns[1])
+                    srcy[q,ix,iz,k] += Sy[ix,iz] * ay
+                end
+                for iy in range(1,Ns[2]), ix in range(1,Ns[1])
+                    srcz[q,ix,iy,k] += Sz[ix,iy] * az
+                end
+            elseif Ndims == 2
+                # A 2D geometry has four faces, each carrying a 1-D array.
+                ay = Mll_surf[p,q,u,v,w,fy,1]; Sy = sources[p,fy]
+                for iy in range(1,Ns[2]); srcx[q,iy,1,k] += Sx[iy] * ax end
+                for ix in range(1,Ns[1]); srcy[q,ix,1,k] += Sy[ix] * ay end
+            elseif Ndims == 1
+                # A 1D geometry has two faces, each carrying a single scalar.
+                srcx[q,1,1,k] += Sx * ax
+            else
+                error("gn_one_speed_fast: unsupported dimension $(Ndims).")
+            end
+        end
+    end
+    # Zeroed clones used by the homogeneous operator A·z (the GN surface source enters the
+    # sweeps through these arrays, not Np_source).
+    srcx0 = zeros(Nq,Ns[2],Ns[3],Npatch)
+    srcy0 = zeros(Nq,Ns[1],Ns[3],Npatch)
+    srcz0 = zeros(Nq,Ns[1],Ns[2],Npatch)
+
+    # Boundary fluxes initialization. With every face void nothing can ever make these
+    # non-zero (only reflective and periodic conditions feed them), so they collapse to
+    # empty arrays: the transforms that move them are skipped, and their contribution to the
+    # Krylov/Livolant inner products — exactly zero — is unchanged.
+    nb = need_boundary_flux ? 1 : 0
+    𝚽x12⁻ = zeros(Np_surf,Nm[1],Ns[2]*nb,Ns[3]*nb,2)
+    𝚽x12⁺ = zeros(Np_surf,Nm[1],Ns[2]*nb,Ns[3]*nb,2)
+    𝚽y12⁻ = zeros(Np_surf,Nm[2],Ns[1]*nb,Ns[3]*nb,2)
+    𝚽y12⁺ = zeros(Np_surf,Nm[2],Ns[1]*nb,Ns[3]*nb,2)
+    𝚽z12⁻ = zeros(Np_surf,Nm[3],Ns[1]*nb,Ns[2]*nb,2)
+    𝚽z12⁺ = zeros(Np_surf,Nm[3],Ns[1]*nb,Ns[2]*nb,2)
+
+    # Restricted-angle buffers, dimensioned on the flat patch list, and the scaled Mll.
+    NmE_face = isCSD ? Nm[4] : 0
+    𝚽_q     = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],Npatch)
+    Q_q     = zeros(Nq,Nm[5],Ns[1],Ns[2],Ns[3],Npatch)
+    𝚽E12_q  = zeros(Nq,NmE_face,Ns[1],Ns[2],Ns[3],Npatch)
+    𝚽x12_q  = zeros(Nq,Nm[1],Ns[2],Ns[3],2,Npatch)
+    𝚽y12_q  = zeros(Nq,Nm[2],Ns[1],Ns[3],2,Npatch)
+    𝚽z12_q  = zeros(Nq,Nm[3],Ns[1],Ns[2],2,Npatch)
+    inv_4π  = 1/(4*π)
+    Mll_factored = similar(Mll)
+    for u in 1:8, v in 1:Nv, w in 1:size(Mll,5), q in 1:Nq, p in 1:Np
+        Mll_factored[p,q,u,v,w] = (2*pl[p]+1) * inv_4π * Mll[p,q,u,v,w]
+    end
+    # Patch-major copies of the transform matrices. With Nq = 1 they turn the whole patch
+    # loop of each volume transform into a single gemm (see gn_inner_pass_fast!).
+    Mll_all   = zeros(Np,Nq*Npatch)
+    Mfact_all = zeros(Np,Nq*Npatch)
+    for (k,(u,v,w)) in enumerate(plist), q in 1:Nq, p in 1:Np
+        Mll_all[p,(k-1)*Nq+q]   = Mll[p,q,u,v,w]
+        Mfact_all[p,(k-1)*Nq+q] = Mll_factored[p,q,u,v,w]
+    end
+
+    # One workspace per patch: the sweeps run concurrently, and a patch-indexed pool avoids
+    # relying on `threadid()` (tasks may migrate between threads).
+    Nmf = [Nm[1],Nm[2],Nm[3]]
+    wss = [GNFastWorkspace(Ndims,Nm[5]*Nq,Nq,Nmf,Ns) for _ in 1:Npatch]
+
+    # Staging buffers for the batched angular transforms (Nq > 1 only; with Nq == 1 the
+    # transform already lands in the sweep's layout and needs none). One per thread, blocked
+    # so the buffer stays cache-sized whatever the mesh — see GN_FAST_BLOCK.
+    tbufs = (Nq == 1) ? [Matrix{Float64}(undef,0,0) for _ in 1:Threads.nthreads()] :
+                        [zeros(Nq*Npatch,GN_FAST_BLOCK) for _ in 1:Threads.nthreads()]
+
+    # Source scratch
+    Ql = similar(Qlout)
+    ρ_in = NaN
+
+    # If there is no source anywhere, the in-group solution is trivially zero
+    if ~any(x->x!=0,sources) && ~any(x->x!=0,Qlout) && (~isCSD || ~any(x->x!=0,𝚽E12))
+        𝚽l .= 0
+        println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",0.0)," , N = ",1," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+        return 𝚽l,𝚽E12_temp,ρ_in,Ntot
+    end
+
+    # Tracks which incoming energy flux 𝚽E12_q currently holds (0 nothing, 1 the affine map's,
+    # 2 the homogeneous operator's zeros), so the pass only rebuilds it when the caller
+    # switches between the two.
+    E12_state = Ref(0)
+
+    # Shorthand wrapper around one source-iteration pass
+    pass!(homogeneous;reconstruct::Bool=false) = gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,isCSD,solver,𝚽E12,T,ℳ,boundary_conditions,Mll,Mll_surf,Rpq,Mll_factored,Mll_all,Mfact_all,ctx,plist,wss,Ql,𝚽E12_temp,homogeneous ? srcx0 : srcx,homogeneous ? srcy0 : srcy,homogeneous ? srcz0 : srcz,𝚽x12⁻,𝚽x12⁺,𝚽y12⁻,𝚽y12⁺,𝚽z12⁻,𝚽z12⁺,Q_q,𝚽_q,𝚽E12_q,𝚽x12_q,𝚽y12_q,𝚽z12_q,E12_state,need_boundary_flux,tbufs;homogeneous=homogeneous,reconstruct=reconstruct)
+
+    # State vector z = (𝚽l, incoming boundary angular fluxes on each active axis)
+    work = Ndims == 3 ? Array{Float64}[𝚽l,𝚽x12⁻,𝚽y12⁻,𝚽z12⁻] :
+           Ndims == 2 ? Array{Float64}[𝚽l,𝚽x12⁻,𝚽y12⁻] :
+                        Array{Float64}[𝚽l,𝚽x12⁻]
+    Nref = Ref(Ntot)
+
+    function load_and_pass!(out::KState,zin::KState,homogeneous::Bool)
+        state_copy!(work,zin)
+        pass!(homogeneous)
+        state_copy!(out,work)
+        Nref[] += 1
+    end
+    fixedpoint!(out::KState,zin::KState) = load_and_pass!(out,zin,false)
+    matvec!(out::KState,zin::KState) = (load_and_pass!(out,zin,true); state_scale!(-1.0,out); state_axpy!(1.0,zin,out))
+
+    local niter, resid, conv
+    if 𝒜 == "none"
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=typemax(Int64))
+    elseif 𝒜 == "livolant"
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=3)
+    elseif 𝒜 == "anderson"
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = anderson!(z,fixedpoint!;depth=anderson_depth,maxit=I_max,tol=ϵ_max,β=1.0)
+    elseif 𝒜 == "gmres"
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = gmres!(z,matvec!,c;restart=gmres_restart,maxit=I_max,tol=ϵ_max)
+    elseif 𝒜 == "bicgstab"
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = bicgstab!(z,matvec!,c;maxit=I_max,tol=ϵ_max)
+    else
+        error("Unknown acceleration method: $𝒜.")
+    end
+
+    # Reconstruction pass on the converged state. This is the only pass that rebuilds the
+    # outgoing energy flux 𝚽E12_temp, which is read after this call and never during the
+    # iteration.
+    state_copy!(work,z); pass!(false;reconstruct=true); Nref[] += 1
+    Ntot = Nref[]
+
+    if conv
+        println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," )")
+    else
+        println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," )")
+    end
+    return 𝚽l,𝚽E12_temp,ρ_in,Ntot
+end

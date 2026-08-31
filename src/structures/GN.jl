@@ -22,6 +22,8 @@ the `DPN` solver.
 - `convergence_criterion::Float64 = 1e-7` : convergence criterion of in-group iterations.
 - `maximum_iteration::Int64 = 300` : maximum number of in-group iterations.
 - `acceleration::String = "none"` : acceleration method for the in-group iterations.
+- `fast_path::Bool = false` : use the optimized solver chain (`gn_one_speed_fast` and
+  below) instead of the reference one. Numerically equivalent; see `set_fast_path`.
 
 """
 mutable struct GN
@@ -44,6 +46,7 @@ mutable struct GN
     subdivision                ::Int64
     tiling                     ::String
     z_fold                     ::Bool
+    fast_path                  ::Bool
 
     # Constructor(s)
     function GN()
@@ -65,6 +68,7 @@ mutable struct GN
         this.subdivision = 1
         this.tiling = "symmetric"
         this.z_fold = true
+        this.fast_path = false
         return this
     end
 end
@@ -769,4 +773,57 @@ Get whether the 2D z-symmetry fold (four quadrants) is enabled.
 """
 function get_z_fold(this::GN)
     return this.z_fold
+end
+
+"""
+    set_fast_path(this::GN,fast_path::Bool)
+
+Enable or disable the optimized solver chain (`fast_path = false` by default).
+
+The optimized chain (`gn_one_speed_fast` → `gn_inner_pass_fast!` → `gn_sweep_*_fast!` →
+`gn_*_BTE_fast!`/`gn_*_BFP_fast!`) is a separate implementation living alongside the
+reference one; the reference functions are never modified and stay the default. It is
+numerically equivalent to the reference chain, and differs only in how the work is
+organized:
+
+- the per-cell matrix is assembled and factorized once per (material, voxel widths,
+  angular patch, energy group) instead of once per voxel — it does not depend on the
+  voxel beyond the mesh widths, and the GN closure weights are constant (DD/DG only);
+- the per-cell solve uses an unrolled Gaussian elimination instead of LAPACK, which also
+  makes the sweeps thread-safe (LAPACK's locked workspace allocator serializes them);
+- the angular patch sweeps run on `Threads.nthreads()` threads.
+
+Set `JULIA_NUM_THREADS` (or `julia -t`) to benefit from the threading.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+- `fast_path::Bool` : whether to use the optimized solver chain.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = GN()
+julia> m.set_fast_path(true)
+```
+"""
+function set_fast_path(this::GN,fast_path::Bool)
+    this.fast_path = fast_path
+end
+
+"""
+    get_fast_path(this::GN)
+
+Get whether the optimized solver chain is enabled.
+
+# Input Argument(s)
+- `this::GN` : discretization method.
+
+# Output Argument(s)
+- `fast_path::Bool` : whether the optimized solver chain is enabled.
+
+"""
+function get_fast_path(this::GN)
+    return this.fast_path
 end

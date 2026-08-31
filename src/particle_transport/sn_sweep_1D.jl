@@ -122,3 +122,45 @@ function sn_sweep_1D(𝚽l::Array{Float64,3},Ql::Array{Float64,3},Σt::Vector{Fl
 
     return 𝚽l, 𝚽E12, 𝚽x12⁺
 end
+"""
+    sn_sweep_1D_fast!(𝚿,o𝚿,Ql,Mnn,Np,𝚽E12,𝚽E12o,oE,mat,Nx,srcx,outx,mom,cells,d,ws,Nmf,NmEf,
+    isCSD,do_E,zero_E,save_out)
+
+Optimized counterpart of `sn_sweep_1D`: sweep the spatial grid along one discrete ordinate.
+
+Identical in structure to `sn_sweep_3D_fast!` with the y and z axes collapsed; see it for the
+four changes to the reference.
+"""
+function sn_sweep_1D_fast!(𝚿::Vector{Float64},o𝚿::Int64,Ql::Vector{Float64},Mnn::Vector{Float64},Np::Int64,𝚽E12::Vector{Float64},𝚽E12o::Vector{Float64},oE::Int64,mat::Array{Int64,3},Nx::Int64,srcx::Vector{Float64},outx::Vector{Float64},mom::GNFastMoments{NMOM},cells::GNFastCells,d::SNFastDir{NMOM},ws::GNFastWorkspace,Nmf::Vector{Int64},NmEf::Int64,isCSD::Bool,do_E::Bool,zero_E::Bool,save_out::Bool) where {NMOM}
+
+    Nm1 = Nmf[1]
+    if d.sx > 0; x_sweep = 1:Nx else x_sweep = Nx:-1:1 end
+
+    bufx = ws.bufx
+    fill!(bufx, 0.0)
+    @inbounds for i in 1:Nm1
+        bufx[i] += srcx[i]
+    end
+
+    @inbounds for ix in x_sweep
+        ikx = Int64(cells.kx[ix])
+        icell = ix-1
+        m = mat[ix,1,1]
+        conf = gn_fast_conf(cells,m,ix,1,1)
+
+        if ~isCSD
+            sn_1D_BTE_fast!(𝚿,o𝚿+NMOM*icell,bufx,0,Ql,Np*NMOM*icell,Mnn,Np,mom,d,ws,conf,ikx)
+        else
+            sn_1D_BFP_fast!(𝚿,o𝚿+NMOM*icell,bufx,0,𝚽E12,𝚽E12o,oE+NmEf*icell,
+                            Ql,Np*NMOM*icell,Mnn,Np,mom,d,ws,conf,ikx,m,do_E,zero_E)
+        end
+    end
+
+    if save_out
+        @inbounds for i in 1:Nm1
+            outx[i] = bufx[i]
+        end
+    end
+
+    return nothing
+end
