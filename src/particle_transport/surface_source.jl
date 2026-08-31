@@ -1,4 +1,41 @@
 """
+    surface_frame_direction(surface::String,μs::Float64,ηs::Float64,ξs::Float64)
+
+Express a source direction in the half-range angular frame attached to a Cartesian boundary.
+
+The half-range spherical harmonics basis built by `surface_angular_polynomial_basis` is
+face-dependent: it uses the direction cosine along the inward normal of the face as polar
+variable, and the two remaining cosines as azimuth. The source moments have to be expanded
+in that same frame, otherwise a beam entering through `Y±` or `Z±` is projected as if it
+entered through `X-` (a normally incident beam then becomes a grazing one).
+
+# Input Argument(s)
+- `surface::String` : boundary the source sits on (`"X-"`, `"X+"`, ..., `"Z+"`).
+- `μs::Float64` : direction cosine of the source along the x-axis.
+- `ηs::Float64` : direction cosine of the source along the y-axis.
+- `ξs::Float64` : direction cosine of the source along the z-axis.
+
+# Output Argument(s)
+- `μ̂s::Float64` : polar cosine with respect to the inward normal of `surface`.
+- `ϕ̂s::Float64` : azimuthal angle in the frame of `surface`.
+
+# Reference(s)
+N/A
+
+"""
+function surface_frame_direction(surface::String,μs::Float64,ηs::Float64,ξs::Float64)
+    if surface ∈ ["X-","X+"]
+        return abs(μs), atan(ξs,ηs)
+    elseif surface ∈ ["Y-","Y+"]
+        return abs(ηs), atan(μs,ξs)
+    elseif surface ∈ ["Z-","Z+"]
+        return abs(ξs), atan(ηs,μs)
+    else
+        error("Unknown surface: $surface.")
+    end
+end
+
+"""
     surface_source(particle::Particle,source::Surface_Source,cross_sections::Cross_Sections,
     geometry::Geometry,solver::Solver)
 
@@ -192,11 +229,18 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
             # Calculation of the source moments
             norm = 0.0
             if solver isa SN
-                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                μ̂s,ϕ̂s = surface_frame_direction(surface,μs,ηs,ξs)
+                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ̂s,ϕ̂s)
             else
                 b = cartesian_boundary_index(surface)
                 ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
             end
+            # `Q` carries the moments of the incoming angular flux DENSITY: it is added as is
+            # to the incoming half-flux of the sweep (sn_sweep_2D/3D), which applies the face
+            # weighting itself. It must therefore hold no mesh-width factor, otherwise the dose
+            # per source particle scales linearly with the mesh spacing. `norm` does carry it:
+            # it sums the total entering current (intensity x illuminated area), which the
+            # energy and charge depositions are normalised by.
             for ig in range(1,Ng)
                 if ~(ig == source.energy_group) continue end
                 for p in range(1,Np)
@@ -206,9 +250,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                         for iy in range(1,Ny)
                             if y[iy] < ymin || y[iy] > ymax continue end
                             if surface == "X-" && μs > 0
-                                Q[ig,p,1][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
+                                Q[ig,p,1][iy] = intensity * ψlms[l+1][l+m+1]
                             elseif surface == "X+" && μs < 0
-                                Q[ig,p,2][iy] = intensity * ψlms[l+1][l+m+1] * Δy[iy]
+                                Q[ig,p,2][iy] = intensity * ψlms[l+1][l+m+1]
                             end
                             if p == 1 norm += intensity * Δy[iy] end
                         end
@@ -217,9 +261,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                         for ix in range(1,Nx)
                             if x[ix] < xmin || x[ix] > xmax continue end
                             if surface == "Y-" && ηs > 0
-                                Q[ig,p,3][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
+                                Q[ig,p,3][ix] = intensity * ψlms[l+1][l+m+1]
                             elseif surface == "Y+" && ηs < 0
-                                Q[ig,p,4][ix] = intensity * ψlms[l+1][l+m+1] * Δx[ix]
+                                Q[ig,p,4][ix] = intensity * ψlms[l+1][l+m+1]
                             end
                             if p == 1 norm += intensity * Δx[ix] end
                         end
@@ -281,11 +325,18 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
             # Calculation of the source moments
             norm = 0.0
             if solver isa SN
-                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,abs(μs),ϕs)
+                μ̂s,ϕ̂s = surface_frame_direction(surface,μs,ηs,ξs)
+                ψlms = real_half_range_spherical_harmonics_up_to_L(Lmax,μ̂s,ϕ̂s)
             else
                 b = cartesian_boundary_index(surface)
                 ψlms = boundary_real_half_range_spherical_harmonics_up_to_L(L,b,-1,μs,ϕs)
             end
+            # `Q` carries the moments of the incoming angular flux DENSITY: it is added as is
+            # to the incoming half-flux of the sweep (sn_sweep_2D/3D), which applies the face
+            # weighting itself. It must therefore hold no mesh-width factor, otherwise the dose
+            # per source particle scales linearly with the mesh spacing. `norm` does carry it:
+            # it sums the total entering current (intensity x illuminated area), which the
+            # energy and charge depositions are normalised by.
             for ig in range(1,Ng)
                 if ~(ig == source.energy_group) continue end
                 for p in range(1,Np)
@@ -296,9 +347,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             if y[iy] < ymin || y[iy] > ymax continue end
                             if z[iz] < zmin || z[iz] > zmax continue end
                             if surface == "X-" && μs > 0
-                                Q[ig,p,1][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
+                                Q[ig,p,1][iy,iz] = intensity * ψlms[l+1][l+m+1]
                             elseif surface == "X+" && μs < 0
-                                Q[ig,p,2][iy,iz] = intensity * ψlms[l+1][l+m+1] * Δy[iy] * Δz[iz]
+                                Q[ig,p,2][iy,iz] = intensity * ψlms[l+1][l+m+1]
                             end
                             if p == 1 norm += intensity * Δy[iy] * Δz[iz] end
                         end
@@ -308,9 +359,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             if x[ix] < xmin || x[ix] > xmax continue end
                             if z[iz] < zmin || z[iz] > zmax continue end
                             if surface == "Y-" && ηs > 0
-                                Q[ig,p,3][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
+                                Q[ig,p,3][ix,iz] = intensity * ψlms[l+1][l+m+1]
                             elseif surface == "Y+" && ηs < 0
-                                Q[ig,p,4][ix,iz] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δz[iz]
+                                Q[ig,p,4][ix,iz] = intensity * ψlms[l+1][l+m+1]
                             end
                             if p == 1 norm += intensity * Δx[ix] * Δz[iz] end
                         end
@@ -320,9 +371,9 @@ function surface_source(particle::Particle,source::Surface_Source,cross_sections
                             if x[ix] < xmin || x[ix] > xmax continue end
                             if y[iy] < ymin || y[iy] > ymax continue end
                             if surface == "Z-" && ξs > 0
-                                Q[ig,p,5][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
+                                Q[ig,p,5][ix,iy] = intensity * ψlms[l+1][l+m+1]
                             elseif surface == "Z+" && ξs < 0
-                                Q[ig,p,6][ix,iy] = intensity * ψlms[l+1][l+m+1] * Δx[ix] * Δy[iy]
+                                Q[ig,p,6][ix,iy] = intensity * ψlms[l+1][l+m+1]
                             end
                             if p == 1 norm += intensity * Δx[ix] * Δy[iy] end
                         end
