@@ -121,8 +121,8 @@ dynamic dispatch (visible in the profile).
 The per-cell work goes to `gn_3D_BTE_fast!`/`gn_3D_BFP_fast!` with the voxel's cell-system
 configuration, rather than rebuilding and refactorizing the cell matrix in place.
 
-All scratch comes from `ws`, one `GNFastWorkspace` per thread, so several patches can be
-swept concurrently. See `set_fast_path`.
+All scratch comes from `ws`, one `GNFastWorkspace` per patch, so a sweep never has to clear
+state left by the previous one. See `set_fast_path`.
 """
 function gn_sweep_3D_fast!(𝚽l::Vector{Float64},𝚽E12::Vector{Float64},𝚽x12::Vector{Float64},𝚽y12::Vector{Float64},𝚽z12::Vector{Float64},k::Int64,mat::Array{Int64,3},Nx::Int64,Ny::Int64,Nz::Int64,Ql::Vector{Float64},src_x::Vector{Float64},src_y::Vector{Float64},src_z::Vector{Float64},mom::GNFastMoments{NMOM},cells::GNFastCells,pat::GNFastPatch{NQ},ws::GNFastWorkspace,Nmf::Vector{Int64},NmEf::Int64,is_CSD::Bool,do_E::Bool,save_out::Bool) where {NMOM,NQ}
 

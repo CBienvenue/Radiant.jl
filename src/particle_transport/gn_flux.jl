@@ -176,7 +176,6 @@ anderson_depth = solver.get_anderson_depth()
 # the cases gn_fast_applicable accepts; anything else falls back rather than failing. It is
 # resolved here because it also decides how much boundary machinery has to be built below.
 use_fast = solver.get_fast_path()
-blas_threads = BLAS.get_num_threads()
 if use_fast
     Npatch = length(gn_patch_list(Ndims,Nv,tiling,is_SPH,fold))
     is_ok, why = gn_fast_applicable(Ndims,Δs,Nmat,𝒪,Nq,isFC,Npatch)
@@ -184,12 +183,7 @@ if use_fast
         println(">>>Fast path unavailable (",why,") — using the reference solver chain.")
         use_fast = false
     else
-        println(">>>Fast path enabled ($Npatch angular patches, $(Threads.nthreads()) thread(s)).")
-        # The fast chain calls BLAS from inside its own threaded regions. Letting OpenBLAS
-        # spawn threads there oversubscribes the machine; it buys nothing anyway at these
-        # shapes (measured: identical runtime from 1 to 12 BLAS threads on the reference
-        # chain), so pin it to one thread for the duration of the solve.
-        if Threads.nthreads() > 1 BLAS.set_num_threads(1) end
+        println(">>>Fast path enabled ($Npatch angular patches).")
     end
 end
 
@@ -338,7 +332,6 @@ while ~(is_outer_convergence)
     
 end
 
-if use_fast BLAS.set_num_threads(blas_threads) end
 
 # Save flux
 flux = Flux_Per_Particle(part)

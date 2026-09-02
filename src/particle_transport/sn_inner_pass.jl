@@ -177,7 +177,7 @@ Accumulate one axis' outgoing face moments of one direction into the pass total.
 
 The reference does this as `Np_surf × Nmfa` scalar updates inside the sweep, at every cell of
 the exit face. Here the sweep leaves the raw face moments in `out` and the transform is a
-rank-1 update — outside the threaded region, since the target is shared by every direction.
+rank-1 update, hoisted out of the sweep since the target is shared by every direction.
 """
 function _sn_fast_faces_out!(𝚽12_temp::Array{Float64},Dh::Matrix{Float64},n::Int64,Np_surf::Int64,Nmfa::Int64,Nfca::Int64,out::Vector{Float64},slot::Int64)
 
@@ -259,7 +259,7 @@ function sn_inner_pass_fast!(𝚽l::Array{Float64},𝚽x12_in::Array{Float64},�
     while n0 ≤ Nd
         nb = min(sc.Nblk, Nd-n0+1)
 
-        Threads.@threads for j in 1:nb
+        for j in 1:nb
             n = n0+j-1
             d = ctx.dir[n]
             @inbounds for p in 1:Np; sc.Mnn[j][p] = Mn[n,p] end
@@ -308,7 +308,7 @@ function sn_inner_pass_fast!(𝚽l::Array{Float64},𝚽x12_in::Array{Float64},�
         # Discrete-to-moment transform of the whole block, in one gemm
         @views mul!(𝚽lm, Dn[:,n0:n0+nb-1], transpose(𝚿m[:,1:nb]), 1.0, 1.0)
 
-        # Outgoing boundary fluxes, accumulated outside the threaded region
+        # Outgoing boundary fluxes, accumulated after the block's sweeps
         if need_boundary_flux
             for j in 1:nb
                 n = n0+j-1; d = ctx.dir[n]

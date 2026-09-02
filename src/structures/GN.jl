@@ -789,11 +789,10 @@ organized:
 - the per-cell matrix is assembled and factorized once per (material, voxel widths,
   angular patch, energy group) instead of once per voxel — it does not depend on the
   voxel beyond the mesh widths, and the GN closure weights are constant (DD/DG only);
-- the per-cell solve uses an unrolled Gaussian elimination instead of LAPACK, which also
-  makes the sweeps thread-safe (LAPACK's locked workspace allocator serializes them);
-- the angular patch sweeps run on `Threads.nthreads()` threads.
+- the per-cell solve uses an unrolled Gaussian elimination instead of LAPACK, whose locked
+  workspace allocator costs more than the arithmetic on systems this small.
 
-Set `JULIA_NUM_THREADS` (or `julia -t`) to benefit from the threading.
+The chain is serial: the speed-up is algorithmic, not parallel.
 
 # Input Argument(s)
 - `this::GN` : discretization method.

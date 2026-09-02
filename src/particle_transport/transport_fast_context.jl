@@ -17,9 +17,9 @@ voxel-independent:
   instead of once per voxel: a few hundred factorizations instead of `Nvox × Npatch` per
   source-iteration pass.
 
-Keeping LAPACK out of the per-cell loop also makes the patch sweeps thread-safe:
-`lu!`/`ldiv!` go through OpenBLAS' globally-locked workspace allocator, which serializes
-concurrent sweeps (measured: 0.64× on 12 threads, i.e. slower than serial).
+Keeping LAPACK out of the per-cell loop matters on its own: `lu!`/`ldiv!` go through
+OpenBLAS' globally-locked workspace allocator, so calling them per cell is far more expensive
+than the arithmetic they perform.
 
 The factorization itself still uses `lu!`, once per configuration and outside the hot
 loop, so the factors are bit-identical to the reference chain's. Only the per-cell
@@ -349,15 +349,15 @@ struct GNFastContext{NMOM,NQ}
 end
 
 # ---------------------------------------------------------------------------------------
-# Per-thread workspace
+# Per-sweep workspace
 # ---------------------------------------------------------------------------------------
 
 """
     GNFastWorkspace
 
-Per-thread scratch for one patch sweep. The reference chain keeps a single shared set of
-these (`gn_one_speed.jl`); threading the patch loop requires one per thread, padded so two
-threads never share a cache line.
+Scratch for one patch sweep. The reference chain keeps a single shared set of these
+(`gn_one_speed.jl`); the optimized chain allocates one per patch so a sweep never has to
+clear state left by the previous one.
 """
 struct GNFastWorkspace
     Q    ::Vector{Float64}
@@ -566,10 +566,10 @@ end
 
 Split `1:n` into at most `nchunk` contiguous ranges of near-equal length.
 
-Used to cut the angular transforms along the spatial axis. Doing so serves two purposes at
-once: the ranges are independent, so the transforms thread; and every patch's transform for
-a given range touches the same slice of the full-range array, which then stays in cache
-across the whole patch loop instead of being streamed from memory once per patch.
+Used to cut the angular transforms along the spatial axis, so that every patch's transform
+for a given range touches the same slice of the full-range array: it then stays in cache
+across the whole patch loop instead of being streamed from memory once per patch. The chain
+being serial, a single range is the usual case; the split is kept for cache blocking.
 """
 function gn_fast_chunks(n::Int64,nchunk::Int64)
     nchunk = max(1,min(nchunk,n))
@@ -684,8 +684,8 @@ end
     gn_fast_solve!(𝚽,LU,ipiv,Q,Nm,conf)
 
 Solve `A x = b` from the cached factors, replacing the reference chain's
-`ldiv!(𝚽,lu!(𝒮),Q)` (LAPACK `dgetrs`) without entering LAPACK — which is what allows the
-patch sweeps to run on several threads.
+`ldiv!(𝚽,lu!(𝒮),Q)` (LAPACK `dgetrs`) without entering LAPACK — whose locked workspace
+allocator costs more per call than the arithmetic on systems this small.
 
 Reproduces `dgetrs('N',…)` step for step: row interchanges, unit-lower forward
 substitution, then upper back substitution, both in the column-oriented order of reference
@@ -1176,8 +1176,9 @@ end
 Allocate the per-group scratch of the optimized SN chain and precompute the per-direction
 half-range transforms.
 
-`Nblk` is the number of directions swept concurrently. It is capped by the number of threads
-and by memory: the block holds `Nblk × Nmom × Nvox` in-cell moments, so on a large mesh it is
+`Nblk` is the number of directions swept per batch: their discrete-to-moment transform is
+done as a single `gemm` over the batch rather than one `gemv` per direction. It is capped by
+memory alone — the block holds `Nblk × Nmom × Nvox` in-cell moments, so on a large mesh it is
 allowed to grow only to a fraction of what the flux array itself occupies.
 """
 function sn_fast_scratch(Ndims::Int64,Ns::Vector{Int64},Nmom::Int64,Nm::Vector{Int64},
@@ -1190,7 +1191,7 @@ function sn_fast_scratch(Ndims::Int64,Ns::Vector{Int64},Nmom::Int64,Nm::Vector{I
     Nx,Ny,Nz = Ns[1],Ns[2],Ns[3]
     Nvox = Nx*Ny*Nz
     M    = Nmom*Nvox
-    Nblk = min(Nd, max(1,Threads.nthreads()), max(1, div(max_block_bytes, max(M,1)*8)))
+    Nblk = min(Nd, max(1, div(max_block_bytes, max(M,1)*8)))
 
     Nmf = [Nm[1], Ndims ≥ 2 ? Nm[2] : 1, Ndims ≥ 3 ? Nm[3] : 1]
     Nfc = [Ny*Nz, Nx*Nz, Nx*Ny]

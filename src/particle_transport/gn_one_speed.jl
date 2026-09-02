@@ -364,8 +364,7 @@ Three things change, all of them organizational:
 - the cell systems are assembled and factorized once per (material, mesh-width triple,
   angular patch) in `gn_fast_context`, instead of once per voxel per patch per pass;
 - the per-patch arrays are dimensioned on the flat patch list (`gn_patch_list`) rather than
-  the `(8,Nv,Nw_max)` box, and each patch gets its own `GNFastWorkspace` so the sweeps can
-  be threaded;
+  the `(8,Nv,Nw_max)` box, and each patch gets its own `GNFastWorkspace`;
 - the boundary sources are folded onto the patches once, into concrete arrays.
 
 The workspaces the reference reallocates for every energy group are the caller's
@@ -471,16 +470,15 @@ function gn_one_speed_fast(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vect
         Mfact_all[p,(k-1)*Nq+q] = Mll_factored[p,q,u,v,w]
     end
 
-    # One workspace per patch: the sweeps run concurrently, and a patch-indexed pool avoids
-    # relying on `threadid()` (tasks may migrate between threads).
+    # One workspace per patch, so a sweep never has to clear state left by the previous one.
     Nmf = [Nm[1],Nm[2],Nm[3]]
     wss = [GNFastWorkspace(Ndims,Nm[5]*Nq,Nq,Nmf,Ns) for _ in 1:Npatch]
 
     # Staging buffers for the batched angular transforms (Nq > 1 only; with Nq == 1 the
-    # transform already lands in the sweep's layout and needs none). One per thread, blocked
-    # so the buffer stays cache-sized whatever the mesh — see GN_FAST_BLOCK.
-    tbufs = (Nq == 1) ? [Matrix{Float64}(undef,0,0) for _ in 1:Threads.nthreads()] :
-                        [zeros(Nq*Npatch,GN_FAST_BLOCK) for _ in 1:Threads.nthreads()]
+    # transform already lands in the sweep's layout and needs none). Blocked so the buffer
+    # stays cache-sized whatever the mesh — see GN_FAST_BLOCK.
+    tbufs = (Nq == 1) ? [Matrix{Float64}(undef,0,0)] :
+                        [zeros(Nq*Npatch,GN_FAST_BLOCK)]
 
     # Source scratch
     Ql = similar(Qlout)

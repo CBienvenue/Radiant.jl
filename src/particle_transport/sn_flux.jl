@@ -146,17 +146,13 @@ Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
 # cases sn_fast_applicable accepts — in particular not the adaptive schemes; anything else
 # falls back rather than failing.
 use_fast = solver.get_fast_path()
-blas_threads = BLAS.get_num_threads()
 if use_fast
     is_ok, why = sn_fast_applicable(Ndims,Δs,Nmat,𝒪,isFC,Nd,is_adaptive)
     if ~is_ok
         println(">>>Fast path unavailable (",why,") — using the reference solver chain.")
         use_fast = false
     else
-        println(">>>Fast path enabled ($Nd directions, $(Threads.nthreads()) thread(s)).")
-        # The fast chain calls BLAS from inside its own threaded regions; letting OpenBLAS
-        # spawn threads there oversubscribes the machine, so pin it to one thread.
-        if Threads.nthreads() > 1 BLAS.set_num_threads(1) end
+        println(">>>Fast path enabled ($Nd directions).")
     end
 end
 
@@ -264,8 +260,6 @@ while ~(is_outer_convergence)
     end
     
 end
-
-if use_fast BLAS.set_num_threads(blas_threads) end
 
 # Save flux
 flux = Flux_Per_Particle(part)

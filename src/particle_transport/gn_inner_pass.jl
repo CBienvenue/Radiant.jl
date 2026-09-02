@@ -418,10 +418,9 @@ What differs:
 - the patches are enumerated on a flat list, so the `(8,Nv,Nw_max)` arrays of the
   reference no longer carry the `8·Nv·Nw_max − 4·Nv·(Nv+1)` slots that never hold a patch
   (24 of 72 at `Nv = 3`);
-- the patch sweeps run concurrently, one `GNFastWorkspace` per patch. This is only sound
-  because `gn_3D_*_fast!` stays out of LAPACK: `lu!`/`ldiv!` serialize on OpenBLAS'
-  globally-locked workspace allocator, which makes the threaded sweep *slower* than the
-  serial one (measured 0.64× on 12 threads);
+- each patch sweeps with its own `GNFastWorkspace`, and `gn_3D_*_fast!` stays out of
+  LAPACK: `lu!`/`ldiv!` go through OpenBLAS' globally-locked workspace allocator, which
+  costs more per call than the arithmetic on systems this small;
 - the per-pass `fill!` of the full-grid patch arrays is gone: every element of `Q_q`,
   `𝚽_q`, `𝚽E12_q` and the boundary arrays is overwritten before it is read — by the
   forward `mul!` for the first three, by the sweep for `𝚽_q`;
@@ -486,18 +485,18 @@ function gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,is
     # patch-major block that has to be scattered back into the sweep's layout. Even paying that
     # copy it beats the per-patch form by 2.59× (measured at Nq = 3, 72 patches): those are
     # `gemm`s of m = 3, where BLAS spends more time packing than multiplying.
-    chunks = gn_fast_chunks(NS,Threads.nthreads())
+    chunks = gn_fast_chunks(NS,1)
     nth = length(tbufs)
     blocks = gn_fast_chunks(NS,max(1,cld(NS,GN_FAST_BLOCK)))
     Q_q_v = vec(Q_q)
     if Nq == 1
         Q_q_2d = reshape(Q_q, NS, Npatch)
-        Threads.@threads for ci in 1:length(chunks)
+        for ci in 1:length(chunks)
             rng = chunks[ci]
             @views mul!(Q_q_2d[rng,:], transpose(Ql_mat[:,rng]), Mfact_all)
         end
     else
-        Threads.@threads for t in 1:nth
+        for t in 1:nth
             buf = tbufs[t]
             for bi in t:nth:length(blocks)
                 rng = blocks[bi]
@@ -517,17 +516,17 @@ function gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,is
             if homogeneous
                 fill!(𝚽E12_q, 0.0)
             else
-                chunksE = gn_fast_chunks(NSE,Threads.nthreads())
+                chunksE = gn_fast_chunks(NSE,1)
                 if Nq == 1
                     𝚽E12_q_2d = reshape(𝚽E12_q, NSE, Npatch)
-                    Threads.@threads for ci in 1:length(chunksE)
+                    for ci in 1:length(chunksE)
                         rng = chunksE[ci]
                         @views mul!(𝚽E12_q_2d[rng,:], transpose(𝚽E12_mat[:,rng]), Mfact_all)
                     end
                 else
                     blocksE = gn_fast_chunks(NSE,max(1,cld(NSE,GN_FAST_BLOCK)))
                     𝚽E12_q_v = vec(𝚽E12_q)
-                    Threads.@threads for t in 1:nth
+                    for t in 1:nth
                         buf = tbufs[t]
                         for bi in t:nth:length(blocksE)
                             rng = blocksE[bi]
@@ -568,7 +567,7 @@ function gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,is
     srcx_v = vec(srcx); srcy_v = vec(srcy); srcz_v = vec(srcz)
     NmEf = isCSD ? Nm[4] : 0
 
-    Threads.@threads for k in 1:Npatch
+    for k in 1:Npatch
         if has_z
             gn_sweep_3D_fast!(𝚽_q_v,𝚽E12_q_v,𝚽x12_q_v,𝚽y12_q_v,𝚽z12_q_v,k,
                               mat,Ns[1],Ns[2],Ns[3],Q_q_v,
@@ -587,11 +586,11 @@ function gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,is
     end
 
     # Transformation of restricted-angle fluxes to full-range fluxes (accumulate). Cut along
-    # the spatial axis like the forward transform: each range owns its columns of 𝚽l, so the
-    # accumulation over patches stays race-free while running on several threads.
+    # the spatial axis like the forward transform, so each range keeps its slice of 𝚽l in
+    # cache across the whole patch loop.
     if Nq == 1
         𝚽_q_2d = reshape(𝚽_q, NS, Npatch)
-        Threads.@threads for ci in 1:length(chunks)
+        for ci in 1:length(chunks)
             rng = chunks[ci]
             @views mul!(𝚽l_mat[:,rng], Mll_all, transpose(𝚽_q_2d[rng,:]), 1.0, 1.0)
         end
@@ -600,7 +599,7 @@ function gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,is
         # buffer, then one accumulating gemm. Each range owns its columns of 𝚽l, so the
         # accumulation over patches stays race-free.
         𝚽_q_vv = vec(𝚽_q)
-        Threads.@threads for t in 1:nth
+        for t in 1:nth
             buf = tbufs[t]
             for bi in t:nth:length(blocks)
                 rng = blocks[bi]
@@ -612,17 +611,17 @@ function gn_inner_pass_fast!(𝚽l,Qlout,Σs,mat,Ndims,Ns,Np,Nq,pl,Np_surf,Nm,is
     # Outgoing energy flux: only the caller's final reconstruction pass needs it — it is not
     # part of the fixed-point state, it is read once gn_one_speed_fast has converged.
     if isCSD && reconstruct
-        chunksE = gn_fast_chunks(NSE,Threads.nthreads())
+        chunksE = gn_fast_chunks(NSE,1)
         if Nq == 1
             𝚽E12_q_2d = reshape(𝚽E12_q, NSE, Npatch)
-            Threads.@threads for ci in 1:length(chunksE)
+            for ci in 1:length(chunksE)
                 rng = chunksE[ci]
                 @views mul!(𝚽E12_t_mat[:,rng], Mll_all, transpose(𝚽E12_q_2d[rng,:]), 1.0, 1.0)
             end
         else
             blocksE = gn_fast_chunks(NSE,max(1,cld(NSE,GN_FAST_BLOCK)))
             𝚽E12_q_vv = vec(𝚽E12_q)
-            Threads.@threads for t in 1:nth
+            for t in 1:nth
                 buf = tbufs[t]
                 for bi in t:nth:length(blocksE)
                     rng = blocksE[bi]
