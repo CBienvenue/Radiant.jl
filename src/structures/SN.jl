@@ -18,6 +18,8 @@ Structure used to define the discretization method associated with the transport
 - `convergence_criterion::Float64 = 1e-7` : convergence criterion of in-group iterations.
 - `maximum_iteration::Int64 = 300` : maximum number of in-group iterations.
 - `acceleration::Int64 = "none"` : acceleration method for the in-group iterations.
+- `fast_path::Bool = false` : use the optimized solver chain (`sn_one_speed_fast` and below)
+  instead of the reference one. Numerically equivalent; see `set_fast_path`.
 
 """
 mutable struct SN
@@ -39,6 +41,7 @@ mutable struct SN
     gmres_restart              ::Int64
     anderson_depth             ::Int64
     isFC                       ::Bool
+    fast_path                  ::Bool
 
     # Constructor(s)
     function SN()
@@ -59,6 +62,7 @@ mutable struct SN
         this.gmres_restart = 30
         this.anderson_depth = 3
         this.isFC = true
+        this.fast_path = false
         return this
     end
 end
@@ -711,4 +715,57 @@ Get the quadrature dimension.
 """
 function get_quadrature_dimension(this::SN)
     return this.quadrature_dimension
+end
+"""
+    set_fast_path(this::SN,fast_path::Bool)
+
+Enable or disable the optimized solver chain (`fast_path = false` by default).
+
+The optimized chain computes the same solution as the reference one — the cell systems are
+assembled by the same code and factorized by the same `lu!` — but it does the work the
+reference repeats per voxel only once: the factorizations are cached per (material,
+mesh-width combination, direction), the half-range and moment transforms are lifted out of
+the cell loop, and the direction sweeps run in parallel.
+
+It covers the BTE and BFP solvers in 1D, 2D and 3D, and falls back to the reference chain,
+with a message, on anything it does not cover — in particular the adaptive (AWD) schemes,
+whose closure weights are recomputed per cell and make the cell system voxel-dependent. See
+`sn_fast_applicable`.
+
+# Input Argument(s)
+- `this::SN` : discrete-ordinates solver.
+- `fast_path::Bool` : whether to use the optimized solver chain.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> m = SN()
+julia> m.set_fast_path(true)
+```
+"""
+function set_fast_path(this::SN,fast_path::Bool)
+    this.fast_path = fast_path
+end
+
+"""
+    get_fast_path(this::SN)
+
+Whether the optimized solver chain is enabled.
+
+# Input Argument(s)
+- `this::SN` : discrete-ordinates solver.
+
+# Output Argument(s)
+- `fast_path::Bool` : whether the optimized solver chain is enabled.
+
+# Examples
+```jldoctest
+julia> m = SN()
+julia> m.get_fast_path()
+```
+"""
+function get_fast_path(this::SN)
+    return this.fast_path
 end

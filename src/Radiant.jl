@@ -79,6 +79,7 @@ module Radiant
         "fokker_planck_finite_difference_gn.jl",
         "electromagnetic_scattering_matrix.jl",
         "transport.jl",
+        "transport_fast_context.jl",
         "sn_inner_pass.jl",
         "sn_flux.jl",
         "sn_one_speed.jl",

@@ -1,4 +1,12 @@
 """
+    uses_gn_fast_path(solver::Solver)
+
+Whether this solver is a GN running its optimized chain. Only `GN` carries the flag; every
+other solver type answers `false`, so the reference coupling builder stays in use.
+"""
+uses_gn_fast_path(solver::Solver) = (solver isa GN) && solver.get_fast_path()
+
+"""
     particle_source(flux::Flux_Per_Particle,cross_sections::Cross_Sections,
     geometry::Geometry,solver_in::Solver,
     solver_out::Solver)
@@ -54,7 +62,14 @@ Ng_out = cross_sections.get_number_of_groups(particle_out)
 # Compute the scattered particle source
 Ql_in = zeros(Ng_out,P_in,Nm_in,Ns[1],Ns[2],Ns[3])
 Ql_out = zeros(Ng_out,P_out,Nm_out,Ns[1],Ns[2],Ns[3])
-particle_sources(Ql_in,𝚽l,Σs,mat,P_in,basis_in.pl,Nm_in,Ns,Ng_in,Ng_out)
+# The optimized variant skips the group-to-group transfers that are identically zero; it is
+# selected when either side of the coupling runs the GN fast path, so the reference chain
+# keeps the reference builder. See particle_sources_fast.
+if uses_gn_fast_path(solver_in) || uses_gn_fast_path(solver_out)
+    particle_sources_fast(Ql_in,𝚽l,Σs,mat,P_in,basis_in.pl,Nm_in,Ns,Ng_in,Ng_out)
+else
+    particle_sources(Ql_in,𝚽l,Σs,mat,P_in,basis_in.pl,Nm_in,Ns,Ng_in,Ng_out)
+end
 
 # Adapt the source to the new particle flux expansions
 map = map_moments(𝒪_in,𝒪_out,isFC_in,isFC_out)

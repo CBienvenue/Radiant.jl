@@ -140,6 +140,27 @@ volume_sources = source.get_volume_sources()
 Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
 
 #----
+# Optimized solver chain
+#----
+# Opt-in, see set_fast_path. Numerically equivalent to the reference chain but only covers the
+# cases sn_fast_applicable accepts — in particular not the adaptive schemes; anything else
+# falls back rather than failing.
+use_fast = solver.get_fast_path()
+if use_fast
+    is_ok, why = sn_fast_applicable(Ndims,Δs,Nmat,𝒪,isFC,Nd,is_adaptive)
+    if ~is_ok
+        println(">>>Fast path unavailable (",why,") — using the reference solver chain.")
+        use_fast = false
+    else
+        println(">>>Fast path enabled ($Nd directions).")
+    end
+end
+
+# With every boundary void, the boundary angular fluxes are identically zero and nothing ever
+# reads them — the whole half-range machinery can then be skipped.
+need_boundary_flux = any(x->x != 0,boundary_conditions)
+
+#----
 # Flux calculations
 #----
 
@@ -201,7 +222,11 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
+        if use_fast
+            𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = sn_one_speed_fast(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,boundary_conditions,Np_source,need_boundary_flux,gmres_restart,anderson_depth)
+        else
         𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = sn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,Nd,ig,Ns,Δs,Ω,Mn,Dn,Np,pl,Mn_surf,Dn_surf,Np_surf,n_to_n⁺,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_adaptive,is_CSD,solver_type,ΔEg,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,is_EM,ℳ_EM[ig,:,:],𝒲,boundary_conditions,Np_source,gmres_restart,anderson_depth)
+        end
     end
 
     # Verification of convergence in all energy groups
@@ -213,8 +238,21 @@ while ~(is_outer_convergence)
         is_outer_convergence = true
         # Calculate the flux at the cutoff energy
         if is_CSD
+            if use_fast
+                # Same contraction, as one gemm per energy moment instead of Nd × Nvox × Nm[4]
+                # × Np scalar updates whose innermost index is the slowest of 𝚽E12. Measured at
+                # 81 % of the whole optimized run before this change, on a 2D BFP case — the
+                # reference solver was slow enough to hide it.
+                Nvox = Ns[1]*Ns[2]*Ns[3]
+                Cr = reshape(𝚽cutoff,Np,Nm[5],Nvox)
+                Er = reshape(𝚽E12,Nd,Nm[4],Nvox)
+                for is in range(1,Nm[4])
+                    @views mul!(Cr[:,is,:],Dn,Er[:,is,:],1.0,1.0)
+                end
+            else
             for n in range(1,Nd), ix in range(1,Ns[1]), iy in range(1,Ns[2]), iz in range(1,Ns[3]), is in range(1,Nm[4]), p in range(1,Np)
                 𝚽cutoff[p,is,ix,iy,iz] += Dn[p,n] * 𝚽E12[n,is,ix,iy,iz]
+            end
             end
         end
     else

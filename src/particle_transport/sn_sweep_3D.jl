@@ -238,3 +238,125 @@ function sn_sweep_3D(𝚽l::Array{Float64,5},Ql::Array{Float64,5},Σt::Vector{Fl
     end
     return 𝚽l, 𝚽E12, 𝚽x12⁺, 𝚽y12⁺, 𝚽z12⁺
 end
+"""
+    sn_sweep_3D_fast!(𝚿,o𝚿,Ql,Mnn,Np,𝚽E12,𝚽E12o,oE,mat,Nx,Ny,Nz,srcx,srcy,srcz,outx,outy,outz,
+    mom,cells,d,ws,Nmf,NmEf,isCSD,do_E,zero_E,save_out)
+
+Optimized counterpart of `sn_sweep_3D`: sweep the spatial grid along one discrete ordinate.
+
+Same sweep ordering and moving-boundary bookkeeping as the reference, with four changes.
+
+The three `copy(ω[1])`, `copy(ω[2])`, `copy(ω[3])` the reference makes *in every cell* are
+gone: they exist only because the adaptive scheme mutates the weights, and the optimized chain
+does not serve that case (`sn_fast_applicable`).
+
+The boundary slices `𝚽x12[:,iy,iz]` and `𝚽y12[:,iz]`, copied in and reassigned out at each
+cell, are replaced by moving buffers addressed by offset — and the incoming half-range
+transform is applied once per direction, ahead of the sweep, into `srcx`/`srcy`/`srcz` rather
+than face by face inside it.
+
+The outgoing face moments are written raw into `outx`/`outy`/`outz`; the reference's
+`Dnx⁻[p]·𝚽x12[is]` accumulation, `Np_surf × Nm` scalar updates per boundary cell, becomes a
+single rank-1 update per direction in the caller. Likewise the in-cell moments go to `𝚿`, one
+value per moment, instead of `𝚽l[p,is,ix,iy,iz] += Dn[p]·𝚽n[is]` — `Np × Nm` scattered updates
+per cell, in a 5-D array, for every direction of every pass.
+
+The loop nesting is `iz` outer, `ix` inner, so the innermost index is the fastest one of the
+arrays; the moving buffers follow suit — `bufz` spans the x-y plane, `bufy` the x line, `bufx`
+is a single face. Either nesting satisfies the sweep's dependencies, since each cell is still
+visited after its three upstream neighbours.
+"""
+function sn_sweep_3D_fast!(𝚿::Vector{Float64},o𝚿::Int64,Ql::Vector{Float64},Mnn::Vector{Float64},Np::Int64,𝚽E12::Vector{Float64},𝚽E12o::Vector{Float64},oE::Int64,mat::Array{Int64,3},Nx::Int64,Ny::Int64,Nz::Int64,srcx::Vector{Float64},srcy::Vector{Float64},srcz::Vector{Float64},outx::Vector{Float64},outy::Vector{Float64},outz::Vector{Float64},mom::GNFastMoments{NMOM},cells::GNFastCells,d::SNFastDir{NMOM},ws::GNFastWorkspace,Nmf::Vector{Int64},NmEf::Int64,isCSD::Bool,do_E::Bool,zero_E::Bool,save_out::Bool) where {NMOM}
+
+    sx = d.sx; sy = d.sy; sz = d.sz
+    Nm1 = Nmf[1]; Nm2 = Nmf[2]; Nm3 = Nmf[3]
+
+    # Sweep ordering
+    if sx > 0; x_sweep = 1:Nx else x_sweep = Nx:-1:1 end
+    if sy > 0; y_sweep = 1:Ny else y_sweep = Ny:-1:1 end
+    if sz > 0; z_sweep = 1:Nz else z_sweep = Nz:-1:1 end
+
+    bufx = ws.bufx; bufy = ws.bufy; bufz = ws.bufz
+
+    # Reset the moving z-boundary workspace (an x-y plane: z is the outer sweep axis)
+    fill!(bufz, 0.0)
+
+    @inbounds for iz in z_sweep
+        fill!(bufy, 0.0)
+        ikz = Int64(cells.kz[iz])
+        is_z_entry = (iz == 1 && sz > 0) || (iz == Nz && sz < 0)
+        is_z_exit  = save_out && ((iz == Nz && sz > 0) || (iz == 1 && sz < 0))
+
+        # Z-boundary initialization (at the iz entrance plane only)
+        if is_z_entry
+            for i in 1:Nm3*Nx*Ny
+                bufz[i] += srcz[i]
+            end
+        end
+
+        # Y-boundary initialization (at the iy entrance line of this plane). Each ix slot is
+        # read by the kernel of that same ix, so it can be filled ahead of the x sweep.
+        for ix in 1:Nx
+            b0 = Nm2*(ix-1); s0 = Nm2*((ix-1) + Nx*(iz-1))
+            for i in 1:Nm2
+                bufy[b0+i] += srcy[s0+i]
+            end
+        end
+
+        for iy in y_sweep
+            fill!(bufx, 0.0)
+            iky = Int64(cells.ky[iy])
+            is_y_exit = save_out && ((iy == Ny && sy > 0) || (iy == 1 && sy < 0))
+
+            # X-boundary initialization (at the ix entrance face only)
+            sxb = Nm1*((iy-1) + Ny*(iz-1))
+            for i in 1:Nm1
+                bufx[i] += srcx[sxb+i]
+            end
+
+            for ix in x_sweep
+                ikx = Int64(cells.kx[ix])
+                icell = (ix-1) + Nx*((iy-1) + Ny*(iz-1))
+                oby = Nm2*(ix-1)
+                obz = Nm3*((ix-1) + Nx*(iy-1))
+                m = mat[ix,iy,iz]
+                conf = gn_fast_conf(cells,m,ix,iy,iz)
+
+                if ~isCSD
+                    sn_3D_BTE_fast2!(𝚿,o𝚿+NMOM*icell,bufx,0,bufy,oby,bufz,obz,
+                                     Ql,Np*NMOM*icell,Mnn,Np,mom,d,ws,conf,ikx,iky,ikz)
+                else
+                    sn_3D_BFP_fast!(𝚿,o𝚿+NMOM*icell,bufx,0,bufy,oby,bufz,obz,
+                                    𝚽E12,𝚽E12o,oE+NmEf*icell,
+                                    Ql,Np*NMOM*icell,Mnn,Np,mom,d,ws,conf,ikx,iky,ikz,m,do_E,zero_E)
+                end
+
+                # Save the z-outgoing boundary at the exit plane
+                if is_z_exit
+                    for i in 1:Nm3
+                        outz[obz+i] = bufz[obz+i]
+                    end
+                end
+            end
+
+            # Save the y-outgoing boundary (end of the x sweep of this line)
+            if is_y_exit
+                for ix in 1:Nx
+                    b0 = Nm2*(ix-1); s0 = Nm2*((ix-1) + Nx*(iz-1))
+                    for i in 1:Nm2
+                        outy[s0+i] = bufy[b0+i]
+                    end
+                end
+            end
+
+            # Save the x-outgoing boundary (end of the x sweep for this (iy,iz))
+            if save_out
+                for i in 1:Nm1
+                    outx[sxb+i] = bufx[i]
+                end
+            end
+        end
+    end
+
+    return nothing
+end

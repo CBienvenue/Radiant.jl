@@ -194,3 +194,141 @@ function sn_one_speed(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Fl
 
     return 𝚽l,𝚽E12_temp,ρ_in,Ntot
 end
+"""
+    sn_one_speed_fast(...)
+
+Optimized counterpart of `sn_one_speed`: solve the one-speed transport equation for one
+energy group with the discrete-ordinates solver.
+
+Identical in structure and in acceleration machinery to the reference — the same state vector,
+the same fixed-point and Krylov drivers — but the pass it iterates is `sn_inner_pass_fast!`,
+and the group's context (`sn_fast_context`) and scratch (`sn_fast_scratch`) are built once here
+instead of being rebuilt in every cell of every sweep.
+
+Two things are set up here rather than in the pass. The cell systems are assembled and
+factorized once per (material, mesh-width combination, direction). And the incoming energy
+flux, which the reference re-slices and re-copies for every direction of every pass, is
+permuted once into the layout the sweeps read — it is constant throughout the group.
+
+Requires `~isAdapt`; `sn_flux` checks that with `sn_fast_applicable` and falls back to the
+reference chain otherwise.
+"""
+function sn_one_speed_fast(𝚽l::Array{Float64},Qlout::Array{Float64},Σt::Vector{Float64},Σs::Array{Float64},mat::Array{Int64,3},ndims::Int64,Nd::Int64,ig::Int64,Ns::Vector{Int64},Δs::Vector{Vector{Float64}},Ω::Vector{Vector{Float64}},Mn::Array{Float64,2},Dn::Array{Float64,2},Np::Int64,pl::Vector{Int64},Mn_surf::Vector{Array{Float64}},Dn_surf::Vector{Array{Float64}},Np_surf::Int64,n_to_n⁺::Vector{Vector{Int64}},𝒪::Vector{Int64},Nm::Vector{Int64},isFC::Bool,C::Vector{Float64},ω::Vector{Array{Float64}},I_max::Int64,ϵ_max::Float64,sources::Array{Union{Array{Float64},Float64}},isCSD::Bool,solver::Int64,ΔE::Float64,𝚽E12::Array{Float64},S⁻::Vector{Float64},S⁺::Vector{Float64},S::Array{Float64},T::Vector{Float64},ℳ::Array{Float64},𝒜::String,Ntot::Int64,is_EM::Bool,ℳ_EM::Array{Float64},𝒲::Array{Float64},boundary_conditions::Vector{Int64},Np_source::Int64,need_boundary_flux::Bool,gmres_restart::Int64=30,anderson_depth::Int64=3)
+
+    Nvox = Ns[1]*Ns[2]*Ns[3]
+    NmEf = isCSD ? Nm[4] : 1
+
+    # Flux Initialization
+    𝚽E12_temp = Array{Float64}(undef)
+    if isCSD
+        𝚽E12_temp = zeros(Nd,Nm[4],Ns[1],Ns[2],Ns[3])
+    end
+
+    # Boundary conditions initialization (unused axes get empty placeholders, never accessed)
+    𝚽y12_in = zeros(0); 𝚽z12_in = zeros(0)
+    𝚽y12_temp = zeros(0); 𝚽z12_temp = zeros(0)
+    if ndims == 1
+        𝚽x12_in = zeros(Np_surf,Nm[1],2)
+        𝚽x12_temp = copy(𝚽x12_in)
+    elseif ndims == 2
+        𝚽x12_in = zeros(Np_surf,Nm[1],2,Ns[2])
+        𝚽y12_in = zeros(Np_surf,Nm[2],2,Ns[1])
+        𝚽x12_temp = copy(𝚽x12_in)
+        𝚽y12_temp = copy(𝚽y12_in)
+    elseif ndims == 3
+        𝚽x12_in = zeros(Np_surf,Nm[1],2,Ns[2],Ns[3])
+        𝚽y12_in = zeros(Np_surf,Nm[2],2,Ns[1],Ns[3])
+        𝚽z12_in = zeros(Np_surf,Nm[3],2,Ns[1],Ns[2])
+        𝚽x12_temp = copy(𝚽x12_in)
+        𝚽y12_temp = copy(𝚽y12_in)
+        𝚽z12_temp = copy(𝚽z12_in)
+    else
+        error("Dimension is not 1, 2 or 3.")
+    end
+
+    # Source scratch
+    Ql = similar(Qlout)
+    ρ_in = NaN
+
+    # If there is no source anywhere, the in-group solution is trivially zero
+    if ~any(x->x!=0,sources) && ~any(x->x!=0,Qlout) && (~isCSD || ~any(x->x!=0,𝚽E12))
+        𝚽l .= 0
+        println(">>>Group ",ig," has converged ( ϵ = ",@sprintf("%.4E",0.0)," , N = ",1," , ρ = ",@sprintf("%.2f",ρ_in)," )")
+        return 𝚽l,𝚽E12_temp,ρ_in,Ntot
+    end
+
+    # Group context: one factorization per (material, mesh-width combination, direction)
+    ctx = sn_fast_context(ndims,Δs,length(Σt),Σt,S⁻,S⁺,S,ΔE,𝒪,isFC,isCSD,C,ω,𝒲,Ω,Nd)
+    sc  = sn_fast_scratch(ndims,Ns,ctx.mom.Nmom,Nm,Nd,Np,Np_surf,Np_source,Mn,Mn_surf,Dn_surf,
+                          n_to_n⁺,sources)
+
+    # Incoming energy flux, permuted once into the layout the sweeps read: (moment, cell,
+    # direction). It is constant over the group, so this replaces the per-direction,
+    # per-pass copy the reference makes.
+    𝚽E12p = zeros(isCSD ? NmEf*Nvox*Nd : 0)
+    𝚽E12o = zeros(isCSD ? NmEf*Nvox*Nd : 0)
+    if isCSD
+        @inbounds for n in 1:Nd, c in 1:Nvox, is in 1:NmEf
+            𝚽E12p[is + NmEf*((c-1) + Nvox*(n-1))] = 𝚽E12[n + Nd*((is-1) + NmEf*(c-1))]
+        end
+    end
+
+    # Shorthand wrapper around one source-iteration pass
+    pass!(homogeneous,reconstruct=false) = sn_inner_pass_fast!(𝚽l,𝚽x12_in,𝚽y12_in,𝚽z12_in,𝚽x12_temp,𝚽y12_temp,𝚽z12_temp,𝚽E12_temp,Ql,Qlout,𝚽E12p,𝚽E12o,Σs,mat,ndims,Nd,Ns,Mn,Dn,Np,pl,Np_surf,Np_source,Nm,isCSD,solver,T,ℳ,is_EM,ℳ_EM,boundary_conditions,ctx,sc,need_boundary_flux;homogeneous=homogeneous,reconstruct=reconstruct)
+
+    # State vector z = (𝚽l, incoming boundary angular fluxes on each active axis)
+    if ndims == 1
+        work = Array{Float64}[𝚽l,𝚽x12_in]
+    elseif ndims == 2
+        work = Array{Float64}[𝚽l,𝚽x12_in,𝚽y12_in]
+    else
+        work = Array{Float64}[𝚽l,𝚽x12_in,𝚽y12_in,𝚽z12_in]
+    end
+    Nref = Ref(Ntot)
+
+    function load_and_pass!(out::KState,zin::KState,homogeneous::Bool)
+        state_copy!(work,zin)
+        pass!(homogeneous)
+        state_copy!(out,work)
+        Nref[] += 1
+    end
+    fixedpoint!(out::KState,zin::KState) = load_and_pass!(out,zin,false)
+    matvec!(out::KState,zin::KState) = (load_and_pass!(out,zin,true); state_scale!(-1.0,out); state_axpy!(1.0,zin,out))
+
+    local niter, resid, conv
+    if 𝒜 == "none"
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=typemax(Int64))
+    elseif 𝒜 == "livolant"
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = livolant!(z,fixedpoint!;maxit=I_max,tol=ϵ_max,period=3)
+    elseif 𝒜 == "anderson"
+        z = state_clone(work)
+        niter,resid,conv,ρ_in = anderson!(z,fixedpoint!;depth=anderson_depth,maxit=I_max,tol=ϵ_max,β=1.0)
+    elseif 𝒜 == "gmres"
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = gmres!(z,matvec!,c;restart=gmres_restart,maxit=I_max,tol=ϵ_max)
+    elseif 𝒜 == "bicgstab"
+        state_zero!(work); pass!(false); Nref[] += 1
+        c = state_clone(work)
+        z = state_similar(work)
+        niter,resid,conv,ρ_in = bicgstab!(z,matvec!,c;maxit=I_max,tol=ϵ_max)
+    else
+        error("Unknown acceleration method: $𝒜.")
+    end
+
+    # Reconstruction pass: the only one whose outgoing energy flux is read, hence the only one
+    # that runs the energy closure.
+    state_copy!(work,z); pass!(false,true); Nref[] += 1
+    Ntot = Nref[]
+
+    if conv
+        println(">>>Group $ig has converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," )")
+    else
+        println(">>>Group $ig has not converged ( ϵ = ",@sprintf("%.4E",resid)," , N = ",niter," , ρ = ",@sprintf("%.4f",ρ_in)," )")
+    end
+
+    return 𝚽l,𝚽E12_temp,ρ_in,Ntot
+end

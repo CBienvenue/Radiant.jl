@@ -30,10 +30,15 @@ if electromagnetic_field.get_electromagnetic_field()[1] error("External electrom
 Ndims = geometry.get_dimension()
 geo_type = geometry.get_type()
 if geo_type != "cartesian" error("Transport of particles in",geo_type," is unavailable.") end
-Ns = geometry.get_number_of_voxels()
-Δs = geometry.get_voxels_width()
-mat = geometry.get_material_per_voxel()
-boundary_conditions = geometry.get_boundary_conditions()
+# The accessors are typed from their struct fields, several of which are declared without a
+# dimension (`::Array{Float64}`, i.e. `Array{Float64,N} where N` — an abstract type). Pinning
+# the concrete types here turns the downstream indexing from runtime-dispatched, splatted
+# calls into ordinary strided access; without it the per-group slicing below shows up as
+# `jl_lookup_generic`/`_sub2ind_recurse` in the profile.
+Ns = geometry.get_number_of_voxels()::Vector{Int64}
+Δs = geometry.get_voxels_width()::Vector{Vector{Float64}}
+mat = geometry.get_material_per_voxel()::Array{Int64,3}
+boundary_conditions = geometry.get_boundary_conditions()::Vector{Int64}
 
 #----
 # Preparation of angular discretisation
@@ -165,6 +170,24 @@ gmres_restart = solver.get_gmres_restart()
 anderson_depth = solver.get_anderson_depth()
 
 #----
+# Optimized solver chain
+#----
+# Opt-in, see set_fast_path. Numerically equivalent to the reference chain but only covers
+# the cases gn_fast_applicable accepts; anything else falls back rather than failing. It is
+# resolved here because it also decides how much boundary machinery has to be built below.
+use_fast = solver.get_fast_path()
+if use_fast
+    Npatch = length(gn_patch_list(Ndims,Nv,tiling,is_SPH,fold))
+    is_ok, why = gn_fast_applicable(Ndims,Δs,Nmat,𝒪,Nq,isFC,Npatch)
+    if ~is_ok
+        println(">>>Fast path unavailable (",why,") — using the reference solver chain.")
+        use_fast = false
+    else
+        println(">>>Fast path enabled ($Npatch angular patches).")
+    end
+end
+
+#----
 # Fixed sources
 #----
 
@@ -174,10 +197,25 @@ if is_SPH
 else
     Np_surf = L_surf + 1
 end
-surface_sources = source.get_surface_sources()
-volume_sources = source.get_volume_sources()
+surface_sources = source.get_surface_sources()::Array{Union{Array{Float64},Float64},3}
+volume_sources = source.get_volume_sources()::Array{Float64,6}
 Np_source = Int64(min(Np_surf,length(surface_sources[1,:,1])))
-if fold_1D
+
+# Is any boundary-flux machinery live at all?
+#
+# The incoming boundary fluxes 𝚽x12⁻/𝚽y12⁻/𝚽z12⁻ are fed by nothing but the reflective and
+# periodic boundary conditions — a surface source enters the sweeps through `sources_q`
+# instead. So with every face void they stay identically zero for the whole solve, and the
+# transforms that carry them onto the angular patches (and back) move nothing but zeros.
+# `Mll_surf` is then only needed for the surface source, if there is one at all.
+need_boundary_flux = any(x->x != 0,boundary_conditions)
+has_surface_source = any(s -> s isa Number ? s != 0 : any(!iszero,s), surface_sources)
+build_Mll_surf = ~use_fast || need_boundary_flux || has_surface_source
+
+if ~build_Mll_surf
+    Mll_surf = Array{Float64}(undef,0,0,0,0,0,0,0)
+    println(">>>Boundary-flux transforms skipped: all faces are void and no surface source.")
+elseif fold_1D
     Mll_surf = patch_to_half_range_matrix_spherical_harmonics_1D(L_surf,L_elem,Nv)
 elseif z_fold
     Mll_surf = patch_to_half_range_matrix_spherical_harmonics_2D_quarter(L_surf,L_elem)
@@ -234,7 +272,13 @@ while ~(is_outer_convergence)
 
         # Calculation of the Legendre components of the source (out-scattering)
         Qlout = zeros(Np,Nm[5],Ns[1],Ns[2],Ns[3])
-        if solver_type ∉ [4,5] Qlout = scattering_source(Qlout,𝚽l,Σs[:,:,ig,:],mat,Np,pl,Nm[5],Ns,Ng,ig) end
+        if solver_type ∉ [4,5]
+            if use_fast
+                Qlout = scattering_source_fast(Qlout,𝚽l,Σs[:,:,ig,:],mat,Np,pl,Nm[5],Ns,Ng,ig)
+            else
+                Qlout = scattering_source(Qlout,𝚽l,Σs[:,:,ig,:],mat,Np,pl,Nm[5],Ns,Ng,ig)
+            end
+        end
 
         # Fixed volumic sources
         Qlout .+= volume_sources[ig,:,:,:,:,:]
@@ -262,7 +306,11 @@ while ~(is_outer_convergence)
             Tg = Vector{Float64}()
             ℳ = Array{Float64}(undef)
         end
-        𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling,gmres_restart,anderson_depth,fold)
+        if use_fast
+            𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed_fast(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,need_boundary_flux,has_surface_source,tiling,gmres_restart,anderson_depth,fold)
+        else
+            𝚽l[ig,:,:,:,:,:],𝚽E12,ρ_in[ig],Ntot = gn_one_speed(𝚽l[ig,:,:,:,:,:],Qlout,Σtot[ig,:],Σs[:,ig,ig,:],mat,Ndims,ig,Ns,Δs,Np,Nq,pl,pm,Np_surf,𝒪,Nm,isFC,𝒞,ω,I_max,ϵ_max,surface_sources[ig,:,:],is_CSD,solver_type,𝚽E12,Sg⁻,Sg⁺,Sg,Tg,ℳ,𝒜,Ntot,𝒲,Mll,is_SPH,𝒩,boundary_conditions,Np_source,Nv,Mll_surf,Rpq,tiling,gmres_restart,anderson_depth,fold)
+        end
     end
 
     # Verification of convergence in all energy groups
@@ -283,6 +331,7 @@ while ~(is_outer_convergence)
     end
     
 end
+
 
 # Save flux
 flux = Flux_Per_Particle(part)
