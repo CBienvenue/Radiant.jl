@@ -64,8 +64,8 @@ end
     AbstractElasticDCSCache
 
 Common supertype of the elastic angular-distribution caches of one isotope at one incident
-energy: `ElasticDCSCache` (ENDF data) and `OpticalDCSCache` (optical-model potentials). It
-holds no data; it lets the kinematics shared by both models (`cm_frame`,
+energy: `ElasticDCSCache` (ENDF data) and `TabulatedElasticDCSCache` (a cross-section given
+as a function, tabulated). It holds no data; it lets the kinematics shared by all models (`cm_frame`,
 `scattered_energy_affine`, in scattering_kinematics.jl) accept either cache, while the
 integration kernels
 (`elastic_group_moments!`, `elastic_soft_integrals`, `integrate_elastic_scattering_below`)
@@ -158,10 +158,11 @@ struct ElasticScatteringOPDB
 end
 
 """
-    OpticalDCSCache
+    TabulatedElasticDCSCache
 
-Stores the optical-model elastic differential cross-section of one isotope at one incident
-energy, tabulated in x = 1 - μ_cm. On the first piece [x₁, x₂] (x₁ = 0) the cross-section is
+Stores the elastic differential cross-section of a model given as a function (model "OP",
+`prepare_op_dsig_cache`) for one isotope at one incident energy, tabulated in x = 1 - μ_cm by
+`tabulate_power_law_dcs`. On the first piece [x₁, x₂] (x₁ = 0) the cross-section is
 linear in x; on the next pieces it is a power law, σ(x) = σᵢ (x/xᵢ)^pᵢ, so that its integrals
 weighted by polynomials in x are closed forms.
 
@@ -174,7 +175,7 @@ weighted by polynomials in x are closed forms.
 - `sigma_grid::Vector{Float64}` : differential cross-section at the nodes [b/sr].
 - `p::Vector{Float64}` : power-law exponent of each piece (unused for the first one).
 """
-struct OpticalDCSCache <: AbstractElasticDCSCache
+struct TabulatedElasticDCSCache <: AbstractElasticDCSCache
     E_in_mev::Float64
     m_mev::Float64
     M_mev::Float64
@@ -899,5 +900,91 @@ function mt(this::Elastic_Scattering,Z::Int64,Ei::Float64,Ec::Float64,particle::
     # Fokker-Planck momentum transfer is half the transport cross section:
     # T = 1/2 ∫ (1-μ) σ dΩ = π ∫ (1-μ) σ dμ.
     return pi * T * BARN_TO_CM2
+end
+
+"""
+    dcs_table_start_grid(x_first::Float64, x_max::Float64, kR::Float64)
+
+Gives the start grid in x = 1 - μ_cm of `tabulate_power_law_dcs`: 10 nodes per decade from
+`x_first` to `x_max`, plus 8 nodes per diffraction period, Δθ = π/(8 k R), from θ = 1/(k R)
+to the angle of `x_max` (π, or π/2 for identical particles, x_max = 1).
+
+# Input Argument(s)
+- `x_first::Float64` : first node.
+- `x_max::Float64` : last node, 2 or 1.
+- `kR::Float64` : center-of-mass wave number times the interaction radius.
+
+# Output Argument(s)
+- `nodes::Vector{Float64}` : increasing nodes.
+"""
+function dcs_table_start_grid(x_first::Float64, x_max::Float64, kR::Float64)
+    nodes = collect(exp10.(range(log10(x_first), log10(x_max), length=ceil(Int, 10 * log10(x_max / x_first)) + 1)))
+    θ_max = x_max < 2.0 ? π / 2.0 : π
+    for θ in (1.0 / kR):(π / (8.0 * kR)):θ_max
+        push!(nodes, 2.0 * sin(θ / 2.0)^2)
+    end
+    sort!(nodes)
+    nodes = nodes[[true; diff(nodes) .> 1.0e-9 .* nodes[2:end]]]
+    nodes[end] = x_max
+    return nodes
+end
+
+"""
+    tabulate_power_law_dcs(f::Function, nodes::Vector{Float64}, flat_first::Bool;
+    label::String)
+
+Tabulates a differential cross-section given as a function of x = 1 - μ_cm, for a
+`TabulatedElasticDCSCache`. Each piece of the start grid is bisected at its log-midpoint
+until the power-law interpolation there agrees with the cross-section within
+`OP_TABLE_RTOL`, relative to the larger of the true and interpolated values (the
+cross-section spans some 25 decades, so no absolute floor; an exact zero is isolated by the
+bisection limit and the node cap `OP_TABLE_MAX_NODES`). A first node x₁ = 0 is added: the
+cross-section on [0, x₂] is taken constant, equal to its value at x₂, when `flat_first`
+(screened Coulomb field), and zero otherwise.
+
+# Input Argument(s)
+- `f::Function` : x -> dσ/dΩ [b/sr].
+- `nodes::Vector{Float64}` : start grid, increasing, from x₂ > 0 to x_max.
+- `flat_first::Bool` : whether the cross-section is constant on [0, x₂] (zero otherwise).
+- `label::String` : description of the cross-section for the node-cap warning.
+
+# Output Argument(s)
+- `X::Vector{Float64}` : nodes, from 0.
+- `Σ::Vector{Float64}` : cross-section at the nodes [b/sr].
+- `p::Vector{Float64}` : power-law exponent of each piece (unused for the first one).
+"""
+function tabulate_power_law_dcs(f::Function, nodes::Vector{Float64}, flat_first::Bool;
+    label::String)
+    X = Float64[]; Σ = Float64[]
+    stack = [(nodes[i], f(nodes[i])) for i in length(nodes):-1:1]
+    xl, σl = pop!(stack)
+    push!(X, xl); push!(Σ, σl)
+    while !isempty(stack)
+        xr, σr = stack[end]
+        xm = sqrt(xl * xr)
+        σm = f(xm)
+        σi = sqrt(max(σl, 0.0) * max(σr, 0.0))
+        refine = abs(σm - σi) > OP_TABLE_RTOL * max(σm, σi) &&
+                 length(X) + length(stack) < OP_TABLE_MAX_NODES && xr / xl > 1.0 + 1.0e-9
+        if refine
+            push!(stack, (xm, σm))
+        else
+            pop!(stack)
+            push!(X, xr); push!(Σ, σr)
+            xl, σl = xr, σr
+        end
+    end
+    length(X) >= OP_TABLE_MAX_NODES &&
+        @warn "$(label): the tabulation stopped at $(OP_TABLE_MAX_NODES) nodes." maxlog=5
+
+    # Power laws need positive values
+    Σ .= max.(Σ, floatmin(Float64))
+    pushfirst!(X, 0.0)
+    pushfirst!(Σ, flat_first ? Σ[1] : 0.0)
+    p = zeros(length(X) - 1)
+    for i in 2:(length(X) - 1)
+        p[i] = log(Σ[i + 1] / Σ[i]) / log(X[i + 1] / X[i])
+    end
+    return X, Σ, p
 end
 

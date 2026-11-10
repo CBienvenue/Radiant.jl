@@ -13,7 +13,7 @@
 # nodes chosen adaptively (`prepare_op_dsig_cache`). It is interpolated as a power law between
 # nodes, so that its integrals weighted by polynomials in x are closed forms; the moments that
 # involve the laboratory cosine are integrated in ln x. The integration kernels of the ENDF
-# description have methods here for `OpticalDCSCache`.
+# description have methods here for `TabulatedElasticDCSCache`.
 
 #----
 # Constants
@@ -1000,8 +1000,9 @@ Tabulates the optical-model cross-section of one isotope at one incident energy 
 x = 1 - μ_cm. The start grid has 10 nodes per decade from x₂ = 10⁻⁴ x_scr (x_scr = θ_scr²/2,
 θ_scr = 1/(k R_at) the screening angle; 10⁻¹² without screening) to x_max (2, or 1 for
 identical particles), plus 8 nodes per diffraction period, Δθ = π/(8 k R), beyond
-θ = 1/(k R). Each piece is then bisected at its log-midpoint until the power-law interpolation
-there agrees with the cross-section within `OP_TABLE_RTOL`. The first node is x₁ = 0: on
+θ = 1/(k R) (`dcs_table_start_grid`). Each piece is then bisected at its log-midpoint until
+the power-law interpolation there agrees with the cross-section within `OP_TABLE_RTOL`
+(`tabulate_power_law_dcs`). The first node is x₁ = 0: on
 [0, x₂] the screened cross-section is flat and is taken constant, equal to its value at x₂;
 without screening it is taken as zero there, as the ENDF description stops the Coulomb term
 at μ = 1 - 10⁻¹².
@@ -1013,7 +1014,7 @@ at μ = 1 - 10⁻¹².
 - `E_in_MeV::Float64` : incident kinetic energy [MeV].
 
 # Output Argument(s)
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 """
 function prepare_op_dsig_cache(db::ElasticScatteringOPDB, Z::Int, A::Int, E_in_MeV::Float64)
     iso = db.isotopes[(Z, A)]
@@ -1021,51 +1022,11 @@ function prepare_op_dsig_cache(db::ElasticScatteringOPDB, Z::Int, A::Int, E_in_M
     x_max = iso.identical ? 1.0 : 2.0
     x_first = db.screening ? 1.0e-4 * 0.5 / (kin.k * Z^(-1.0 / 3.0) * OP_A0_FM)^2 : 1.0e-12
 
-    # Start grid
-    nodes = collect(exp10.(range(log10(x_first), log10(x_max), length=ceil(Int, 10 * log10(x_max / x_first)) + 1)))
     R = 1.2 * (A^(1.0 / 3.0) + (iso.m_mev / AMU_MEV)^(1.0 / 3.0))
-    θ_max = iso.identical ? π / 2.0 : π
-    for θ in (1.0 / (kin.k * R)):(π / (8.0 * kin.k * R)):θ_max
-        push!(nodes, 2.0 * sin(θ / 2.0)^2)
-    end
-    sort!(nodes)
-    nodes = nodes[[true; diff(nodes) .> 1.0e-9 .* nodes[2:end]]]
-    nodes[end] = x_max
-
-    # Refinement at the log-midpoints, relative to the larger of the true and interpolated
-    # values (the cross-section spans some 25 decades, so no absolute floor; an exact zero is
-    # isolated by the bisection limit and the node cap)
-    X = Float64[]; Σ = Float64[]
-    stack = [(nodes[i], f(nodes[i])) for i in length(nodes):-1:1]
-    xl, σl = pop!(stack)
-    push!(X, xl); push!(Σ, σl)
-    while !isempty(stack)
-        xr, σr = stack[end]
-        xm = sqrt(xl * xr)
-        σm = f(xm)
-        σi = sqrt(max(σl, 0.0) * max(σr, 0.0))
-        refine = abs(σm - σi) > OP_TABLE_RTOL * max(σm, σi) &&
-                 length(X) + length(stack) < OP_TABLE_MAX_NODES && xr / xl > 1.0 + 1.0e-9
-        if refine
-            push!(stack, (xm, σm))
-        else
-            pop!(stack)
-            push!(X, xr); push!(Σ, σr)
-            xl, σl = xr, σr
-        end
-    end
-    length(X) >= OP_TABLE_MAX_NODES &&
-        @warn "Optical-model elastic cross-section of Z=$(Z), A=$(A) at $(E_in_MeV) MeV: the tabulation stopped at $(OP_TABLE_MAX_NODES) nodes." maxlog=5
-
-    # Power laws need positive values
-    Σ .= max.(Σ, floatmin(Float64))
-    pushfirst!(X, 0.0)
-    pushfirst!(Σ, db.screening ? Σ[1] : 0.0)
-    p = zeros(length(X) - 1)
-    for i in 2:(length(X) - 1)
-        p[i] = log(Σ[i + 1] / Σ[i]) / log(X[i + 1] / X[i])
-    end
-    return OpticalDCSCache(E_in_MeV, iso.m_mev, iso.M_mev, iso.identical, X, Σ, p)
+    nodes = dcs_table_start_grid(x_first, x_max, kin.k * R)
+    X, Σ, p = tabulate_power_law_dcs(f, nodes, db.screening;
+        label="Optical-model elastic cross-section of Z=$(Z), A=$(A) at $(E_in_MeV) MeV")
+    return TabulatedElasticDCSCache(E_in_MeV, iso.m_mev, iso.M_mev, iso.identical, X, Σ, p)
 end
 
 #----
@@ -1073,34 +1034,34 @@ end
 #----
 
 "Piece of the table holding x: 1 for [x₁, x₂], i for [xᵢ, xᵢ₊₁]."
-op_piece(cache::OpticalDCSCache, x::Float64) = clamp(searchsortedlast(cache.x_grid, x), 1, length(cache.x_grid) - 1)
+op_piece(cache::TabulatedElasticDCSCache, x::Float64) = clamp(searchsortedlast(cache.x_grid, x), 1, length(cache.x_grid) - 1)
 
 "Interpolated cross-section [b/sr] at x = 1 - μ_cm on piece i."
-function op_sigma(cache::OpticalDCSCache, i::Int, x::Float64)
+function op_sigma(cache::TabulatedElasticDCSCache, i::Int, x::Float64)
     i == 1 && return cache.sigma_grid[1]
     return cache.sigma_grid[i] * (x / cache.x_grid[i])^cache.p[i]
 end
 
 """
-    elastic_dsig(cache::OpticalDCSCache, mu_cm::Float64)
+    elastic_dsig(cache::TabulatedElasticDCSCache, mu_cm::Float64)
 
 Gives the optical-model elastic differential cross-section, interpolated from its
 tabulation.
 
 # Input Argument(s)
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 - `mu_cm::Float64` : center-of-mass scattering cosine.
 
 # Output Argument(s)
 - `σs::Float64` : elastic differential cross-section in barn/sr.
 """
-function elastic_dsig(cache::OpticalDCSCache, mu_cm::Float64)
+function elastic_dsig(cache::TabulatedElasticDCSCache, mu_cm::Float64)
     x = 1.0 - mu_cm
     return op_sigma(cache, op_piece(cache, x), x)
 end
 
 # ∫ σ xⁿ dx over [a, b] inside piece i, in closed form (n = 0, 1)
-function op_piece_moment(cache::OpticalDCSCache, i::Int, a::Float64, b::Float64, n::Int)
+function op_piece_moment(cache::TabulatedElasticDCSCache, i::Int, a::Float64, b::Float64, n::Int)
     b <= a && return 0.0
     i == 1 && return cache.sigma_grid[1] * (b^(n + 1) - a^(n + 1)) / (n + 1)
     p = cache.p[i]
@@ -1112,13 +1073,13 @@ function op_piece_moment(cache::OpticalDCSCache, i::Int, a::Float64, b::Float64,
 end
 
 """
-    op_moment(cache::OpticalDCSCache, xa::Float64, xb::Float64, n::Int)
+    op_moment(cache::TabulatedElasticDCSCache, xa::Float64, xb::Float64, n::Int)
 
 Gives ∫ σ(x) xⁿ dx over [xa, xb], x = 1 - μ_cm, in closed form on every piece of the
 tabulation (power law, or constant on the first piece).
 
 # Input Argument(s)
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 - `xa::Float64` : lower bound.
 - `xb::Float64` : upper bound.
 - `n::Int` : power of x (0 or 1).
@@ -1126,7 +1087,7 @@ tabulation (power law, or constant on the first piece).
 # Output Argument(s)
 - `I::Float64` : integral [b].
 """
-function op_moment(cache::OpticalDCSCache, xa::Float64, xb::Float64, n::Int)
+function op_moment(cache::TabulatedElasticDCSCache, xa::Float64, xb::Float64, n::Int)
     xb <= xa && return 0.0
     X = cache.x_grid
     acc = 0.0
@@ -1137,7 +1098,7 @@ function op_moment(cache::OpticalDCSCache, xa::Float64, xb::Float64, n::Int)
 end
 
 """
-    op_quadrature(cache::OpticalDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
+    op_quadrature(cache::TabulatedElasticDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
 
 Gives ∫ σ(x) w(x) dx over [xa, xb], x = 1 - μ_cm, for a weight w (scalar or vector) that is
 not polynomial in x, piece by piece: in ln x on the power-law pieces, in x on the first one.
@@ -1145,7 +1106,7 @@ not polynomial in x, piece by piece: in ln x on the power-law pieces, in x on th
 `n_gauss` points (`:gauss`).
 
 # Input Argument(s)
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 - `w::Function` : weight w(x).
 - `xa::Float64` : lower bound.
 - `xb::Float64` : upper bound.
@@ -1154,7 +1115,7 @@ not polynomial in x, piece by piece: in ln x on the power-law pieces, in x on th
 # Output Argument(s)
 - `I` : integral, of the type returned by `w`.
 """
-function op_quadrature(cache::OpticalDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
+function op_quadrature(cache::TabulatedElasticDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
     X = cache.x_grid
     adaptive = OP_QUADRATURE[] == :adaptive
     u_g, w_g = quadrature(n_gauss, "gauss-legendre")
@@ -1185,7 +1146,7 @@ end
 
 """
     elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVector{Float64},
-    cache::OpticalDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64,
+    cache::TabulatedElasticDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64,
     L::Int64; recoil::Bool=false)
 
 Adds, for every outgoing energy group, the Legendre moments and the energy moment of the
@@ -1199,7 +1160,7 @@ the laboratory cosine is not polynomial in x. Pieces outside the groups are skip
 # Input Argument(s)
 - `σl::AbstractMatrix{Float64}` : Legendre moments to add to, size (Ng, L+1), in barn.
 - `σe::AbstractVector{Float64}` : energy moments to add to, size Ng, in barn × MeV.
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 - `Eout_mev::Vector{Float64}` : outgoing group boundaries [MeV], decreasing.
 - `mu_lo::Float64` : lower center-of-mass cosine bound of the projectile.
 - `mu_hi::Float64` : upper center-of-mass cosine bound of the projectile.
@@ -1210,7 +1171,7 @@ the laboratory cosine is not polynomial in x. Pieces outside the groups are skip
 N/A
 """
 function elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVector{Float64},
-        cache::OpticalDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64, L::Int64;
+        cache::TabulatedElasticDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64, L::Int64;
         recoil::Bool=false)
     mu_hi <= mu_lo && return nothing
     Ng = length(Eout_mev) - 1
@@ -1248,7 +1209,7 @@ function elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVecto
 end
 
 """
-    elastic_soft_integrals(cache::OpticalDCSCache, mu_lo::Float64)
+    elastic_soft_integrals(cache::TabulatedElasticDCSCache, mu_lo::Float64)
 
 Gives the two integrals of the soft elastic collisions, center-of-mass cosines from `mu_lo`
 to 1, on which the stopping power and the momentum transfer rest: ∫ dσ/dΩ (1 - μ) dμ, in
@@ -1256,14 +1217,14 @@ closed form, and ∫ dσ/dΩ (1 - μ_lab) dμ, by `op_quadrature` with 1 - μ_la
 cancellation (`one_minus_mu_lab`).
 
 # Input Argument(s)
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 - `mu_lo::Float64` : lower center-of-mass cosine bound, the cutoff cosine μ_c.
 
 # Output Argument(s)
 - `I_cm::Float64` : ∫ dσ/dΩ (1 - μ) dμ over [mu_lo, 1], in barn.
 - `I_lab::Float64` : ∫ dσ/dΩ (1 - μ_lab) dμ over [mu_lo, 1], in barn.
 """
-function elastic_soft_integrals(cache::OpticalDCSCache, mu_lo::Float64)
+function elastic_soft_integrals(cache::TabulatedElasticDCSCache, mu_lo::Float64)
     mu_lo >= 1.0 && return 0.0, 0.0
     xb = 1.0 - mu_lo
     frame = cm_frame(cache)
@@ -1273,7 +1234,7 @@ function elastic_soft_integrals(cache::OpticalDCSCache, mu_lo::Float64)
 end
 
 """
-    integrate_elastic_scattering_below(cache::OpticalDCSCache, Ec_MeV::Float64,
+    integrate_elastic_scattering_below(cache::TabulatedElasticDCSCache, Ec_MeV::Float64,
     E_last_mev::Float64)
 
 Gives the part of the total optical-model elastic cross-section above an outgoing-energy
@@ -1282,14 +1243,14 @@ in closed form. It completes the sum of the moments of order zero of
 `elastic_group_moments!` to the total cross-section (`tcs`).
 
 # Input Argument(s)
-- `cache::OpticalDCSCache` : tabulated cross-section.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
 - `Ec_MeV::Float64` : cutoff energy between soft and catastrophic events.
 - `E_last_mev::Float64` : lower boundary of the last outgoing group [MeV].
 
 # Output Argument(s)
 - `σb::Float64` : cross-section below the last group, in barn.
 """
-function integrate_elastic_scattering_below(cache::OpticalDCSCache, Ec_MeV::Float64,
+function integrate_elastic_scattering_below(cache::TabulatedElasticDCSCache, Ec_MeV::Float64,
                                             E_last_mev::Float64)
     mu_lo = cache.identical ? 0.0 : -1.0
     mu_c = mu_cm_from_Eout_relativistic(cache.E_in_mev, max(Ec_MeV, 0.0), cache.m_mev, cache.M_mev)
