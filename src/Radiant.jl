@@ -65,7 +65,8 @@ module Radiant
         "endf_reading.jl",
         "scattering_kinematics.jl",
         "elastic_scattering_endf.jl",
-        "elastic_scattering_op.jl"
+        "elastic_scattering_op.jl",
+        "elastic_scattering_g4.jl"
     ]
     radiant_src["particle_transport/"] = [
         "geometry.jl",

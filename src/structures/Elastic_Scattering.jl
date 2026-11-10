@@ -158,10 +158,64 @@ struct ElasticScatteringOPDB
 end
 
 """
+    IsotopeG4Model
+
+Describes the elastic scattering of protons by one target isotope as Geant4 11.4 simulates
+it (model "G4"), with the quantities of the isotope that do not depend on the energy.
+
+The masses are Radiant's (`get_mass`), as in the ENDF and OP descriptions, so that the three
+share the same kinematics. Geant4 uses nuclear masses (G4NucleiProperties); the atomic mass
+minus Z electron masses would be closer to them (relative difference of order 10⁻⁴ for
+heavy targets) and is the choice to consider if Geant4 is to be matched more closely.
+
+# Field(s)
+- `Z::Int` : target atomic number.
+- `A::Int` : target mass number.
+- `m_mev::Float64` : projectile rest energy [MeV].
+- `M_mev::Float64` : target rest energy [MeV].
+- `identical::Bool` : whether projectile and target are identical particles (p + ¹H).
+- `screen_rsquare::Float64` : Thomas-Fermi screening factor ScreenRSquare of
+  G4WentzelOKandVIxSection [MeV²].
+- `formfactor::Float64` : exponential nuclear form-factor coefficient [MeV⁻²].
+- `chips_Z::Int`, `chips_N::Int` : target of the CHIPS parameterisation (³H and ³He are
+  replaced by ²H and ⁴He).
+- `chips_M_mev::Float64` : rest energy of the CHIPS target [MeV].
+- `chips_par::Vector{Float64}` : CHIPS parameters of the target (lastPAR of
+  G4ChipsProtonElasticXS::GetPTables).
+"""
+struct IsotopeG4Model
+    Z::Int
+    A::Int
+    m_mev::Float64
+    M_mev::Float64
+    identical::Bool
+    screen_rsquare::Float64
+    formfactor::Float64
+    chips_Z::Int
+    chips_N::Int
+    chips_M_mev::Float64
+    chips_par::Vector{Float64}
+end
+
+"""
+    ElasticScatteringG4DB
+
+Stores the Geant4 elastic-scattering description for one incoming particle type (protons).
+
+# Field(s)
+- `screening::Bool` : whether the Coulomb field is screened by the atomic electrons.
+- `isotopes::Dict{Tuple{Int,Int},IsotopeG4Model}` : isotope models indexed by `(Z, A)`.
+"""
+struct ElasticScatteringG4DB
+    screening::Bool
+    isotopes::Dict{Tuple{Int,Int},IsotopeG4Model}
+end
+
+"""
     TabulatedElasticDCSCache
 
 Stores the elastic differential cross-section of a model given as a function (model "OP",
-`prepare_op_dsig_cache`) for one isotope at one incident energy, tabulated in x = 1 - μ_cm by
+`prepare_op_dsig_cache`, or "G4", `prepare_g4_dsig_cache`) for one isotope at one incident energy, tabulated in x = 1 - μ_cm by
 `tabulate_power_law_dcs`. On the first piece [x₁, x₂] (x₁ = 0) the cross-section is
 linear in x; on the next pieces it is a power law, σ(x) = σᵢ (x/xᵢ)^pᵢ, so that its integrals
 weighted by polynomials in x are closed forms.
@@ -195,7 +249,8 @@ cross sections.
 - `interaction_types::Dict{Tuple{Type,Type},Vector{String}} = Dict((Proton,Proton) => ["S", "P"])` : interaction processes, where `"S"` is scattered-projectile production and `"P"` is recoil production.
 - `scattering_model::String = "BFP"` : elastic-scattering transport model.
 - `model::String = "ENDF"` : description of the elastic cross-section, `"ENDF"` (evaluated
-  data library) or `"OP"` (optical-model potentials, Salvat & Heredia 2024).
+  data library), `"OP"` (optical-model potentials, Salvat & Heredia 2024) or `"G4"` (Geant4
+  11.4).
 - `library::String = "TENDL2023"` : elastic ENDF library name.
 - `data_path::String = "../../data"` : root directory for elastic ENDF data.
 - `coulomb_kinematics::String = "standard"` : Coulomb kinematics convention.
@@ -220,6 +275,7 @@ mutable struct Elastic_Scattering <: Interaction
     data_path::String
     endf_db::Dict{Type,ElasticScatteringENDFDB}
     op_db::Dict{Type,ElasticScatteringOPDB}
+    g4_db::Dict{Type,ElasticScatteringG4DB}
     coulomb_kinematics::String
     screening::Bool
     coulomb_only::Bool
@@ -239,6 +295,7 @@ mutable struct Elastic_Scattering <: Interaction
         this.is_subshells_dependant = false
         this.dcs_cache = Dict{Tuple{Type,Int,Int,String,Bool},AbstractElasticDCSCache}()
         this.op_db = Dict{Type,ElasticScatteringOPDB}()
+        this.g4_db = Dict{Type,ElasticScatteringG4DB}()
         this.set_scattering_model("BFP")
         this.set_model("ENDF")
         this.set_library("TENDL2023")
@@ -259,8 +316,9 @@ const BARN_TO_CM2 = 1.0e-24
     initialize(this::Elastic_Scattering, particles, isotopes::Vector{Tuple{Int,Int}})
 
 Initializes the elastic-scattering databases required by the incoming particles: the ENDF
-library (model "ENDF"), the optical-model description (model "OP") or the Coulomb
-cross-section alone (`coulomb_only`). Already initialized particle databases are reused.
+library (model "ENDF"), the optical-model description (model "OP"), the Geant4 description
+(model "G4") or the Coulomb cross-section alone (`coulomb_only`). Already initialized
+particle databases are reused.
 
 # Input Argument(s)
 - `this::Elastic_Scattering` : elastic scattering structure.
@@ -281,6 +339,18 @@ function initialize(this::Elastic_Scattering, particles, isotopes::Vector{Tuple{
             end
         end
         this.set_op_db(op_db)
+        return nothing
+    end
+    if this.get_model() == "G4" && !this.get_coulomb_only()
+        g4_db = this.get_g4_db()
+        for particle in particles
+            ptype = get_type(particle)
+            if ptype ∈ this.get_in_particles() && !haskey(g4_db, ptype)
+                g4_db[ptype] = init_elastic_scattering_g4_db(isotopes, particle;
+                    screening=this.get_screening())
+            end
+        end
+        this.set_g4_db(g4_db)
         return nothing
     end
     endf_db = this.get_endf_db()
@@ -370,6 +440,14 @@ To define the description of the elastic-scattering cross-section.
       partial waves with the Koning-Delaroche or Watson et al. potentials (protons) or the
       Su-Han potential (alphas); Galyuzov-Kosov parameterisation for protons on A ≤ 6.
       The Coulomb kinematics setting does not apply: the kinematics are relativistic.
+    - `G4` : protons only, as Geant4 11.4 simulates them with the `_SS` (single Coulomb
+      scattering) variants of the reference physics lists: the Wentzel single-scattering
+      cross-section of G4eCoulombScatteringModel (Molière screening, spin, exponential
+      nuclear form factor and recoil factors) plus the hadronic elastic cross-section of
+      G4BGGNucleonElasticXS with the angular distribution of G4ChipsElasticModel, summed
+      incoherently (no Coulomb-nuclear interference). The kinematics are relativistic.
+    With `set_coulomb_only(true)`, every model uses the Coulomb cross-section of the ENDF
+    description.
 
 # Output Argument(s)
 N/A
@@ -381,10 +459,11 @@ julia> elastic_scattering.set_model("OP")
 ```
 """
 function set_model(this::Elastic_Scattering,model::String)
-    if uppercase(model) ∉ ["ENDF","OP"] error("Unknown elastic-scattering model (should be ENDF or OP).") end
+    if uppercase(model) ∉ ["ENDF","OP","G4"] error("Unknown elastic-scattering model (should be ENDF, OP or G4).") end
     this.model = uppercase(model)
     this.endf_db = Dict{Type,ElasticScatteringENDFDB}()
     this.op_db = Dict{Type,ElasticScatteringOPDB}()
+    this.g4_db = Dict{Type,ElasticScatteringG4DB}()
     empty!(this.dcs_cache)
 end
 
@@ -397,7 +476,7 @@ Gets the description of the elastic-scattering cross-section.
 - `this::Elastic_Scattering` : elastic scattering structure.
 
 # Output Argument(s)
-- `model::String` : "ENDF" or "OP".
+- `model::String` : "ENDF", "OP" or "G4".
 """
 function get_model(this::Elastic_Scattering)
     return this.model
@@ -481,6 +560,7 @@ function set_screening(this::Elastic_Scattering,screening::Bool)
     this.screening = screening
     this.endf_db = Dict{Type,ElasticScatteringENDFDB}()
     this.op_db = Dict{Type,ElasticScatteringOPDB}()
+    this.g4_db = Dict{Type,ElasticScatteringG4DB}()
     empty!(this.dcs_cache)
 end
 
@@ -524,6 +604,7 @@ function set_coulomb_only(this::Elastic_Scattering,coulomb_only::Bool)
     this.coulomb_only = coulomb_only
     this.endf_db = Dict{Type,ElasticScatteringENDFDB}()
     this.op_db = Dict{Type,ElasticScatteringOPDB}()
+    this.g4_db = Dict{Type,ElasticScatteringG4DB}()
     empty!(this.dcs_cache)
 end
 
@@ -561,8 +642,9 @@ end
     get_dcs_cache(this::Elastic_Scattering, ptype::Type, Z::Int, A::Int, E_in_mev::Float64)
 
 Gets or builds the cached DCS data for one particle, isotope, and incident energy, from
-the ENDF database (`prepare_elastic_dsig_cache`) or the optical-model description
-(`prepare_op_dsig_cache`), as set by `set_model`. One energy is kept per particle and
+the ENDF database (`prepare_elastic_dsig_cache`), the optical-model description
+(`prepare_op_dsig_cache`) or the Geant4 description (`prepare_g4_dsig_cache`), as set by
+`set_model`. One energy is kept per particle and
 isotope: the feed functions, `tcs`, `mt` and `sp` at the same energy reuse it.
 
 # Input Argument(s)
@@ -581,6 +663,12 @@ function get_dcs_cache(this::Elastic_Scattering,ptype::Type,Z::Int,A::Int,E_in_m
         key = (ptype, Z, A, "OP", op_db.screening)
         if !haskey(this.dcs_cache, key) || this.dcs_cache[key].E_in_mev != E_in_mev
             this.dcs_cache[key] = prepare_op_dsig_cache(op_db, Z, A, E_in_mev)
+        end
+    elseif this.get_model() == "G4" && !this.get_coulomb_only()
+        g4_db = this.get_g4_db()[ptype]
+        key = (ptype, Z, A, "G4", g4_db.screening)
+        if !haskey(this.dcs_cache, key) || this.dcs_cache[key].E_in_mev != E_in_mev
+            this.dcs_cache[key] = prepare_g4_dsig_cache(g4_db, Z, A, E_in_mev)
         end
     else
         db = this.get_endf_db()[ptype]
@@ -622,6 +710,38 @@ Get the optical-model elastic-scattering descriptions by particle id.
 """
 function get_op_db(this::Elastic_Scattering)
     return this.op_db
+end
+
+"""
+    set_g4_db(this::Elastic_Scattering,g4_db::Dict{Type,ElasticScatteringG4DB})
+
+Set the Geant4 elastic-scattering descriptions by particle id.
+
+# Input Argument(s)
+- `this::Elastic_Scattering` : elastic scattering structure.
+- `g4_db::Dict{Type,ElasticScatteringG4DB}` : Geant4 descriptions by particle type.
+
+# Output Argument(s)
+N/A
+"""
+function set_g4_db(this::Elastic_Scattering,g4_db::Dict{Type,ElasticScatteringG4DB})
+    this.g4_db = g4_db
+    empty!(this.dcs_cache)
+end
+
+"""
+    get_g4_db(this::Elastic_Scattering)
+
+Get the Geant4 elastic-scattering descriptions by particle id.
+
+# Input Argument(s)
+- `this::Elastic_Scattering` : elastic scattering structure.
+
+# Output Argument(s)
+- `g4_db::Dict{Type,ElasticScatteringG4DB}` : Geant4 descriptions by particle type.
+"""
+function get_g4_db(this::Elastic_Scattering)
+    return this.g4_db
 end
 
 """
@@ -937,8 +1057,9 @@ Tabulates a differential cross-section given as a function of x = 1 - μ_cm, for
 `TabulatedElasticDCSCache`. Each piece of the start grid is bisected at its log-midpoint
 until the power-law interpolation there agrees with the cross-section within
 `OP_TABLE_RTOL`, relative to the larger of the true and interpolated values (the
-cross-section spans some 25 decades, so no absolute floor; an exact zero is isolated by the
-bisection limit and the node cap `OP_TABLE_MAX_NODES`). A first node x₁ = 0 is added: the
+cross-section spans some 25 decades, so no absolute floor), and a piece with one end at an
+exact zero is bisected down to the limit xᵣ/xₗ = 1 + 10⁻⁹, which isolates the jump (node cap
+`OP_TABLE_MAX_NODES`). A first node x₁ = 0 is added: the
 cross-section on [0, x₂] is taken constant, equal to its value at x₂, when `flat_first`
 (screened Coulomb field), and zero otherwise.
 
@@ -964,7 +1085,9 @@ function tabulate_power_law_dcs(f::Function, nodes::Vector{Float64}, flat_first:
         xm = sqrt(xl * xr)
         σm = f(xm)
         σi = sqrt(max(σl, 0.0) * max(σr, 0.0))
-        refine = abs(σm - σi) > OP_TABLE_RTOL * max(σm, σi) &&
+        # a piece with one zero end is bisected down to the limit even when its midpoint is
+        # zero too, so that the jump to zero is isolated
+        refine = (abs(σm - σi) > OP_TABLE_RTOL * max(σm, σi) || (σl > 0.0) != (σr > 0.0)) &&
                  length(X) + length(stack) < OP_TABLE_MAX_NODES && xr / xl > 1.0 + 1.0e-9
         if refine
             push!(stack, (xm, σm))
