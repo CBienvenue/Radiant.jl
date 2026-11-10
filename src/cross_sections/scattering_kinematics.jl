@@ -119,6 +119,29 @@ function one_minus_mu_lab(frame::NamedTuple, x::Float64)
 end
 
 """
+    lab_solid_angle_ratio(frame::NamedTuple, x::Float64)
+
+Gives dΩ_lab/dΩ_cm of the scattered projectile at x = 1 - μ_cm, γ (1 + τ μ_cm)/D^(3/2) with
+D = γ² (τ + μ_cm)² + sin²θ_cm and τ = β_cm/β*₁ (D p*² = p_lab²). For equal masses, τ = 1,
+θ_cm = π maps to θ_lab = 90° with an integrable singularity of dΩ_cm/dΩ_lab; that single
+point is given the value 0.
+
+# Input Argument(s)
+- `frame::NamedTuple` : center-of-mass frame from `cm_frame`.
+- `x::Float64` : 1 - μ_cm.
+
+# Output Argument(s)
+- `J::Float64` : dΩ_lab/dΩ_cm.
+"""
+function lab_solid_angle_ratio(frame::NamedTuple, x::Float64)
+    τ = frame.beta * frame.E1_star / frame.p_star
+    c = 1.0 - x
+    D = frame.gamma^2 * (τ + c)^2 + x * (2.0 - x)
+    D > 0.0 || return 0.0
+    return frame.gamma * (1.0 + τ * c) / D^1.5
+end
+
+"""
 Relativistic scattered projectile energy for elastic scattering.
 Assumes mu = cos(theta_cm) and target at rest.
 

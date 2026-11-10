@@ -12,8 +12,8 @@
 # For each isotope and incident energy, the cross-section is tabulated in x = 1 - μ_cm on
 # nodes chosen adaptively (`prepare_op_dsig_cache`). It is interpolated as a power law between
 # nodes, so that its integrals weighted by polynomials in x are closed forms; the moments that
-# involve the laboratory cosine are integrated in ln x. The integration kernels of the ENDF
-# description have methods here for `TabulatedElasticDCSCache`.
+# involve the laboratory cosine are integrated in ln x. The tabulation and the integration
+# kernels, shared with model G4, are at the end of structures/Elastic_Scattering.jl.
 
 #----
 # Constants
@@ -32,15 +32,6 @@ const OP_DATA_FILE = "elastic_scattering_op_salvat_2024.jld2"
 const OP_WATSON_EMAX = 50.0
 const OP_KD_EFREEZE = 300.0                        # Koning-Delaroche frozen above [MeV]
 const OP_SU_HAN_EFREEZE = 386.0                    # Su-Han frozen above [MeV]
-
-# Tabulation of the cross-section: relative tolerance of the power-law interpolation at the
-# log-midpoint of every piece, and maximum number of nodes.
-const OP_TABLE_RTOL = 1.0e-3
-const OP_TABLE_MAX_NODES = 4000
-
-# Quadrature of the moments involving the laboratory cosine on each piece, in ln x:
-# :adaptive (Gauss-Kronrod) or :gauss (fixed Gauss-Legendre).
-const OP_QUADRATURE = Ref(:adaptive)
 
 #----
 # Point-Coulomb cross-section (kinematics: `cm_kinematics`, scattering_kinematics.jl)
@@ -1001,7 +992,7 @@ x = 1 - μ_cm. The start grid has 10 nodes per decade from x₂ = 10⁻⁴ x_scr
 θ_scr = 1/(k R_at) the screening angle; 10⁻¹² without screening) to x_max (2, or 1 for
 identical particles), plus 8 nodes per diffraction period, Δθ = π/(8 k R), beyond
 θ = 1/(k R) (`dcs_table_start_grid`). Each piece is then bisected at its log-midpoint until
-the power-law interpolation there agrees with the cross-section within `OP_TABLE_RTOL`
+the power-law interpolation there agrees with the cross-section within `DCS_TABLE_RTOL`
 (`tabulate_power_law_dcs`). The first node is x₁ = 0: on
 [0, x₂] the screened cross-section is flat and is taken constant, equal to its value at x₂;
 without screening it is taken as zero there, as the ENDF description stops the Coulomb term
@@ -1027,235 +1018,4 @@ function prepare_op_dsig_cache(db::ElasticScatteringOPDB, Z::Int, A::Int, E_in_M
     X, Σ, p = tabulate_power_law_dcs(f, nodes, db.screening;
         label="Optical-model elastic cross-section of Z=$(Z), A=$(A) at $(E_in_MeV) MeV")
     return TabulatedElasticDCSCache(E_in_MeV, iso.m_mev, iso.M_mev, iso.identical, X, Σ, p)
-end
-
-#----
-# Interpolation and integration of the tabulated cross-section
-#----
-
-"Piece of the table holding x: 1 for [x₁, x₂], i for [xᵢ, xᵢ₊₁]."
-op_piece(cache::TabulatedElasticDCSCache, x::Float64) = clamp(searchsortedlast(cache.x_grid, x), 1, length(cache.x_grid) - 1)
-
-"Interpolated cross-section [b/sr] at x = 1 - μ_cm on piece i."
-function op_sigma(cache::TabulatedElasticDCSCache, i::Int, x::Float64)
-    i == 1 && return cache.sigma_grid[1]
-    return cache.sigma_grid[i] * (x / cache.x_grid[i])^cache.p[i]
-end
-
-"""
-    elastic_dsig(cache::TabulatedElasticDCSCache, mu_cm::Float64)
-
-Gives the optical-model elastic differential cross-section, interpolated from its
-tabulation.
-
-# Input Argument(s)
-- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
-- `mu_cm::Float64` : center-of-mass scattering cosine.
-
-# Output Argument(s)
-- `σs::Float64` : elastic differential cross-section in barn/sr.
-"""
-function elastic_dsig(cache::TabulatedElasticDCSCache, mu_cm::Float64)
-    x = 1.0 - mu_cm
-    return op_sigma(cache, op_piece(cache, x), x)
-end
-
-# ∫ σ xⁿ dx over [a, b] inside piece i, in closed form (n = 0, 1)
-function op_piece_moment(cache::TabulatedElasticDCSCache, i::Int, a::Float64, b::Float64, n::Int)
-    b <= a && return 0.0
-    i == 1 && return cache.sigma_grid[1] * (b^(n + 1) - a^(n + 1)) / (n + 1)
-    p = cache.p[i]
-    Fa = op_sigma(cache, i, a) * a^(n + 1)
-    Fb = op_sigma(cache, i, b) * b^(n + 1)
-    q = p + n + 1
-    abs(q) < 1.0e-10 && return Fa * log(b / a)
-    return (Fb - Fa) / q
-end
-
-"""
-    op_moment(cache::TabulatedElasticDCSCache, xa::Float64, xb::Float64, n::Int)
-
-Gives ∫ σ(x) xⁿ dx over [xa, xb], x = 1 - μ_cm, in closed form on every piece of the
-tabulation (power law, or constant on the first piece).
-
-# Input Argument(s)
-- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
-- `xa::Float64` : lower bound.
-- `xb::Float64` : upper bound.
-- `n::Int` : power of x (0 or 1).
-
-# Output Argument(s)
-- `I::Float64` : integral [b].
-"""
-function op_moment(cache::TabulatedElasticDCSCache, xa::Float64, xb::Float64, n::Int)
-    xb <= xa && return 0.0
-    X = cache.x_grid
-    acc = 0.0
-    for i in op_piece(cache, xa):op_piece(cache, xb)
-        acc += op_piece_moment(cache, i, max(xa, X[i]), min(xb, X[i + 1]), n)
-    end
-    return acc
-end
-
-"""
-    op_quadrature(cache::TabulatedElasticDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
-
-Gives ∫ σ(x) w(x) dx over [xa, xb], x = 1 - μ_cm, for a weight w (scalar or vector) that is
-not polynomial in x, piece by piece: in ln x on the power-law pieces, in x on the first one.
-`OP_QUADRATURE[]` selects adaptive Gauss-Kronrod (`:adaptive`) or fixed Gauss-Legendre with
-`n_gauss` points (`:gauss`).
-
-# Input Argument(s)
-- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
-- `w::Function` : weight w(x).
-- `xa::Float64` : lower bound.
-- `xb::Float64` : upper bound.
-- `n_gauss::Int` : number of Gauss-Legendre points per piece.
-
-# Output Argument(s)
-- `I` : integral, of the type returned by `w`.
-"""
-function op_quadrature(cache::TabulatedElasticDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
-    X = cache.x_grid
-    adaptive = OP_QUADRATURE[] == :adaptive
-    u_g, w_g = quadrature(n_gauss, "gauss-legendre")
-    acc = nothing
-    for i in op_piece(cache, xa):op_piece(cache, xb)
-        a, b = max(xa, X[i]), min(xb, X[i + 1])
-        b <= a && continue
-        if i == 1 || a == 0.0
-            g = x -> op_sigma(cache, i, x) * w(x)
-            lo, hi = a, b
-        else
-            g = t -> (x = exp(t); op_sigma(cache, i, x) * w(x) * x)
-            lo, hi = log(a), log(b)
-        end
-        if adaptive
-            I = quadgk(g, lo, hi; rtol=1.0e-12, maxevals=30_000)[1]
-        else
-            c, h = 0.5 * (hi + lo), 0.5 * (hi - lo)
-            I = h * w_g[1] * g(c + h * u_g[1])
-            for q in 2:n_gauss
-                I = I + h * w_g[q] * g(c + h * u_g[q])
-            end
-        end
-        acc = isnothing(acc) ? I : acc + I
-    end
-    return isnothing(acc) ? zero(w(max(xa, 1.0e-300))) : acc
-end
-
-"""
-    elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVector{Float64},
-    cache::TabulatedElasticDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64,
-    L::Int64; recoil::Bool=false)
-
-Adds, for every outgoing energy group, the Legendre moments and the energy moment of the
-optical-model cross-section over the center-of-mass cosines [mu_lo, mu_hi] of the scattered
-projectile, or with `recoil` of the recoiling target of identical particles. The range is cut
-at the nodes of the tabulation and at the cosines of the group boundaries (the outgoing
-energy is affine in the cosine). On every piece the moment of order zero and the energy
-moment are closed forms; the moments of order l ≥ 1 are integrated by `op_quadrature`, since
-the laboratory cosine is not polynomial in x. Pieces outside the groups are skipped.
-
-# Input Argument(s)
-- `σl::AbstractMatrix{Float64}` : Legendre moments to add to, size (Ng, L+1), in barn.
-- `σe::AbstractVector{Float64}` : energy moments to add to, size Ng, in barn × MeV.
-- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
-- `Eout_mev::Vector{Float64}` : outgoing group boundaries [MeV], decreasing.
-- `mu_lo::Float64` : lower center-of-mass cosine bound of the projectile.
-- `mu_hi::Float64` : upper center-of-mass cosine bound of the projectile.
-- `L::Int64` : Legendre truncation order.
-- `recoil::Bool` : boolean to give the moments of the recoiling target.
-
-# Output Argument(s)
-N/A
-"""
-function elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVector{Float64},
-        cache::TabulatedElasticDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64, L::Int64;
-        recoil::Bool=false)
-    mu_hi <= mu_lo && return nothing
-    Ng = length(Eout_mev) - 1
-    e0, e1 = scattered_energy_affine(cache)
-    sgn = recoil ? -1.0 : 1.0                 # the particle followed leaves at sgn·μ
-    energy(x) = e0 + sgn * e1 * (1.0 - x)
-    lab(x) = mu_lab_from_mu_cm(sgn * (1.0 - x), cache.E_in_mev, cache.m_mev, cache.M_mev)
-
-    xa, xb = 1.0 - mu_hi, 1.0 - mu_lo
-    cuts = [xa; filter(x -> xa < x < xb, cache.x_grid); xb]
-    for E_b in Eout_mev
-        # x of the group boundary, written without cancellation (e0 + e1 = E_in)
-        x_b = recoil ? 1.0 + (E_b - e0) / e1 : (cache.E_in_mev - E_b) / e1
-        xa < x_b < xb && push!(cuts, x_b)
-    end
-    sort!(unique!(cuts))
-
-    for k in 1:(length(cuts) - 1)
-        x0, x1 = cuts[k], cuts[k + 1]
-        x1 <= x0 && continue
-        g = searchsortedfirst(Eout_mev, energy(0.5 * (x0 + x1)); rev=true) - 1
-        (1 <= g <= Ng) || continue
-        I0 = op_moment(cache, x0, x1, 0)
-        I1 = op_moment(cache, x0, x1, 1)
-        σl[g, 1] += 2π * I0
-        σe[g] += 2π * ((e0 + sgn * e1) * I0 - sgn * e1 * I1)
-        if L >= 1
-            I = op_quadrature(cache, x -> legendre_polynomials_up_to_L(L, lab(x)), x0, x1, max(L + 2, 8))
-            for l in 1:L
-                σl[g, l + 1] += 2π * I[l + 1]
-            end
-        end
-    end
-    return nothing
-end
-
-"""
-    elastic_soft_integrals(cache::TabulatedElasticDCSCache, mu_lo::Float64)
-
-Gives the two integrals of the soft elastic collisions, center-of-mass cosines from `mu_lo`
-to 1, on which the stopping power and the momentum transfer rest: ∫ dσ/dΩ (1 - μ) dμ, in
-closed form, and ∫ dσ/dΩ (1 - μ_lab) dμ, by `op_quadrature` with 1 - μ_lab written without
-cancellation (`one_minus_mu_lab`).
-
-# Input Argument(s)
-- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
-- `mu_lo::Float64` : lower center-of-mass cosine bound, the cutoff cosine μ_c.
-
-# Output Argument(s)
-- `I_cm::Float64` : ∫ dσ/dΩ (1 - μ) dμ over [mu_lo, 1], in barn.
-- `I_lab::Float64` : ∫ dσ/dΩ (1 - μ_lab) dμ over [mu_lo, 1], in barn.
-"""
-function elastic_soft_integrals(cache::TabulatedElasticDCSCache, mu_lo::Float64)
-    mu_lo >= 1.0 && return 0.0, 0.0
-    xb = 1.0 - mu_lo
-    frame = cm_frame(cache)
-    I_cm = op_moment(cache, 0.0, xb, 1)
-    I_lab = op_quadrature(cache, x -> one_minus_mu_lab(frame, x), 0.0, xb, 8)
-    return I_cm, I_lab
-end
-
-"""
-    integrate_elastic_scattering_below(cache::TabulatedElasticDCSCache, Ec_MeV::Float64,
-    E_last_mev::Float64)
-
-Gives the part of the total optical-model elastic cross-section above an outgoing-energy
-cutoff whose scattered projectile ends below the last outgoing group, E_out < `E_last_mev`,
-in closed form. It completes the sum of the moments of order zero of
-`elastic_group_moments!` to the total cross-section (`tcs`).
-
-# Input Argument(s)
-- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
-- `Ec_MeV::Float64` : cutoff energy between soft and catastrophic events.
-- `E_last_mev::Float64` : lower boundary of the last outgoing group [MeV].
-
-# Output Argument(s)
-- `σb::Float64` : cross-section below the last group, in barn.
-"""
-function integrate_elastic_scattering_below(cache::TabulatedElasticDCSCache, Ec_MeV::Float64,
-                                            E_last_mev::Float64)
-    mu_lo = cache.identical ? 0.0 : -1.0
-    mu_c = mu_cm_from_Eout_relativistic(cache.E_in_mev, max(Ec_MeV, 0.0), cache.m_mev, cache.M_mev)
-    mu_c <= mu_lo && return 0.0
-    e0, e1 = scattered_energy_affine(cache)
-    mu_cut = clamp((E_last_mev - e0) / e1, mu_lo, mu_c)
-    return 2.0 * pi * op_moment(cache, 1.0 - mu_cut, 1.0 - mu_lo, 0)
 end

@@ -1022,6 +1022,21 @@ function mt(this::Elastic_Scattering,Z::Int64,Ei::Float64,Ec::Float64,particle::
     return pi * T * BARN_TO_CM2
 end
 
+#----
+# Tabulated cross-section (`TabulatedElasticDCSCache`, models OP and G4): tabulation in
+# x = 1 - μ_cm with power-law interpolation between nodes, and its interpolation and
+# integration kernels
+#----
+
+# Tabulation of the cross-section: relative tolerance of the power-law interpolation at the
+# log-midpoint of every piece, and maximum number of nodes.
+const DCS_TABLE_RTOL = 1.0e-3
+const DCS_TABLE_MAX_NODES = 4000
+
+# Quadrature of the moments involving the laboratory cosine on each piece, in ln x:
+# :adaptive (Gauss-Kronrod) or :gauss (fixed Gauss-Legendre).
+const DCS_TABLE_QUADRATURE = Ref(:adaptive)
+
 """
     dcs_table_start_grid(x_first::Float64, x_max::Float64, kR::Float64)
 
@@ -1056,10 +1071,10 @@ end
 Tabulates a differential cross-section given as a function of x = 1 - μ_cm, for a
 `TabulatedElasticDCSCache`. Each piece of the start grid is bisected at its log-midpoint
 until the power-law interpolation there agrees with the cross-section within
-`OP_TABLE_RTOL`, relative to the larger of the true and interpolated values (the
+`DCS_TABLE_RTOL`, relative to the larger of the true and interpolated values (the
 cross-section spans some 25 decades, so no absolute floor), and a piece with one end at an
 exact zero is bisected down to the limit xᵣ/xₗ = 1 + 10⁻⁹, which isolates the jump (node cap
-`OP_TABLE_MAX_NODES`). A first node x₁ = 0 is added: the
+`DCS_TABLE_MAX_NODES`). A first node x₁ = 0 is added: the
 cross-section on [0, x₂] is taken constant, equal to its value at x₂, when `flat_first`
 (screened Coulomb field), and zero otherwise.
 
@@ -1087,8 +1102,8 @@ function tabulate_power_law_dcs(f::Function, nodes::Vector{Float64}, flat_first:
         σi = sqrt(max(σl, 0.0) * max(σr, 0.0))
         # a piece with one zero end is bisected down to the limit even when its midpoint is
         # zero too, so that the jump to zero is isolated
-        refine = (abs(σm - σi) > OP_TABLE_RTOL * max(σm, σi) || (σl > 0.0) != (σr > 0.0)) &&
-                 length(X) + length(stack) < OP_TABLE_MAX_NODES && xr / xl > 1.0 + 1.0e-9
+        refine = (abs(σm - σi) > DCS_TABLE_RTOL * max(σm, σi) || (σl > 0.0) != (σr > 0.0)) &&
+                 length(X) + length(stack) < DCS_TABLE_MAX_NODES && xr / xl > 1.0 + 1.0e-9
         if refine
             push!(stack, (xm, σm))
         else
@@ -1097,8 +1112,8 @@ function tabulate_power_law_dcs(f::Function, nodes::Vector{Float64}, flat_first:
             xl, σl = xr, σr
         end
     end
-    length(X) >= OP_TABLE_MAX_NODES &&
-        @warn "$(label): the tabulation stopped at $(OP_TABLE_MAX_NODES) nodes." maxlog=5
+    length(X) >= DCS_TABLE_MAX_NODES &&
+        @warn "$(label): the tabulation stopped at $(DCS_TABLE_MAX_NODES) nodes." maxlog=5
 
     # Power laws need positive values
     Σ .= max.(Σ, floatmin(Float64))
@@ -1111,3 +1126,230 @@ function tabulate_power_law_dcs(f::Function, nodes::Vector{Float64}, flat_first:
     return X, Σ, p
 end
 
+
+"Piece of the table holding x: 1 for [x₁, x₂], i for [xᵢ, xᵢ₊₁]."
+dcs_table_piece(cache::TabulatedElasticDCSCache, x::Float64) = clamp(searchsortedlast(cache.x_grid, x), 1, length(cache.x_grid) - 1)
+
+"Interpolated cross-section [b/sr] at x = 1 - μ_cm on piece i."
+function dcs_table_sigma(cache::TabulatedElasticDCSCache, i::Int, x::Float64)
+    i == 1 && return cache.sigma_grid[1]
+    return cache.sigma_grid[i] * (x / cache.x_grid[i])^cache.p[i]
+end
+
+"""
+    elastic_dsig(cache::TabulatedElasticDCSCache, mu_cm::Float64)
+
+Gives the tabulated elastic differential cross-section (models OP and G4), interpolated from its
+tabulation.
+
+# Input Argument(s)
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
+- `mu_cm::Float64` : center-of-mass scattering cosine.
+
+# Output Argument(s)
+- `σs::Float64` : elastic differential cross-section in barn/sr.
+"""
+function elastic_dsig(cache::TabulatedElasticDCSCache, mu_cm::Float64)
+    x = 1.0 - mu_cm
+    return dcs_table_sigma(cache, dcs_table_piece(cache, x), x)
+end
+
+# ∫ σ xⁿ dx over [a, b] inside piece i, in closed form (n = 0, 1)
+function dcs_table_piece_moment(cache::TabulatedElasticDCSCache, i::Int, a::Float64, b::Float64, n::Int)
+    b <= a && return 0.0
+    i == 1 && return cache.sigma_grid[1] * (b^(n + 1) - a^(n + 1)) / (n + 1)
+    p = cache.p[i]
+    Fa = dcs_table_sigma(cache, i, a) * a^(n + 1)
+    Fb = dcs_table_sigma(cache, i, b) * b^(n + 1)
+    q = p + n + 1
+    abs(q) < 1.0e-10 && return Fa * log(b / a)
+    return (Fb - Fa) / q
+end
+
+"""
+    dcs_table_moment(cache::TabulatedElasticDCSCache, xa::Float64, xb::Float64, n::Int)
+
+Gives ∫ σ(x) xⁿ dx over [xa, xb], x = 1 - μ_cm, in closed form on every piece of the
+tabulation (power law, or constant on the first piece).
+
+# Input Argument(s)
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
+- `xa::Float64` : lower bound.
+- `xb::Float64` : upper bound.
+- `n::Int` : power of x (0 or 1).
+
+# Output Argument(s)
+- `I::Float64` : integral [b].
+"""
+function dcs_table_moment(cache::TabulatedElasticDCSCache, xa::Float64, xb::Float64, n::Int)
+    xb <= xa && return 0.0
+    X = cache.x_grid
+    acc = 0.0
+    for i in dcs_table_piece(cache, xa):dcs_table_piece(cache, xb)
+        acc += dcs_table_piece_moment(cache, i, max(xa, X[i]), min(xb, X[i + 1]), n)
+    end
+    return acc
+end
+
+"""
+    dcs_table_quadrature(cache::TabulatedElasticDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
+
+Gives ∫ σ(x) w(x) dx over [xa, xb], x = 1 - μ_cm, for a weight w (scalar or vector) that is
+not polynomial in x, piece by piece: in ln x on the power-law pieces, in x on the first one.
+`DCS_TABLE_QUADRATURE[]` selects adaptive Gauss-Kronrod (`:adaptive`) or fixed Gauss-Legendre with
+`n_gauss` points (`:gauss`).
+
+# Input Argument(s)
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
+- `w::Function` : weight w(x).
+- `xa::Float64` : lower bound.
+- `xb::Float64` : upper bound.
+- `n_gauss::Int` : number of Gauss-Legendre points per piece.
+
+# Output Argument(s)
+- `I` : integral, of the type returned by `w`.
+"""
+function dcs_table_quadrature(cache::TabulatedElasticDCSCache, w::Function, xa::Float64, xb::Float64, n_gauss::Int)
+    X = cache.x_grid
+    adaptive = DCS_TABLE_QUADRATURE[] == :adaptive
+    u_g, w_g = quadrature(n_gauss, "gauss-legendre")
+    acc = nothing
+    for i in dcs_table_piece(cache, xa):dcs_table_piece(cache, xb)
+        a, b = max(xa, X[i]), min(xb, X[i + 1])
+        b <= a && continue
+        if i == 1 || a == 0.0
+            g = x -> dcs_table_sigma(cache, i, x) * w(x)
+            lo, hi = a, b
+        else
+            g = t -> (x = exp(t); dcs_table_sigma(cache, i, x) * w(x) * x)
+            lo, hi = log(a), log(b)
+        end
+        if adaptive
+            I = quadgk(g, lo, hi; rtol=1.0e-12, maxevals=30_000)[1]
+        else
+            c, h = 0.5 * (hi + lo), 0.5 * (hi - lo)
+            I = h * w_g[1] * g(c + h * u_g[1])
+            for q in 2:n_gauss
+                I = I + h * w_g[q] * g(c + h * u_g[q])
+            end
+        end
+        acc = isnothing(acc) ? I : acc + I
+    end
+    return isnothing(acc) ? zero(w(max(xa, 1.0e-300))) : acc
+end
+
+"""
+    elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVector{Float64},
+    cache::TabulatedElasticDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64,
+    L::Int64; recoil::Bool=false)
+
+Adds, for every outgoing energy group, the Legendre moments and the energy moment of the
+tabulated cross-section over the center-of-mass cosines [mu_lo, mu_hi] of the scattered
+projectile, or with `recoil` of the recoiling target of identical particles. The range is cut
+at the nodes of the tabulation and at the cosines of the group boundaries (the outgoing
+energy is affine in the cosine). On every piece the moment of order zero and the energy
+moment are closed forms; the moments of order l ≥ 1 are integrated by `dcs_table_quadrature`, since
+the laboratory cosine is not polynomial in x. Pieces outside the groups are skipped.
+
+# Input Argument(s)
+- `σl::AbstractMatrix{Float64}` : Legendre moments to add to, size (Ng, L+1), in barn.
+- `σe::AbstractVector{Float64}` : energy moments to add to, size Ng, in barn × MeV.
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
+- `Eout_mev::Vector{Float64}` : outgoing group boundaries [MeV], decreasing.
+- `mu_lo::Float64` : lower center-of-mass cosine bound of the projectile.
+- `mu_hi::Float64` : upper center-of-mass cosine bound of the projectile.
+- `L::Int64` : Legendre truncation order.
+- `recoil::Bool` : boolean to give the moments of the recoiling target.
+
+# Output Argument(s)
+N/A
+"""
+function elastic_group_moments!(σl::AbstractMatrix{Float64}, σe::AbstractVector{Float64},
+        cache::TabulatedElasticDCSCache, Eout_mev::Vector{Float64}, mu_lo::Float64, mu_hi::Float64, L::Int64;
+        recoil::Bool=false)
+    mu_hi <= mu_lo && return nothing
+    Ng = length(Eout_mev) - 1
+    e0, e1 = scattered_energy_affine(cache)
+    sgn = recoil ? -1.0 : 1.0                 # the particle followed leaves at sgn·μ
+    energy(x) = e0 + sgn * e1 * (1.0 - x)
+    lab(x) = mu_lab_from_mu_cm(sgn * (1.0 - x), cache.E_in_mev, cache.m_mev, cache.M_mev)
+
+    xa, xb = 1.0 - mu_hi, 1.0 - mu_lo
+    cuts = [xa; filter(x -> xa < x < xb, cache.x_grid); xb]
+    for E_b in Eout_mev
+        # x of the group boundary, written without cancellation (e0 + e1 = E_in)
+        x_b = recoil ? 1.0 + (E_b - e0) / e1 : (cache.E_in_mev - E_b) / e1
+        xa < x_b < xb && push!(cuts, x_b)
+    end
+    sort!(unique!(cuts))
+
+    for k in 1:(length(cuts) - 1)
+        x0, x1 = cuts[k], cuts[k + 1]
+        x1 <= x0 && continue
+        g = searchsortedfirst(Eout_mev, energy(0.5 * (x0 + x1)); rev=true) - 1
+        (1 <= g <= Ng) || continue
+        I0 = dcs_table_moment(cache, x0, x1, 0)
+        I1 = dcs_table_moment(cache, x0, x1, 1)
+        σl[g, 1] += 2π * I0
+        σe[g] += 2π * ((e0 + sgn * e1) * I0 - sgn * e1 * I1)
+        if L >= 1
+            I = dcs_table_quadrature(cache, x -> legendre_polynomials_up_to_L(L, lab(x)), x0, x1, max(L + 2, 8))
+            for l in 1:L
+                σl[g, l + 1] += 2π * I[l + 1]
+            end
+        end
+    end
+    return nothing
+end
+
+"""
+    elastic_soft_integrals(cache::TabulatedElasticDCSCache, mu_lo::Float64)
+
+Gives the two integrals of the soft elastic collisions, center-of-mass cosines from `mu_lo`
+to 1, on which the stopping power and the momentum transfer rest: ∫ dσ/dΩ (1 - μ) dμ, in
+closed form, and ∫ dσ/dΩ (1 - μ_lab) dμ, by `dcs_table_quadrature` with 1 - μ_lab written without
+cancellation (`one_minus_mu_lab`).
+
+# Input Argument(s)
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
+- `mu_lo::Float64` : lower center-of-mass cosine bound, the cutoff cosine μ_c.
+
+# Output Argument(s)
+- `I_cm::Float64` : ∫ dσ/dΩ (1 - μ) dμ over [mu_lo, 1], in barn.
+- `I_lab::Float64` : ∫ dσ/dΩ (1 - μ_lab) dμ over [mu_lo, 1], in barn.
+"""
+function elastic_soft_integrals(cache::TabulatedElasticDCSCache, mu_lo::Float64)
+    mu_lo >= 1.0 && return 0.0, 0.0
+    xb = 1.0 - mu_lo
+    frame = cm_frame(cache)
+    I_cm = dcs_table_moment(cache, 0.0, xb, 1)
+    I_lab = dcs_table_quadrature(cache, x -> one_minus_mu_lab(frame, x), 0.0, xb, 8)
+    return I_cm, I_lab
+end
+
+"""
+    integrate_elastic_scattering_below(cache::TabulatedElasticDCSCache, Ec_MeV::Float64,
+    E_last_mev::Float64)
+
+Gives the part of the total tabulated elastic cross-section above an outgoing-energy
+cutoff whose scattered projectile ends below the last outgoing group, E_out < `E_last_mev`,
+in closed form. It completes the sum of the moments of order zero of
+`elastic_group_moments!` to the total cross-section (`tcs`).
+
+# Input Argument(s)
+- `cache::TabulatedElasticDCSCache` : tabulated cross-section.
+- `Ec_MeV::Float64` : cutoff energy between soft and catastrophic events.
+- `E_last_mev::Float64` : lower boundary of the last outgoing group [MeV].
+
+# Output Argument(s)
+- `σb::Float64` : cross-section below the last group, in barn.
+"""
+function integrate_elastic_scattering_below(cache::TabulatedElasticDCSCache, Ec_MeV::Float64,
+                                            E_last_mev::Float64)
+    mu_lo = cache.identical ? 0.0 : -1.0
+    mu_c = mu_cm_from_Eout_relativistic(cache.E_in_mev, max(Ec_MeV, 0.0), cache.m_mev, cache.M_mev)
+    mu_c <= mu_lo && return 0.0
+    e0, e1 = scattered_energy_affine(cache)
+    mu_cut = clamp((E_last_mev - e0) / e1, mu_lo, mu_c)
+    return 2.0 * pi * dcs_table_moment(cache, 1.0 - mu_cut, 1.0 - mu_lo, 0)
+end

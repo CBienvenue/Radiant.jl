@@ -23,8 +23,8 @@
 #
 # The cross-section of one isotope at one energy is tabulated in x = 1 - μ_cm as for the OP
 # description (`dcs_table_start_grid`, `tabulate_power_law_dcs`), in a
-# `TabulatedElasticDCSCache`, so that all the integration kernels of the OP description
-# apply. For p + ¹H the cross-section is folded onto μ_cm ≥ 0: the faster proton is the
+# `TabulatedElasticDCSCache`, so that the integration kernels shared with OP (end of
+# structures/Elastic_Scattering.jl) apply. For p + ¹H the cross-section is folded onto μ_cm ≥ 0: the faster proton is the
 # scattered one.
 
 #----
@@ -264,10 +264,9 @@ function g4_bgg_elastic(iso::IsotopeG4Model, E::Float64)
     iso.Z == 1 && return iso.A * g4_pp_elastic(E, iso.m_mev)
     Z = min(iso.Z, 92)
     E > G4_BGG_LOW_ENERGY && return g4_barashenkov_elastic(Z, E)
-    # BGG target: theA[Z] = lrint(mean atomic mass), which may be unstable (⁵⁹Ni, ⁷⁹Se, ...):
-    # A u when Radiant has no mass for it
+    # BGG target: theA[Z] = lrint(mean atomic mass), which may be unstable (⁵⁹Ni, ⁷⁹Se, ...)
     Ab = round(Int, g4_aeff(Z))
-    Mb = haskey(isotopic_mass_dict, (Z, Ab)) ? get_mass(Z, Ab) : Ab * AMU_MEV
+    Mb = get_mass(Z, Ab)
     fac = g4_barashenkov_elastic(Z, G4_BGG_LOW_ENERGY) /
           g4_coulomb_factor(Z, Ab, G4_BGG_LOW_ENERGY, iso.m_mev, Mb)
     return fac * g4_coulomb_factor(Z, Ab, E, iso.m_mev, Mb)
@@ -624,32 +623,9 @@ end
 # Whole cross-section in the center-of-mass frame
 #----
 
-"""
-    g4_lab_solid_angle_ratio(frame::NamedTuple, x::Float64)
-
-Gives dΩ_lab/dΩ_cm of the scattered projectile at x = 1 - μ_cm, γ (1 + τ μ_cm)/D^(3/2) with
-D = γ² (τ + μ_cm)² + sin²θ_cm and τ = β_cm/β*₁ (D p*² = p_lab²). For equal masses, τ = 1,
-θ_cm = π maps to θ_lab = 90° with an integrable singularity of dΩ_cm/dΩ_lab; that single
-point is given the value 0.
-
-# Input Argument(s)
-- `frame::NamedTuple` : center-of-mass frame from `cm_frame`.
-- `x::Float64` : 1 - μ_cm.
-
-# Output Argument(s)
-- `J::Float64` : dΩ_lab/dΩ_cm.
-"""
-function g4_lab_solid_angle_ratio(frame::NamedTuple, x::Float64)
-    τ = frame.beta * frame.E1_star / frame.p_star
-    c = 1.0 - x
-    D = frame.gamma^2 * (τ + c)^2 + x * (2.0 - x)
-    D > 0.0 || return 0.0
-    return frame.gamma * (1.0 + τ * c) / D^1.5
-end
-
 "Geant4 Coulomb cross-section dσ/dΩ_cm [b/sr] at x = 1 - μ_cm (projectile, not folded)."
 g4_coulomb_dcs_cm(w::NamedTuple, frame::NamedTuple, x::Float64) =
-    g4_coulomb_dcs_lab(w, one_minus_mu_lab(frame, x)) * g4_lab_solid_angle_ratio(frame, x)
+    g4_coulomb_dcs_lab(w, one_minus_mu_lab(frame, x)) * lab_solid_angle_ratio(frame, x)
 
 "Geant4 hadronic cross-section dσ/dΩ_cm [b/sr] at x = 1 - μ_cm, σ f(Q²) dQ²/dΩ, Q² = tmax x/2."
 g4_nuclear_dcs_cm(c::NamedTuple, σ_nuc::Float64, x::Float64) =
