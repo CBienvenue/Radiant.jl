@@ -30,6 +30,7 @@ state_of_matter = Vector{String}()
 Z = Vector{Vector{Int64}}(undef,Nmat)
 ωz = Vector{Vector{Float64}}(undef,Nmat)
 I_eff = fill(NaN,Nmat)   # per-material mean excitation energy override [in mₑc²]; NaN ⟹ resolved from table/additivity
+S_user = Vector{Dict{Type,String}}(undef,Nmat)   # per-material, per-particle stopping-power tables
 for n in range(1,Nmat)
     ρ[n] = materials[n].get_density()
     Zn = materials[n].get_atomic_numbers()
@@ -41,6 +42,7 @@ for n in range(1,Nmat)
     ωz[n] = ωn[keep]
     Iov = materials[n].get_mean_excitation_energy()   # [in eV] or missing
     if !ismissing(Iov) I_eff[n] = Iov/(1e6*0.510999) end
+    S_user[n] = materials[n].get_stopping_power()
     push!(state_of_matter,materials[n].get_state_of_matter())
 end
 A, atpercentA = material_isotopic_composition(materials, Z)
@@ -88,7 +90,7 @@ for i in range(1,Npart), n in range(1,Nmat)
                 if pin != get_type(particles[i]) || pout != get_type(particles[j]) continue end
                 for type in interaction.get_types(pin,pout)
                     println("\n Interaction: $(typeof(interaction)) | Type: $type | Incoming particle: $(get_type(particles[i])) | Outgoing particle: $(get_type(particles[j]))")
-                    @time Σsli, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,interactions,I_eff[n],A[n],atpercentA[n])
+                    @time Σsli, Σti, Σai, Σei, Σci, Sbi, Si, Ti = multigroup(Z[n],ωz[n],ρ[n],state_of_matter[n],Eᵇ[i],Eᵇ[j],L,interaction,type,particles[i],particles[j],particles,interactions,I_eff[n],A[n],atpercentA[n],S_user[n])
                     Σsl .+= Σsli; Σt .+= Σti; Σa .+= Σai; Σe .+= Σei; Σc .+= Σci; Sb .+= Sbi; S .+= Si; T .+= Ti;
                 end
             end

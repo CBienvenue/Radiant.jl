@@ -479,12 +479,16 @@ Gives the stopping power.
 - `Ec::Float64` : cutoff energy between soft and catastrophic interactions.
 - `particle::Particle` : incoming particle.
 - `Eout::Vector{Float64}` : energy boundaries associated with outgoing particles.
+- `S_user::Dict{Type,String}` : per-particle user-supplied stopping-power tables. An input
+  to the collisional stopping power only: the Bremsstrahlung and Elastic_Scattering
+  branches ignore it, because a user table replaces the inelastic-collision term and
+  neither the radiative nor the nuclear one.
 
 # Output Argument(s)
 - `S::Float64` : stopping power.
 
 """
-function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Eout::Vector{Float64},I_eff::Float64=NaN,A::Union{Nothing,Vector{Vector{Int64}}}=nothing,atpercentA::Union{Nothing,Vector{Vector{Float64}}}=nothing)
+function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,Eout::Vector{Float64},I_eff::Float64=NaN,A::Union{Nothing,Vector{Vector{Int64}}}=nothing,atpercentA::Union{Nothing,Vector{Vector{Float64}}}=nothing,S_user::Dict{Type,String}=Dict{Type,String}())
     itype = typeof(interaction)
     if itype == Bremsstrahlung
         return sp(interaction,Z,atz,N_density,Ei,Ec,Eout,particle)
@@ -492,7 +496,7 @@ function sp_dispatch(interaction::Interaction,Z::Vector{Int64},ωz::Vector{Float
         return sp(interaction,Z,atz,N_density,Ei,Ec,particle,A,atpercentA)
     elseif itype == Inelastic_Collision
         atomic_weights = [atomic_weight(Z[i], isnothing(A) ? nothing : A[i], isnothing(atpercentA) ? nothing : atpercentA[i]) for i in eachindex(Z)]
-        return sp(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei,Ec,particle,I_eff,atomic_weights)
+        return sp(interaction,Z,ωz,atz,ρ,N_density,state_of_matter,Ei,Ec,particle,I_eff,atomic_weights,S_user)
     else
         error("Unknown interaction.")
     end

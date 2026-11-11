@@ -26,6 +26,7 @@ mutable struct Material
     atomic_numbers      ::Vector{Int64}
     weight_fractions    ::Vector{Float64}
     mean_excitation_energy   ::Union{Missing,Float64}
+    stopping_power_files     ::Dict{Type,String}
     mass_numbers             ::Vector{Vector{Int64}}
     isotope_atomic_fractions ::Vector{Vector{Float64}}
 
@@ -42,6 +43,7 @@ mutable struct Material
         this.mean_excitation_energy      = missing
         this.mass_numbers                = Vector{Vector{Int64}}()
         this.isotope_atomic_fractions    = Vector{Vector{Float64}}()
+        this.stopping_power_files        = Dict{Type,String}()
         return this
     end
 end
@@ -67,6 +69,9 @@ function println(this::Material)
     if any(!isempty.(this.mass_numbers))
         println("   Isotope mass numbers:          $(this.mass_numbers)")
         println("   Isotope atomic fractions:      $(this.isotope_atomic_fractions)")
+    end
+    if !isempty(this.stopping_power_files)
+        println("   Stopping-power files:         $(this.stopping_power_files)")
     end
     println("   State of matter:              $(this.state_of_matter)")
 end
@@ -427,4 +432,137 @@ julia> state_of_matter = mat.get_state_of_matter()
 """
 function get_state_of_matter(this::Material)
     return this.state_of_matter
+end
+
+"""
+    set_stopping_power(this::Material,particle::Type,file::String)
+
+To read the electronic stopping power of this material, for one particle, out of a
+two-column text file instead of computing it. On this path `bethe` is not called for the
+electronic term and neither is the SRIM lookup: the file *is* the stopping power.
+
+This is the escape hatch. A user with a measured table, a table from a code Radiant does
+not implement, or a table their group has agreed on can use it without the answer passing
+through any model. It lives on `Material` rather than on `Inelastic_Collision` because the
+table describes one material and nothing about it generalises to the next one in the
+geometry.
+
+**It is also the one path in Radiant's stopping-power chain with no validation behind it.**
+Everything else was measured against NIST or SRIM; a user table is measured against
+nothing, because its correctness is the user's to establish. Radiant checks that the file
+is well-formed and then does exactly what it says.
+
+# File format
+
+Plain text, two columns, conventionally placed in `data/`:
+
+```
+# proton in liquid water, PSTAR, retrieved 2026-01-14
+# E [MeV]      S/rho [MeV cm^2/g]
+1.000e-03      1.769e+02
+1.500e-03      1.984e+02
+...
+1.000e+04      1.848e+00
+```
+
+Column 1 is the projectile's **total kinetic energy in MeV** - not energy per nucleon.
+Column 2 is the **mass** stopping power in **MeV cm²/g**. The separator is whitespace or a
+comma, blank lines are skipped, and a line starting with `#` or `%` is a comment. Energies
+must be strictly increasing and are never sorted for you. A third column is an error, not
+something ignored: in SRIM's output that column is *nuclear* stopping, and adding it in
+silently would be wrong by percent at the low end.
+
+The file is parsed and validated here, at the call site where the user is standing, rather
+than at the first call to `sp` three layers away. An absolute path is used as given;
+anything else is taken relative to `data/`.
+
+# What the table must be
+
+A **total electronic** stopping power: not restricted, not soft-only, and with no nuclear
+component. `sp` computes `Sr = Stot - Sc` and subtracts its own catastrophic part from
+whatever it is given, so a restricted table subtracts that part twice. The soft/catastrophic
+split is therefore approximate on this path, in the same way it is for the `icru49`
+low-energy branch: `Stot` comes from the user's source and `Sc` from Radiant's analytic
+cross-section, and the two were never reconciled. Radiant cannot check any of this.
+
+# What it applies to, and what it overrides
+
+**One table, one particle.** A table registered for `Proton` changes nothing for any other
+particle: electrons in the same material still go through `bethe`, and alphas still go
+through `bethe` or through SRIM. Radiant runs coupled multi-particle problems, and a single
+un-keyed table would quietly apply a proton table to electrons the moment someone added an
+electron group. A user with tables for two particles calls this twice.
+
+It **supersedes everything** for that one particle in that one material -
+`set_use_srim_sp`, `set_ecut`, `set_emax`, `set_low_energy_model`,
+`set_low_energy_source`, `set_is_bragg_additivity`, the Sternheimer, atom-fraction and
+Barkas corrections, and `set_mean_excitation_energy` - all of which stay set and stop
+having an effect. None of that is an error: handing in a table is switching sources.
+
+It does **not** replace the radiative or nuclear stopping power. `Bremsstrahlung.sp` and
+`Elastic_Scattering.sp` still run and still contribute, so a Radiant total will differ from
+the table at high energy.
+
+# Density, which is where this will go wrong
+
+The table is scaled by **this material's** density. For everything except the density effect
+that is correct, because mass stopping power is density-independent - but the density effect
+is baked into whatever numbers were supplied, at whatever density their source assumed, and
+rescaling cannot touch it. A water-vapour table handed to a liquid-water material gives
+vapour physics scaled to liquid density, silently.
+
+# Range
+
+The table must span the whole energy range of the group structure for that particle. An
+energy outside it is an error, not an extrapolation and not a fallback to `bethe`.
+
+# Input Argument(s)
+- `this::Material` : material.
+- `particle::Type` : particle type the table applies to.
+- `file::String` : file name, taken relative to `data/`, or an absolute path.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> mat = Material("water")
+julia> mat.set_stopping_power(Proton,"pstar_water_proton.txt")
+```
+"""
+function set_stopping_power(this::Material,particle::Type,file::String)
+    if particle ∉ [Photon,Electron,Positron,Proton,Antiproton,Alpha,Muon,Antimuon]
+        error("Unknown '$particle' particle. A stopping-power table can be registered for " *
+              "Photon, Electron, Positron, Proton, Antiproton, Alpha, Muon or Antimuon.")
+    end
+    path = resolve_user_stopping_power_file(file)
+    user_stopping_power_table(path)   # parse and validate now, not at the first call to sp
+    this.stopping_power_files[particle] = path
+end
+
+"""
+    get_stopping_power(this::Material,particle::Type)
+    get_stopping_power(this::Material)
+
+To get the resolved path of the stopping-power table registered for a particle, or
+`missing` if none is; or, with no particle, the whole dictionary.
+
+# Input Argument(s)
+- `this::Material` : material.
+- `particle::Type` : particle type.
+
+# Output Argument(s)
+- `file::Union{Missing,String}` : resolved path, or `missing`.
+
+# Examples
+```jldoctest
+julia> mat.get_stopping_power(Proton)
+```
+"""
+function get_stopping_power(this::Material,particle::Type)
+    return get(this.stopping_power_files,particle,missing)
+end
+
+function get_stopping_power(this::Material)
+    return this.stopping_power_files
 end

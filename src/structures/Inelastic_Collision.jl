@@ -38,6 +38,7 @@ mutable struct Inelastic_Collision <: Interaction
     low_energy_model::String
     low_energy_source::String
     is_bragg_additivity::Bool
+    use_srim_sp::Bool
 
     # Constructor(s)
     function Inelastic_Collision()
@@ -62,6 +63,7 @@ mutable struct Inelastic_Collision <: Interaction
         this.set_low_energy_model("analytic")
         this.set_low_energy_source("srim")
         this.set_is_bragg_additivity(false)
+        this.set_use_srim_sp(false)
 
         return this
     end
@@ -581,6 +583,89 @@ function get_is_bragg_additivity(this::Inelastic_Collision)
 end
 
 """
+    set_use_srim_sp(this::Inelastic_Collision,use_srim_sp::Bool)
+
+To replace the computed electronic stopping power with SRIM-2013's own tabulated values,
+mixed from the elements in mass fractions and taken in the material's declared phase. On
+this path `bethe` is not called at all for the electronic term.
+
+**The point is fidelity to SRIM, not accuracy.** Turn it on to reproduce SRIM numbers — to
+compare against a SRIM-based workflow, or to feed a code that was tuned on them. Everything
+else in the stopping-power path is about getting the physics right; this one is about
+getting *SRIM* right, and the two are not the same thing.
+
+Supported for `Proton` and `Alpha` only, over 0.1 keV to 1 GeV for protons and 0.1 keV to
+4 GeV for alphas, Z = 1 to 92. Anything outside that raises rather than quietly falling
+back, because a silent fallback puts a discontinuity in the middle of a stopping-power
+curve where the user cannot see it. A user who sets this on a mixed electron/proton problem
+needs to be told, not to get Bethe for the electrons and SRIM for the protons without
+knowing which is which.
+
+**SRIM's compound correction is deliberately not applied and cannot be set.** It is a
+property of the molecule rather than of the interaction, so one setting here would apply
+one molecule's bond correction to every material in the geometry; and the numbers are in no
+shipped SRIM data file, only in the GUI's Compound Dictionary. For a molecular target the
+correction SRIM would have applied reaches about 6% below 1 MeV — liquid water is -6.00%
+flat from 10 keV to 400 keV — fading out above about 2.5 MeV/u. So below a few MeV this
+reproduces *SRIM run on a composition*, not *SRIM's compound library entry*.
+
+**SRIM has no Fermi density effect at all**, so above roughly 500 MeV/u these tables are
+wrong in a way that grows with energy: for liquid water the density effect removes about
+1.8% of the stopping number at 2 GeV and 8.5% at 10 GeV, and none of it is in SRIM. This is
+the wrong switch for high-energy work.
+
+Enabling it **supersedes** `set_ecut`, `set_emax`, `set_low_energy_model`,
+`set_low_energy_source` and `set_is_bragg_additivity` for the electronic stopping power:
+none of them are consulted, because none of them describe what SRIM did. They stay set, and
+the combination is not an error — a user who has the fitted branch configured and then sets
+this is switching sources.
+
+It is itself superseded, per material and per particle, by a user table registered with
+`Material.set_stopping_power`.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `use_srim_sp::Bool` : activate (true) or deactivate (false) the SRIM tables.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.set_use_srim_sp(true)
+```
+
+# Reference(s)
+- Ziegler, Ziegler and Biersack (2010), SRIM - The Stopping and Range of Ions in Matter.
+"""
+function set_use_srim_sp(this::Inelastic_Collision,use_srim_sp::Bool)
+    this.use_srim_sp = use_srim_sp
+end
+
+"""
+    get_use_srim_sp(this::Inelastic_Collision)
+
+To know whether the electronic stopping power is read from SRIM-2013's tabulated values.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+
+# Output Argument(s)
+- `use_srim_sp::Bool` : whether the SRIM tables are used.
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.get_use_srim_sp()
+false
+```
+"""
+function get_use_srim_sp(this::Inelastic_Collision)
+    return this.use_srim_sp
+end
+
+"""
     in_distribution(this::Inelastic_Collision)
 
 Describe the energy discretization method for the incoming particle in the inelastic collision
@@ -888,18 +973,27 @@ Gives the stopping power for inelastic collision interaction.
 - `S::Float64` : stopping power.
 
 """
-function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,I_eff::Float64=NaN,atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
+function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,I_eff::Float64=NaN,atomic_weights::Union{Nothing,Vector{Float64}}=nothing,S_user::Dict{Type,String}=Dict{Type,String}())
 
-    # Compute the total stopping power
-    Stot = bethe(Z,ωz,atz,ρ,N_density,Ei,particle,this.density_correction,state_of_matter,I_eff;
-        atomic_weights=atomic_weights,
-        is_shell_correction=this.is_shell_correction,
-        user_ecut=get(this.user_ecut,get_type(particle),NaN),
-        user_emax=get(this.user_emax,get_type(particle),NaN),
-        is_emax_fit=(get_type(particle) in this.user_emax_fit),
-        low_energy_model=this.low_energy_model,
-        low_energy_source=this.low_energy_source,
-        is_bragg_additivity=this.is_bragg_additivity)
+    # Compute the total stopping power. A user table registered on the material wins over
+    # everything, per particle; the SRIM tables replace the electronic stopping power at
+    # every energy. On neither path is a Bethe setting consulted, because neither describes
+    # what the numbers are. Sc and Sr below are untouched.
+    if haskey(S_user,get_type(particle))
+        Stot = user_stopping_power(S_user[get_type(particle)],Ei,ρ)
+    elseif this.use_srim_sp
+        Stot = srim_stopping_power(Z,ωz,ρ,Ei,particle,state_of_matter)
+    else
+        Stot = bethe(Z,ωz,atz,ρ,N_density,Ei,particle,this.density_correction,state_of_matter,I_eff;
+            atomic_weights=atomic_weights,
+            is_shell_correction=this.is_shell_correction,
+            user_ecut=get(this.user_ecut,get_type(particle),NaN),
+            user_emax=get(this.user_emax,get_type(particle),NaN),
+            is_emax_fit=(get_type(particle) in this.user_emax_fit),
+            low_energy_model=this.low_energy_model,
+            low_energy_source=this.low_energy_source,
+            is_bragg_additivity=this.is_bragg_additivity)
+    end
 
     # Compute the catastrophic Møller- or Bhabha- derived stopping power
     Sc = 0
