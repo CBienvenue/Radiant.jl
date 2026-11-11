@@ -32,6 +32,12 @@ mutable struct Inelastic_Collision <: Interaction
     is_distant_collision::Bool
     density_correction::String
     scattering_model::String
+    user_ecut::Dict{Type,Float64}
+    user_emax::Dict{Type,Float64}
+    user_emax_fit::Set{Type}
+    low_energy_model::String
+    low_energy_source::String
+    is_bragg_additivity::Bool
 
     # Constructor(s)
     function Inelastic_Collision()
@@ -50,6 +56,13 @@ mutable struct Inelastic_Collision <: Interaction
         this.set_is_subshells_dependant(true)
         this.set_is_shell_correction(true)
         this.set_scattering_model("BFP")
+        this.user_ecut = Dict{Type,Float64}()
+        this.user_emax = Dict{Type,Float64}()
+        this.user_emax_fit = Set{Type}()
+        this.set_low_energy_model("analytic")
+        this.set_low_energy_source("srim")
+        this.set_is_bragg_additivity(false)
+
         return this
     end
 end
@@ -175,6 +188,396 @@ julia> elastic_collision.set_scattering_model("FP")
 function set_scattering_model(this::Inelastic_Collision,scattering_model::String)
     if uppercase(scattering_model) ∉ ["BFP","FP","BTE"] error("Unknown scattering model (should be BFP, FP or BTE).") end
     this.scattering_model = uppercase(scattering_model)
+end
+
+"""
+    set_ecut(this::Inelastic_Collision,particle::Type,energy::Real)
+
+To set the energy above which the corrected Bethe formula is used for a given particle,
+and below which the stopping power is taken from the low-energy branch.
+
+Lowering it extends the Bethe formula into a region where its corrections are less well
+determined; the shell-correction tables stop at a tabulated γ and raise an error naming
+this setter when they run out.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `particle::Type` : particle type, one of `Electron`, `Positron`, `Muon`, `Antimuon`,
+  `Proton`, `Antiproton` or `Alpha`.
+- `energy::Real` : cutoff energy [in MeV].
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.set_ecut(Proton,1.0)
+```
+"""
+function set_ecut(this::Inelastic_Collision,particle::Type,energy::Real)
+    if !haskey(ECUT_DEFAULTS,particle) error("The cutoff energy is undefined for the '$particle' particle. It is defined for $(collect(keys(ECUT_DEFAULTS))).") end
+    if energy ≤ 0 error("The cutoff energy should be positive.") end
+    this.user_ecut[particle] = float(energy)
+end
+
+"""
+    get_ecut(this::Inelastic_Collision,particle::Type)
+
+To get the energy above which the corrected Bethe formula is used for a given particle:
+the value `set_ecut` stored, or `ECUT_DEFAULTS[particle]` if none was set.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `particle::Type` : particle type.
+
+# Output Argument(s)
+- `energy::Float64` : cutoff energy [in MeV].
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.get_ecut(Proton)
+0.75
+```
+"""
+function get_ecut(this::Inelastic_Collision,particle::Type)
+    if !haskey(ECUT_DEFAULTS,particle) error("The cutoff energy is undefined for the '$particle' particle. It is defined for $(collect(keys(ECUT_DEFAULTS))).") end
+    return get(this.user_ecut,particle,ECUT_DEFAULTS[particle])
+end
+
+"""
+    set_emax(this::Inelastic_Collision,particle::Type,energy::Real)
+    set_emax(this::Inelastic_Collision,particle::Type,mode::String)
+
+To set the energy of the stopping-power maximum of the analytic low-energy extension.
+
+`Emax` is read only inside that extension and is meaningful only there: both of its
+branches have zero slope at `Ei/Emax = 1`, so `Emax` is where the extension puts the
+stopping-power maximum. Nothing at or above `Ecut` changes, and neither does the
+`"icru49"` low-energy branch, which does not use it.
+
+Passing `"f"` selects `emax_stopping_maximum`, a power-law fit in the mean atomic number
+to the measured maximum of all 92 elements against SRIM-2013. A single constant asserts
+the same peak energy in hydrogen as in uranium, where the real peak runs 41-164 keV for
+protons and 0.42-1.19 MeV for alphas. `"f"` is accepted for `Proton` and `Alpha` only;
+there is no Z-dependent fit for the others.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `particle::Type` : particle type.
+- `energy::Real` : energy of the stopping-power maximum [in MeV].
+- `mode::String` : `"f"`, to select the Z-dependent fit.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.set_emax(Proton,"f")
+julia> inelastic_collision.set_emax(Alpha,0.9)
+```
+"""
+function set_emax(this::Inelastic_Collision,particle::Type,energy::Real)
+    if !haskey(EMAX_DEFAULTS,particle) error("The stopping-power maximum is undefined for the '$particle' particle. It is defined for $(collect(keys(EMAX_DEFAULTS))).") end
+    if energy ≤ 0 error("The energy of the stopping-power maximum should be positive.") end
+    delete!(this.user_emax_fit,particle)
+    this.user_emax[particle] = float(energy)
+end
+
+function set_emax(this::Inelastic_Collision,particle::Type,mode::String)
+    if lowercase(mode) != "f" error("Unknown '$mode' mode for the stopping-power maximum. Give an energy [in MeV], or \"f\" for the Z-dependent fit.") end
+    if particle ∉ [Proton,Alpha] error("The \"f\" mode is only supported for Proton and Alpha; there is no Z-dependent fit for the '$particle' particle.") end
+    delete!(this.user_emax,particle)
+    push!(this.user_emax_fit,particle)
+end
+
+"""
+    get_emax(this::Inelastic_Collision,particle::Type)
+
+To get the energy of the stopping-power maximum of the analytic low-energy extension.
+
+Gives the value `set_emax` stored, or `EMAX_DEFAULTS[particle]` if none was set. Returns
+`"f"` unchanged when the Z-dependent fit is selected: the resolved value depends on the
+material and cannot be known here.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `particle::Type` : particle type.
+
+# Output Argument(s)
+- `energy::Union{Float64,String}` : energy of the stopping-power maximum [in MeV], or `"f"`.
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.get_emax(Proton)
+0.05
+```
+"""
+function get_emax(this::Inelastic_Collision,particle::Type)
+    if !haskey(EMAX_DEFAULTS,particle) error("The stopping-power maximum is undefined for the '$particle' particle. It is defined for $(collect(keys(EMAX_DEFAULTS))).") end
+    if particle in this.user_emax_fit return "f" end
+    return get(this.user_emax,particle,EMAX_DEFAULTS[particle])
+end
+
+"""
+    set_low_energy_model(this::Inelastic_Collision,model::String)
+
+To set the model used for the stopping power below `Ecut`.
+
+- `analytic` : analytical extension anchored on the value and the slope of the Bethe
+  branch at `Ecut`. Smooth at the join, but it extrapolates from that single anchor and
+  its error grows with distance from it.
+- `icru49` : the empirical form of ICRU Report 49, attributed there to Andersen and
+  Ziegler, with per-element coefficients fitted to SRIM-2013. The low branch exponent is
+  fitted per element rather than pinned at 0.45, which is what removes the separate
+  `sqrt(E)` branch the pinned version carries below 10 keV. It is confined to [0.30, 0.80],
+  a departure from the parametrization as published: unconstrained, seven of the 92 proton
+  fits ran to 0.8-1.31 with 22-43% error extrapolating below the fitting window.
+
+The default is `analytic`, and it stays the default in this change: that the evidence
+favours the fitted branch does not make a default swap part of it.
+
+Measured against NIST PSTAR/ASTAR below `Ecut` over the 74 ICRU 49 materials, median
+deviation goes from 18.72% to 2.67% for protons and 26.40% to 3.60% for alphas. Against
+the same form with the exponent pinned at 0.45 the improvement is decisive for alphas and
+close to a coin flip for protons -- 3.33% to 2.67%, with the whole proton gain coming from
+below 10 keV, where the fitted exponent replaces the pinned form's bolted-on `sqrt(E)`.
+That region is where PSTAR and ASTAR are themselves fits to experiment in this same
+empirical form, so the comparison is between two empirical fits of one functional form and
+not between a model and theory.
+
+**10 keV is the floor of validity.** Below about 5 keV this branch is badly wrong for some
+elements -- helium worst, 153% median below 10 keV -- and no choice of exponent fixes it.
+
+Above `Ecut` the fitted form is blended onto the Bethe branch over one octave, so that the
+handover is C¹ rather than leaving a step of up to 13.6% in the CSD operator.
+
+Below `Ecut` with `icru49` selected, `sp` computes `Sr = Stot - Sc` where `Stot` is a fit
+to SRIM's *total electronic* stopping while `Sc` comes from the analytic heavy-particle
+differential cross-section, so the soft/catastrophic split is approximate in that region.
+In practice it rarely bites -- a 750 keV proton can transfer at most about 1.6 keV to an
+electron, so `Sc` is zero unless the electron group structure reaches below that -- and it
+is not new, since the analytic extension is not a Bethe evaluation either.
+
+The fitted table covers Z = 1-92, protons and alphas only. Any other particle, or any
+element outside that range, falls back to the analytic extension silently.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `model::String` : low-energy model, `"analytic"` or `"icru49"`.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.set_low_energy_model("icru49")
+```
+
+# Reference(s)
+- ICRU Report 49 (1993), Stopping Powers and Ranges for Protons and Alpha Particles.
+- Andersen and Ziegler (1977), Hydrogen: Stopping Powers and Ranges in All Elements.
+- Salvat (2022), Bethe stopping-power formula and its corrections. Eqs. (134)-(136), for
+  the free-exponent parametrization and the fitting prescription.
+"""
+function set_low_energy_model(this::Inelastic_Collision,model::String)
+    if lowercase(model) ∉ ["analytic","icru49"] error("Unknown '$model' low-energy model.") end
+    this.low_energy_model = lowercase(model)
+end
+
+"""
+    get_low_energy_model(this::Inelastic_Collision)
+
+To get the model used for the stopping power below `Ecut`.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+
+# Output Argument(s)
+- `model::String` : low-energy model.
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.get_low_energy_model()
+"analytic"
+```
+"""
+function get_low_energy_model(this::Inelastic_Collision)
+    return this.low_energy_model
+end
+
+"""
+    set_low_energy_source(this::Inelastic_Collision,source::String)
+
+To choose which coefficients the fitted low-energy branch reads.
+
+- `srim` : fitted to SRIM-2013, all 92 elements from one fit.
+- `iaea` : fitted to the IAEA electronic stopping power database — the compiled
+  experimental literature, 720 references, publications from 1928 to 2025. Same form, same
+  units, same phase convention, same `a2` bound; only the numbers differ.
+
+**It is inert unless `set_low_energy_model("icru49")` is also selected.** There are no
+coefficients in the analytic branch to choose between, and results are bit-identical
+between the two sources there.
+
+`iaea` is a **partial override on top of the SRIM table**, not a table in its own right:
+it covers 41 elements for protons and 30 for alphas, and it is resolved per element at the
+point of use, so a compound routinely draws from both at once. An element is missing only
+because the measurements cannot determine the form — no points on one side of the stopping
+maximum, too few points, or nothing reaching `Ecut` — and every element it omits is served
+by the SRIM entry through the same lookup. So `iaea` never fails, never warns, and leaves
+most materials untouched.
+
+Each entry carries `n_references` and a leave-one-reference-out cross-validated error
+under `["quality"]`, and those are the numbers to read before relying on one. The
+cross-validated median is 4.38% for protons and 3.38% for alphas, against in-sample
+medians of 2.83% and 2.03%; the tail is real and is not hidden — terbium fits its own alpha
+points well and misses by 44% when a reference is held out. Radiant does not gate on these
+numbers: which entries to trust is the user's judgement, and a filter applied here would
+be invisible to them.
+
+**This is a choice of reference, not an upgrade.** Scored against NIST PSTAR/ASTAR, which
+neither table was fitted to, `iaea` is closer for 11 of 23 elements for protons and 6 of
+19 for alphas, and the median is *worse* for both — 1.72% to 2.38% and 1.85% to 3.13%. The
+gains and the losses are both large where they occur: Pt 10.68% to 3.67% against Pb 2.96%
+to 7.19% for protons, Ar 1.42% to 0.42% against Ti 1.04% to 11.27% for alphas. ICRU 49 is
+itself an evaluation of experiment in this same functional form, so this is two empirical
+fits weighing the same disagreeing literature differently, not a model scored against
+theory: `srim` tracks ICRU 49 more closely because SRIM and ICRU 49 are two evaluations by
+overlapping communities of the same older measurements, while `iaea` tracks the current
+compiled database, which includes measurements neither of them saw. The measurements
+disagree among themselves by 14-17%.
+
+The honest reason to select `iaea` is wanting elemental stopping tied to the measurement
+compilation rather than to SRIM's evaluation of it, or working on an element where the two
+disagree and having a reason to trust the measurements. On the evidence above, for alphas
+it is usually worse.
+
+The default stays `srim`: it is the only source covering all 92 elements from one fit, and
+defaulting to a partial one would put a provenance seam in the middle of the table where a
+trend across Z could no longer be told from a change of data source.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `source::String` : coefficient source, `"srim"` or `"iaea"`.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.set_low_energy_model("icru49")
+julia> inelastic_collision.set_low_energy_source("iaea")
+```
+
+# Reference(s)
+- IAEA, Electronic Stopping Power of Matter for Ions (database),
+  https://www-nds.iaea.org/stopping/. Sole source of the "iaea" coefficients.
+"""
+function set_low_energy_source(this::Inelastic_Collision,source::String)
+    if lowercase(source) ∉ ["srim","iaea"] error("Unknown '$source' low-energy coefficient source.") end
+    this.low_energy_source = lowercase(source)
+end
+
+"""
+    get_low_energy_source(this::Inelastic_Collision)
+
+To get the coefficient source of the fitted low-energy branch. Inert unless the `icru49`
+low-energy model is selected.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+
+# Output Argument(s)
+- `source::String` : coefficient source.
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.get_low_energy_source()
+"srim"
+```
+
+# Reference(s)
+- IAEA, Electronic Stopping Power of Matter for Ions (database),
+  https://www-nds.iaea.org/stopping/. Sole source of the "iaea" coefficients.
+"""
+function get_low_energy_source(this::Inelastic_Collision)
+    return this.low_energy_source
+end
+
+"""
+    set_is_bragg_additivity(this::Inelastic_Collision,is_bragg_additivity::Bool)
+
+To build the stopping power of a compound from its elements rather than from its own
+composition. Each element is evaluated separately and the results are combined with mass
+fractions, `S = Σⱼ ωⱼ Sⱼ`, which is what mass stopping power is additive in.
+
+Every element is evaluated at the *compound* density, because the density effect in a
+compound is set by the compound's electron density and not by what the pure element would
+do on its own.
+
+**Scope: the Bethe branch only.** The fitted `icru49` low-energy branch is already
+unconditionally additive whatever this flag says, so scoping the flag here is what stops
+it meaning different things in different energy regions. With the `analytic` model each
+element's extension anchors to that element's own Bethe value and slope at `Ecut`.
+
+**Enabling this overrides the tabulated compound mean excitation energy.**
+`effective_mean_excitation_energy` returns the ICRU value for canonical compounds — 75 eV
+for liquid water — before falling back to additivity. Building water from H and O
+elementwise means each element carries its own I and that 75 eV never enters. For
+electrons this is a visible shift, and in the opposite direction from what a user who
+trusts ICRU would want, so it is a choice to be made knowingly.
+
+Note also that any additivity-based kernel misses NIST's liquid water by about 28% at
+1 keV and 18% at 100 keV. Applying additivity to NIST's own hydrogen and oxygen tables
+reproduces the same gap, so that is the assumption failing rather than the implementation.
+
+Applies to all particles.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+- `is_bragg_additivity::Bool` : activate (true) or deactivate (false) Bragg additivity.
+
+# Output Argument(s)
+N/A
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.set_is_bragg_additivity(true)
+```
+"""
+function set_is_bragg_additivity(this::Inelastic_Collision,is_bragg_additivity::Bool)
+    this.is_bragg_additivity = is_bragg_additivity
+end
+
+"""
+    get_is_bragg_additivity(this::Inelastic_Collision)
+
+To know whether compounds are built from their elements by Bragg additivity.
+
+# Input Argument(s)
+- `this::Inelastic_Collision` : inelastic collision structure.
+
+# Output Argument(s)
+- `is_bragg_additivity::Bool` : whether Bragg additivity is enabled.
+
+# Examples
+```jldoctest
+julia> inelastic_collision = Inelastic_Collision()
+julia> inelastic_collision.get_is_bragg_additivity()
+false
+```
+"""
+function get_is_bragg_additivity(this::Inelastic_Collision)
+    return this.is_bragg_additivity
 end
 
 """
@@ -488,7 +891,15 @@ Gives the stopping power for inelastic collision interaction.
 function sp(this::Inelastic_Collision,Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,state_of_matter::String,Ei::Float64,Ec::Float64,particle::Particle,I_eff::Float64=NaN,atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
 
     # Compute the total stopping power
-    Stot = bethe(Z,ωz,ρ,Ei,particle,this.density_correction,state_of_matter,I_eff; atomic_weights=atomic_weights,is_shell_correction=this.is_shell_correction)
+    Stot = bethe(Z,ωz,atz,ρ,N_density,Ei,particle,this.density_correction,state_of_matter,I_eff;
+        atomic_weights=atomic_weights,
+        is_shell_correction=this.is_shell_correction,
+        user_ecut=get(this.user_ecut,get_type(particle),NaN),
+        user_emax=get(this.user_emax,get_type(particle),NaN),
+        is_emax_fit=(get_type(particle) in this.user_emax_fit),
+        low_energy_model=this.low_energy_model,
+        low_energy_source=this.low_energy_source,
+        is_bragg_additivity=this.is_bragg_additivity)
 
     # Compute the catastrophic Møller- or Bhabha- derived stopping power
     Sc = 0

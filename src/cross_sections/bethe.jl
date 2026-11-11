@@ -1,7 +1,39 @@
 """
-    bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,
-    density_correction::String,state_of_matter::String,I_eff::Float64;
-    atomic_weights::Union{Nothing,Vector{Float64}}=nothing,
+    ECUT_DEFAULTS
+
+Energy above which the corrected Bethe formula is used, per particle [in MeV]. `bethe`
+reads this unless the caller overrides it, and `Inelastic_Collision` seeds `set_ecut` from
+it, so the defaults are written down once.
+
+"""
+const ECUT_DEFAULTS = Dict{Type,Float64}(
+    Electron => 0.001, Positron => 0.001,   # 1 keV
+    Muon     => 0.15,  Antimuon => 0.15,    # 150 keV
+    Proton   => 0.75,  Antiproton => 0.75,  # 750 keV
+    Alpha    => 5.0                         # 5 MeV
+)
+
+"""
+    EMAX_DEFAULTS
+
+Energy of the stopping-power maximum used by the analytic low-energy extension, per
+particle [in MeV]. Read only by that extension, and seeded into `set_emax` the same way.
+
+"""
+const EMAX_DEFAULTS = Dict{Type,Float64}(
+    Electron => 0.0001, Positron => 0.0001,  # 100 eV
+    Muon     => 0.02,   Antimuon => 0.02,    # 20 keV
+    Proton   => 0.05,   Antiproton => 0.05,  # 50 keV
+    Alpha    => 0.8                          # 800 keV
+)
+
+"""
+    bethe(Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,
+    N_density::Float64,Ei::Float64,particle::Particle,density_correction::String,
+    state_of_matter::String,I_eff::Float64;
+    atomic_weights::Union{Nothing,Vector{Float64}}=nothing,user_ecut::Float64=NaN,
+    user_emax::Float64=NaN,is_emax_fit::Bool=false,low_energy_model::String="analytic",
+    low_energy_source::String="srim",is_bragg_additivity::Bool=false,
     is_bethe_correction::Bool=true,is_density_correction::Bool=true,
     is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
 
@@ -11,7 +43,9 @@ and heavy ions (proton, muon, alpha particle).
 # Input Argument(s)
 - `Z::Vector{Int64}` : atomic numbers of the elements in the material.
 - `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
+- `atz::Vector{Float64}` : atomic fraction of the elements composing the material.
 - `ρ::Float64` : material density.
+- `N_density::Float64` : atom density of the material [in cm⁻³].
 - `Ei::Float64` : incoming particle energy.
 - `particle::Particle` : incoming particle.
 - `density_correction::String` : density-effect correction type.
@@ -23,6 +57,16 @@ and heavy ions (proton, muon, alpha particle).
 - `is_shell_correction::Bool` : boolean to enable or not the shell correction.
 - `is_lindhard_sorensen::Bool` : boolean to enable or not the Lindhard-Sorensen correction.
 - `is_barkas::Bool` : boolean to enable or not the Barkas correction.
+- `user_ecut::Float64` : energy above which the corrected Bethe formula is used [in MeV];
+  NaN ⟹ the per-particle default.
+- `user_emax::Float64` : energy of the stopping-power maximum of the analytic low-energy
+  extension [in MeV]; NaN ⟹ the per-particle default.
+- `is_emax_fit::Bool` : take that energy from the Z-dependent fit
+  `emax_stopping_maximum` instead, which overrides `user_emax`.
+- `low_energy_model::String` : model used below `Ecut`, `"analytic"` or `"icru49"`.
+- `low_energy_source::String` : coefficient source of the fitted low-energy model.
+- `is_bragg_additivity::Bool` : boolean to build a compound from its elements rather than
+  from its own composition.
 
 # Output Argument(s)
 - `S::Float64` : stopping power.
@@ -33,26 +77,61 @@ and heavy ions (proton, muon, alpha particle).
   particles from the corrected Bethe formula.
 
 """
-function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid",I_eff::Float64=NaN; atomic_weights::Union{Nothing,Vector{Float64}}=nothing,is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true)
+function bethe(Z::Vector{Int64},ωz::Vector{Float64},atz::Vector{Float64},ρ::Float64,N_density::Float64,Ei::Float64,particle::Particle,density_correction::String="fano",state_of_matter::String="solid",I_eff::Float64=NaN; atomic_weights::Union{Nothing,Vector{Float64}}=nothing,is_bethe_correction::Bool=true,is_density_correction::Bool=true,is_shell_correction::Bool=true,is_lindhard_sorensen::Bool=true,is_barkas::Bool=true,user_ecut::Float64=NaN,user_emax::Float64=NaN,is_emax_fit::Bool=false,low_energy_model::String="analytic",low_energy_source::String="srim",is_bragg_additivity::Bool=false)
 
     #----
     # Set the minimum energy cutoff over which the corrected Bethe formula is valid.
     #----
     mₑ = 0.51099895069
-    if is_electron(particle) || is_positron(particle)
-        Ecut = 0.001/mₑ  # 1 keV
-        Emax = 0.0001/mₑ # 100 eV
-    elseif is_muon(particle) || is_antimuon(particle)
-        Ecut = 0.15/mₑ # 150 keV
-        Emax = 0.02/mₑ # 20 keV
-    elseif is_proton(particle) || is_antiproton(particle)
-        Ecut = 0.75/mₑ # 750 keV
-        Emax = 0.05/mₑ # 50 keV
-    elseif is_alpha(particle)
-        Ecut = 5/mₑ   # 5 MeV
-        Emax = 0.8/mₑ # 800 keV
-    else
-        error("Unknown particle.")
+    particle_type = get_type(particle)
+    if !haskey(ECUT_DEFAULTS,particle_type) error("Unknown particle.") end
+    Ecut = ECUT_DEFAULTS[particle_type]/mₑ
+    Emax = EMAX_DEFAULTS[particle_type]/mₑ
+
+    # A user-supplied cutoff overrides the default. Emax is read only by the analytic
+    # low-energy extension and means nothing at or above Ecut, so nothing there changes.
+    if !isnan(user_ecut) Ecut = user_ecut/mₑ end
+    if is_emax_fit
+        Emax = emax_stopping_maximum(Z,atz,particle)/mₑ
+    elseif !isnan(user_emax)
+        Emax = user_emax/mₑ
+    end
+
+    #----
+    # Bragg additivity
+    #----
+    # Build the compound by evaluating each element on its own and combining with mass
+    # fractions. Mass stopping power is additive in mass fractions; this is a different
+    # question from the Eq. (53) electron weighting inside the bracket.
+    #
+    # ρ is the compound's density, not the element's: the density effect in a compound is
+    # set by the compound's electron density, not by what graphite would do on its own.
+    # That also means no elemental density table is needed, and since every element is
+    # evaluated at the same density the mass-stopping-power conversion cancels and the
+    # combination is a plain sum over the linear stopping powers bethe returns.
+    #
+    # N_density is per element at the compound's mass density. I_eff is NaN so each
+    # element carries its own tabulated mean excitation energy, which is the whole point.
+    # The recursion passes is_bragg_additivity = false, or it would not terminate.
+    if is_bragg_additivity && length(Z) > 1
+        element_atomic_weights = isnothing(atomic_weights) ? standard_atomic_weight.(Z) : atomic_weights
+        S = 0.0
+        for j in eachindex(Z)
+            S += ωz[j] * bethe([Z[j]],[1.0],[1.0],ρ,nuclei_density(element_atomic_weights[j],ρ),Ei,particle,density_correction,state_of_matter,NaN;
+                atomic_weights=[element_atomic_weights[j]],
+                is_bethe_correction=is_bethe_correction,
+                is_density_correction=is_density_correction,
+                is_shell_correction=is_shell_correction,
+                is_lindhard_sorensen=is_lindhard_sorensen,
+                is_barkas=is_barkas,
+                user_ecut=user_ecut,
+                user_emax=user_emax,
+                is_emax_fit=is_emax_fit,
+                low_energy_model=low_energy_model,
+                low_energy_source=low_energy_source,
+                is_bragg_additivity=false)
+        end
+        return S
     end
 
     #----
@@ -74,8 +153,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         # Effective electron density and ionization energy
         #----
-        element_atomic_weights = isnothing(atomic_weights) ? standard_atomic_weight.(Z) : atomic_weights
-        𝒩ₑ_eff = sum(ωz .* Z .* nuclei_density.(element_atomic_weights, ρ)) # (in cm⁻³)
+        𝒩ₑ_eff = N_density * sum(atz .* Z) # (in cm⁻³)
         I = effective_mean_excitation_energy(Z,ωz,I_eff) # (in mₑc²)
 
         #----
@@ -100,7 +178,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         δF = 0
         if is_density_correction
-            δF = fermi_density_effect(Z,ωz,ρ,Ei,state_of_matter,density_correction,ratio_mass,I_eff; atomic_weights=atomic_weights)
+            δF = fermi_density_effect(Z,atz,𝒩ₑ_eff,Ei,state_of_matter,density_correction,ratio_mass,I)
         end
 
         #----
@@ -108,7 +186,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         Cz = 0
         if is_shell_correction
-            Cz = shell_correction(Z,ωz,γ,particle)
+            Cz = shell_correction(Z,atz,γ,particle)
         end
 
         #----
@@ -146,7 +224,7 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         ΔL_B = 0
         if is_barkas && is_heavy
-            ΔL_B = barkas_correction(Z,ωz,ρ,γ,particle; atomic_weights=atomic_weights)
+            ΔL_B = barkas_correction(Z,atz,𝒩ₑ_eff,γ,particle,I)
         end
 
         #----
@@ -162,55 +240,51 @@ function bethe(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,par
         #----
         S = 4*π*rₑ^2/β² * Zc^2 * 𝒩ₑ_eff * ( log(2*β²/I) + log(γ^2) - β² + f/2 - Cz - δF/2 + ΔL_LS + ΔL_B )
 
+        #----
+        # Handover window, from Ecut up to 2*Ecut
+        #----
+        # The fitted form is not tied to the Bethe branch at Ecut, so without blending the
+        # handover leaves a discontinuity of up to 13.6%, which multigroup.jl would carry
+        # straight into the CSD operator. The window sits above Ecut, where S is already in
+        # hand: the Bethe branch is never evaluated below its own cutoff. E_top is a
+        # multiple of Ecut, not a constant, so set_ecut moves both ends together and the
+        # window can never invert. The guard is the same predicate the branch below Ecut
+        # uses, or the two would disagree about a material.
+        E_MeV = Ei*mₑ
+        Ecut_MeV = Ecut*mₑ
+        E_top = 2*Ecut_MeV
+        if low_energy_model != "analytic" && E_MeV < E_top && has_low_energy_data(Z,particle)
+            w = blend_weight(E_MeV,Ecut_MeV,E_top)
+            S_fit = icru49_stopping(Z,ωz,E_MeV,particle,state_of_matter,low_energy_source) * ρ/mₑ
+            S = (1-w)*S_fit + w*S
+        end
+
     #----
-    # Analytical extension to low-energies
+    # Low-energy branch
     #----
     else
-
-        #----
-        # Estimate parameters A and B
-        #----
-        h = 0.00005
-        Sc = bethe(Z,ωz,ρ,Ecut,particle,density_correction,state_of_matter,I_eff;
+        S = low_energy_stopping(Z,ωz,atz,ρ,N_density,Ei,particle,density_correction,state_of_matter,I_eff,Ecut,Emax;
             atomic_weights=atomic_weights,
             is_bethe_correction=is_bethe_correction,
             is_density_correction=is_density_correction,
             is_shell_correction=is_shell_correction,
             is_lindhard_sorensen=is_lindhard_sorensen,
-            is_barkas=is_barkas)
-        Sc_plus_h = bethe(Z,ωz,ρ,Ecut+h,particle,density_correction,state_of_matter,I_eff;
-            atomic_weights=atomic_weights,
-            is_bethe_correction=is_bethe_correction,
-            is_density_correction=is_density_correction,
-            is_shell_correction=is_shell_correction,
-            is_lindhard_sorensen=is_lindhard_sorensen,
-            is_barkas=is_barkas)
-        dSdE = (Sc_plus_h - Sc)/h
-        A = (3*log(Sc)*Sc - 2*dSdE*Ecut*log(Ecut/Emax))/(3*Sc)
-        B = -2*Ecut*dSdE/(3*Sc*sqrt(log(Ecut/Emax)))
-
-        #----
-        # Compute total cross-sections using analytical formula
-        #----
-        t = Ei/Emax
-        if t ≥ 1
-            S = exp(A-B*(log(t))^1.5)
-        else
-            S = 1.5*exp(A)*sqrt(t)*(1-t/3)
-        end
+            is_barkas=is_barkas,
+            user_ecut=user_ecut,
+            low_energy_model=low_energy_model,
+            low_energy_source=low_energy_source)
     end
     return S
 end
 
 """
-    shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,particle::Particle)
+    shell_correction(Z::Vector{Int64},atz::Vector{Float64},γi::Float64,particle::Particle)
 
 Gives the shell correction to the Bethe formula.
 
 # Input Argument(s)
 - `Z::Vector{Int64}` : atomic numbers of the elements in the material.
-- `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
-- `ρ::Float64` : material density.
+- `atz::Vector{Float64}` : atomic fraction of the elements composing the material.
 - `γi::Float64` : total energy of the incoming particle in unit of its rest energy.
 - `particle::Particle` : incoming particle.
 
@@ -223,7 +297,7 @@ Gives the shell correction to the Bethe formula.
   particles from the corrected Bethe formula.
 
 """
-function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,particle::Particle)
+function shell_correction(Z::Vector{Int64},atz::Vector{Float64},γi::Float64,particle::Particle)
 
     #----
     # Initialization
@@ -261,7 +335,11 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
             Cz_prime[iz,n] = datai["modified_shell_corrections"][n]
             γ[iz,n] = datai["gamma"][n]
         end
-        if γi < minimum(γ[iz,:]) || γi > maximum(γ[iz,:]) error("Energy is out of range.") end
+        if γi < minimum(γ[iz,:]) || γi > maximum(γ[iz,:])
+            error("Shell-correction table for Z = $(Z[iz]) does not cover γ = $γi " *
+                  "(tabulated range $(minimum(γ[iz,:])) to $(maximum(γ[iz,:]))). " *
+                  "If Ecut was lowered with set_ecut, raise it.")
+        end
         Ec[iz] = datai["cutoff_energy"]
         for n in range(1,6)
             pn[iz,n] = datai["fit_parameters"][n]
@@ -276,7 +354,11 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
     Cz = 0.0
     β² = (γi^2-1)/γi^2
     Nz = length(Z)
-    Zeff = sum(ωz.*Z)
+
+    # Stoichiometric electron fraction of each element, SBETHE Eq. (53):
+    # C(γ)/Z = (1/Z) Σⱼ nⱼZⱼ Cⱼ(γ)/Zⱼ with Z = Σⱼ nⱼZⱼ. The mixing rule takes atom
+    # fractions, not mass fractions.
+    g = atz .* Z ./ sum(atz .* Z)
     for iz in range(1,Nz)
         if γi < maximum(γ[iz,:])
             Czprime = spline_Cz[iz](γi)
@@ -285,23 +367,28 @@ function shell_correction(Z::Vector{Int64},ωz::Vector{Float64},γi::Float64,par
         else
             Czprime = sum(pn[iz,:] .* 2 .^(1:6))
         end
-        Cz += ωz[iz]*Z[iz]/Zeff * (Czprime + (Z[iz]-S₀[iz])/(2*Z[iz])*(log(β²/(1-β²))-β²))
+        Cz += g[iz] * (Czprime + (Z[iz]-S₀[iz])/(2*Z[iz])*(log(β²/(1-β²))-β²))
     end
     return Cz
 end
 
 """
-    barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ::Float64,
-    particle::Particle)
+    barkas_correction(Z::Vector{Int64},atz::Vector{Float64},𝒩ₑ_eff::Float64,
+    γ::Float64,particle::Particle,I::Float64)
 
 Gives the Barkas correction to the Bethe formula.
 
 # Input Argument(s)
 - `Z::Vector{Int64}` : atomic numbers of the elements in the material.
-- `ωz::Vector{Float64}` : weight fraction of the elements composing the material.
-- `ρ::Float64` : material density.
+- `atz::Vector{Float64}` : atomic fraction of the elements composing the material.
+- `𝒩ₑ_eff::Float64` : effective electron density of the material [in cm⁻³], already
+  built by the caller, so that the Bethe bracket and the plasma energy cannot drift
+  apart.
 - `γ::Float64` : total energy of the incoming particle in unit of its rest energy.
 - `particle::Particle` : incoming particle.
+- `I::Float64` : mean excitation energy of the material [in mₑc²], already resolved by the
+  caller. Passing it in is what makes the Barkas term honour a user-set value; resolving it
+  here would silently ignore `set_mean_excitation_energy`.
 
 # Output Argument(s)
 - `ΔLB::Float64` : Barkas correction.
@@ -312,7 +399,7 @@ Gives the Barkas correction to the Bethe formula.
   particles from the corrected Bethe formula.
 
 """
-function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ::Float64,particle::Particle; atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
+function barkas_correction(Z::Vector{Int64},atz::Vector{Float64},𝒩ₑ_eff::Float64,γ::Float64,particle::Particle,I::Float64)
 
     #----
     # Initialization
@@ -320,11 +407,14 @@ function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ:
     α = 1/137.035999177
     β² = (γ^2-1)/γ^2
     Nz = length(Z)
-    Zeff = sum(ωz.*Z)
-    CB = max(1,Zeff/10)
+
+    # SBETHE Eq. (54): CB = max{1, Z̄/10} with Z̄ = Z(Σⱼnⱼ)⁻¹, the mean atomic number
+    # per atom. Atom fractions sum to unity, so Z̄ is their Z-weighted sum, which is also
+    # the number of electrons on an average atom of the material.
+    Zbar = sum(atz .* Z)
+    CB = max(1,Zbar/10)
     charge = get_charge(particle)
-    Ωp = plasma_energy(Z,ωz,ρ; atomic_weights=atomic_weights)
-    I = effective_mean_excitation_energy(Z,ωz)
+    Ωp = plasma_energy(𝒩ₑ_eff)
 
     #----
     # Extract the subshell of all atoms of the compound
@@ -333,7 +423,7 @@ function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ:
     for iz in range(1,Nz)
         _,Ze,Ue,_,_,_ = electron_subshells(Z[iz])
         We = resonance_energy(Z[iz],Ωp,I)
-        append!(Zi,ωz[iz].*Ze)
+        append!(Zi,(atz[iz]/Zbar).*Ze)
         append!(Ui,Ue)
         append!(Wi,We)
     end
@@ -342,11 +432,9 @@ function barkas_correction(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,γ:
     # Compute the Barkas correction
     #----
     ΔLB = 0
-    for iz in range(1,Nz)
-        for δi in range(1,length(Zi))
-            ξ = 0.5616 * CB * Wi[δi]/(γ*β²)
-            ΔLB += ωz[iz] * charge*α/(γ^2*β²^(3/2))/Z[iz] * Zi[δi] * Wi[δi] * (I₁_barkas(ξ) + I₂_barkas(ξ)/γ^2)
-        end
+    for δi in range(1,length(Zi))
+        ξ = 0.5616 * CB * Wi[δi]/(γ*β²)
+        ΔLB += charge*α/(γ^2*β²^(3/2)) * Zi[δi] * Wi[δi] * (I₁_barkas(ξ) + I₂_barkas(ξ)/γ^2)
     end
     return ΔLB
 end

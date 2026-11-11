@@ -1,15 +1,22 @@
 """
-    fermi_density_effect(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,
-    type::String)
+    fermi_density_effect(Z::Vector{Int64},atz::Vector{Float64},𝒩ₑ_eff::Float64,
+    Ei::Float64,state_of_matter::String,type::String,ratio_mass::Float64,I::Float64)
 
 Compute the Fermi density effect correction.
 
 # Input Argument(s)
 - `Z::Vector{Int64}`: atomic number of the element(s) composing the material.
-- `ωz::Vector{Float64}`: weight fraction of the element(s) composing the material.
-- `ρ::Float64`: density of the material [in g/cm³].
+- `atz::Vector{Float64}`: atomic fraction of the elements composing the material.
+- `𝒩ₑ_eff::Float64`: effective electron density of the material [in cm⁻³], already built
+  by the caller. Passing it in rather than rebuilding it from the composition keeps one
+  definition of the electron density: the Bethe bracket and the plasma energy cannot
+  drift apart.
 - `Ei::Float64`: energy of the incoming particle [in mₑc²].
 - `type::String`: type of calculation.
+- `ratio_mass::Float64`: mass of the incoming particle in unit of the electron mass.
+- `I::Float64`: mean excitation energy of the material [in mₑc²], already resolved by the
+  caller. It is passed in rather than looked up here so that every term of the Bethe
+  formula uses one and the same value.
 
 # Output Argument(s)
 - `δF::Float64`: Fermi density effect correction.
@@ -21,36 +28,37 @@ Compute the Fermi density effect correction.
   Cross-Section Generating Code.
 
 """
-function fermi_density_effect(Z::Vector{Int64},ωz::Vector{Float64},ρ::Float64,Ei::Float64,state_of_matter::String,type::String,ratio_mass::Float64=1.0,I_eff::Float64=NaN; atomic_weights::Union{Nothing,Vector{Float64}}=nothing)
+function fermi_density_effect(Z::Vector{Int64},atz::Vector{Float64},𝒩ₑ_eff::Float64,Ei::Float64,state_of_matter::String,type::String,ratio_mass::Float64,I::Float64)
 
 if type == "fano"
 
     # Initialization
     γ = (Ei + ratio_mass)/ratio_mass
     β² = (γ^2-1)/γ^2
-    Ωp = plasma_energy(Z,ωz,ρ; atomic_weights=atomic_weights)
-    Zeff = sum(ωz.*Z)
-    I = effective_mean_excitation_energy(Z,ωz,I_eff)
+    Ωp = plasma_energy(𝒩ₑ_eff)
+
+    # Mean electron number per atom.
+    Zbar = sum(atz .* Z)
 
     # Extract the subshell of all atoms of the compound
     Zi = zeros(0); Ui = zeros(0); Wi = zeros(0); Nz = length(Z)
     for i in range(1,Nz)
         _,Ze,Ue,_,_,_ = electron_subshells(Z[i])
         We = resonance_energy(Z[i],Ωp,I)
-        append!(Zi,ωz[i].*Ze)
+        append!(Zi,(atz[i]/Zbar).*Ze)
         append!(Ui,Ue)
         append!(Wi,We)
     end
 
-    if (1-β²) < 1/Zeff * Ωp^2 * sum(Zi./Wi.^2)
+    if (1-β²) < Ωp^2 * sum(Zi./Wi.^2)
 
         # Find the root L
-        f(L) = Ωp^2/Zeff * sum(Zi./(Wi.^2 .+ L^2)) - (1-β²)
-        dfdL(L) = -2*L*Ωp^2/Zeff * sum(Zi./((Wi.^2 .+ L.^2).^2))
+        f(L) = Ωp^2 * sum(Zi./(Wi.^2 .+ L^2)) - (1-β²)
+        dfdL(L) = -2*L*Ωp^2 * sum(Zi./((Wi.^2 .+ L.^2).^2))
         L = newton_bisection(f,dfdL,10*Ωp/sqrt(1-β²),0,1e-5,500)
 
         # Compute the Fermi density effect
-        δF = 1/Zeff * sum(Zi.* log.(1 .+ L^2 ./Wi.^2)) - L^2/Ωp^2 * (1-β²)
+        δF = sum(Zi.* log.(1 .+ L^2 ./Wi.^2)) - L^2/Ωp^2 * (1-β²)
 
     else
         # No root for L
@@ -60,11 +68,14 @@ if type == "fano"
 elseif type == "sternheimer"
 
     mₑc² = 0.510999
-    I = effective_mean_excitation_energy(Z,ωz,I_eff)
-    Ωp = plasma_energy(Z,ωz,ρ; atomic_weights=atomic_weights)
+    Ωp = plasma_energy(𝒩ₑ_eff)
 
     C = -2*log(I/Ωp) - 1
-    X = log10(sqrt(2*Ei*ratio_mass+Ei^2))
+    # X = log10(βγ) = log10(p/Mc), momentum in units of the incident particle's own
+    # mass. sqrt(2*Ei*ratio_mass + Ei^2) is p/(mₑc), so it must be divided by
+    # ratio_mass = M/mₑ. Do not "simplify" this away: ratio_mass == 1 for electrons
+    # and positrons, which is why the two forms look identical there.
+    X = log10(sqrt(2*Ei*ratio_mass+Ei^2)/ratio_mass)
 
     if state_of_matter ∈ ["solid","liquid"]
         if I ≥ 0.0001/mₑc² && -C ≥ 5.215

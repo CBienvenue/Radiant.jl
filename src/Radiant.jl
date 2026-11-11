@@ -38,6 +38,7 @@ module Radiant
         "transport_correction.jl",
         "angular_fokker_planck_decomposition.jl",
         "bethe.jl",
+        "low_energy_sp.jl",
         "moller.jl",
         "bhabha.jl",
         "kawrakow_correction.jl",

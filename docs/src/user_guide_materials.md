@@ -67,6 +67,15 @@ muscle.set_mean_excitation_energy(74.7)   # ICRU/ESTAR value for striated muscle
 
 A value set this way takes precedence over both the tabulated value and the additivity rule. The getter `get_mean_excitation_energy()` returns the user-defined value, or `missing` if none was set (in which case the automatic value is used internally).
 
+!!! note "Additivity has a floor that `I` cannot lift"
+    Any additivity-based stopping-power kernel misses NIST's liquid water by about
+    28% at 1 keV and 18% at 100 keV. Applying additivity to NIST's *own* hydrogen and
+    oxygen tables reproduces the same gap, so this is the assumption failing, not the
+    implementation — ICRU 49 uses measured molecular data for water for exactly this
+    reason. `set_mean_excitation_energy` does not fix it, because what fails is the
+    stopping-power mixing rather than `I`. Only per-compound data would, which is what
+    per-compound data would be.
+
 ## 2.6 Inspecting a Material
 
 Calling `println(material)` prints a summary of the material:
