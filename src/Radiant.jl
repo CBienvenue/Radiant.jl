@@ -173,7 +173,6 @@ module Radiant
         "spline.jl",
         "voronoi.jl",
         "newton_bisection.jl",
-        "tanh_sinh_integral.jl",
         "one_space.jl",
         "cache.jl",
         "find_package_root.jl",

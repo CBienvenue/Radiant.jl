@@ -285,7 +285,7 @@ Gives the integration energy bounds for the outgoing particle.
 - `isSkip::Bool` : define if the integration is skipped or not.
 
 """
-function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Ec::Float64,particle::Particle,A_target::Union{Nothing,Float64}=nothing)
+function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,Ei::Float64,gi::Int64,gf::Int64,type::String,Ui::Float64,Ec::Float64,particle::Particle)
     itype = typeof(interaction)
     if itype == Annihilation
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
@@ -295,8 +295,6 @@ function bounds_dispatch(interaction::Interaction,Ef⁻::Float64,Ef⁺::Float64,
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type)
     elseif itype == Elastic_Collision
         return bounds(interaction,Ef⁻,Ef⁺,gi,gf)
-    elseif itype == Elastic_Scattering
-        return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec,particle,A_target)
     elseif itype == Inelastic_Collision
         return bounds(interaction,Ef⁻,Ef⁺,Ei,type,Ec,Ui,particle)
     elseif itype == Pair_Production
@@ -345,7 +343,7 @@ Gives the Legendre moments of the scattering cross-sections.
 - `σl::Vector{Float64}` : Legendre moments of the scattering cross-sections.
 
 """
-function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,Ec::Float64,incoming_particle::Particle,A::Int64=0)
+function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,Z::Int64,scattered_particle::Particle,type::String,iz::Int64,particles::Vector{Particle},Ein::Vector{Float64},Ef⁻::Float64,Ef⁺::Float64,δi::Int64,Ui::Float64,Zi::Real,Ti::Float64,ri::Float64,Ec::Float64,incoming_particle::Particle)
     itype = typeof(interaction)
     if itype == Annihilation
         return dcs(interaction,L,Ei,Ef,type,Z,Ein,Ec)
@@ -355,8 +353,6 @@ function dcs_dispatch(interaction::Interaction,L::Int64,Ei::Float64,Ef::Float64,
         return dcs(interaction,L,Ei,Ef,type,Z,iz,δi,scattered_particle)
     elseif itype == Elastic_Collision
         return dcs(interaction,L,Ei,Z,incoming_particle,Ein[end])
-    elseif itype == Elastic_Scattering
-        return dcs(interaction,Z,A,L,Ei,Ef⁻,Ef⁺,type,incoming_particle)
     elseif itype == Inelastic_Collision
         return dcs(interaction,Z,L,Ei,Ef,type,incoming_particle,δi,Ui,Zi,Ti,ri)
     elseif itype == Pair_Production
@@ -387,10 +383,14 @@ Gives the total cross-section.
 - `particle::Particle` : incoming particle.
 - `Ecutoff::Float64` : cutoff energy.
 - `Eout::Vector{Float64}` : outgoing energy boundaries.
+- `A::Union{Nothing,Vector{Int64}}` : isotope mass numbers of the element.
+- `atpercentA::Union{Nothing,Vector{Float64}}` : isotope atomic fractions.
 - `type::String` : type of interaction.
 
 # Output Argument(s)
-- `σt::Float64` : total cross-section.
+- `σt::Float64` : total cross-section; for elastic scattering, only its part below the
+  last outgoing group, the multigroup calculation adding the moments of order zero of the
+  feed functions.
 
 """
 function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,iz::Int64,particle::Particle,Ecutoff::Float64,Eout::Vector{Float64},A::Union{Nothing,Vector{Int64}}=nothing,atpercentA::Union{Nothing,Vector{Float64}}=nothing)
@@ -404,7 +404,7 @@ function tcs_dispatch(interaction::Interaction,Ei::Float64,Z::Int64,Ec::Float64,
     elseif itype == Elastic_Collision
         return tcs(interaction,Ei,Z,particle,Ecutoff)
     elseif itype == Elastic_Scattering
-        return tcs(interaction,Ei,Ec,particle,Z; A=A, atpercentA=atpercentA)
+        return tcs(interaction,Ei,Ec,particle,Z; A=A, atpercentA=atpercentA, Eout=Eout)
     elseif itype == Inelastic_Collision
         return tcs(interaction,Ei,Ec,particle,Z)
     elseif itype == Pair_Production
