@@ -95,7 +95,7 @@ for gi in range(1,Ngi)
         # Scattering cross sections
         if type ∈ ["S","P"] && scattering_model != "FP"
             if interaction isa Elastic_Scattering
-                𝓕, 𝓕ₑ = feed_elastic_scattering(Z,atz,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells,A,atpercentA)
+                𝓕, 𝓕ₑ = feed_elastic_scattering(Z,atz,L,Ei,E_out,Ngf,interaction,type,incoming_particle,Ec,A,atpercentA)
             else
                 𝓕, 𝓕ₑ = feed(Z,atz,L,Ei,E_out,Ngf,interaction,gi,Ngi,particles,full_type,incoming_particle,scattered_particle,E_in,Ec,is_elastic,is_subshells)
             end
@@ -115,6 +115,11 @@ for gi in range(1,Ngi)
                 Σtᵢ += w[ni]/2 * tcs_dispatch(interaction,Ei,Z[i],Ec,i,incoming_particle,E_in[end],E_out,Ai,atpercentAi) * atz[i] * N_density
             end
             if is_dirac Σtᵢ /= ΔEi end
+            # Elastic scattering: tcs_dispatch gave the part below the last group; the rest
+            # are the moments of order zero of the feed functions
+            if interaction isa Elastic_Scattering
+                Σtᵢ += w[ni]/2 * sum(𝓕[:,1]) * N_density
+            end
             Σt[gi] += Σtᵢ
             Σtₑ[gi] += Σtᵢ * (Ei-ΔQ)
             Σaᵢ = Σtᵢ - w[ni]/2 * sum(𝓕[:,1]) * N_density

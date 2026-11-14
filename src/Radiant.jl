@@ -8,6 +8,7 @@ module Radiant
     using LinearAlgebra
     using JLD2
     using SpecialFunctions
+    using QuadGK: quadgk
 
     #----
     # Include files
@@ -65,7 +66,9 @@ module Radiant
         "soft_catastrophic_cutoff.jl",
         "endf_reading.jl",
         "scattering_kinematics.jl",
-        "elastic_scattering_endf.jl"
+        "elastic_scattering_endf.jl",
+        "elastic_scattering_op.jl",
+        "elastic_scattering_g4.jl"
     ]
     radiant_src["particle_transport/"] = [
         "geometry.jl",
@@ -173,7 +176,6 @@ module Radiant
         "spline.jl",
         "voronoi.jl",
         "newton_bisection.jl",
-        "tanh_sinh_integral.jl",
         "one_space.jl",
         "cache.jl",
         "find_package_root.jl",
